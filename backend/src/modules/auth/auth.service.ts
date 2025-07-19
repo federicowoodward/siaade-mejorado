@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';  // Servicio de usuarios
+import { UsersService } from '../users/manage/users.service';  // Servicio de usuarios
 import { LoginDto } from './login.dto';  // El DTO para el login
 import { JwtPayload } from './jwt.payload';  // El tipo de payload del JWT
 
