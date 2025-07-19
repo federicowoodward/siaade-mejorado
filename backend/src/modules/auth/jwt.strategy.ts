@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { ExtractJwt } from 'passport-jwt';
 import { JwtPayload } from './jwt.payload';  // El tipo de payload que contiene el JWT
-import { UsersService } from '../users/users.service'; // Para obtener los datos del usuario
+import { UsersService } from '../users/manage/users.service'; // Para obtener los datos del usuario
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
