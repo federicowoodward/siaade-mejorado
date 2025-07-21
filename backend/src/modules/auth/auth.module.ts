@@ -4,7 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy'; // Estrategia personalizada de JWT
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UsersModule } from '../users/users.module';  // Asegúrate de tener acceso al módulo de usuarios
+import { UsersModule } from '../users/manage/users.module';  // Asegúrate de tener acceso al módulo de usuarios
 
 @Module({
   imports: [
