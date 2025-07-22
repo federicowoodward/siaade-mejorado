@@ -27,7 +27,6 @@ export const routes: Routes = [
     path: 'students',
     children: STUDENTS_ROUTES,
   },
-  // Rutas a pages sueltas
   {
     path: 'welcome',
     component: WelcomePage,

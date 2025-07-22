@@ -6,9 +6,9 @@ import {
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeuix/themes/aura';
-import Lara from '@primeuix/themes/lara';
 import { routes } from './app.routes';
+import { provideHttpClient } from '@angular/common/http';
+import MyPreset from './mypreset';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,12 +16,13 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideAnimationsAsync(),
+    provideHttpClient(),
     providePrimeNG({
       theme: {
-        preset: Lara,
+        preset: MyPreset,
         options: {
-          darkModeSelector: true // con esta variable cambia el mode dark
-      }
+          darkModeSelector: false, // con esta variable cambia el mode dark
+        },
       },
     }),
   ],

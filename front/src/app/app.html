@@ -1,2 +1,35 @@
-<router-outlet />
-<p-button label="Check" />
+<!-- app.component.html -->
+
+<app-role-switcher></app-role-switcher>
+<div class="md:hidden block p-2">
+  <p-button
+    (click)="sidebarVisible = true"
+    aria-label="Open menu"
+    icon="pi pi-bars"
+  >
+  </p-button>
+</div>
+<div class="flex h-screen">
+  <!-- Sidebar: visible en md+, hamburger/overlay en mobile -->
+  <aside class="min-w-17rem max-w-17rem h-full hidden md:block">
+    <app-menu-component></app-menu-component>
+  </aside>
+
+  <!-- Hamburger button (solo visible en móvil) -->
+
+  <!-- Sidebar Drawer (solo visible en móvil) -->
+  <p-drawer
+    [(visible)]="sidebarVisible"
+    header="Menu"
+    position="left"
+    [modal]="true"
+    styleClass=""
+  >
+    <app-menu-component></app-menu-component>
+  </p-drawer>
+
+  <!-- Main content -->
+  <main class="flex-1 p-3 overflow-auto">
+    <router-outlet></router-outlet>
+  </main>
+</div>

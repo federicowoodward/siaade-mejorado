@@ -3,8 +3,7 @@
     { "id": 1, "name": "student" },
     { "id": 2, "name": "teacher" },
     { "id": 3, "name": "preceptor" },
-    { "id": 4, "name": "secretary" },
-    { "id": 5, "name": "admin" }
+    { "id": 4, "name": "secretary" }
   ],
 
   "users": [
@@ -51,7 +50,7 @@
       "email": "eva@admin.com",
       "password": "hash5",
       "cuil": "20399887766",
-      "roleId": 5
+      "roleId": 4
     }
   ],
 
@@ -157,7 +156,10 @@
 
   "preceptors": [{ "userId": "u3" }],
 
-  "secretaries": [{ "userId": "u4", "isDirective": true }],
+  "secretaries": [
+    { "userId": "u4", "isDirective": false },
+    { "userId": "u5", "isDirective": true }
+  ],
 
   "subjects": [
     {
