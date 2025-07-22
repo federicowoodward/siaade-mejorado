@@ -1,0 +1,256 @@
+{
+  "roles": [
+    { "id": 1, "name": "student" },
+    { "id": 2, "name": "teacher" },
+    { "id": 3, "name": "preceptor" },
+    { "id": 4, "name": "secretary" },
+    { "id": 5, "name": "admin" }
+  ],
+
+  "users": [
+    {
+      "id": "u1",
+      "name": "Alice",
+      "lastName": "Smith",
+      "email": "alice@student.com",
+      "password": "hash1",
+      "cuil": "20123456780",
+      "roleId": 1
+    },
+    {
+      "id": "u2",
+      "name": "Bob",
+      "lastName": "Brown",
+      "email": "bob@teacher.com",
+      "password": "hash2",
+      "cuil": "20987654321",
+      "roleId": 2
+    },
+    {
+      "id": "u3",
+      "name": "Carol",
+      "lastName": "Green",
+      "email": "carol@preceptor.com",
+      "password": "hash3",
+      "cuil": "20345345345",
+      "roleId": 3
+    },
+    {
+      "id": "u4",
+      "name": "Derek",
+      "lastName": "White",
+      "email": "derek@secretary.com",
+      "password": "hash4",
+      "cuil": "20367891234",
+      "roleId": 4
+    },
+    {
+      "id": "u5",
+      "name": "Eva",
+      "lastName": "Miller",
+      "email": "eva@admin.com",
+      "password": "hash5",
+      "cuil": "20399887766",
+      "roleId": 5
+    }
+  ],
+
+  "user_info": [
+    {
+      "id": 1,
+      "userId": "u1",
+      "documentType": "DNI",
+      "documentValue": "12345678",
+      "phone": "3514441111",
+      "emergencyName": "Laura",
+      "emergencyPhone": "3519998888"
+    },
+    {
+      "id": 2,
+      "userId": "u2",
+      "documentType": "DNI",
+      "documentValue": "23456789",
+      "phone": "3515552222",
+      "emergencyName": "Mike",
+      "emergencyPhone": "3517776666"
+    },
+    {
+      "id": 3,
+      "userId": "u3",
+      "documentType": "DNI",
+      "documentValue": "34567890",
+      "phone": "3518883333",
+      "emergencyName": "Nina",
+      "emergencyPhone": "3511112222"
+    },
+    {
+      "id": 4,
+      "userId": "u4",
+      "documentType": "DNI",
+      "documentValue": "45678901",
+      "phone": "3512223333",
+      "emergencyName": "Sam",
+      "emergencyPhone": "3513334444"
+    },
+    {
+      "id": 5,
+      "userId": "u5",
+      "documentType": "DNI",
+      "documentValue": "56789012",
+      "phone": "3516665555",
+      "emergencyName": "Oscar",
+      "emergencyPhone": "3515554444"
+    }
+  ],
+
+  "common_data": [
+    {
+      "id": 1,
+      "userId": "u1",
+      "addressDataId": 1,
+      "sex": "F",
+      "birthDate": "2004-05-12",
+      "birthPlace": "Córdoba",
+      "nationality": "Argentinian"
+    },
+    {
+      "id": 2,
+      "userId": "u2",
+      "addressDataId": 2,
+      "sex": "M",
+      "birthDate": "1980-03-30",
+      "birthPlace": "Río Cuarto",
+      "nationality": "Argentinian"
+    }
+  ],
+
+  "address_data": [
+    {
+      "id": 1,
+      "street": "San Martín",
+      "number": "1000",
+      "floor": "2",
+      "apartment": "A",
+      "neighborhood": "Centro",
+      "locality": "Córdoba",
+      "province": "Córdoba",
+      "postalCode": "5000",
+      "country": "Argentina"
+    },
+    {
+      "id": 2,
+      "street": "Belgrano",
+      "number": "200",
+      "floor": "",
+      "apartment": "",
+      "neighborhood": "Norte",
+      "locality": "Córdoba",
+      "province": "Córdoba",
+      "postalCode": "5000",
+      "country": "Argentina"
+    }
+  ],
+
+  "students": [{ "userId": "u1", "legajo": "2021001" }],
+
+  "teachers": [{ "userId": "u2" }],
+
+  "preceptors": [{ "userId": "u3" }],
+
+  "secretaries": [{ "userId": "u4", "isDirective": true }],
+
+  "subjects": [
+    {
+      "id": 1,
+      "subjectName": "Mathematics I",
+      "teacher": "u2",
+      "preceptor": "u3",
+      "courseNum": 1,
+      "courseLetter": "A",
+      "courseYear": "2024",
+      "correlative": null
+    },
+    {
+      "id": 2,
+      "subjectName": "Physics I",
+      "teacher": "u2",
+      "preceptor": "u3",
+      "courseNum": 1,
+      "courseLetter": "B",
+      "courseYear": "2024",
+      "correlative": 1
+    }
+  ],
+
+  "subject_students": [
+    {
+      "id": 1,
+      "subjectId": 1,
+      "studentId": "u1",
+      "enrollmentDate": "2024-03-10"
+    }
+  ],
+
+  "subject_absences": [
+    {
+      "id": 1,
+      "subjectId": 1,
+      "studentId": "u1",
+      "dates": ["2024-04-15", "2024-05-02"]
+    }
+  ],
+
+  "exams": [
+    {
+      "id": 1,
+      "subjectId": 1,
+      "title": "Midterm 1",
+      "date": "2024-05-10",
+      "isValid": true
+    },
+    {
+      "id": 2,
+      "subjectId": 1,
+      "title": "Recovery 1",
+      "date": "2024-05-20",
+      "isValid": false
+    }
+  ],
+
+  "exam_results": [
+    { "id": 1, "examId": 1, "studentId": "u1", "score": 7.5 },
+    { "id": 2, "examId": 2, "studentId": "u1", "score": 8 }
+  ],
+
+  "exam_table": [
+    {
+      "id": 1,
+      "name": "Final December 2024",
+      "startDate": "2024-12-01",
+      "endDate": "2024-12-10",
+      "createdBy": "u4"
+    }
+  ],
+
+  "final_exams": [
+    {
+      "id": 1,
+      "examTableId": 1,
+      "subjectId": 1,
+      "examDate": "2024-12-03",
+      "aula": "101"
+    }
+  ],
+
+  "final_exams_students": [
+    {
+      "id": 1,
+      "finalExamsId": 1,
+      "studentId": "u1",
+      "enrolled": true,
+      "enrolledAt": "2024-11-20",
+      "score": 9,
+      "notes": "Good performance"
+    }
+  ]
+}
