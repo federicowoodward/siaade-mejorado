@@ -1,21 +1,35 @@
-<!-- app.component.html -->
-
-<app-role-switcher></app-role-switcher>
-<div class="md:hidden block p-2">
-  <p-button
-    (click)="sidebarVisible = true"
-    aria-label="Open menu"
-    icon="pi pi-bars"
-  >
-  </p-button>
+<!-- <div class="p-2 bg-indigo-200 flex gap-2 align-items-center">
+  <app-role-switcher></app-role-switcher>
+  <p>Only dev</p>
+</div> -->
+<div
+  class="py-2 px-3 flex justify-content-between align-items-center"
+  *ngIf="authService.isLoggedIn()"
+>
+  <div>
+    <p-button
+      (click)="sidebarVisible = true"
+      aria-label="Open menu"
+      icon="pi pi-bars"
+      class="lg:hidden block"
+    >
+    </p-button>
+  </div>
+  <div>
+    <img src="assets/images/logo.png" alt="Logo" class="w-4rem" />
+  </div>
+  <div class="">
+    <p>SA</p>
+  </div>
 </div>
 <div class="flex h-screen">
-  <!-- Sidebar: visible en md+, hamburger/overlay en mobile -->
-  <aside class="min-w-17rem max-w-17rem h-full hidden md:block">
+  <!-- Sidebar: visible en lg+, hamburger/overlay en mobile -->
+  <aside
+    class="min-w-17rem max-w-17rem h-full hidden lg:block"
+    *ngIf="authService.isLoggedIn()"
+  >
     <app-menu-component></app-menu-component>
   </aside>
-
-  <!-- Hamburger button (solo visible en móvil) -->
 
   <!-- Sidebar Drawer (solo visible en móvil) -->
   <p-drawer
@@ -29,7 +43,7 @@
   </p-drawer>
 
   <!-- Main content -->
-  <main class="flex-1 p-3 overflow-auto">
+  <main class="flex-1 p-3 overflow-auto bg-indigo-50">
     <router-outlet></router-outlet>
   </main>
 </div>

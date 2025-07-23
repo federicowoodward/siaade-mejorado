@@ -1,1 +1,99 @@
-<p>personal-data-page works!</p>
+<h2>Datos Personales</h2>
+
+<form class="grid gap-3 p-3" style="max-width: 800px;">
+  <h4>Datos básicos</h4>
+  <label>
+    Nombre
+    <input class="w-full" type="text" [(ngModel)]="userData().name" name="name" />
+  </label>
+  <label>
+    Apellido
+    <input class="w-full" type="text" [(ngModel)]="userData().lastName" name="lastName" />
+  </label>
+  <label>
+    Email
+    <input class="w-full" type="email" [(ngModel)]="userData().email" name="email" />
+  </label>
+  <label>
+    CUIL
+    <input class="w-full" type="text" [(ngModel)]="userData().cuil" name="cuil" />
+  </label>
+
+  <h4>Información adicional</h4>
+  <label>
+    Tipo de documento
+    <input class="w-full" type="text" [(ngModel)]="userInfo().documentType" name="docType" />
+  </label>
+  <label>
+    Documento
+    <input class="w-full" type="text" [(ngModel)]="userInfo().documentValue" name="docValue" />
+  </label>
+  <label>
+    Teléfono
+    <input class="w-full" type="text" [(ngModel)]="userInfo().phone" name="phone" />
+  </label>
+  <label>
+    Nombre emergencia
+    <input class="w-full" type="text" [(ngModel)]="userInfo().emergencyName" name="emergencyName" />
+  </label>
+  <label>
+    Teléfono emergencia
+    <input class="w-full" type="text" [(ngModel)]="userInfo().emergencyPhone" name="emergencyPhone" />
+  </label>
+
+  <h4>Datos comunes</h4>
+  <label>
+    Sexo
+    <input class="w-full" type="text" [(ngModel)]="commonData().sex" name="sex" />
+  </label>
+  <label>
+    Fecha de nacimiento
+    <input class="w-full" type="date" [(ngModel)]="commonData().birthDate" name="birthDate" />
+  </label>
+  <label>
+    Lugar de nacimiento
+    <input class="w-full" type="text" [(ngModel)]="commonData().birthPlace" name="birthPlace" />
+  </label>
+  <label>
+    Nacionalidad
+    <input class="w-full" type="text" [(ngModel)]="commonData().nationality" name="nationality" />
+  </label>
+
+  <h4>Domicilio</h4>
+  <label>
+    Calle
+    <input class="w-full" type="text" [(ngModel)]="addressData().street" name="street" />
+  </label>
+  <label>
+    Número
+    <input class="w-full" type="text" [(ngModel)]="addressData().number" name="number" />
+  </label>
+  <label>
+    Piso
+    <input class="w-full" type="text" [(ngModel)]="addressData().floor" name="floor" />
+  </label>
+  <label>
+    Depto
+    <input class="w-full" type="text" [(ngModel)]="addressData().apartment" name="apartment" />
+  </label>
+  <label>
+    Barrio
+    <input class="w-full" type="text" [(ngModel)]="addressData().neighborhood" name="neighborhood" />
+  </label>
+  <label>
+    Localidad
+    <input class="w-full" type="text" [(ngModel)]="addressData().locality" name="locality" />
+  </label>
+  <label>
+    Provincia
+    <input class="w-full" type="text" [(ngModel)]="addressData().province" name="province" />
+  </label>
+  <label>
+    Código Postal
+    <input class="w-full" type="text" [(ngModel)]="addressData().postalCode" name="postalCode" />
+  </label>
+  <label>
+    País
+    <input class="w-full" type="text" [(ngModel)]="addressData().country" name="country" />
+  </label>
+</form>

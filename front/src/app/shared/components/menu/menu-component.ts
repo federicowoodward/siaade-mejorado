@@ -4,11 +4,12 @@ import { Menu } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
 import { RoleName, RolesService } from '../../../core/services/role.service';
 import { DrawerVisibility } from '../../../core/services/drawer_visibility.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 function addCommandToMenu(items: MenuItem[], command: () => void): MenuItem[] {
   return items.map((item) => ({
     ...item,
-    command,
+    command: item.command ?? command,
     ...(item.items ? { items: addCommandToMenu(item.items, command) } : {}),
   }));
 }
@@ -25,6 +26,17 @@ export class MenuComponent {
   menuItems = signal<MenuItem[]>([]);
   private rolesService = inject(RolesService);
   private drawerVisibility = inject(DrawerVisibility);
+  private authService = inject(AuthService);
+
+  private readonly generalMenuItems: MenuItem[] = [
+    {
+      label: 'Cerrar sesión',
+      icon: 'pi pi-sign-out',
+      command: () => {
+        this.authService.logout();
+      },
+    },
+  ];
 
   /** Diccionario de menús por rol */
   private readonly menuByRole: Record<RoleName, MenuItem[]> = {
@@ -83,12 +95,17 @@ export class MenuComponent {
     this.drawerVisibility.closeSidebar();
   }
 
+  private mergeWithGeneralMenu(role: RoleName): MenuItem[] {
+    const roleSpecific = this.menuByRole[role] ?? [];
+    return [...roleSpecific, ...this.generalMenuItems];
+  }
+
   constructor() {
     effect(() => {
       const role = this.rolesService.currentRole();
-      // Genera el menú con el command agregado en todos los niveles
+      const mergedMenu = this.mergeWithGeneralMenu(role);
       this.menuItems.set(
-        addCommandToMenu(this.menuByRole[role], () => this.onMenuItemClick())
+        addCommandToMenu(mergedMenu, () => this.onMenuItemClick())
       );
     });
   }

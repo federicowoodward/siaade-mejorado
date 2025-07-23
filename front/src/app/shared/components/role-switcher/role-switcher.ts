@@ -6,7 +6,7 @@ import { RoleName, RolesService } from '../../../core/services/role.service';
 @Component({
   selector: 'app-role-switcher',
   template: `
-    <div class="flex gap-2 align-items-center p-2">
+    <div class="flex gap-2 align-items-center">
       <span class="font-bold mr-2">Rol:</span>
       <p-select
         [(ngModel)]="role"
