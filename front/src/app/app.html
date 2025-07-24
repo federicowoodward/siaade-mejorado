@@ -1,49 +1,49 @@
-<!-- <div class="p-2 bg-indigo-200 flex gap-2 align-items-center">
-  <app-role-switcher></app-role-switcher>
-  <p>Only dev</p>
-</div> -->
-<div
-  class="py-2 px-3 flex justify-content-between align-items-center"
-  *ngIf="authService.isLoggedIn()"
->
-  <div>
-    <p-button
-      (click)="sidebarVisible = true"
-      aria-label="Open menu"
-      icon="pi pi-bars"
-      class="lg:hidden block"
-    >
-    </p-button>
-  </div>
-  <div>
-    <img src="assets/images/logo.png" alt="Logo" class="w-4rem" />
-  </div>
-  <div class="">
-    <p>SA</p>
-  </div>
-</div>
-<div class="flex h-screen">
-  <!-- Sidebar: visible en lg+, hamburger/overlay en mobile -->
-  <aside
-    class="min-w-17rem max-w-17rem h-full hidden lg:block"
+<div class="h-screen flex flex-column">
+  <!-- Header fijo -->
+  <div
+    class="py-2 px-3 flex justify-content-between align-items-center shrink-0"
     *ngIf="authService.isLoggedIn()"
   >
-    <app-menu-component></app-menu-component>
-  </aside>
+    <div>
+      <p-button
+        (click)="sidebarVisible = true"
+        aria-label="Open menu"
+        icon="pi pi-bars"
+        class="lg:hidden block"
+      >
+      </p-button>
+    </div>
+    <div>
+      <img src="assets/images/logo.png" alt="Logo" class="w-4rem" />
+    </div>
+    <div class="">
+      <p>SA</p>
+    </div>
+  </div>
 
-  <!-- Sidebar Drawer (solo visible en móvil) -->
-  <p-drawer
-    [(visible)]="sidebarVisible"
-    header="Menu"
-    position="left"
-    [modal]="true"
-    styleClass=""
-  >
-    <app-menu-component></app-menu-component>
-  </p-drawer>
+  <!-- Contenedor principal (sidebar + contenido) -->
+  <div class="flex flex-1 min-h-0">
+    <!-- Sidebar fijo -->
+    <aside
+      class="min-w-17rem max-w-17rem h-full hidden lg:block shrink-0"
+      *ngIf="authService.isLoggedIn()"
+    >
+      <app-menu-component></app-menu-component>
+    </aside>
 
-  <!-- Main content -->
-  <main class="flex-1 p-3 overflow-auto bg-indigo-50">
-    <router-outlet></router-outlet>
-  </main>
+    <!-- Sidebar Drawer (móvil) -->
+    <p-drawer
+      [(visible)]="sidebarVisible"
+      header="Menu"
+      position="left"
+      [modal]="true"
+    >
+      <app-menu-component></app-menu-component>
+    </p-drawer>
+
+    <!-- Main scrollable -->
+    <main class="flex-1 p-3 overflow-auto bg-indigo-50 min-h-0">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 </div>

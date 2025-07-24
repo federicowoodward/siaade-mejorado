@@ -1,99 +1,306 @@
-<h2>Datos Personales</h2>
+<div class="flex flex-column align-items-center pb-4">
+  <form class="flex flex-column gap-3 mb-3 relative" style="max-width: 768px">
+    <h2>Datos personales</h2>
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="name"
+          [(ngModel)]="userData().name"
+          name="name"
+        />
+        <label for="name">Nombre</label>
+      </p-iftalabel>
 
-<form class="grid gap-3 p-3" style="max-width: 800px;">
-  <h4>Datos básicos</h4>
-  <label>
-    Nombre
-    <input class="w-full" type="text" [(ngModel)]="userData().name" name="name" />
-  </label>
-  <label>
-    Apellido
-    <input class="w-full" type="text" [(ngModel)]="userData().lastName" name="lastName" />
-  </label>
-  <label>
-    Email
-    <input class="w-full" type="email" [(ngModel)]="userData().email" name="email" />
-  </label>
-  <label>
-    CUIL
-    <input class="w-full" type="text" [(ngModel)]="userData().cuil" name="cuil" />
-  </label>
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="lastName"
+          [(ngModel)]="userData().lastName"
+          name="lastName"
+        />
+        <label for="lastName">Apellido</label>
+      </p-iftalabel>
+    </div>
 
-  <h4>Información adicional</h4>
-  <label>
-    Tipo de documento
-    <input class="w-full" type="text" [(ngModel)]="userInfo().documentType" name="docType" />
-  </label>
-  <label>
-    Documento
-    <input class="w-full" type="text" [(ngModel)]="userInfo().documentValue" name="docValue" />
-  </label>
-  <label>
-    Teléfono
-    <input class="w-full" type="text" [(ngModel)]="userInfo().phone" name="phone" />
-  </label>
-  <label>
-    Nombre emergencia
-    <input class="w-full" type="text" [(ngModel)]="userInfo().emergencyName" name="emergencyName" />
-  </label>
-  <label>
-    Teléfono emergencia
-    <input class="w-full" type="text" [(ngModel)]="userInfo().emergencyPhone" name="emergencyPhone" />
-  </label>
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="email"
+          type="email"
+          [(ngModel)]="userData().email"
+          name="email"
+        />
+        <label for="email">Email</label>
+      </p-iftalabel>
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="cuil"
+          [(ngModel)]="userData().cuil"
+          name="cuil"
+        />
+        <label for="cuil">CUIL</label>
+      </p-iftalabel>
+    </div>
 
-  <h4>Datos comunes</h4>
-  <label>
-    Sexo
-    <input class="w-full" type="text" [(ngModel)]="commonData().sex" name="sex" />
-  </label>
-  <label>
-    Fecha de nacimiento
-    <input class="w-full" type="date" [(ngModel)]="commonData().birthDate" name="birthDate" />
-  </label>
-  <label>
-    Lugar de nacimiento
-    <input class="w-full" type="text" [(ngModel)]="commonData().birthPlace" name="birthPlace" />
-  </label>
-  <label>
-    Nacionalidad
-    <input class="w-full" type="text" [(ngModel)]="commonData().nationality" name="nationality" />
-  </label>
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-inputgroup>
+        <p-inputgroup-addon>
+          <p-button
+            label="{{userInfo().documentType}}"
+            severity="secondary"
+            variant="text"
+            (click)="menu.toggle($event)"
+          />
+        </p-inputgroup-addon>
+        <p-iftalabel>
+          <input
+            class="w-full"
+            pInputText
+            id="docValue"
+            [(ngModel)]="userInfo().documentValue"
+            name="docValue"
+          />
+          <label for="docValue">Número de documento</label>
+        </p-iftalabel>
+      </p-inputgroup>
 
-  <h4>Domicilio</h4>
-  <label>
-    Calle
-    <input class="w-full" type="text" [(ngModel)]="addressData().street" name="street" />
-  </label>
-  <label>
-    Número
-    <input class="w-full" type="text" [(ngModel)]="addressData().number" name="number" />
-  </label>
-  <label>
-    Piso
-    <input class="w-full" type="text" [(ngModel)]="addressData().floor" name="floor" />
-  </label>
-  <label>
-    Depto
-    <input class="w-full" type="text" [(ngModel)]="addressData().apartment" name="apartment" />
-  </label>
-  <label>
-    Barrio
-    <input class="w-full" type="text" [(ngModel)]="addressData().neighborhood" name="neighborhood" />
-  </label>
-  <label>
-    Localidad
-    <input class="w-full" type="text" [(ngModel)]="addressData().locality" name="locality" />
-  </label>
-  <label>
-    Provincia
-    <input class="w-full" type="text" [(ngModel)]="addressData().province" name="province" />
-  </label>
-  <label>
-    Código Postal
-    <input class="w-full" type="text" [(ngModel)]="addressData().postalCode" name="postalCode" />
-  </label>
-  <label>
-    País
-    <input class="w-full" type="text" [(ngModel)]="addressData().country" name="country" />
-  </label>
-</form>
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="phone"
+          [(ngModel)]="userInfo().phone"
+          name="phone"
+        />
+        <label for="phone">Teléfono</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="emergencyName"
+          [(ngModel)]="userInfo().emergencyName"
+          name="emergencyName"
+        />
+        <label for="emergencyName">Nombre contacto emergencia</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="emergencyPhone"
+          [(ngModel)]="userInfo().emergencyPhone"
+          name="emergencyPhone"
+        />
+        <label for="emergencyPhone">Teléfono emergencia</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="sex"
+          [(ngModel)]="commonData().sex"
+          name="sex"
+        />
+        <label for="sex">Sexo</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="birthDate"
+          type="date"
+          [(ngModel)]="commonData().birthDate"
+          name="birthDate"
+        />
+        <label for="birthDate">Fecha de nacimiento</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="birthPlace"
+          [(ngModel)]="commonData().birthPlace"
+          name="birthPlace"
+        />
+        <label for="birthPlace">Lugar de nacimiento</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="nationality"
+          [(ngModel)]="commonData().nationality"
+          name="nationality"
+        />
+        <label for="nationality">Nacionalidad</label>
+      </p-iftalabel>
+    </div>
+
+    <h4 class="">Domicilio</h4>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="street"
+          [(ngModel)]="addressData().street"
+          name="street"
+        />
+        <label for="street">Calle</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="number"
+          [(ngModel)]="addressData().number"
+          name="number"
+        />
+        <label for="number">Número</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="floor"
+          [(ngModel)]="addressData().floor"
+          name="floor"
+        />
+        <label for="floor">Piso</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="apartment"
+          [(ngModel)]="addressData().apartment"
+          name="apartment"
+        />
+        <label for="apartment">Departamento</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="neighborhood"
+          [(ngModel)]="addressData().neighborhood"
+          name="neighborhood"
+        />
+        <label for="neighborhood">Barrio</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="locality"
+          [(ngModel)]="addressData().locality"
+          name="locality"
+        />
+        <label for="locality">Localidad</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="province"
+          [(ngModel)]="addressData().province"
+          name="province"
+        />
+        <label for="province">Provincia</label>
+      </p-iftalabel>
+
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="postalCode"
+          [(ngModel)]="addressData().postalCode"
+          name="postalCode"
+        />
+        <label for="postalCode">Código Postal</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="flex gap-3 w-full flex-column md:flex-row">
+      <p-iftalabel class="w-full">
+        <input
+          class="w-full"
+          pInputText
+          id="country"
+          [(ngModel)]="addressData().country"
+          name="country"
+        />
+        <label for="country">País</label>
+      </p-iftalabel>
+    </div>
+  </form>
+  <p-menu #menu [model]="docTypes" popup class="docTypeMenu" />
+  <div class="flex gap-2">
+    <p-button
+      label="Guardar cambios"
+      icon="pi pi-save"
+      (click)="checkForChanges()"
+    />
+    <p-button
+      label="Restaurar"
+      icon="pi pi-refresh"
+      severity="secondary"
+      (click)="restoreOriginal()"
+    />
+  </div>
+</div>
+
+<p-dialog
+  header="Confirmar cambios"
+  (visible)="showConfirmDialog()"
+  [modal]="true"
+  [style]="{ width: '30vw' }"
+>
+  <p *ngIf="modifiedFields().length === 0">No se detectaron cambios.</p>
+  <ul *ngIf="modifiedFields().length > 0">
+    <li *ngFor="let field of modifiedFields()">{{ field }}</li>
+  </ul>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      icon="pi pi-times"
+      (click)="showConfirmDialog.set(false)"
+      severity="secondary"
+    />
+    <p-button label="Confirmar" icon="pi pi-check" (click)="submitChanges()" />
+  </ng-template>
+</p-dialog>
