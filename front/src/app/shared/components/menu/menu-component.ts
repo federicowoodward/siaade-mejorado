@@ -28,25 +28,13 @@ export class MenuComponent {
   private drawerVisibility = inject(DrawerVisibility);
   private authService = inject(AuthService);
 
-  private readonly generalMenuItems: MenuItem[] = [
-    {
-      label: 'Cerrar sesión',
-      icon: 'pi pi-sign-out',
-      command: () => {
-        this.authService.logout();
-      },
-    },
-  ];
+  // menu para agregar elementos generales
+  private readonly generalMenuItems: MenuItem[] = [];
 
   /** Diccionario de menús por rol */
   private readonly menuByRole: Record<RoleName, MenuItem[]> = {
     student: [
       { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      {
-        label: 'Datos personales',
-        icon: 'pi pi-user',
-        routerLink: ['/personal-data'],
-      },
       {
         label: 'Inscripciones',
         icon: 'pi pi-pencil',
@@ -65,21 +53,11 @@ export class MenuComponent {
     ],
     teacher: [
       { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      {
-        label: 'Datos personales',
-        icon: 'pi pi-user',
-        routerLink: ['/personal-data'],
-      },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
     ],
     preceptor: [
       { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      {
-        label: 'Datos personales',
-        icon: 'pi pi-user',
-        routerLink: ['/personal-data'],
-      },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
     ],
@@ -91,7 +69,6 @@ export class MenuComponent {
   };
 
   onMenuItemClick() {
-    // Solo cierra si está en modo móvil (drawer visible)
     this.drawerVisibility.closeSidebar();
   }
 

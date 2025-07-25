@@ -1,25 +1,6 @@
 <div class="h-screen flex flex-column">
   <!-- Header fijo -->
-  <div
-    class="py-2 px-3 flex justify-content-between align-items-center shrink-0"
-    *ngIf="authService.isLoggedIn()"
-  >
-    <div>
-      <p-button
-        (click)="sidebarVisible = true"
-        aria-label="Open menu"
-        icon="pi pi-bars"
-        class="lg:hidden block"
-      >
-      </p-button>
-    </div>
-    <div>
-      <img src="assets/images/logo.png" alt="Logo" class="w-4rem" />
-    </div>
-    <div class="">
-      <p>SA</p>
-    </div>
-  </div>
+  <app-navbar></app-navbar>
 
   <!-- Contenedor principal (sidebar + contenido) -->
   <div class="flex flex-1 min-h-0">

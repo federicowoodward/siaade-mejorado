@@ -3,10 +3,10 @@ import { RouterOutlet } from '@angular/router';
 import { MenuComponent } from './shared/components/menu/menu-component';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
-import { RoleSwitcherComponent } from './shared/components/role-switcher/role-switcher';
 import { DrawerVisibility } from './core/services/drawer_visibility.service';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
+import { Navbar } from "./shared/components/navbar/navbar/navbar";
 
 @Component({
   selector: 'app-root',
@@ -15,9 +15,9 @@ import { AuthService } from './core/services/auth.service';
     ButtonModule,
     MenuComponent,
     DrawerModule,
-    // RoleSwitcherComponent,
-    CommonModule
-  ],
+    CommonModule,
+    Navbar
+],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
