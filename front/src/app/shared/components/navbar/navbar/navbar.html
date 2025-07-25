@@ -1,0 +1,31 @@
+<div
+  class="py-2 px-4 md:px-6 flex justify-content-between align-items-center shrink-0"
+  *ngIf="authService.isLoggedIn()"
+>
+  <!-- Botón hamburguesa -->
+  <div>
+    <p-button
+      (click)="openSidebar()"
+      aria-label="Abrir menú"
+      icon="pi pi-bars"
+      class="lg:hidden block"
+    ></p-button>
+  </div>
+
+  <!-- Logo -->
+  <div>
+    <img src="assets/images/logo.png" alt="Logo" class="w-4rem" />
+  </div>
+
+  <!-- Usuario y menú -->
+  <div
+    class="flex align-items-center gap-2 cursor-pointer"
+    (click)="menu.toggle($event)"
+  >
+    <p>{{ userName }}</p>
+    <i class="pi pi-angle-down"></i>
+  </div>
+</div>
+<div>
+  <p-menu #menu [model]="items" [popup]="true" styleClass="mt-custom" />
+</div>
