@@ -1,6 +1,24 @@
 ::ng-deep {
-  .p-menu {
-    width: 17.05rem !important;
-    min-width: 17.05rem !important;
+  .menu-component {
+
+    .p-menu {
+      width: 7.1rem !important;
+      min-width: 7.1rem !important;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 0 !important;
+    }
+    .p-menu-item-link {
+      flex-direction: column;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      .p-menu-item-label {
+        font-size: 9px !important;
+      }
+    }
+    .p-menu-item-icon {
+      font-size: 22px !important;
+    }
   }
 }

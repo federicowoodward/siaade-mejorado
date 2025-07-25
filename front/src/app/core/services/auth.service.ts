@@ -9,7 +9,9 @@ export class AuthService {
   private router = inject(Router);
   private rolesService = inject(RolesService); // 👈 inyectás el service acá
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) {
+    this.loadUserFromStorage();
+  }
 
   private readonly roleMap: Record<number, RoleName> = {
     1: 'student',

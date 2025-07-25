@@ -247,12 +247,21 @@
   "final_exams_students": [
     {
       "id": 1,
-      "finalExamsId": 1,
+      "finalExamsId": 2,
       "studentId": "u1",
       "enrolled": true,
       "enrolledAt": "2024-11-20",
       "score": 9,
       "notes": "Good performance"
+    },
+    {
+      "id": 2,
+      "finalExamsId": 1,
+      "studentId": "u1",
+      "enrolled": false,
+      "enrolledAt": null,
+      "score": null,
+      "notes": null
     }
   ]
 }

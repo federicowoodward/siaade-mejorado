@@ -28,7 +28,7 @@ export class Navbar implements OnInit {
 
     this.items = [
       {
-        label: 'Datos personales',
+        label: 'Mi perfil',
         icon: 'pi pi-user',
         routerLink: ['/personal-data'],
       },

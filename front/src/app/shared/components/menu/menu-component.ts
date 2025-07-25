@@ -34,14 +34,14 @@ export class MenuComponent {
   /** Diccionario de menús por rol */
   private readonly menuByRole: Record<RoleName, MenuItem[]> = {
     student: [
-      { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       {
         label: 'Inscripciones',
         icon: 'pi pi-pencil',
         routerLink: ['/students/enrollments'],
       },
       {
-        label: 'Turnos y documentación',
+        label: 'Documentación',
         icon: 'pi pi-calendar',
         routerLink: ['/students/appointments-documents'],
       },
@@ -52,17 +52,17 @@ export class MenuComponent {
       },
     ],
     teacher: [
-      { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
     ],
     preceptor: [
-      { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
     ],
     secretary: [
-      { label: 'Bienvenida', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
     ],

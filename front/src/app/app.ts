@@ -26,6 +26,10 @@ export class App {
   authService = inject(AuthService)
   protected title = 'front';
 
+  constructor() {
+    this.authService.loadUserFromStorage(); 
+  }
+
   get sidebarVisible() {
     return this.drawerVisibility.sidebarVisible();
   }

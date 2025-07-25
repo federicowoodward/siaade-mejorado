@@ -1,11 +1,9 @@
 import { Component } from '@angular/core';
+import { AcademicStatus } from '../../../shared/components/academic_status/academic-status-component';
 
 @Component({
-  selector: 'app-academic-status-page',
-  imports: [],
+  imports: [AcademicStatus],
   templateUrl: './academic-status-page.html',
-  styleUrl: './academic-status-page.scss'
+  styleUrl: './academic-status-page.scss',
 })
-export class AcademicStatusPage {
-
-}
+export class AcademicStatusPage {}
