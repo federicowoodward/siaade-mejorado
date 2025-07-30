@@ -19,13 +19,21 @@
 
   <!-- Usuario y menú -->
   <div
-    class="flex align-items-center gap-2 cursor-pointer"
-    (click)="menu.toggle($event)"
+    class="flex align-items-center gap-2 cursor-pointer p-2 px-3"
+    (click)="menu.toggle($event); this.isMenuOpen = !this.isMenuOpen;"
   >
     <p>{{ userName }}</p>
-    <i class="pi pi-angle-down"></i>
+    <p
+      [class.pi-angle-down]="!isMenuOpen"
+      [class.pi-angle-up]="isMenuOpen"
+      class="pi text-lg"
+    ></p>
   </div>
 </div>
-<div>
-  <p-menu #menu [model]="items" [popup]="true" styleClass="mt-custom" />
-</div>
+<p-menu
+  #menu
+  [model]="items"
+  [popup]="true"
+  class="navbar"
+  (onHide)="isMenuOpen = false"
+/>

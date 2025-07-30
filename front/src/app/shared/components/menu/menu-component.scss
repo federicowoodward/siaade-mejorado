@@ -1,14 +1,21 @@
+.border-custom {
+  border-top: 1px solid var(--p-menu-border-color);
+}
+@media (max-width: 992px) {
+  .border-custom {
+    border-top: 1px solid transparent !important;
+  }
+}
 ::ng-deep {
+  .p-menu {
+    width: 7.1rem !important;
+    min-width: 7.1rem !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-color: transparent !important;
+  }
   .menu-component {
-
-    .p-menu {
-      width: 7.1rem !important;
-      min-width: 7.1rem !important;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 0 !important;
-    }
     .p-menu-item-link {
       flex-direction: column;
       padding-left: 0 !important;

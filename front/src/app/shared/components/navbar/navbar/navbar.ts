@@ -18,6 +18,7 @@ export class Navbar implements OnInit {
   drawer = inject(DrawerVisibility);
   userName = '';
   items: MenuItem[] = [];
+  isMenuOpen = false;
 
   ngOnInit(): void {
     this.authService.getUser().subscribe((user) => {
