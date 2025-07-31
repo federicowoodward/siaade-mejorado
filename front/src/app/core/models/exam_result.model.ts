@@ -4,4 +4,5 @@ export interface ExamResult {
     studentId: number;
     score?: number; // Puede ser null (opcional)
   }
-  
+
+  // posible busqueda idea: filtro por score

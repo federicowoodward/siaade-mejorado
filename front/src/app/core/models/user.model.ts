@@ -8,3 +8,4 @@ export interface User {
     roleId: number;
   }
   
+// posible busqueda idea: name email lastname cuil

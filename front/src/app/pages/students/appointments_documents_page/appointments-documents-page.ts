@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Button } from 'primeng/button';
+import { DocumentsService } from '../../../core/services/documents_generations.service';
 
 @Component({
   selector: 'app-appointments-documents-page',
@@ -8,9 +9,9 @@ import { Button } from 'primeng/button';
   styleUrl: './appointments-documents-page.scss',
 })
 export class AppointmentsDocumentsPage {
+  private documentsService = inject(DocumentsService);
   
   downloadCertificate() {
-    //integrar servicio de generacion y datos de usuario
-    window.open('assets/doc.pdf', '_blank');
+    this.documentsService.downloadStudentCertificate();
   }
 }

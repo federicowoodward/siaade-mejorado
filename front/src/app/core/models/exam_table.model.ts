@@ -6,3 +6,4 @@ export interface ExamTable {
     createdBy: number;   // user_id de secretario
   }
   
+   // posible busqueda idea: busqueda por creadted y por fechas

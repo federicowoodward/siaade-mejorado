@@ -12,6 +12,7 @@ import { cloneDeep, isEqual } from 'lodash';
 import { Dialog } from 'primeng/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { FieldLabelPipe } from '../../pipes/field-label.pipe';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 
 @Component({
   selector: 'app-personal-data',
@@ -27,6 +28,7 @@ import { FieldLabelPipe } from '../../pipes/field-label.pipe';
     Button,
     Dialog,
     FieldLabelPipe,
+    ToggleButtonModule,
   ],
   templateUrl: './personal-data-component.html',
   styleUrls: ['./personal-data-component.scss'],
@@ -43,11 +45,13 @@ export class PersonalDataComponent implements OnInit {
   userInfo = signal<any>({});
   commonData = signal<any>({});
   addressData = signal<any>({});
+  activateInputs = signal(false);
 
   // cambios
   original = signal<any>({});
   showConfirmDialog = signal(false);
   modifiedFields = signal<string[]>([]);
+
 
   ngOnInit(): void {
     if (!this.userId) return;

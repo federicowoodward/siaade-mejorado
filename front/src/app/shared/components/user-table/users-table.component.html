@@ -1,8 +1,9 @@
-<h2>Gestión de Usuarios</h2>
+<div class="m-w-custom">
+  <h2>Gestión de Usuarios</h2>
 
-<div class="mb-3">
-  <!-- Filtro por rol (en el futuro se puede habilitar) -->
-  <!--
+  <div class="mb-3">
+    <!-- Filtro por rol (en el futuro se puede habilitar) -->
+    <!--
   <p-autocomplete
     [options]="roles"
     [(ngModel)]="selectedRole()"
@@ -11,98 +12,121 @@
     optionLabel="label"
     class="w-full md:w-14rem"
   />
-  -->
-</div>
+  --></div>
 
-<p-table
-  [value]="filteredUsers()"
-  [paginator]="true"
-  [rows]="10"
-  responsiveLayout="scroll"
->
-  <ng-template pTemplate="header">
-    <tr>
-      <th>Nombre</th>
-      <th>Email</th>
-      <th>Rol</th>
-      <th>Acciones</th>
-    </tr>
-  </ng-template>
-  <ng-template pTemplate="body" let-user>
-    <tr>
-      <td>{{ user.name }} {{ user.lastName }}</td>
-      <td>{{ user.email }}</td>
-      <td>{{ user.rol }}</td>
-      <td class="flex gap-2">
-        <p-button pButton icon="pi pi-user" (click)="viewDetails(user)" />
-
+  <p-table
+    #dt
+    [value]="users()"
+    [paginator]="true"
+    [rows]="10"
+    responsiveLayout="scroll"
+    [globalFilterFields]="['name', 'email', 'cuil']"
+  >
+    <ng-template pTemplate="caption">
+      <div class="flex">
         <p-button
-          pButton
-          icon="pi pi-file"
-          (click)="generateCertificate(user)"
-          class="p-button-info"
-        />
+          label="Limpiar filtros"
+          [outlined]="true"
+          icon="pi pi-filter-slash"
+          (click)="clear(dt, filterInput)"
+        ></p-button>
+        <p-iconfield iconPosition="left" class="ml-auto">
+          <p-inputicon>
+            <i class="pi pi-search"></i>
+          </p-inputicon>
+          <input
+            #filterInput
+            pInputText
+            type="text"
+            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+            placeholder="Buscar usuario"
+          />
+        </p-iconfield>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Dni</th>
+        <th>Rol</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-user>
+      <tr>
+        <td>{{ user.name }} {{ user.lastName }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.cuil }}</td>
+        <td>{{ user.rol }}</td>
+        <td class="flex gap-2">
+          <p-button pButton icon="pi pi-user" (click)="viewDetails(user)" />
 
-        <p-button
-          *ngIf="user.role === 'alumno'"
-          pButton
-          icon="pi pi-book"
-          (click)="viewAcademicStatus(user)"
-          class="p-button-secondary"
-        />
+          <p-button
+            pButton
+            icon="pi pi-file"
+            (click)="generateCertificate(user)"
+            class="p-button-info"
+          />
 
-        <p-button
-          *ngIf="user.role === 'docente'"
-          pButton
-          icon="pi pi-list"
-          (click)="viewSubjects(user)"
-          class="p-button-warning"
-        />
-      </td>
-    </tr>
-  </ng-template>
-</p-table>
+          <p-button
+            *ngIf="user.role === 'alumno'"
+            pButton
+            icon="pi pi-book"
+            (click)="viewAcademicStatus(user)"
+            class="p-button-secondary"
+          />
 
-<!-- Diálogo de Certificado -->
-<p-dialog
-  header="Acciones de Certificado"
-  [visible]="showCertDialog()"
-  (visibleChange)="showCertDialog.set($event)"
-  [modal]="true"
-  resizable="false"
-  draggable="false"
-  [style]="{ width: '400px' }"
->
-  <p>¿Qué acción deseas realizar para {{ selectedUser()?.name }}?</p>
-  <div class="flex justify-content-end mt-3 gap-2">
-    <p-button pButton label="Generar PDF" (click)="showCertDialog.set(false)" />
-    <p-button
-      pButton
-      label="Ver online"
-      class="p-button-secondary"
-      (click)="showCertDialog.set(false)"
-    />
-  </div>
-</p-dialog>
+          <p-button
+            *ngIf="user.role === 'docente'"
+            pButton
+            icon="pi pi-list"
+            (click)="viewSubjects(user)"
+            class="p-button-warning"
+          />
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 
-<!-- Diálogo para Materias -->
-<p-dialog
-  header="Materias a Cargo"
-  [visible]="showSubjectsDialog()"
-  (visibleChange)="showSubjectsDialog.set($event)"
-  [modal]="true"
-  resizable="false"
-  draggable="false"
-  [style]="{ width: '400px' }"
->
-  <ng-container *ngIf="selectedUser()">
-    <p *ngFor="let subject of selectedUser()?.subjects">
+  <p-dialog
+    header="Generar archivos para/del el usuario"
+    [visible]="showCertDialog()"
+    (visibleChange)="showCertDialog.set($event)"
+    [modal]="true"
+    resizable="false"
+    draggable="false"
+    [style]="{ width: '400px' }"
+  >
+    <p>¿Qué acción deseas realizar para {{ selectedUser()?.name }}?</p>
+    <div class="flex mt-3 gap-2">
       <p-button
-        class="p-button-link"
-        (click)="confirmSubjectRedirect(subject.id)"
-      >
-        {{ subject.subject_name }}
-      </p-button>
-    </p>
-  </ng-container>
-</p-dialog>
+        pButton
+        label="Constancia de alumno regular"
+        (click)="downloadCertificate()"
+      />
+    </div>
+  </p-dialog>
+
+  <!-- Diálogo para Materias -->
+  <p-dialog
+    header="Materias a Cargo"
+    [visible]="showSubjectsDialog()"
+    (visibleChange)="showSubjectsDialog.set($event)"
+    [modal]="true"
+    resizable="false"
+    draggable="false"
+    [style]="{ width: '400px' }"
+  >
+    <ng-container *ngIf="selectedUser()">
+      <p *ngFor="let subject of selectedUser()?.subjects">
+        <p-button
+          class="p-button-link"
+          (click)="confirmSubjectRedirect(subject.id)"
+        >
+          {{ subject.subject_name }}
+        </p-button>
+      </p>
+    </ng-container>
+  </p-dialog>
+</div>
