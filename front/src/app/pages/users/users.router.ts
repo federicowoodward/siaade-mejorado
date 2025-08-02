@@ -2,9 +2,8 @@ import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { RoleGuard } from '../../core/guards/role.guard';
 import { UsersPage } from './users_page/users-page';
-import { CertificatesPage } from './shared/certificates_page/certificates-page';
-import { UserModal } from './shared/user_modal/user-modal';
 import { UserDetailPage } from './user-detail-page/user-detail-page';
+import { StudentAcademicStatusPage } from './student-academic-status-page/student-academic-status-page';
 
 export const USERS_ROUTES: Routes = [
   {
@@ -18,8 +17,8 @@ export const USERS_ROUTES: Routes = [
     canActivate: [AuthGuard, RoleGuard],
   },
   {
-    path: 'certificates',
-    component: CertificatesPage,
+    path: 'student_academic_status/:id',
+    component: StudentAcademicStatusPage,
     canActivate: [AuthGuard, RoleGuard],
   },
 ];
