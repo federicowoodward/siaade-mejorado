@@ -9,4 +9,4 @@ export interface Subject {
   correlative?: number; // id de otra materia (subject)
 }
 
-// posible busqueda idea: busqueda por subjectName y teacher
+// posible busqueda idea: busqueda por subjectName

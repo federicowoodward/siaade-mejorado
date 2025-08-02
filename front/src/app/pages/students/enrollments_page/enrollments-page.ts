@@ -41,7 +41,7 @@ export class EnrollmentsPage implements OnInit {
         const studentFinals = allFinals.filter(
           (f) => f.studentId === user.id && !f.enrolled
         );
-        console.log(studentFinals);
+        
         if (studentFinals.length === 0) {
           this.finals.set([]);
           this.loading.set(false);
