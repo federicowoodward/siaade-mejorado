@@ -1,9 +1,26 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+// #ASUMIENDO CODIGO: src/app/shared/components/academic_status/academic-status-component.ts
+import {
+  Component,
+  Input,
+  OnInit,
+  OnChanges,
+  SimpleChanges,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { forkJoin } from 'rxjs';
+
+export interface StudentMinimal {
+  id: string;
+  name: string;
+  lastName: string;
+  cuil: string;
+}
 
 @Component({
   selector: 'app-academic-status',
@@ -12,50 +29,67 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './academic-status-component.html',
 })
 export class AcademicStatus implements OnInit {
-  private api = inject(ApiService);
-  private auth = inject(AuthService);
+  /** If provided, we load this student; otherwise we fall back to the logged-in user */
+  @Input() student?: StudentMinimal;
 
   subjectsByYear = signal<Record<string, any[]>>({});
   loading = signal(true);
-  user: { name: string; document: string } | null = null;
+  user = signal<{ name: string; cuil: string } | undefined>(undefined);
 
-  ngOnInit(): void {
-    this.auth.getUser().subscribe((user) => {
-      if (!user) return;
+  private api = inject(ApiService);
+  private auth = inject(AuthService);
 
-      this.user = {
-        name: `${user.name} ${user.lastName}`,
-        document: user.cuil,
-      };
-
-      const studentId = user.id;
-
-      // Cargar materias y resultados
-      this.api.getAll('subjects').subscribe((subjects) => {
-        this.api.getAll('exam_results').subscribe((results) => {
-          const byYear: Record<string, any[]> = {};
-
-          subjects.forEach((subject) => {
-            const res = results.find(
-              (r) => r.studentId === studentId && subject.id === r.examId
-            );
-
-            const yearKey = `${subject.courseYear}° Año`;
-
-            if (!byYear[yearKey]) byYear[yearKey] = [];
-
-            byYear[yearKey].push({
-              subjectName: subject.subjectName,
-              year: subject.courseYear,
-              division: `${subject.courseNum}-${subject.courseLetter}`,
-              condition: res ? 'Aprobado' : 'Inscripto',
-              examInfo: res ? `Nota: ${res.score}` : '-',
-            });
-          });
-
-          this.subjectsByYear.set(byYear);
-          this.loading.set(false); // ✅ Ya terminó de cargar'
+  ngOnInit() {
+    if (this.student) {
+      this.loadData(this.student);
+    } else {
+      // no student input → use the logged-in user
+      this.auth.getUser().subscribe((u) => {
+        if (!u) return;
+        this.loadData({
+          id: u.id,
+          name: u.name,
+          lastName: u.lastName,
+          cuil: u.cuil,
         });
+      });
+    }
+  }
+
+  private loadData(s: StudentMinimal) {
+    this.user.set({
+      name: `${s.name} ${s.lastName}`,
+      cuil: s.cuil,
+    });
+
+    this.getAcademicStatus(s.id);
+  }
+
+  getAcademicStatus(studentId: string): void {
+    this.api.getAll('subjects').subscribe((subjects) => {
+      this.api.getAll('exam_results').subscribe((results) => {
+        const byYear: Record<string, any[]> = {};
+
+        subjects.forEach((subject) => {
+          const res = results.find(
+            (r) => r.studentId === studentId && subject.id === r.examId
+          );
+
+          const yearKey = `${subject.courseYear}° Año`;
+
+          if (!byYear[yearKey]) byYear[yearKey] = [];
+
+          byYear[yearKey].push({
+            subjectName: subject.subjectName,
+            year: subject.courseYear,
+            division: `${subject.courseNum}-${subject.courseLetter}`,
+            condition: res ? 'Aprobado' : 'Inscripto',
+            examInfo: res ? `Nota: ${res.score}` : '-',
+          });
+        });
+
+        this.subjectsByYear.set(byYear);
+        this.loading.set(false);
       });
     });
   }
@@ -68,7 +102,6 @@ export class AcademicStatus implements OnInit {
         return 'warn';
       case 'Desaprobado':
         return 'danger';
-      case 'Inscripto':
       default:
         return 'info';
     }
