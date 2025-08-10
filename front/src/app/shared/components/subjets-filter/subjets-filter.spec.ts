@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SubjectTable } from './subject-table';
+import { SubjetsFilter } from './subjets-filter';
 
-describe('SubjectTable', () => {
-  let component: SubjectTable;
-  let fixture: ComponentFixture<SubjectTable>;
+describe('SubjetsFilter', () => {
+  let component: SubjetsFilter;
+  let fixture: ComponentFixture<SubjetsFilter>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SubjectTable]
+      imports: [SubjetsFilter]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SubjectTable);
+    fixture = TestBed.createComponent(SubjetsFilter);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

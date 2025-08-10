@@ -4,8 +4,8 @@ import {
   OnInit,
   inject,
   signal,
-  computed,
   ViewChild,
+  Input,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Table, TableModule } from 'primeng/table';
@@ -25,13 +25,7 @@ import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { Listbox } from 'primeng/listbox';
 import { Tooltip } from 'primeng/tooltip';
-import {
-  trigger,
-  state,
-  style,
-  transition,
-  animate,
-} from '@angular/animations';
+import { expandCollapse } from '../../animations/expand-collapse.animation';
 
 @Component({
   selector: 'app-users-table',
@@ -55,15 +49,12 @@ import {
   ],
   templateUrl: './users-table.component.html',
   styleUrl: './users-table.component.scss',
-  animations: [
-    trigger('expandCollapse', [
-      state('open', style({ height: '*', opacity: 1 })),
-      state('closed', style({ height: '0px', opacity: 0 })),
-      transition('open <=> closed', animate('300ms ease-in-out')),
-    ]),
-  ],
+  animations: [expandCollapse],
 })
 export class UsersTableComponent implements OnInit {
+  @Input() config: 'allroles' | 'onlystudents' = 'allroles';
+  @Input() config_users_filtered: string[] | null = null;
+
   private api = inject(ApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -102,18 +93,35 @@ export class UsersTableComponent implements OnInit {
     this.api.getAll('users').subscribe((users) => {
       const mapped = users.map((u: any) => ({
         ...u,
-        // aquí convertimos el número a string usando tu servicio
         role: this.rolesService.getRoleNameById(u.roleId) || 'unknown',
       }));
-      this.users.set(mapped);
+
+      // Muestra IDs concretos.
+      let initial = this.config_users_filtered?.length
+        ? mapped.filter((u) => this.config_users_filtered!.includes(u.id))
+        : mapped;
+
+      // Filtra por rol estudianes
+      if (this.config === 'onlystudents') {
+        initial = initial.filter((u) => u.role === 'student');
+        this.selectedDialogRole = 'student';
+      }
+
+      this.users.set(initial);
     });
-    console.log(this.users());
   }
 
+  // Limpia filtros respetando la configuracion inicial.
   clear(table: Table, filterInput: HTMLInputElement) {
     filterInput.value = '';
-    this.selectedDialogRole = '';
-    table.clear();
+    this.dt.filterGlobal('', 'contains');
+
+    if (this.config === 'allroles') {
+      table.clear();
+      this.selectedDialogRole = null;
+    } else {
+      this.selectedDialogRole = 'student';
+    }
   }
 
   viewDetails(user: any) {
@@ -128,7 +136,7 @@ export class UsersTableComponent implements OnInit {
   viewAcademicStatus(user: any) {
     this.router.navigate(['/users/student_academic_status', user.id], {
       relativeTo: this.route,
-    }); // old
+    });
   }
 
   viewSubjects(user: any) {

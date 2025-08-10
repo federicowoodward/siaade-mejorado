@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
-import { SubjectTableComponent } from "../../../shared/components/subject-table/subject-table";
+import { SubjectTableComponent } from '../../../shared/components/subjects-table/subjects-table';
 
 @Component({
   selector: 'app-subjects-page',
   imports: [SubjectTableComponent],
   templateUrl: './subjects-page.html',
-  styleUrl: './subjects-page.scss'
+  styleUrl: './subjects-page.scss',
 })
-export class SubjectsPage {
-
-}
+export class SubjectsPage {}

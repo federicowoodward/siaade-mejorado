@@ -16,7 +16,9 @@ export class ApiService {
   }
 
   private loadDb() {
-    this.http.get<any>('./assets/mock-data.json').subscribe((db) => this.db$.next(db));
+    this.http
+      .get<any>('./assets/mock-data.json')
+      .subscribe((db) => this.db$.next(db));
   }
 
   /**

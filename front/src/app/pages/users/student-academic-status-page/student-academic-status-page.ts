@@ -8,6 +8,7 @@ import {
 } from '../../../shared/components/academic_status/academic-status-component';
 import { ApiService } from '../../../core/services/api.service';
 import { Button } from 'primeng/button';
+import { GoBackService } from '../../../core/services/go_back.service';
 
 @Component({
   selector: 'app-student-academic-status-page',
@@ -33,6 +34,7 @@ import { Button } from 'primeng/button';
 export class StudentAcademicStatusPage implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private goBack = inject(GoBackService);
 
   // this is a signal we *own* and can .set()
   student = signal<StudentMinimal | undefined>(undefined);
@@ -55,6 +57,6 @@ export class StudentAcademicStatusPage implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['/users']);
+    this.goBack.back();
   }
 }

@@ -12,27 +12,25 @@ export const SUBJECTS_ROUTES: Routes = [
     path: '',
     component: SubjectsPage,
     canActivate: [AuthGuard, RoleGuard],
-    children: [
-      {
-        path: 'subject/:id',
-        component: SubjectPage,
-        canActivate: [AuthGuard, RoleGuard],
-      },
-      {
-        path: 'students/:subjectId',
-        component: StudentsPage,
-        canActivate: [AuthGuard, RoleGuard],
-      },
-      {
-        path: 'attendance/:subjectId',
-        component: AttendancePage,
-        canActivate: [AuthGuard, RoleGuard],
-      },
-      {
-        path: 'grades/:subjectId',
-        component: GradesPage,
-        canActivate: [AuthGuard, RoleGuard],
-      },
-    ],
+  },
+  {
+    path: 'subject/:id',
+    component: SubjectPage,
+    canActivate: [AuthGuard, RoleGuard],
+  },
+  {
+    path: 'students/:subjectId',
+    component: StudentsPage,
+    canActivate: [AuthGuard, RoleGuard],
+  },
+  {
+    path: 'attendance/:subjectId',
+    component: AttendancePage,
+    canActivate: [AuthGuard, RoleGuard],
+  },
+  {
+    path: 'grades/:subjectId',
+    component: GradesPage,
+    canActivate: [AuthGuard, RoleGuard],
   },
 ];

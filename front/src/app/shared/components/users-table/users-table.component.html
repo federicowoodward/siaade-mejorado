@@ -1,6 +1,4 @@
 <div class="m-w-custom">
-  <h2 class="mb-3">Gestión de Usuarios</h2>
-
   <p-table
     #dt
     [value]="users()"
@@ -24,13 +22,10 @@
           (onClick)="this.showFilterDialog.set(!showFilterDialog())"
         ></p-button>
       </div>
-      <div
-        class="overflow-hidden"
-        [@expandCollapse]="showFilterDialog() ? 'open' : 'closed'"
-      >
+      <div [@expandCollapse]="showFilterDialog() ? 'open' : 'closed'">
         <div class="p-fluid p-formgrid p-grid py-4">
           <div class="flex flex-column gap-1 mb-3">
-            <label class="font-semibold">Buscar usuario</label>
+            <label class="font-light text-sm">Buscar usuario</label>
             <input
               pInputText
               #filterInput
@@ -39,8 +34,8 @@
             />
           </div>
 
-          <div class="flex flex-column gap-1 w-5">
-            <label class="font-semibold">Filtrar por rol</label>
+          <div class="flex flex-column gap-1 w-5" *ngIf="config === 'allroles'">
+            <label class="font-light text-sm">Filtrar por rol</label>
             <p-select
               [(ngModel)]="selectedDialogRole"
               [options]="roleOptions"
@@ -138,5 +133,4 @@
       class="w-full md:w-56"
     />
   </p-dialog>
-
 </div>

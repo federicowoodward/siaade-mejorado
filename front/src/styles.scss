@@ -13,3 +13,10 @@
   max-width: 768px !important;
   margin: auto;
 }
+
+@media (min-width: 1440px) {
+  .m-w-custom {
+    max-width: 1000px !important;
+    margin: auto;
+  }
+}
