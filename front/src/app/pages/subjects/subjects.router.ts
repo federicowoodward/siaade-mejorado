@@ -6,6 +6,7 @@ import { StudentsPage } from './shared/students_page/students-page';
 import { AttendancePage } from './shared/attendance_page/attendance-page';
 import { GradesPage } from './shared/grades_page/grades-page';
 import { SubjectsPage } from './subjects_page/subjects-page';
+import { NewSubjectPage } from './shared/new-subject-page/new-subject-page';
 
 export const SUBJECTS_ROUTES: Routes = [
   {
@@ -32,5 +33,9 @@ export const SUBJECTS_ROUTES: Routes = [
     path: 'grades/:subjectId',
     component: GradesPage,
     canActivate: [AuthGuard, RoleGuard],
+  },
+  {
+    path: 'new',
+    component: NewSubjectPage,
   },
 ];

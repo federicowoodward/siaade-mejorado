@@ -1,0 +1,124 @@
+<!-- src/app/pages/subject-new/subject-new-page.html -->
+<div class="m-w-custom">
+  <h2 class="mb-4">Crear Materia</h2>
+
+  <div class="grid form-grid">
+    <!-- Nombre -->
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Nombre de materia *</label>
+      <input
+        pInputText
+        class="w-full"
+        id="subjectName"
+        [(ngModel)]="subjectName"
+        placeholder="Ej: Matemática I"
+      />
+    </div>
+
+    <!-- Docente -->
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Docente *</label>
+      <p-autoComplete
+        id="teacher"
+        class="w-full"
+        [suggestions]="teacherSuggestions"
+        (completeMethod)="searchTeachers($event)"
+        [dropdown]="true"
+        [minLength]="0"
+        [(ngModel)]="teacherId"
+        placeholder="Seleccionar docente"
+      ></p-autoComplete>
+    </div>
+
+    <!-- Preceptor -->
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Preceptor *</label>
+      <p-autoComplete
+        id="preceptor"
+        class="w-full"
+        [suggestions]="preceptorSuggestions"
+        (completeMethod)="searchPreceptors($event)"
+        [dropdown]="true"
+        [minLength]="0"
+        [(ngModel)]="preceptorId"
+        placeholder="Seleccionar preceptor"
+      ></p-autoComplete>
+    </div>
+
+    <!-- Correlativa -->
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Correlativa (opcional)</label>
+      <p-autoComplete
+        class="w-full"
+        [suggestions]="corrSuggestions"
+        (completeMethod)="onSearchCorr($event)"
+        [dropdown]="true"
+        [minLength]="0"
+        (onSelect)="onPickCorr($event.value)"
+        [ngModel]="corrQuery"
+        (ngModelChange)="corrQuery = $event"
+        placeholder="Buscar materia..."
+      ></p-autoComplete>
+      <small *ngIf="corrSelectedId"
+        >Seleccionada ID: {{ corrSelectedId }}</small
+      >
+    </div>
+    <!-- Curso Nº -->
+    <div class="col-12 md:col-3">
+      <label class="block mb-2">Curso Nº *</label>
+      <p-autoComplete
+        id="courseNum"
+        class="w-full"
+        [suggestions]="courseNums"
+        (completeMethod)="searchCourseNums($event)"
+        [dropdown]="true"
+        [minLength]="0"
+        [ngModel]="courseNum"
+        (ngModelChange)="courseNum = $event"
+        placeholder="Ej: 2"
+      ></p-autoComplete>
+    </div>
+
+    <!-- Letra -->
+    <div class="col-12 md:col-3">
+      <label class="block mb-2">Letra *</label>
+      <p-autoComplete
+        id="courseLetter"
+        class="w-full"
+        [suggestions]="letters"
+        (completeMethod)="searchLetters($event)"
+        [dropdown]="true"
+        [minLength]="0"
+        [ngModel]="courseLetter"
+        (ngModelChange)="courseLetter = $event"
+        placeholder="A, B, C..."
+      ></p-autoComplete>
+    </div>
+
+    <!-- Año -->
+    <div class="col-12 md:col-3">
+      <label class="block mb-2">Año *</label>
+      <p-autoComplete
+        id="courseYear"
+        class="w-full"
+        [suggestions]="years"
+        (completeMethod)="searchYears($event)"
+        [dropdown]="true"
+        [minLength]="0"
+        [ngModel]="courseYear"
+        (ngModelChange)="courseYear = $event"
+        placeholder="Ej: 2025"
+      ></p-autoComplete>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mt-4">
+    <p-button label="Cancelar" icon="pi pi-times" (click)="goBack()"></p-button>
+    <p-button
+      label="Crear"
+      icon="pi pi-check"
+      [disabled]="true"
+      pTooltip="MVP: sin acción"
+    ></p-button>
+  </div>
+</div>

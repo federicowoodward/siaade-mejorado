@@ -1,127 +1,123 @@
-<div class="m-w-custom">
-  <h2 class="mb-4">Gestión de Materias</h2>
-
-  <p-table
-    [value]="filtered()"
-    [paginator]="true"
-    [rows]="10"
-    responsiveLayout="scroll"
-    [globalFilterFields]="['subjectName']"
-    #dt
-  >
-    <ng-template pTemplate="caption">
-      <div class="flex justify-content-between">
-        <p-button
-          label="Limpiar filtros"
-          [outlined]="true"
-          icon="pi pi-filter-slash"
-          (onClick)="clearFilters()"
-        ></p-button>
-        <p-button
-          icon="pi pi-filter"
-          label="Filtros"
-          iconPos="right"
-          (onClick)="this.showFilterDialog.set(!showFilterDialog())"
-        ></p-button>
+<p-table
+  [value]="filtered()"
+  [paginator]="true"
+  [rows]="10"
+  responsiveLayout="scroll"
+  [globalFilterFields]="['subjectName']"
+  #dt
+>
+  <ng-template pTemplate="caption">
+    <div class="flex justify-content-between">
+      <p-button
+        label="Limpiar filtros"
+        [outlined]="true"
+        icon="pi pi-filter-slash"
+        (onClick)="clearFilters()"
+      ></p-button>
+      <p-button
+        icon="pi pi-filter"
+        label="Filtros"
+        iconPos="right"
+        (onClick)="this.showFilterDialog.set(!showFilterDialog())"
+      ></p-button>
+    </div>
+    <div [@expandCollapse]="showFilterDialog() ? 'open' : 'closed'">
+      <div class="flex flex-column gap-1 mb-3 mt-2">
+        <label class="font-light text-sm">Buscar materia:</label>
+        <input
+          pInputText
+          #filterInput
+          (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+          placeholder="Nombre, email o CUIL"
+        />
       </div>
-      <div [@expandCollapse]="showFilterDialog() ? 'open' : 'closed'">
-        <div class="flex flex-column gap-1 mb-3 mt-2">
-          <label class="font-light text-sm">Buscar materia:</label>
-          <input
-            pInputText
-            #filterInput
-            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-            placeholder="Nombre, email o CUIL"
-          />
-        </div>
-        <app-subject-filter [courseData]="courseData"></app-subject-filter>
+      <app-subject-filter [courseData]="courseData"></app-subject-filter>
+    </div>
+  </ng-template>
+  <ng-template pTemplate="header">
+    <tr>
+      <th>Nombre de Materia</th>
+      <th>Profesor</th>
+      <th>Curso</th>
+      <th>Año</th>
+      <th>Correlativa</th>
+      <th>Acciones</th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-subject>
+    <tr>
+      <td>{{ subject.subjectName }}</td>
+      <td>{{ getTeacherName(subject.teacherId) }}</td>
+      <td>{{ subject.courseNum }}-{{ subject.courseLetter }}</td>
+      <td>{{ subject.courseYear }}</td>
+      <td>
+        <button
+          pButton
+          type="button"
+          label="Ver correlativa"
+          (click)="viewCorrelative(subject.correlative)"
+          [disabled]="!subject.correlative"
+        ></button>
+      </td>
+      <td class="flex gap-2">
+        <button
+          pButton
+          icon="pi pi-users"
+          pTooltip="Alumnos inscriptos"
+          tooltipPosition="bottom"
+          (click)="viewStudents(subject)"
+        ></button>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<p-dialog
+  header="Materia correlativa"
+  [visible]="showCorrelativeDialog()"
+  (visibleChange)="showCorrelativeDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '480px', maxWidth: '95vw' }"
+  (onHide)="showCorrelativeDialog.set(false)"
+>
+  <ng-container *ngIf="correlativeSubject(); else noCorr">
+    <div class="flex flex-column gap-3">
+      <div class="flex flex-column">
+        <span class="text-sm text-color-secondary">Nombre</span>
+        <span class="font-semibold"
+          >{{ correlativeSubject()!.subjectName }}</span
+        >
       </div>
-    </ng-template>
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Nombre de Materia</th>
-        <th>Profesor</th>
-        <th>Curso</th>
-        <th>Año</th>
-        <th>Correlativa</th>
-        <th>Acciones</th>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-subject>
-      <tr>
-        <td>{{ subject.subjectName }}</td>
-        <td>{{ getTeacherName(subject.teacherId) }}</td>
-        <td>{{ subject.courseNum }}-{{ subject.courseLetter }}</td>
-        <td>{{ subject.courseYear }}</td>
-        <td>
-          <button
-            pButton
-            type="button"
-            label="Ver correlativa"
-            (click)="viewCorrelative(subject.correlative)"
-            [disabled]="!subject.correlative"
-          ></button>
-        </td>
-        <td class="flex gap-2">
-          <button
-            pButton
-            icon="pi pi-users"
-            pTooltip="Alumnos inscriptos"
-            tooltipPosition="bottom"
-            (click)="viewStudents(subject)"
-          ></button>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
 
-  <p-dialog
-    header="Materia correlativa"
-    [visible]="showCorrelativeDialog()"
-    (visibleChange)="showCorrelativeDialog.set($event)"
-    [modal]="true"
-    [style]="{ width: '480px', maxWidth: '95vw' }"
-    (onHide)="showCorrelativeDialog.set(false)"
-  >
-    <ng-container *ngIf="correlativeSubject(); else noCorr">
-      <div class="flex flex-column gap-3">
-        <div class="flex flex-column">
-          <span class="text-sm text-color-secondary">Nombre</span>
-          <span class="font-semibold"
-            >{{ correlativeSubject()!.subjectName }}</span
-          >
-        </div>
-
-        <div class="flex flex-column">
-          <span class="text-sm text-color-secondary">Docente</span>
-          <span class="font-medium">
-            {{ getTeacherName(correlativeSubject()!.teacher.toString()) }}
-          </span>
-        </div>
-
-        <div class="flex flex-column">
-          <span class="text-sm text-color-secondary">Curso</span>
-          <span>
-            Curso {{ correlativeSubject()!.courseNum }} • {{
-            correlativeSubject()!.courseLetter }} • {{
-            correlativeSubject()!.courseYear }}
-          </span>
-        </div>
-
-        <div class="flex gap-2 pt-2">
-          <button
-            pButton
-            type="button"
-            icon="pi pi-users"
-            label="Ver alumnos"
-            (click)="viewStudents(correlativeSubject()!)"
-          ></button>
-        </div>
+      <div class="flex flex-column">
+        <span class="text-sm text-color-secondary">Docente</span>
+        <span class="font-medium">
+          {{ getTeacherName(correlativeSubject()!.teacher.toString()) }}
+        </span>
       </div>
-    </ng-container>
 
-    <ng-template #noCorr>
-      <p>No hay correlativa.</p>
-    </ng-template>
-  </p-dialog>
-</div>
+      <div class="flex flex-column">
+        <span class="text-sm text-color-secondary">Curso</span>
+        <span>
+          Curso {{ correlativeSubject()!.courseNum }} • {{
+          correlativeSubject()!.courseLetter }} • {{
+          correlativeSubject()!.courseYear }}
+        </span>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-users"
+          label="Ver alumnos"
+          (click)="viewStudents(correlativeSubject()!)"
+        ></button>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #noCorr>
+    <p>No hay correlativa.</p>
+  </ng-template>
+</p-dialog>
