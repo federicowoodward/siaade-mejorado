@@ -28,6 +28,7 @@ export class FieldLabelPipe implements PipeTransform {
     province: 'Provincia',
     postalCode: 'Código Postal',
     country: 'País',
+    password: 'Contraseña',
   };
 
   transform(fieldKey: string): string {

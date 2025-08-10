@@ -9,6 +9,9 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { GoBackService } from '../../../core/services/go_back.service';
+import { TableModule } from 'primeng/table';
+import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
+import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 
 @Component({
   selector: 'app-create-user-page',
@@ -21,13 +24,18 @@ import { GoBackService } from '../../../core/services/go_back.service';
     InputTextModule,
     AutoCompleteModule,
     TooltipModule,
+    TableModule,
+    FieldLabelPipe,
+    RoleLabelPipe
   ],
   templateUrl: './create-user-page.html',
   styleUrl: './create-user-page.scss',
 })
 export class CreateUserPage {
   private goBackSvc = inject(GoBackService);
-  back(): void { this.goBackSvc.back(); }
+  back(): void {
+    this.goBackSvc.back();
+  }
 
   // Paso 1 — Usuario básico
   role: string | null = null;
@@ -37,7 +45,9 @@ export class CreateUserPage {
   cuil = '';
 
   // Vista previa de password (CUIL)
-  get passwordPreview() { return this.cuil || '—'; }
+  get passwordPreview() {
+    return this.cuil || '—';
+  }
 
   // Paso 2 — Datos extra por rol
   // student
@@ -67,11 +77,17 @@ export class CreateUserPage {
   // Métodos de sugerencias
   private filterContains(src: string[], q: string) {
     const qq = (q || '').toLowerCase().trim();
-    return !qq ? [...src] : src.filter(v => v.toLowerCase().includes(qq));
+    return !qq ? [...src] : src.filter((v) => v.toLowerCase().includes(qq));
   }
-  searchRoles(e: any) { this.roleSuggestions   = this.filterContains(this.rolesAll, e?.query); }
-  searchDocTypes(e: any) { this.docTypeSuggestions = this.filterContains(this.docTypesAll, e?.query); }
-  searchSex(e: any) { this.sexSuggestions     = this.filterContains(this.sexesAll, e?.query); }
+  searchRoles(e: any) {
+    this.roleSuggestions = this.filterContains(this.rolesAll, e?.query);
+  }
+  searchDocTypes(e: any) {
+    this.docTypeSuggestions = this.filterContains(this.docTypesAll, e?.query);
+  }
+  searchSex(e: any) {
+    this.sexSuggestions = this.filterContains(this.sexesAll, e?.query);
+  }
 
   // Paso 3 — Preview simple (solo para mostrar captura)
   getPreview() {
@@ -102,5 +118,21 @@ export class CreateUserPage {
         nationality: this.nationality || undefined,
       },
     };
+  }
+  get previewRows(): { section: string; field: string; value: string }[] {
+    const data = this.getPreview(); // usa tu método existente
+    const rows: { section: string; field: string; value: string }[] = [];
+    const push = (section: string, obj: any) => {
+      Object.entries(obj || {}).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          rows.push({ section, field: k, value: String(v) });
+        }
+      });
+    };
+    push('user', data.user);
+    push('roleExtras', data.roleExtras);
+    push('user_info', data.user_info);
+    push('common_data', data.common_data);
+    return rows;
   }
 }

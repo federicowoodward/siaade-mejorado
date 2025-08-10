@@ -21,8 +21,18 @@
                 [dropdown]="true"
                 [minLength]="0"
                 [(ngModel)]="role"
-                placeholder="student, teacher, preceptor o secretary"
-              ></p-autoComplete>
+                placeholder="Seleccione rol del nuevo usuario"
+              >
+                <!-- items del dropdown -->
+                <ng-template pTemplate="item" let-item>
+                  {{ item | roleLabel }}
+                </ng-template>
+
+                <!-- valor seleccionado en el input -->
+                <ng-template pTemplate="selectedItem" let-value>
+                  {{ value | roleLabel }}
+                </ng-template>
+              </p-autoComplete>
             </div>
 
             <div class="col-12 md:col-6">
@@ -208,28 +218,52 @@
         <ng-template #content let-activateCallback="activateCallback">
           <div class="m-w-custom">
             <h3 class="mb-3">Resumen (demo)</h3>
-            <pre
-              class="bg-surface-100 p-3 border-round overflow-auto"
-              style="max-height: 300px"
+
+            <p-table
+              [value]="previewRows"
+              showGridlines
+              [tableStyle]="{ 'min-width': '50rem' }"
             >
-  {{ getPreview() | json }}
-              </pre
-            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Campo</th>
+                  <th>Valor</th>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="body" let-row>
+                <tr>
+                  <td>{{ row.field | fieldLabel}}</td>
+                  <td>{{ row.value | fieldLabel}}</td>
+                </tr>
+              </ng-template>
+            </p-table>
           </div>
 
-          <div class="flex pt-6 justify-start gap-2">
-            <p-button
-              label="Cancelar"
-              icon="pi pi-arrow-left"
-              variant="outlined"
-              (onClick)="back()"
-            />
-            <p-button
-              label="Crear"
-              icon="pi pi-check"
-              [disabled]="true"
-              pTooltip="MVP: sin acción"
-            />
+          <div class="flex pt-6 justify-content-between">
+            <div class="flex gap-2">
+              <p-button
+                label="Volver"
+                severity="secondary"
+                icon="pi pi-arrow-left"
+                (onClick)="activateCallback(1)"
+              />
+              <p-button
+                label="Cancelar"
+                icon="pi pi-times"
+                variant="outlined"
+                severity="danger"
+                (onClick)="back()"
+              />
+            </div>
+            <div>
+              <p-button
+                label="Crear"
+                icon="pi pi-check"
+                [disabled]="true"
+                pTooltip="MVP: sin acción"
+              />
+            </div>
           </div>
         </ng-template>
       </p-step-panel>

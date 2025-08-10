@@ -1,4 +1,3 @@
-// #ASUMIENDO CODIGO: src/app/shared/pipes/role-label.pipe.ts
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
