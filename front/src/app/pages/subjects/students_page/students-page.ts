@@ -1,11 +1,11 @@
 import { Component, inject, Input, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { UsersTableComponent } from '../../../../shared/components/users-table/users-table.component';
+import { UsersTableComponent } from '../../../shared/components/users-table/users-table.component';
 import { CommonModule } from '@angular/common';
-import { ApiService } from '../../../../core/services/api.service';
-import { SubjectStudent } from '../../../../core/models/subject_student.model';
+import { ApiService } from '../../../core/services/api.service';
+import { SubjectStudent } from '../../../core/models/subject_student.model';
 import { Button } from "primeng/button";
-import { GoBackService } from '../../../../core/services/go_back.service';
+import { GoBackService } from '../../../core/services/go_back.service';
 
 @Component({
   selector: 'app-students-page',
