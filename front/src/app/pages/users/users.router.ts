@@ -4,6 +4,7 @@ import { RoleGuard } from '../../core/guards/role.guard';
 import { UsersPage } from './users_page/users-page';
 import { UserDetailPage } from './user-detail-page/user-detail-page';
 import { StudentAcademicStatusPage } from './student-academic-status-page/student-academic-status-page';
+import { CreateUserPage } from './create-user-page/create-user-page';
 
 export const USERS_ROUTES: Routes = [
   {
@@ -19,6 +20,11 @@ export const USERS_ROUTES: Routes = [
   {
     path: 'student_academic_status/:id',
     component: StudentAcademicStatusPage,
+    canActivate: [AuthGuard, RoleGuard],
+  },
+  {
+    path: 'create',
+    component: CreateUserPage,
     canActivate: [AuthGuard, RoleGuard],
   },
 ];
