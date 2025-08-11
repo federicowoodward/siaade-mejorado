@@ -8,5 +8,3 @@ export interface Subject {
   courseYear: string;
   correlative?: number; // id de otra materia (subject)
 }
-
-// posible busqueda idea: busqueda por subjectName

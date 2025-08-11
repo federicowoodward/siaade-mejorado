@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { RoleGuard } from '../../core/guards/role.guard';
-import { SubjectPage } from './subject_page/subject-page';
 import { StudentsPage } from './students_page/students-page';
 import { AttendancePage } from './attendance_page/attendance-page';
 import { GradesPage } from './grades_page/grades-page';
@@ -12,11 +11,6 @@ export const SUBJECTS_ROUTES: Routes = [
   {
     path: '',
     component: SubjectsPage,
-    canActivate: [AuthGuard, RoleGuard],
-  },
-  {
-    path: 'subject/:id',
-    component: SubjectPage,
     canActivate: [AuthGuard, RoleGuard],
   },
   {

@@ -45,7 +45,7 @@ export class SubjectTableComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  // UI
+  expandedRowKeys: { [s: string]: boolean } = {};
 
   // Datos
   subjects = signal<SubjectModel[]>([]);
@@ -134,5 +134,13 @@ export class SubjectTableComponent implements OnInit {
   getTeacherName(teacherId: string) {
     const teacher = this.teachers().find((t) => t.id === teacherId);
     return teacher ? teacher.name : 'Sin asignar';
+  }
+
+  goToGrades(subj: SubjectModel) {
+    this.router.navigate(['/subjects', 'grades', subj.id]);
+  }
+
+  goToAttendance(subj: SubjectModel) {
+    this.router.navigate(['/subjects', 'attendance', subj.id]);
   }
 }

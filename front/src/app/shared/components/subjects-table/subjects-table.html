@@ -4,6 +4,7 @@
   [rows]="10"
   responsiveLayout="scroll"
   [globalFilterFields]="['subjectName']"
+  dataKey="id"
   #dt
 >
   <ng-template pTemplate="caption">
@@ -22,7 +23,7 @@
       ></p-button>
     </div>
     <div [@expandCollapse]="showFilterDialog() ? 'open' : 'closed'">
-      <div class="flex flex-column gap-1 mb-3 mt-2">
+      <div class="flex flex-column gap-1 mb-3 mt-3">
         <label class="font-light text-sm">Buscar materia:</label>
         <input
           pInputText
@@ -40,33 +41,63 @@
       <th>Profesor</th>
       <th>Curso</th>
       <th>Año</th>
-      <th>Correlativa</th>
-      <th>Acciones</th>
     </tr>
   </ng-template>
-  <ng-template pTemplate="body" let-subject>
+  <ng-template pTemplate="body" let-subject let-expanded="expanded">
     <tr>
-      <td>{{ subject.subjectName }}</td>
-      <td>{{ getTeacherName(subject.teacherId) }}</td>
-      <td>{{ subject.courseNum }}-{{ subject.courseLetter }}</td>
-      <td>{{ subject.courseYear }}</td>
       <td>
         <button
           pButton
+          [pRowToggler]="subject"
           type="button"
-          label="Ver correlativa"
-          (click)="viewCorrelative(subject.correlative)"
-          [disabled]="!subject.correlative"
-        ></button>
-      </td>
-      <td class="flex gap-2">
-        <button
-          pButton
-          icon="pi pi-users"
-          pTooltip="Alumnos inscriptos"
+          [text]="true"
+          class="mr-2"
+          [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+          pTooltip="Ver más"
           tooltipPosition="bottom"
-          (click)="viewStudents(subject)"
         ></button>
+        {{ subject.subjectName }}
+      </td>
+      <td>{{ getTeacherName(subject.teacherId) }}</td>
+      <td>{{ subject.courseNum }}-{{ subject.courseLetter }}</td>
+      <td>{{ subject.courseYear }}</td>
+    </tr>
+  </ng-template>
+
+  <ng-template #expandedrow let-subject>
+    <tr>
+      <td colspan="4">
+        <div class="flex justify-content-center gap-3 py-2">
+          <button
+            pButton
+            type="button"
+            label="Ver correlativa"
+            icon="pi pi-link"
+            (click)="viewCorrelative(subject.correlative)"
+            [disabled]="!subject.correlative"
+          ></button>
+          <button
+            pButton
+            type="button"
+            label="Ver alumnos"
+            icon="pi pi-users"
+            (click)="viewStudents(subject)"
+          ></button>
+          <button
+            pButton
+            type="button"
+            label="Notas de la materia"
+            icon="pi pi-book"
+            (click)="goToGrades(subject)"
+          ></button>
+          <button
+            pButton
+            type="button"
+            label="Asistencia"
+            icon="pi pi-calendar"
+            (click)="goToAttendance(subject)"
+          ></button>
+        </div>
       </td>
     </tr>
   </ng-template>
