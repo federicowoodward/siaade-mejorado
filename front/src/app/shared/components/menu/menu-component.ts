@@ -55,16 +55,19 @@ export class MenuComponent {
       { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
     ],
     preceptor: [
       { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
     ],
     secretary: [
       { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
     ],
   };
 
