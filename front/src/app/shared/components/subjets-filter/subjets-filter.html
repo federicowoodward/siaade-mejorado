@@ -1,0 +1,68 @@
+<div class="flex flex-wrap align-items-end gap-4 mb-3">
+  <div class="flex flex-column">
+    <label for="filterCourseNum" class="font-light text-sm">Curso Nº</label>
+    <p-autocomplete
+      id="filterCourseNum"
+      [suggestions]="courseNums"
+      (completeMethod)="searchCourseNums($event)"
+      [dropdown]="true"
+      [minLength]="0"
+      [ngModel]="courseData().num"
+      (ngModelChange)="
+          courseData.set({
+            num: $event,
+            letter: courseData().letter,
+            year: courseData().year
+          })
+        "
+      placeholder="Ej: 2"
+      class="w-10rem"
+    ></p-autocomplete>
+  </div>
+
+  <!-- Letra de curso -->
+  <div class="flex flex-column">
+    <label for="filterCourseLetter" class="font-light text-sm"
+      >Curso Letra</label
+    >
+    <p-autocomplete
+      id="filterCourseLetter"
+      [suggestions]="courseLetters"
+      (completeMethod)="searchCourseLetters($event)"
+      [dropdown]="true"
+      [minLength]="0"
+      [ngModel]="courseData().letter"
+      (ngModelChange)="
+          courseData.set({
+            num: courseData().num,
+            letter: $event,
+            year: courseData().year
+          })
+        "
+      placeholder="Ej: A"
+      class="w-10rem"
+    ></p-autocomplete>
+  </div>
+
+  <!-- Año -->
+  <div class="flex flex-column">
+    <label for="filterYear" class="font-light text-sm">Año</label>
+    <p-autocomplete
+      id="filterYear"
+      [suggestions]="years.reverse()"
+      (completeMethod)="searchYears($event)"
+      [dropdown]="true"
+      [minLength]="0"
+      [ngModel]="courseData().year"
+      (ngModelChange)="
+          courseData.set({
+            num: courseData().num,
+            letter: courseData().letter,
+            year: $event
+          })
+        "
+      placeholder="Ej: 2025"
+      class="w-10rem"
+    ></p-autocomplete>
+  </div>
+</div>

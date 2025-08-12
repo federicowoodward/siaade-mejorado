@@ -1,0 +1,63 @@
+<div class="m-w-custom">
+    <div class="flex justify-content-between align-items-center mb-3">
+      <h2 class="m-0">
+        {{ table()?.name || 'Mesa' }}
+        <small class="text-color-secondary block">
+          {{ table()?.start_date }} → {{ table()?.end_date }}
+        </small>
+      </h2>
+  
+      <div class="flex gap-2">
+        <p-button label="Ver calendario" icon="pi pi-calendar" (onClick)="openCalendar()"></p-button>
+        <p-button label="Crear examen" icon="pi pi-plus" (onClick)="openCreate()"></p-button>
+        <p-button label="Volver" icon="pi pi-arrow-left" severity="secondary" (onClick)="back()"></p-button>
+      </div>
+    </div>
+  
+    <p-table [value]="finals()" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Materia</th>
+          <th>Fecha</th>
+          <th>Aula</th>
+          <th style="width: 280px">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td class="font-medium">{{ row.subject_name }}</td>
+          <td>{{ row.exam_date }}</td>
+          <td>{{ row.aula || '—' }}</td>
+          <td class="flex gap-2 flex-wrap">
+            <p-button label="Abrir" icon="pi pi-arrow-right" (onClick)="openFinal(row)"></p-button>
+            <p-button label="Eliminar" icon="pi pi-trash" severity="danger" (onClick)="deleteFinal(row)"></p-button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+  
+  <p-dialog header="Crear examen" [visible]="showCreate()" (visibleChange)="showCreate.set($event)"
+    [modal]="true" [style]="{ width: '520px', maxWidth: '95vw' }">
+    <div class="flex flex-column gap-3">
+      <div>
+        <label class="block mb-1">Materia</label>
+        <input pInputText class="w-full" [(ngModel)]="subject_name" placeholder="Ej: Matemática I" />
+      </div>
+      <div class="grid">
+        <div class="col-12 md:col-6">
+          <label class="block mb-1">Fecha</label>
+          <input type="date" class="w-full p-inputtext p-component" [(ngModel)]="exam_date" />
+        </div>
+        <div class="col-12 md:col-6">
+          <label class="block mb-1">Aula</label>
+          <input pInputText class="w-full" [(ngModel)]="aula" placeholder="Ej: Aula 12" />
+        </div>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button label="Cancelar" severity="secondary" (onClick)="showCreate.set(false)"></p-button>
+      <p-button label="Crear" icon="pi pi-check" (onClick)="confirmCreate()"></p-button>
+    </ng-template>
+  </p-dialog>
+  
