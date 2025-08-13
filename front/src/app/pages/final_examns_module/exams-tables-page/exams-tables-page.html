@@ -10,21 +10,24 @@
         <ng-template pTemplate="header">
             <tr>
                 <th>Nombre</th>
-                <th>Rango</th>
+                <th>Inicia</th>
+                <th>Finaliza</th>
                 <th>Creada por</th>
-                <th style="width: 400px">Acciones</th>
+                <th>Acciones</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-row>
             <tr>
                 <td class="font-medium">{{ row.name }}</td>
-                <td>{{ row.start_date }} → {{ row.end_date }}</td>
+                <td>{{ row.start_date }} </td>
+                <td>{{ row.end_date }}</td>
                 <td>{{ row.created_by }}</td>
                 <td class="flex gap-2 ">
-                    <p-button label="Abrir" icon="pi pi-arrow-right" (onClick)="openTable(row)"></p-button>
-                    <p-button label="Editar" icon="pi pi-pencil" severity="secondary"
+                    <p-button icon="pi pi-arrow-right" pTooltip="Ver examenes" tooltipPosition="bottom"
+                        (onClick)="openTable(row)"></p-button>
+                    <p-button icon="pi pi-pencil" pTooltip="Editar" tooltipPosition="bottom" severity="secondary"
                         (onClick)="openEdit(row)"></p-button>
-                    <p-button label="Eliminar" icon="pi pi-trash" severity="danger"
+                    <p-button icon="pi pi-trash" pTooltip="Borrar" tooltipPosition="bottom" severity="danger"
                         (onClick)="deleteTable(row)"></p-button>
                 </td>
             </tr>
@@ -54,8 +57,4 @@
         <p-button label="Cancelar" severity="secondary" (onClick)="showDialog.set(false)"></p-button>
         <p-button label="Confirmar" icon="pi pi-check" (onClick)="confirmDialog()"></p-button>
     </ng-template>
-</p-dialog>
-
-<p-dialog header="Ver rango" [visible]="showDialog()">
-    
 </p-dialog>

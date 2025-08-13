@@ -71,7 +71,7 @@ export class UsersTableComponent implements OnInit {
   showSubjectsDialog = signal(false);
   showFilterDialog = signal(false);
 
-  subjetsOfTheTeacher = [{ a: 'a' }, { a: 'b' }];
+  subjetsOfTheTeacher = [{ a: 'Mathematics I' }, { a: 'Mathematics II' }];
 
   readonly roles = [
     { label: 'All', value: null },

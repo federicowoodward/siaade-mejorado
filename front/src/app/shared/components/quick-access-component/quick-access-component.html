@@ -1,0 +1,6 @@
+<div class="quick-access-grid px-4">
+  <p-card *ngFor="let access of accesses()" [header]="access.label" [subheader]="access.description"
+    class="quick-access-card">
+    <p-button [label]="access.label" [icon]="access.icon" [routerLink]="access.route"></p-button>
+  </p-card>
+</div>
