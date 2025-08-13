@@ -2,8 +2,8 @@
 
 <div class="flex justify-content-center align-items-center h-full">
   <div class="auth-shell surface-card shadow-2 border-round p-0 relative overflow-hidden"
-       [class.login-mode]="loginMode()" [class.recover-mode]="!loginMode()"
-       [class.transitioning]="transitioning()" [class.expand-phase]="expandPhase()">
+    [class.login-mode]="loginMode()" [class.recover-mode]="!loginMode()" [class.transitioning]="transitioning()"
+    [class.expand-phase]="expandPhase()">
     <!-- Header móvil (solo phone) -->
     <div class="mobile-auth-header">
       <div class="m-tabs">
@@ -28,7 +28,8 @@
         <div class="cover-text">
           <h2 class="cover-title">¿Olvidaste tu contraseña?</h2>
           <p class="cover-desc">Podés recuperarla en segundos.</p>
-          <button pButton type="button" label="Recuperar" class="p-button-outlined p-button-rounded cover-btn" (click)="changeMode()"></button>
+          <button pButton type="button" label="Recuperar" class="p-button-outlined p-button-rounded cover-btn"
+            (click)="changeMode()"></button>
         </div>
       </div>
       <ng-template #recoverCta>
@@ -36,18 +37,20 @@
           <div class="cover-text">
             <h2 class="cover-title">Bienvenido de nuevo</h2>
             <p class="cover-desc">Iniciá sesión para continuar.</p>
-            <button pButton type="button" label="Iniciar sesión" class="p-button-outlined p-button-rounded cover-btn" (click)="changeMode()"></button>
+            <button pButton type="button" label="Iniciar sesión" class="p-button-outlined p-button-rounded cover-btn"
+              (click)="changeMode()"></button>
           </div>
         </div>
       </ng-template>
     </div>
 
-    <div class="auth-content px-4 md:px-6 relative overflow-hidden">
+    <div class="auth-content px-2 relative overflow-hidden">
       <div class="panes">
         <!-- Pane Recuperar (primer panel - izquierda) -->
         <div class="pane recover-pane" [attr.aria-hidden]="loginMode()">
           <h2 class="pane-title">Recuperar contraseña</h2>
-          <form [formGroup]="recoverForm" (ngSubmit)="submitRecover()" autocomplete="on" novalidate class="form-block center-form">
+          <form [formGroup]="recoverForm" (ngSubmit)="submitRecover()" autocomplete="on" novalidate
+            class="form-block center-form">
             <label for="recover_identity" class="block mb-2 label-inline">Nombre, Email o CUIL</label>
             <input id="recover_identity" type="text" pInputText formControlName="identity" class="w-full mb-3"
               placeholder="Ej: juan@mail.com" autocomplete="username" />
@@ -58,7 +61,8 @@
         <!-- Pane Login (segundo panel - derecha) -->
         <div class="pane login-pane" [attr.aria-hidden]="!loginMode()">
           <h2 class="pane-title">Iniciar sesión</h2>
-          <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" autocomplete="on" novalidate class="form-block center-form">
+          <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" autocomplete="on" novalidate
+            class="form-block center-form">
             <label for="login_identity" class="block mb-2 label-inline">Nombre, Email o CUIL</label>
             <input id="login_identity" type="text" pInputText formControlName="identity" class="w-full mb-3"
               placeholder="Ej: juan@mail.com" autocomplete="username" />
