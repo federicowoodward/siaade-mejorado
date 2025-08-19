@@ -1,6 +1,4 @@
+login.json
 /node_modules
 .vercel
 tareas.txt
-package-lock.json
-package.json
-login.json
