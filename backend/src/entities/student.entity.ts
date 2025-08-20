@@ -1,38 +1,15 @@
-<<<<<<< HEAD
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
-import { Subject } from './subject.entity';  // Importa la entidad Subject para la relación
+import { Entity, PrimaryColumn, Column, JoinColumn, OneToOne } from 'typeorm';
+import { User } from './user.entity';
 
-@Entity()
+@Entity('students')
 export class Student {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;  // El ID del estudiante
+  @PrimaryColumn('uuid')
+  userId: string;
 
-  @Column()
-  name: string;  // Nombre del estudiante
+  @Column({ unique: true, nullable: true })
+  legajo: string;
 
-  @Column()
-  email: string;  // Email del estudiante
-
-  @ManyToMany(() => Subject)
-  @JoinTable()
-  subjects: Subject[];  // Relación de muchos a muchos con la entidad Subject (materias)
-=======
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
-import { Subject } from './subject.entity';  // Importa la entidad Subject para la relación
-
-@Entity()
-export class Student {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;  // El ID del estudiante
-
-  @Column()
-  name: string;  // Nombre del estudiante
-
-  @Column()
-  email: string;  // Email del estudiante
-
-  @ManyToMany(() => Subject)
-  @JoinTable()
-  subjects: Subject[];  // Relación de muchos a muchos con la entidad Subject (materias)
->>>>>>> master
+  @OneToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

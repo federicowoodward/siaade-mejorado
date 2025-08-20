@@ -25,4 +25,10 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
+
+  async resetPassword(resetPasswordDto: any) {
+    // Implementación básica para resetear contraseña
+    // Aquí puedes agregar la lógica para resetear la contraseña
+    return { message: 'Password reset functionality not implemented yet' };
+  }
 }

@@ -1,12 +1,11 @@
-import { Component, inject, OnInit, computed, signal } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { RolesService } from '../../core/services/role.service';
-import { QuickAccessComponent } from '../../shared/components/quick-access-component/quick-access-component';
 
 @Component({
   selector: 'app-welcome-page',
   standalone: true,
-  imports: [QuickAccessComponent], 
+  imports: [],
   templateUrl: './welcome-page.html',
   styleUrls: ['./welcome-page.scss'],
 })
@@ -18,6 +17,7 @@ export class WelcomePage implements OnInit {
   userRole = computed(() => this.rolesService.currentRole());
 
   ngOnInit() {
+    // Escuchamos al observable y seteamos el signal
     this.authService.getUser().subscribe((user) => {
       if (user) {
         this.userName.set(`${user.name} ${user.lastName}`);

@@ -1,22 +1,43 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';  // Asegúrate de importar el módulo principal
-import { ValidationPipe } from '@nestjs/common';  // Para validar los DTOs (Data Transfer Objects)
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);  // Crear la aplicación usando el módulo principal
+  const app = await NestFactory.create(AppModule);
 
-  // Usar un pipe global para validar los datos de entrada con class-validator
+  // Configurar CORS para el frontend
+  app.enableCors({
+    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'], // URLs del frontend Angular
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
+
+  // Usar un pipe global para validar los datos de entrada
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,  // Elimina las propiedades no validadas en el DTO
-    forbidNonWhitelisted: true,  // Lanza un error si hay propiedades no permitidas
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
   }));
 
-  // Habilitar CORS (si necesitas que tu API sea accesible desde otros dominios)
-  app.enableCors();
+  // Establecer prefijo global para todas las rutas ANTES de configurar Swagger
+  app.setGlobalPrefix('api');
 
-  // Establecer el puerto en el que el servidor escuchará
-  await app.listen(3000);  // Cambia el puerto si es necesario
-  console.log('Application is running on: http://localhost:3000');
+  // Configurar Swagger/OpenAPI
+  const config = new DocumentBuilder()
+    .setTitle('SIAADE API')
+    .setDescription('Sistema Integral de Administración Académica Educativa')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`🚀 SIAADE Backend running on: http://localhost:${port}`);
+  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

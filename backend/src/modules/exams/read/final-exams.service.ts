@@ -10,8 +10,10 @@ export class FinalExamsService {
     private finalExamsRepository: Repository<FinalExam>,
   ) {}
 
-  async getExamInfo(id: string): Promise<FinalExam> {
-    return this.finalExamsRepository.findOne(id);  // Buscar un examen por ID
+  async getExamInfo(id: number): Promise<FinalExam | null> {
+    return this.finalExamsRepository.findOne({
+      where: { id }
+    });  // Buscar un examen por ID
   }
 
   async getAllExams(): Promise<FinalExam[]> {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { ExtractJwt } from 'passport-jwt';
@@ -11,6 +11,7 @@ import { User } from '../../entities/user.entity';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
@@ -22,7 +23,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.usersRepository.findOne(payload.sub);  // Busca al usuario usando el ID del JWT
+    const user = await this.usersRepository.findOne({
+      where: { id: payload.sub },
+      relations: ['role']
+    });  // Busca al usuario usando el ID del JWT
     return user;
   }
 }

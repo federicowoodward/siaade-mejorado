@@ -10,8 +10,10 @@ export class SubjectsService {
     private subjectsRepository: Repository<Subject>,
   ) {}
 
-  async getSubjectInfo(id: string): Promise<Subject> {
-    return this.subjectsRepository.findOne(id);  // Buscar una materia por su ID
+  async getSubjectInfo(id: number): Promise<Subject | null> {
+    return this.subjectsRepository.findOne({
+      where: { id }
+    });  // Buscar una materia por su ID
   }
 
   async getAllSubjects(): Promise<Subject[]> {

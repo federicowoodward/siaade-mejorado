@@ -81,18 +81,31 @@ export class AuthPage {
     this.changeMode();
   }
 
-  submitLogin() {
+  async submitLogin() {
     if (this.loginForm.invalid || this.submittingLogin()) return;
     const { identity, password } = this.loginForm.value;
     this.submittingLogin.set(true);
-    this.auth.loginFlexible(identity!, password!).subscribe({
-      next: (success) => {
-        if (success) this.router.navigate(['/welcome']);
-        else this.message.add({ severity: 'error', summary: 'Error', detail: 'Usuario o contraseña incorrectos' });
-      },
-      error: () => this.message.add({ severity: 'error', summary: 'Error', detail: 'No se pudo iniciar sesión' }),
-      complete: () => this.submittingLogin.set(false)
-    });
+    
+    try {
+      const success = await this.auth.loginFlexible({ username: identity, password });
+      if (success) {
+        this.router.navigate(['/welcome']);
+      } else {
+        this.message.add({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Usuario o contraseña incorrectos' 
+        });
+      }
+    } catch (error) {
+      this.message.add({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'No se pudo iniciar sesión' 
+      });
+    } finally {
+      this.submittingLogin.set(false);
+    }
   }
 
   submitRecover() {

@@ -20,14 +20,14 @@ export class FinalExamsController {
   @Put('update/:id')
   @UseGuards(JwtAuthGuard, RolesGuard, HierarchyGuard)
   @Roles('ADMIN_GENERAL')  // Solo los usuarios con rol 'ADMIN_GENERAL' pueden actualizar exámenes
-  async updateExam(@Param('id') id: string, @Body() examData: FinalExam): Promise<FinalExam> {
-    return this.finalExamsService.update(id, examData);  // Actualizar un examen final
+  async updateExam(@Param('id') id: string, @Body() examData: FinalExam): Promise<FinalExam | null> {
+    return this.finalExamsService.update(parseInt(id), examData);  // Actualizar un examen final
   }
 
   @Delete('delete/:id')
   @UseGuards(JwtAuthGuard, RolesGuard, HierarchyGuard)
   @Roles('ADMIN_GENERAL')  // Solo los usuarios con rol 'ADMIN_GENERAL' pueden eliminar exámenes
   async deleteExam(@Param('id') id: string): Promise<void> {
-    return this.finalExamsService.delete(id);  // Eliminar un examen final
+    return this.finalExamsService.delete(parseInt(id));  // Eliminar un examen final
   }
 }

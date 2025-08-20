@@ -15,12 +15,14 @@ export class SubjectsService {
     return this.subjectsRepository.save(subject);  // Guardar la nueva materia en la base de datos
   }
 
-  async update(id: string, subjectData: Subject): Promise<Subject> {
-    await this.subjectsRepository.update(id, subjectData);
-    return this.subjectsRepository.findOne(id);  // Devolver la materia actualizada
+  async update(id: number, subjectData: Subject): Promise<Subject | null> {
+    await this.subjectsRepository.update(id, subjectData);  // Actualizar la materia
+    return this.subjectsRepository.findOne({
+      where: { id }
+    });  // Devolver la materia actualizada
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.subjectsRepository.delete(id);  // Eliminar la materia
   }
 }

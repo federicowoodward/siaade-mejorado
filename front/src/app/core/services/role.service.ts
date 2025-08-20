@@ -1,5 +1,6 @@
 // #ASUMIENDO CODIGO: src/app/core/services/roles.service.ts
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { ApiService } from './api.service';
 
 export type RoleName = 
   | 'student'
@@ -9,16 +10,36 @@ export type RoleName =
 
 @Injectable({ providedIn: 'root' })
 export class RolesService {
+  private api = inject(ApiService);
+  
   readonly currentRole = signal<RoleName>('student');
   readonly isDirective = signal<boolean>(false);
+  readonly roles = signal<any[]>([]);
 
-  // #ASUMIENDO NEGOCIO: mapeo numérico → nombre de rol
-  private readonly roleMap: Record<number, RoleName> = {
+  // #ASUMIENDO NEGOCIO: mapeo numérico → nombre de rol (fallback)
+  private readonly roleMapFallback: Record<number, RoleName> = {
     1: 'student',
-    2: 'teacher',
+    2: 'teacher', 
     3: 'preceptor',
     4: 'secretary',
   };
+
+  constructor() {
+    // Cargar roles desde el backend
+    this.loadRoles();
+  }
+
+  private loadRoles() {
+    this.api.getAll('roles').subscribe({
+      next: (roles) => {
+        this.roles.set(roles);
+      },
+      error: (error) => {
+        console.error('Error loading roles:', error);
+        // Usar fallback si hay error
+      }
+    });
+  }
 
   /** Cambia el rol actual y el estado de directivo */
   setRole(role: RoleName, isDirective = false) {
@@ -43,6 +64,22 @@ export class RolesService {
 
   /** Devuelve el nombre de rol a partir del roleId numérico */
   getRoleNameById(id: number): RoleName | null {
-    return this.roleMap[id] ?? null;
+    const loadedRoles = this.roles();
+    if (loadedRoles.length > 0) {
+      const role = loadedRoles.find(r => r.id === id);
+      if (role) {
+        // Mapear nombres del backend a nuestros tipos
+        const nameMap: Record<string, RoleName> = {
+          'Alumno': 'student',
+          'Docente': 'teacher', 
+          'Preceptor': 'preceptor',
+          'Secretario': 'secretary',
+          'Administrador': 'secretary' // Asumiendo que admin se trata como secretary
+        };
+        return nameMap[role.name] || 'student';
+      }
+    }
+    // Fallback al mapeo hardcodeado
+    return this.roleMapFallback[id] ?? null;
   }
 }

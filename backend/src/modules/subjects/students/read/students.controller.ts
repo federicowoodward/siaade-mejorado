@@ -1,9 +1,9 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { StudentsService } from './students.service';
-import { Student } from '../../../entities/student.entity';  // Asegúrate de tener la entidad Student
-import { RolesGuard } from '../../auth/roles.guard';  // Importa el RolesGuard
-import { Roles } from '../../auth/roles.decorator';  // Importa el decorador para roles
-import { JwtAuthGuard } from '../../auth/jwt.guard';  // Importa el AuthGuard
+import { StudentsService } from './students.service';  // Importa el servicio de estudiantes
+import { Student } from '../../../../entities/student.entity';  // Asegúrate de tener la entidad Student
+import { RolesGuard } from '../../../auth/roles.guard';  // Importa el RolesGuard
+import { Roles } from '../../../auth/roles.decorator';  // Importa el decorador para roles
+import { JwtAuthGuard } from '../../../auth/jwt.guard';  // Importa el AuthGuard
 
 @Controller('subjects/students/read')  // Ruta para leer la información de los estudiantes
 export class StudentsController {
@@ -12,7 +12,7 @@ export class StudentsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)  // Protege la ruta con los guards
   @Roles('ADMIN_GENERAL', 'PRECEPTOR')  // Permite a los usuarios con estos roles consultar estudiantes
-  async getStudentInfo(@Param('id') id: string): Promise<Student> {
+  async getStudentInfo(@Param('id') id: string): Promise<Student | null> {
     return this.studentsService.getStudentInfo(id);  // Consultar información de un estudiante por su ID
   }
 

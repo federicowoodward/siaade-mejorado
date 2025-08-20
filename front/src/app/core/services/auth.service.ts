@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, map, Observable, tap } from 'rxjs';
+import { BehaviorSubject, map, Observable, tap, firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import { Router } from '@angular/router';
 import { RoleName, RolesService } from './role.service';
@@ -8,55 +8,68 @@ export class AuthService {
   private readonly user$ = new BehaviorSubject<any | null>(null);
   private router = inject(Router);
   private rolesService = inject(RolesService); // 👈 inyectás el service acá
+  private apiService = inject(ApiService);
 
-  constructor(private api: ApiService) {
+  constructor() {
     this.loadUserFromStorage();
   }
 
   private readonly roleMap: Record<number, RoleName> = {
-    1: 'student',
-    2: 'teacher',
-    3: 'preceptor',
-    4: 'secretary',
+    1: 'secretary', // Administrador (se maneja con isDirective)
+    2: 'student',   // Estudiante
+    3: 'teacher',   // Profesor
+    4: 'preceptor', // Preceptor
+    5: 'secretary', // Secretario
   };
 
-  loginFlexible(identity: string, password: string): Observable<boolean> {
-    return this.api
-      .getWhere(
-        'users',
-        (u) =>
-          (u.email === identity ||
-            u.name?.toLowerCase() === identity.toLowerCase() ||
-            u.cuil === identity) &&
-          u.password === password
-      )
-      .pipe(
-        map((users) => {
-          const user = users[0];
-          if (user) {
-            this.user$.next(user);
-            localStorage.setItem('mock_user', JSON.stringify(user));
+  async loginFlexible(credentials: any): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(this.apiService.request<any>('POST', 'auth/login', {
+        email: credentials.username,
+        password: credentials.password
+      }));
 
-            // 👇 Establece el rol en el RolesService
-            const role: RoleName = this.roleMap[user.roleId];
-            const isDirective = !!user.isDirective; // #ASUMIENDO campo en user si aplica
-            this.rolesService.setRole(role, isDirective);
-
-            return true;
-          }
-          return false;
-        })
-      );
+      if (response && response.accessToken && response.user) {
+        // Guardar el token
+        localStorage.setItem('access_token', response.accessToken);
+        
+        // Usar la información real del usuario desde el backend
+        const user = {
+          id: response.user.id,
+          username: response.user.email,
+          email: response.user.email,
+          name: response.user.name,
+          lastName: response.user.lastName,
+          roleId: response.user.roleId || 1,
+          isDirective: response.user.roleId === 1 // Administrador es directive
+        };
+        
+        this.user$.next(user);
+        localStorage.setItem('mock_user', JSON.stringify(user));
+        
+        // 👇 Setea el rol al hacer login
+        const role: RoleName = this.roleMap[user.roleId];
+        const isDirective = user.isDirective;
+        this.rolesService.setRole(role, isDirective);
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
   }
 
   logout() {
     this.router.navigate(['/auth']);
     this.user$.next(null);
     localStorage.removeItem('mock_user');
+    localStorage.removeItem('access_token');
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('mock_user');
+    return !!localStorage.getItem('mock_user') && !!localStorage.getItem('access_token');
   }
 
   getUser(): Observable<any | null> {

@@ -1,6 +1,17 @@
 <!-- src/app/pages/subject-new/subject-new-page.html -->
 <div class="m-w-custom">
-  <h2 class="mb-4">Crear Materia</h2>
+        <div class="flex align-items-center justify-content-between mb-4">
+          <h1 class="text-xl font-bold text-gray-800 m-0">Crear Nueva Materia</h1>
+          <p-button 
+            icon="pi pi-refresh" 
+            severity="secondary" 
+            size="small"
+            (onClick)="loadData()" 
+            [loading]="loading"
+            pTooltip="Recargar datos"
+            tooltipPosition="left">
+          </p-button>
+        </div>
 
   <div class="grid form-grid">
     <!-- Nombre -->
@@ -26,6 +37,7 @@
         [dropdown]="true"
         [minLength]="0"
         [(ngModel)]="teacherId"
+        optionLabel="displayName"
         placeholder="Seleccionar docente"
       ></p-autoComplete>
     </div>
@@ -41,6 +53,7 @@
         [dropdown]="true"
         [minLength]="0"
         [(ngModel)]="preceptorId"
+        optionLabel="displayName"
         placeholder="Seleccionar preceptor"
       ></p-autoComplete>
     </div>
@@ -54,9 +67,7 @@
         (completeMethod)="onSearchCorr($event)"
         [dropdown]="true"
         [minLength]="0"
-        (onSelect)="onPickCorr($event.value)"
-        [ngModel]="corrQuery"
-        (ngModelChange)="corrQuery = $event"
+        (onSelect)="onPickCorr($event)"
         placeholder="Buscar materia..."
       ></p-autoComplete>
       <small *ngIf="corrSelectedId"
@@ -117,8 +128,11 @@
     <p-button
       label="Crear"
       icon="pi pi-check"
-      [disabled]="true"
-      pTooltip="MVP: sin acción"
+      [disabled]="creating"
+      [loading]="creating"
+      (click)="createSubject()"
     ></p-button>
   </div>
 </div>
+
+<p-toast></p-toast>

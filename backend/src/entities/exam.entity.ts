@@ -1,36 +1,24 @@
-<<<<<<< HEAD
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Subject } from './subject.entity';  // Importa la entidad Subject para la relación
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Subject } from './subject.entity';
 
-@Entity()
+@Entity('exams')
 export class Exam {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;  // El ID del examen
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
-  title: string;  // Título del examen (por ejemplo, "Primer Parcial")
+  @Column({ name: 'subject_id' })
+  subjectId: number;
 
-  @Column()
-  date: Date;  // Fecha en la que se realiza el examen
+  @Column({ nullable: true })
+  title: string;
 
-  @ManyToOne(() => Subject, (subject) => subject.exams)
-  subject: Subject;  // Relación con la entidad Subject (materia)
-=======
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Subject } from './subject.entity';  // Importa la entidad Subject para la relación
+  @Column({ type: 'date', nullable: true })
+  date: Date;
 
-@Entity()
-export class Exam {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;  // El ID del examen
+  @Column({ name: 'is_valid', default: true })
+  isValid: boolean;
 
-  @Column()
-  title: string;  // Título del examen (por ejemplo, "Primer Parcial")
-
-  @Column()
-  date: Date;  // Fecha en la que se realiza el examen
-
-  @ManyToOne(() => Subject, (subject) => subject.exams)
-  subject: Subject;  // Relación con la entidad Subject (materia)
->>>>>>> master
+  @ManyToOne(() => Subject)
+  @JoinColumn({ name: 'subject_id' })
+  subject: Subject;
 }

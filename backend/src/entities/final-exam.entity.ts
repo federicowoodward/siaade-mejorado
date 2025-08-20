@@ -1,13 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Subject } from './subject.entity';
 
-@Entity()
+@Entity('final_exams')
 export class FinalExam {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
-  subject_id: string;  // ID de la materia asociada al examen
+  @Column({ name: 'exam_table_id' })
+  examTableId: number;
 
-  @Column()
-  exam_date: Date;  // Fecha del examen
+  @Column({ name: 'subject_id' })
+  subjectId: number;
+
+  @Column({ name: 'exam_date', type: 'date' })
+  examDate: Date;
+
+  @Column({ nullable: true })
+  aula: string;
+
+  @ManyToOne(() => Subject)
+  @JoinColumn({ name: 'subject_id' })
+  subject: Subject;
 }

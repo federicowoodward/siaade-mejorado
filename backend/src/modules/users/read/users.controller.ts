@@ -12,7 +12,7 @@ export class UsersController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_GENERAL', 'PRECEPTOR')  // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'PRECEPTOR' consultar usuarios
-  async getUserInfo(@Param('id') id: string): Promise<User> {
+  async getUserInfo(@Param('id') id: string): Promise<User | null> {
     return this.usersService.getUserInfo(id);  // Consultar información de un usuario por ID
   }
 

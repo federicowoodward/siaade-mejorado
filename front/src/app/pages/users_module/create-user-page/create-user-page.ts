@@ -9,6 +9,8 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { GoBackService } from '../../../core/services/go_back.service';
+import { ApiService } from '../../../core/services/api.service';
+import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
 import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
@@ -33,8 +35,53 @@ import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 })
 export class CreateUserPage {
   private goBackSvc = inject(GoBackService);
+  private api = inject(ApiService);
+  private router = inject(Router);
+  
+  isCreating = false;
+
   back(): void {
     this.goBackSvc.back();
+  }
+
+  async createUser(): Promise<void> {
+    if (this.isCreating) return;
+    
+    this.isCreating = true;
+    
+    try {
+      const userData = {
+        name: this.name,
+        lastName: this.lastName,
+        email: this.email,
+        cuil: this.cuil,
+        password: this.passwordPreview,
+        roleId: this.getRoleId(this.role)
+      };
+
+      const newUser = await this.api.create('users', userData).toPromise();
+      console.log('Usuario creado:', newUser);
+      
+      // Redirigir a la lista de usuarios o mostrar mensaje de éxito
+      this.router.navigate(['/users']);
+      
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+      // Aquí podrías mostrar un mensaje de error
+    } finally {
+      this.isCreating = false;
+    }
+  }
+
+  private getRoleId(role: string | null): number {
+    // Mapear roles a IDs (esto debería venir del backend idealmente)
+    const roleMap: Record<string, number> = {
+      'student': 1,
+      'teacher': 2,
+      'preceptor': 3,
+      'secretary': 4
+    };
+    return roleMap[role || 'student'] || 1;
   }
 
   // Paso 1 — Usuario básico

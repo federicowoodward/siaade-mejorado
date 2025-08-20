@@ -18,7 +18,6 @@ import {
   Subject,
   Subject as SubjectModel,
 } from '../../../core/models/subject.model';
-import { Teacher } from '../../../core/models/teacher.model';
 import { User } from '../../../core/models/user.model';
 import { SubjectsFilterComponent } from '../subjets-filter/subjets-filter';
 
@@ -86,25 +85,21 @@ export class SubjectTableComponent implements OnInit {
 
   ngOnInit() {
     // 1) Primero traemos las materias
-    this.api.getAll<Subject>('subjects').subscribe((subjects) => {
+    this.api.getAll<Subject>('subjects/read').subscribe((subjects) => {
       this.subjects.set(subjects);
     });
 
-    // 2) Luego traemos los teachers
-    this.api.getAll<Teacher>('teachers').subscribe((teachers) => {
-      const teacherIds: string[] = teachers.map((t) => t.userId);
-      // 3) Finalmente traemos los usuarios
-      this.api.getAll<User>('users').subscribe((users) => {
-        // 4) Filtramos y seteamos la lista de profesores
-        const list = users
-          .filter((u) => teacherIds.includes(u.id))
-          .map((u) => ({
-            id: u.id,
-            name: `${u.name} ${u.lastName}`,
-            email: u.email,
-          }));
-        this.teachers.set(list);
-      });
+    // 2) Traemos todos los usuarios y filtramos solo los profesores
+    this.api.getAll<User>('users').subscribe((users) => {
+      // Filtramos usuarios que tienen roleId de Profesor (ID 3)
+      const list = users
+        .filter((u) => u.roleId === 3) // Asumiendo que Profesor tiene ID 3
+        .map((u) => ({
+          id: u.id,
+          name: `${u.name} ${u.lastName}`,
+          email: u.email,
+        }));
+      this.teachers.set(list);
     });
   }
 

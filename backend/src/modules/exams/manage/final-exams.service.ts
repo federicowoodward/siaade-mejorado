@@ -15,12 +15,14 @@ export class FinalExamsService {
     return this.finalExamsRepository.save(exam);  // Guardar el examen en la base de datos
   }
 
-  async update(id: string, examData: FinalExam): Promise<FinalExam> {
+  async update(id: number, examData: FinalExam): Promise<FinalExam | null> {
     await this.finalExamsRepository.update(id, examData);  // Actualizar el examen en la base de datos
-    return this.finalExamsRepository.findOne(id);  // Devolver el examen actualizado
+    return this.finalExamsRepository.findOne({
+      where: { id }
+    });  // Devolver el examen actualizado
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.finalExamsRepository.delete(id);  // Eliminar el examen
   }
 }

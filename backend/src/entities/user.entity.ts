@@ -1,20 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Role } from './role.entity';  // Si estás utilizando roles como una relación
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import { Role } from './role.entity';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
-  @Column()
+  @Column({ name: 'last_name', nullable: true })
+  lastName: string;
+
+  @Column({ unique: true, nullable: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
+  @Column({ unique: true, nullable: true })
+  cuil: string;
+
+  @Column({ name: 'role_id' })
+  roleId: number;
+
   @ManyToOne(() => Role, role => role.users)
-  role: Role;  // Relación con la entidad Role
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
 }

@@ -1,13 +1,41 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from './user.entity';
 
-@Entity()
+@Entity('subjects')
 export class Subject {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
-  name: string;  // Nombre de la materia
+  @Column({ name: 'subject_name', nullable: true })
+  subjectName: string;
 
-  @Column()
-  description: string;  // Descripción de la materia
+  @Column({ type: 'uuid' })
+  teacher: string;
+
+  @Column({ type: 'uuid' })
+  preceptor: string;
+
+  @Column({ name: 'course_num', nullable: true })
+  courseNum: number;
+
+  @Column({ name: 'course_letter', nullable: true })
+  courseLetter: string;
+
+  @Column({ name: 'course_year', nullable: true })
+  courseYear: string;
+
+  @Column({ nullable: true })
+  correlative: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'teacher' })
+  teacherUser: User;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'preceptor' })
+  preceptorUser: User;
+
+  @ManyToOne(() => Subject)
+  @JoinColumn({ name: 'correlative' })
+  correlativeSubject: Subject;
 }

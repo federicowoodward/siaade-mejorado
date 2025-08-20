@@ -11,14 +11,14 @@ export class SubjectsController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'ADMIN_GENERAL')
-  async getSubjectInfo(@Param('id') id: string): Promise<Subject> {
-    return this.subjectsService.getSubjectInfo(id);
+  @Roles('Preceptor', 'Administrador', 'Secretario', 'Profesor')
+  async getSubjectInfo(@Param('id') id: string): Promise<Subject | null> {
+    return this.subjectsService.getSubjectInfo(parseInt(id));
   }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'ADMIN_GENERAL')
+  @Roles('Preceptor', 'Administrador', 'Secretario', 'Profesor')
   async getAllSubjects(): Promise<Subject[]> {
     return this.subjectsService.getAllSubjects();
   }

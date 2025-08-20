@@ -1,24 +1,65 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './create-role.dto';
-import { Role } from './role.entity';
 
+@ApiTags('Roles')
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
-  @Post('create')
-  async createRole(@Body() createRoleDto: CreateRoleDto): Promise<Role> {
-    return this.rolesService.createRole(createRoleDto);  // Crear un nuevo rol
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create new role' })
+  @ApiResponse({ status: 201, description: 'Role created successfully' })
+  async createRole(@Body() createRoleDto: CreateRoleDto) {
+    try {
+      const role = await this.rolesService.createRole(createRoleDto);
+      return {
+        data: role,
+        message: 'Role created successfully'
+      };
+    } catch (error: any) {
+      return {
+        error: error?.message || 'Unknown error',
+        message: 'Failed to create role'
+      };
+    }
   }
 
   @Get()
-  async getRoles(): Promise<Role[]> {
-    return this.rolesService.getRoles();  // Obtener todos los roles
+  @ApiOperation({ summary: 'Get all roles' })
+  @ApiResponse({ status: 200, description: 'Roles retrieved successfully' })
+  async getRoles() {
+    try {
+      const roles = await this.rolesService.getRoles();
+      return {
+        data: roles,
+        message: 'Roles retrieved successfully'
+      };
+    } catch (error: any) {
+      return {
+        error: error?.message || 'Unknown error',
+        message: 'Failed to retrieve roles'
+      };
+    }
   }
 
   @Get(':id')
-  async getRoleById(@Param('id') id: string): Promise<Role> {
-    return this.rolesService.getRoleById(id);  // Obtener un rol por su ID
+  @ApiOperation({ summary: 'Get role by ID' })
+  @ApiResponse({ status: 200, description: 'Role retrieved successfully' })
+  async getRoleById(@Param('id') id: string) {
+    try {
+      const role = await this.rolesService.getRoleById(parseInt(id));
+      return {
+        data: role,
+        message: 'Role retrieved successfully'
+      };
+    } catch (error: any) {
+      return {
+        error: error?.message || 'Unknown error',
+        message: 'Failed to retrieve role'
+      };
+    }
   }
 }

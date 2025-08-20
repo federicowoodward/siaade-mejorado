@@ -17,7 +17,8 @@
         <ng-template pTemplate="header">
             <tr>
                 <th>Alumno</th>
-                <th style="width: 12rem">Inscripción</th>
+                <th style="width: 5rem">Inscripto</th>
+                <th style="width: 10rem">Fecha insc.</th>
                 <th style="width: 10rem">Nota</th>
                 <th>Observaciones</th>
             </tr>
@@ -26,22 +27,18 @@
         <ng-template pTemplate="body" let-row>
             <tr>
                 <td class="font-medium">{{ row.name }}</td>
-
-                <!-- Solo lectura: fecha o "No inscripto" -->
-                <td>
-                    {{ displayEnrollment(row) }}
+                <td class="text-center">
+                    <p-checkbox binary="true" [(ngModel)]="row.enrolled"></p-checkbox>
                 </td>
-
                 <td>
-                    <!-- si también es solo lectura, mostrala como texto -->
-                    <!-- {{ row.score ?? '—' }} -->
-                    <!-- si mantenés edición de nota, dejá tu input -->
+                    <input type="date" class="w-full p-inputtext p-component" [(ngModel)]="row.enrolled_at"
+                        [disabled]="!row.enrolled" />
+                </td>
+                <td>
                     <p-inputNumber [min]="0" [max]="10" [step]="0.5" [useGrouping]="false" mode="decimal"
                         [(ngModel)]="row.score" inputStyleClass="w-7rem"></p-inputNumber>
                 </td>
-
                 <td>
-                    <!-- idem para observaciones: texto o input según tu caso -->
                     <input pInputText class="w-full" [(ngModel)]="row.notes" placeholder="Notas del acta (opcional)" />
                 </td>
             </tr>

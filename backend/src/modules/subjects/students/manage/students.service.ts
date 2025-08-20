@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Student } from '../../../entities/student.entity';  // Asegúrate de tener la entidad Student
+import { Student } from '../../../../entities/student.entity';  // Asegúrate de tener la entidad Student
 
 @Injectable()
 export class StudentsService {
@@ -15,9 +15,11 @@ export class StudentsService {
     return this.studentsRepository.save(student);  // Inscribir al estudiante
   }
 
-  async update(id: string, studentData: Student): Promise<Student> {
-    await this.studentsRepository.update(id, studentData);
-    return this.studentsRepository.findOne(id);  // Actualizar el estudiante
+  async update(id: string, studentData: Student): Promise<Student | null> {
+    await this.studentsRepository.update(id, studentData);  // Actualizar el estudiante
+    return this.studentsRepository.findOne({
+      where: { userId: id }
+    });  // Actualizar el estudiante
   }
 
   async unenroll(id: string): Promise<void> {

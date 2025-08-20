@@ -1,10 +1,10 @@
-import { Controller, Post, Body, Put, Param, Delete, UseGuards } from '@nestjs/common';
-import { StudentsService } from './students.service';
-import { Student } from '../../../entities/student.entity';  // Asegúrate de tener la entidad Student
-import { RolesGuard } from '../../auth/roles.guard';  // Importa el RolesGuard
-import { Roles } from '../../auth/roles.decorator';  // Importa el decorador para roles
-import { HierarchyGuard } from '../../auth/hierarchy.guard';  // Importa el HierarchyGuard
-import { JwtAuthGuard } from '../../auth/jwt.guard';  // Importa el AuthGuard
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { StudentsService } from './students.service';  // Importa el servicio de estudiantes
+import { Student } from '../../../../entities/student.entity';  // Asegúrate de tener la entidad Student
+import { RolesGuard } from '../../../auth/roles.guard';  // Importa el RolesGuard
+import { Roles } from '../../../auth/roles.decorator';  // Importa el decorador para roles
+import { HierarchyGuard } from '../../../auth/hierarchy.guard';  // Importa el HierarchyGuard
+import { JwtAuthGuard } from '../../../auth/jwt.guard';  // Importa el AuthGuard
 
 @Controller('subjects/students/manage')  // Ruta para gestionar estudiantes
 export class StudentsController {
@@ -20,7 +20,7 @@ export class StudentsController {
   @Put('update/:id')
   @UseGuards(JwtAuthGuard, RolesGuard, HierarchyGuard)  // Aplica los guards
   @Roles('ADMIN_GENERAL', 'SECRETARIO')  // Solo los usuarios con estos roles pueden actualizar estudiantes
-  async updateStudent(@Param('id') id: string, @Body() studentData: Student): Promise<Student> {
+  async updateStudent(@Param('id') id: string, @Body() studentData: Student): Promise<Student | null> {
     return this.studentsService.update(id, studentData);  // Actualizar los datos de un estudiante
   }
 

@@ -10,8 +10,11 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async getUserInfo(id: string): Promise<User> {
-    return this.usersRepository.findOne(id);  // Buscar un usuario por ID
+  async getUserInfo(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { id },
+      relations: ['role']
+    });  // Buscar un usuario por ID
   }
 
   async getAllUsers(): Promise<User[]> {

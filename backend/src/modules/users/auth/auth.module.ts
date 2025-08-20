@@ -1,14 +1,23 @@
-// src/modules/users/auth/auth.module.ts
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';  // Necesario para la gestión de JWT
-import { AuthService } from './auth.service';  // Importa el servicio de autenticación
-import { SignInController } from './sign-in.controller';  // Importa el controlador de sign-in
-import { ResetPasswordController } from './reset-password.controller';  // Importa el controlador de reset-password
-import { JwtStrategy } from './jwt.strategy';  // Estrategia para verificar el JWT (si la necesitas)
+import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PassportModule } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { User } from '../../../entities/user.entity';
+import { Role } from '../../../entities/role.entity';
 
 @Module({
-  imports: [JwtModule.register({ secret: 'SECRET_KEY', signOptions: { expiresIn: '60m' } })],  // Configura el JWT
-  providers: [AuthService, JwtStrategy],  // Servicios y estrategias necesarias
-  controllers: [SignInController, ResetPasswordController],  // Controladores para la autenticación
+  imports: [
+    TypeOrmModule.forFeature([User, Role]),
+    PassportModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'siaade-secret-key-2025',
+      signOptions: { expiresIn: '1h' },
+    }),
+  ],
+  providers: [AuthService],
+  controllers: [AuthController],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

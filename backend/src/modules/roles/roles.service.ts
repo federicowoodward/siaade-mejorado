@@ -1,31 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Role } from './role.entity';  // Asegúrate de que la entidad Role esté definida
+import { Role } from '../../entities/role.entity';
 import { CreateRoleDto } from './create-role.dto';
 
 @Injectable()
 export class RolesService {
   constructor(
     @InjectRepository(Role)
-    private rolesRepository: Repository<Role>,  // Usamos el repositorio de TypeORM para interactuar con la base de datos
+    private rolesRepository: Repository<Role>,
   ) {}
 
   async createRole(createRoleDto: CreateRoleDto): Promise<Role> {
-    const role = this.rolesRepository.create(createRoleDto);  // Crear un nuevo rol
-    return this.rolesRepository.save(role);  // Guardar el rol en la base de datos
+    const role = this.rolesRepository.create(createRoleDto);
+    return this.rolesRepository.save(role);
   }
 
   async getRoles(): Promise<Role[]> {
-    return this.rolesRepository.find();  // Obtener todos los roles
+    return this.rolesRepository.find();
   }
 
-  async getRoleById(id: string): Promise<Role> {
-    return this.rolesRepository.findOne(id);  // Obtener un rol por su ID
+  async getRoleById(id: number): Promise<Role> {
+    const role = await this.rolesRepository.findOne({ where: { id } });
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+    return role;
   }
 
-  async assignRoleToUser(userId: string, roleId: string): Promise<void> {
-    // Aquí iría la lógica para asignar un rol a un usuario. 
-    // Esto puede implicar actualizar la tabla de usuarios para agregar un campo `role_id` o una relación.
+  async updateRole(id: number, updateData: Partial<CreateRoleDto>): Promise<Role> {
+    const role = await this.getRoleById(id);
+    await this.rolesRepository.update(id, updateData);
+    const updatedRole = await this.rolesRepository.findOne({ where: { id } });
+    if (!updatedRole) {
+      throw new NotFoundException('Role not found after update');
+    }
+    return updatedRole;
+  }
+
+  async deleteRole(id: number): Promise<void> {
+    const role = await this.getRoleById(id);
+    await this.rolesRepository.delete(id);
   }
 }

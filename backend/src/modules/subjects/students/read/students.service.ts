@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Student } from '../../../entities/student.entity';  // Asegúrate de tener la entidad Student
+import { Student } from '../../../../entities/student.entity';  // Asegúrate de tener la entidad Student
 
 @Injectable()
 export class StudentsService {
@@ -10,8 +10,10 @@ export class StudentsService {
     private studentsRepository: Repository<Student>,
   ) {}
 
-  async getStudentInfo(id: string): Promise<Student> {
-    return this.studentsRepository.findOne(id);  // Buscar un estudiante por su ID
+  async getStudentInfo(id: string): Promise<Student | null> {
+    return this.studentsRepository.findOne({
+      where: { userId: id }
+    });  // Buscar un estudiante por su ID
   }
 
   async getAllStudents(): Promise<Student[]> {

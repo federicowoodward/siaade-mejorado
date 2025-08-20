@@ -12,8 +12,8 @@ export class FinalExamsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_GENERAL', 'PRECEPTOR')  // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'PRECEPTOR' consultar exámenes
-  async getExamInfo(@Param('id') id: string): Promise<FinalExam> {
-    return this.finalExamsService.getExamInfo(id);  // Consultar un examen por ID
+  async getExamInfo(@Param('id') id: string): Promise<FinalExam | null> {
+    return this.finalExamsService.getExamInfo(parseInt(id));  // Consultar un examen por ID
   }
 
   @Get()
