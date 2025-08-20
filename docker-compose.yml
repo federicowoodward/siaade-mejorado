@@ -1,0 +1,11 @@
+# Docker base para generar instancia de DB. 
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: dbsiaade2
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Joeldatabase*
+    ports:
+      - "5433:5432"
