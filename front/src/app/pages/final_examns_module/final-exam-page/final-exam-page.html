@@ -1,0 +1,52 @@
+<div class="m-w-custom">
+    <div class="flex justify-content-between align-items-center mb-3">
+        <h2 class="m-0">
+            Examen • {{ exam()?.subject_name || 'Materia' }}
+            <small class="text-color-secondary block">
+                Fecha: {{ exam()?.exam_date }} • Aula: {{ exam()?.aula || '—' }}
+            </small>
+        </h2>
+        <div class="flex gap-2">
+            <p-button label="Volver a la mesa" icon="pi pi-arrow-left" severity="secondary"
+                (onClick)="back()"></p-button>
+        </div>
+    </div>
+
+    <p-table [value]="rows()" responsiveLayout="scroll" [paginator]="true" [rows]="10"
+        [tableStyle]="{ 'min-width': '60rem' }">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Alumno</th>
+                <th style="width: 5rem">Inscripto</th>
+                <th style="width: 10rem">Fecha insc.</th>
+                <th style="width: 10rem">Nota</th>
+                <th>Observaciones</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+            <tr>
+                <td class="font-medium">{{ row.name }}</td>
+                <td class="text-center">
+                    <p-checkbox binary="true" [(ngModel)]="row.enrolled"></p-checkbox>
+                </td>
+                <td>
+                    <input type="date" class="w-full p-inputtext p-component" [(ngModel)]="row.enrolled_at"
+                        [disabled]="!row.enrolled" />
+                </td>
+                <td>
+                    <p-inputNumber [min]="0" [max]="10" [step]="0.5" [useGrouping]="false" mode="decimal"
+                        [(ngModel)]="row.score" inputStyleClass="w-7rem"></p-inputNumber>
+                </td>
+                <td>
+                    <input pInputText class="w-full" [(ngModel)]="row.notes" placeholder="Notas del acta (opcional)" />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <div class="flex justify-end mt-3">
+        <p-button label="Guardar cambios" icon="pi pi-check" [disabled]="true"
+            pTooltip="MVP: sin persistencia"></p-button>
+    </div>
+</div>

@@ -1,0 +1,31 @@
+<div class="h-screen flex flex-column">
+  <!-- Header fijo -->
+  <app-navbar></app-navbar>
+
+  <!-- Contenedor principal (sidebar + contenido) -->
+  <div class="flex flex-1 min-h-0">
+    <!-- Sidebar fijo -->
+    <aside
+      class="min-w-17rem max-w-17rem h-full hidden lg:block shrink-0"
+      *ngIf="authService.isLoggedIn()"
+    >
+      <app-menu-component></app-menu-component>
+    </aside>
+
+    <!-- Sidebar Drawer (móvil) -->
+    <p-drawer
+      [(visible)]="sidebarVisible"
+      header="Menu"
+      position="left"
+      [modal]="true"
+      closable="false"
+    >
+      <app-menu-component></app-menu-component>
+    </p-drawer>
+
+    <!-- Main scrollable -->
+    <main class="flex-1 p-3 overflow-auto bg-indigo-50 min-h-0 relative">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

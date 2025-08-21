@@ -1,0 +1,21 @@
+.exam-common {
+  background-color: var(--p-cyan-200); /* Azul de PrimeNG */
+}
+
+.exam-recovery {
+  background-color: var(--p-cyan-300); /* Naranja de PrimeNG */
+}
+
+/* Opcional: Estilo para la barra dentro del modal */
+.exam-type-selector {
+margin-bottom: 15px;
+}
+.exam-practical {
+  background-color: var(--p-cyan-300); /* Verde de PrimeNG */
+    border: none
+    
+}
+
+.nota-header {
+  background-color: var(--p-cyan-300); /* Variable de PrimeNG para un azul muy claro */
+}
