@@ -1,0 +1,56 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FinalExamsService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const final_exam_entity_1 = require("../../../entities/final-exam.entity");
+let FinalExamsService = class FinalExamsService {
+    constructor(finalExamsRepository) {
+        this.finalExamsRepository = finalExamsRepository;
+    }
+    async create(examData) {
+        const exam = this.finalExamsRepository.create(examData); // Crear el examen
+        return this.finalExamsRepository.save(exam); // Guardar el examen en la base de datos
+    }
+    async update(id, examData) {
+        await this.finalExamsRepository.update(id, examData); // Actualizar el examen en la base de datos
+        return this.finalExamsRepository.findOne({
+            where: { id }
+        }); // Devolver el examen actualizado
+    }
+    async delete(id) {
+        await this.finalExamsRepository.delete(id); // Eliminar el examen
+    }
+    // Métodos para el controlador de lectura
+    async getExamInfo(id) {
+        return this.finalExamsRepository.findOne({
+            where: { id },
+            relations: ['subject']
+        });
+    }
+    async getAllExams() {
+        return this.finalExamsRepository.find({
+            relations: ['subject']
+        });
+    }
+};
+exports.FinalExamsService = FinalExamsService;
+exports.FinalExamsService = FinalExamsService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(final_exam_entity_1.FinalExam)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
+], FinalExamsService);
+//# sourceMappingURL=final-exams.service.js.map
