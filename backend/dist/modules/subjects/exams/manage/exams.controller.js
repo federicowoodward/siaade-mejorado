@@ -14,12 +14,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExamsController = void 0;
 const common_1 = require("@nestjs/common");
-const exams_service_1 = require("./exams.service"); // Importa el servicio de exámenes
-const exam_entity_1 = require("../../../../entities/exam.entity"); // Asegúrate de tener la entidad Exam
-const roles_guard_1 = require("../../../auth/roles.guard"); // Importa el RolesGuard
-const roles_decorator_1 = require("../../../auth/roles.decorator"); // Importa el decorador para roles
-const hierarchy_guard_1 = require("../../../auth/hierarchy.guard"); // Importa el HierarchyGuard
-const jwt_guard_1 = require("../../../auth/jwt.guard"); // Importa el AuthGuard
+const exams_service_1 = require("./exams.service"); // Servicio de exámenes
+const exam_entity_1 = require("../../../../entities/exam.entity"); // Entidad de examen
+const roles_guard_1 = require("../../../../guards/roles.guard");
+const roles_decorator_1 = require("../../../users/auth/roles.decorator");
+const hierarchy_guard_1 = require("../../../../guards/hierarchy.guard");
+const jwt_auth_guard_1 = require("../../../../guards/jwt-auth.guard");
 let ExamsController = class ExamsController {
     constructor(examsService) {
         this.examsService = examsService;
@@ -37,7 +37,7 @@ let ExamsController = class ExamsController {
 exports.ExamsController = ExamsController;
 __decorate([
     (0, common_1.Post)('create'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Protege la ruta con los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Protege la ruta con los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Solo los usuarios con rol 'ADMIN_GENERAL' o 'SECRETARIO' pueden crear exámenes
     ,
@@ -48,7 +48,7 @@ __decorate([
 ], ExamsController.prototype, "createExam", null);
 __decorate([
     (0, common_1.Put)('update/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Protege la ruta con los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Protege la ruta con los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Solo los usuarios con rol 'ADMIN_GENERAL' o 'SECRETARIO' pueden editar exámenes
     ,
@@ -60,7 +60,7 @@ __decorate([
 ], ExamsController.prototype, "updateExam", null);
 __decorate([
     (0, common_1.Delete)('delete/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Protege la ruta con los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Protege la ruta con los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Solo los usuarios con rol 'ADMIN_GENERAL' o 'SECRETARIO' pueden eliminar exámenes
     ,

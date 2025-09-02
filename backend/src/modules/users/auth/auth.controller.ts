@@ -1,10 +1,13 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto } from './login.dto';
+import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Public } from '../../../shared/decorators/public.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
+@Public() // Marcar todo el controlador como público
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -26,6 +29,15 @@ export class AuthController {
         message: 'Login failed'
       };
     }
+  }
+
+  @Post('sign-in')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Alternative login endpoint' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async signIn(@Body() loginDto: LoginDto) {
+    return this.login(loginDto);
   }
 
   @Post('logout')
@@ -54,6 +66,25 @@ export class AuthController {
       return {
         error: error?.message || 'Unknown error',
         message: 'Token refresh failed'
+      };
+    }
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    try {
+      const result = await this.authService.resetPassword(resetPasswordDto);
+      return {
+        data: result,
+        message: 'Password reset instructions sent'
+      };
+    } catch (error: any) {
+      return {
+        error: error?.message || 'Unknown error',
+        message: 'Password reset failed'
       };
     }
   }

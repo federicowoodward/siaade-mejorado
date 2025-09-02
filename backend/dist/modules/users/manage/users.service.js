@@ -160,6 +160,13 @@ let UsersService = class UsersService {
             throw new common_1.BadRequestException('Error al validar usuario: ' + error.message);
         }
     }
+    // Métodos para el controlador de lectura
+    async getUserInfo(id) {
+        return this.findById(id);
+    }
+    async getAllUsers() {
+        return this.findAll();
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

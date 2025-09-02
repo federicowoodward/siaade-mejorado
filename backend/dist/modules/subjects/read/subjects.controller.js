@@ -14,10 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubjectsController = void 0;
 const common_1 = require("@nestjs/common");
-const subjects_service_1 = require("./subjects.service");
-const roles_guard_1 = require("../../auth/roles.guard"); // Asegúrate de importar el RolesGuard
-const roles_decorator_1 = require("../../auth/roles.decorator"); // Importa el decorador para roles
-const jwt_guard_1 = require("../../auth/jwt.guard"); // Importa el AuthGuard
+const subjects_service_1 = require("../manage/subjects.service"); // Importa el servicio de materias
+const roles_guard_1 = require("../../../guards/roles.guard");
+const roles_decorator_1 = require("../../users/auth/roles.decorator"); // Importa el decorador para roles
+const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");
 let SubjectsController = class SubjectsController {
     constructor(subjectsService) {
         this.subjectsService = subjectsService;
@@ -32,8 +32,8 @@ let SubjectsController = class SubjectsController {
 exports.SubjectsController = SubjectsController;
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('PRECEPTOR', 'ADMIN_GENERAL'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('Preceptor', 'Administrador', 'Secretario', 'Profesor'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -41,8 +41,8 @@ __decorate([
 ], SubjectsController.prototype, "getSubjectInfo", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('PRECEPTOR', 'ADMIN_GENERAL'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('Preceptor', 'Administrador', 'Secretario', 'Profesor'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

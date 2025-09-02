@@ -1,9 +1,9 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { SubjectsService } from './subjects.service';
-import { Subject } from '../../../entities/subject.entity';  // Asegúrate de tener la entidad Subject
-import { RolesGuard } from '../../auth/roles.guard';  // Asegúrate de importar el RolesGuard
-import { Roles } from '../../auth/roles.decorator';  // Importa el decorador para roles
-import { JwtAuthGuard } from '../../auth/jwt.guard';  // Importa el AuthGuard
+import { SubjectsService } from './subjects.service';  // Importa el servicio local de read
+import { Subject } from '../../../entities/subject.entity';  // Entidad de materia para el tipo de retorno
+import { RolesGuard } from '../../../guards/roles.guard';
+import { Roles } from '../../users/auth/roles.decorator';  // Importa el decorador para roles
+import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
 
 @Controller('subjects/read')
 export class SubjectsController {

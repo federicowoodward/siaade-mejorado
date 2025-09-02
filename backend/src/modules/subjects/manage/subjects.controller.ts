@@ -1,11 +1,11 @@
 import { Controller, Post, Body, Put, Param, Delete, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
 import { Subject } from '../../../entities/subject.entity';  // Asegúrate de tener la entidad Subject
-import { CreateSubjectDto } from './create-subject.dto';
-import { RolesGuard } from '../../auth/roles.guard';  // Asegúrate de importar el RolesGuard
-import { Roles } from '../../auth/roles.decorator';  // Importa el decorador para roles
-import { HierarchyGuard } from '../../auth/hierarchy.guard';  // Importa el HierarchyGuard
-import { JwtAuthGuard } from '../../auth/jwt.guard';  // Importa el AuthGuard
+import { CreateSubjectDto } from '../dto/create-subject.dto';
+import { RolesGuard } from '../../../guards/roles.guard';
+import { Roles } from '../../users/auth/roles.decorator';  // Importa el decorador para roles
+import { HierarchyGuard } from '../../../guards/hierarchy.guard';
+import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
 
 @Controller('subjects/manage')
 export class SubjectsController {

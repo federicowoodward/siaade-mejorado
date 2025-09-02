@@ -25,4 +25,18 @@ export class SubjectsService {
   async delete(id: number): Promise<void> {
     await this.subjectsRepository.delete(id);  // Eliminar la materia
   }
+
+  // Métodos para el controlador de lectura
+  async getSubjectInfo(id: number): Promise<Subject | null> {
+    return this.subjectsRepository.findOne({
+      where: { id },
+      relations: ['teacher', 'preceptor']
+    });
+  }
+
+  async getAllSubjects(): Promise<Subject[]> {
+    return this.subjectsRepository.find({
+      relations: ['teacher', 'preceptor']
+    });
+  }
 }

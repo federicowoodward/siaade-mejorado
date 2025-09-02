@@ -14,12 +14,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FinalExamsController = void 0;
 const common_1 = require("@nestjs/common");
-const final_exams_service_1 = require("./final-exams.service");
-const final_exam_entity_1 = require("../../../entities/final-exam.entity");
-const roles_guard_1 = require("../../auth/roles.guard"); // Importa el RolesGuard
-const roles_decorator_1 = require("../../auth/roles.decorator"); // Importa el decorador para roles
-const hierarchy_guard_1 = require("../../auth/hierarchy.guard"); // Importa el HierarchyGuard
-const jwt_guard_1 = require("../../auth/jwt.guard"); // Importa el AuthGuard
+const final_exams_service_1 = require("./final-exams.service"); // Servicio de exámenes finales
+const final_exam_entity_1 = require("../../../entities/final-exam.entity"); // Entidad de examen final
+const roles_guard_1 = require("../../../guards/roles.guard");
+const roles_decorator_1 = require("../../users/auth/roles.decorator");
+const hierarchy_guard_1 = require("../../../guards/hierarchy.guard");
+const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");
 let FinalExamsController = class FinalExamsController {
     constructor(finalExamsService) {
         this.finalExamsService = finalExamsService;
@@ -37,7 +37,7 @@ let FinalExamsController = class FinalExamsController {
 exports.FinalExamsController = FinalExamsController;
 __decorate([
     (0, common_1.Post)('create'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL') // Solo los usuarios con rol 'ADMIN_GENERAL' pueden crear exámenes
     ,
     __param(0, (0, common_1.Body)()),
@@ -47,7 +47,7 @@ __decorate([
 ], FinalExamsController.prototype, "createExam", null);
 __decorate([
     (0, common_1.Put)('update/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL') // Solo los usuarios con rol 'ADMIN_GENERAL' pueden actualizar exámenes
     ,
     __param(0, (0, common_1.Param)('id')),
@@ -58,7 +58,7 @@ __decorate([
 ], FinalExamsController.prototype, "updateExam", null);
 __decorate([
     (0, common_1.Delete)('delete/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL') // Solo los usuarios con rol 'ADMIN_GENERAL' pueden eliminar exámenes
     ,
     __param(0, (0, common_1.Param)('id')),

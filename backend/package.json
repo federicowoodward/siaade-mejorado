@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "@nestjs/common": "^11.1.5",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.5",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",

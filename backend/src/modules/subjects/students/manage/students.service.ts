@@ -25,4 +25,18 @@ export class StudentsService {
   async unenroll(id: string): Promise<void> {
     await this.studentsRepository.delete(id);  // Eliminar la inscripción del estudiante
   }
+
+  // Métodos para el controlador de lectura
+  async getStudentInfo(id: string): Promise<Student | null> {
+    return this.studentsRepository.findOne({
+      where: { userId: id },
+      relations: ['user']
+    });
+  }
+
+  async getAllStudents(): Promise<Student[]> {
+    return this.studentsRepository.find({
+      relations: ['user']
+    });
+  }
 }

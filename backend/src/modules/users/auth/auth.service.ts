@@ -3,7 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { LoginDto } from './login.dto';
+import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User } from '../../../entities/user.entity';
 import { Role } from '../../../entities/role.entity';
 
@@ -95,5 +96,22 @@ export class AuthService {
       where: { id: userId },
       relations: ['role'],
     });
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: resetPasswordDto.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Aquí implementarías la lógica para enviar email de reset
+    // Por ahora solo retornamos un mensaje
+    return {
+      message: 'Password reset instructions sent to your email',
+      email: resetPasswordDto.email,
+    };
   }
 }

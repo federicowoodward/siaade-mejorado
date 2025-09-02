@@ -34,6 +34,18 @@ let FinalExamsService = class FinalExamsService {
     async delete(id) {
         await this.finalExamsRepository.delete(id); // Eliminar el examen
     }
+    // Métodos para el controlador de lectura
+    async getExamInfo(id) {
+        return this.finalExamsRepository.findOne({
+            where: { id },
+            relations: ['subject']
+        });
+    }
+    async getAllExams() {
+        return this.finalExamsRepository.find({
+            relations: ['subject']
+        });
+    }
 };
 exports.FinalExamsService = FinalExamsService;
 exports.FinalExamsService = FinalExamsService = __decorate([

@@ -16,10 +16,11 @@ exports.SubjectsController = void 0;
 const common_1 = require("@nestjs/common");
 const subjects_service_1 = require("./subjects.service");
 const subject_entity_1 = require("../../../entities/subject.entity"); // Asegúrate de tener la entidad Subject
-const roles_guard_1 = require("../../auth/roles.guard"); // Asegúrate de importar el RolesGuard
-const roles_decorator_1 = require("../../auth/roles.decorator"); // Importa el decorador para roles
-const hierarchy_guard_1 = require("../../auth/hierarchy.guard"); // Importa el HierarchyGuard
-const jwt_guard_1 = require("../../auth/jwt.guard"); // Importa el AuthGuard
+const create_subject_dto_1 = require("../dto/create-subject.dto");
+const roles_guard_1 = require("../../../guards/roles.guard");
+const roles_decorator_1 = require("../../users/auth/roles.decorator"); // Importa el decorador para roles
+const hierarchy_guard_1 = require("../../../guards/hierarchy.guard");
+const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");
 let SubjectsController = class SubjectsController {
     constructor(subjectsService) {
         this.subjectsService = subjectsService;
@@ -37,16 +38,16 @@ let SubjectsController = class SubjectsController {
 exports.SubjectsController = SubjectsController;
 __decorate([
     (0, common_1.Post)('create'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('Administrador', 'Secretario'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [subject_entity_1.Subject]),
+    __metadata("design:paramtypes", [create_subject_dto_1.CreateSubjectDto]),
     __metadata("design:returntype", Promise)
 ], SubjectsController.prototype, "createSubject", null);
 __decorate([
     (0, common_1.Put)('update/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
     (0, roles_decorator_1.Roles)('Administrador', 'Secretario'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -56,7 +57,7 @@ __decorate([
 ], SubjectsController.prototype, "updateSubject", null);
 __decorate([
     (0, common_1.Delete)('delete/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('Administrador', 'Secretario'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

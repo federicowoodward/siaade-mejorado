@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { ExamsService } from './exams.service';  // Importa el servicio de exámenes
-import { Exam } from '../../../../entities/exam.entity';  // Asegúrate de tener la entidad Exam
-import { RolesGuard } from '../../../auth/roles.guard';  // Importa el RolesGuard
-import { Roles } from '../../../auth/roles.decorator';  // Importa el decorador para roles
-import { HierarchyGuard } from '../../../auth/hierarchy.guard';  // Importa el HierarchyGuard
-import { JwtAuthGuard } from '../../../auth/jwt.guard';  // Importa el AuthGuard
+import { ExamsService } from './exams.service';  // Servicio de exámenes
+import { Exam } from '../../../../entities/exam.entity';  // Entidad de examen
+import { RolesGuard } from '../../../../guards/roles.guard';
+import { Roles } from '../../../users/auth/roles.decorator';
+import { HierarchyGuard } from '../../../../guards/hierarchy.guard';
+import { JwtAuthGuard } from '../../../../guards/jwt-auth.guard';
 
 @Controller('subjects/exams/manage')
 export class ExamsController {

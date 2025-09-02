@@ -34,6 +34,18 @@ let StudentsService = class StudentsService {
     async unenroll(id) {
         await this.studentsRepository.delete(id); // Eliminar la inscripción del estudiante
     }
+    // Métodos para el controlador de lectura
+    async getStudentInfo(id) {
+        return this.studentsRepository.findOne({
+            where: { userId: id },
+            relations: ['user']
+        });
+    }
+    async getAllStudents() {
+        return this.studentsRepository.find({
+            relations: ['user']
+        });
+    }
 };
 exports.StudentsService = StudentsService;
 exports.StudentsService = StudentsService = __decorate([

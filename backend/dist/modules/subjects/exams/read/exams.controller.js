@@ -14,10 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExamsController = void 0;
 const common_1 = require("@nestjs/common");
-const exams_service_1 = require("./exams.service");
-const roles_guard_1 = require("../../../auth/roles.guard"); // Importa el RolesGuard
-const roles_decorator_1 = require("../../../auth/roles.decorator"); // Importa el decorador para roles
-const jwt_guard_1 = require("../../../auth/jwt.guard"); // Importa el AuthGuard
+const exams_service_1 = require("../manage/exams.service"); // Servicio de exámenes
+const roles_guard_1 = require("../../../../guards/roles.guard");
+const roles_decorator_1 = require("../../../users/auth/roles.decorator");
+const jwt_auth_guard_1 = require("../../../../guards/jwt-auth.guard");
 let ExamsController = class ExamsController {
     constructor(examsService) {
         this.examsService = examsService;
@@ -32,7 +32,7 @@ let ExamsController = class ExamsController {
 exports.ExamsController = ExamsController;
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los roles ADMIN_GENERAL y PRECEPTOR acceder
     ,
     __param(0, (0, common_1.Param)('id')),
@@ -42,7 +42,7 @@ __decorate([
 ], ExamsController.prototype, "getExamInfo", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los roles ADMIN_GENERAL y PRECEPTOR acceder
     ,
     __metadata("design:type", Function),

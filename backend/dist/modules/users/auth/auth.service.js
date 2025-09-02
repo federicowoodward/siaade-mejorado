@@ -128,6 +128,20 @@ let AuthService = class AuthService {
             relations: ['role'],
         });
     }
+    async resetPassword(resetPasswordDto) {
+        const user = await this.userRepository.findOne({
+            where: { email: resetPasswordDto.email },
+        });
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        // Aquí implementarías la lógica para enviar email de reset
+        // Por ahora solo retornamos un mensaje
+        return {
+            message: 'Password reset instructions sent to your email',
+            email: resetPasswordDto.email,
+        };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

@@ -1,10 +1,10 @@
 import { Controller, Post, Body, Put, Param, Delete, UseGuards } from '@nestjs/common';
-import { FinalExamsService } from './final-exams.service';
-import { FinalExam } from '../../../entities/final-exam.entity';
-import { RolesGuard } from '../../auth/roles.guard';  // Importa el RolesGuard
-import { Roles } from '../../auth/roles.decorator';  // Importa el decorador para roles
-import { HierarchyGuard } from '../../auth/hierarchy.guard';  // Importa el HierarchyGuard
-import { JwtAuthGuard } from '../../auth/jwt.guard';  // Importa el AuthGuard
+import { FinalExamsService } from './final-exams.service';  // Servicio de exámenes finales
+import { FinalExam } from '../../../entities/final-exam.entity';  // Entidad de examen final
+import { RolesGuard } from '../../../guards/roles.guard';
+import { Roles } from '../../users/auth/roles.decorator';
+import { HierarchyGuard } from '../../../guards/hierarchy.guard';
+import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
 
 @Controller('exams/manage')
 export class FinalExamsController {

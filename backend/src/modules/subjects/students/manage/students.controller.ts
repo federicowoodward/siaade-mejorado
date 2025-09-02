@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { StudentsService } from './students.service';  // Importa el servicio de estudiantes
-import { Student } from '../../../../entities/student.entity';  // Asegúrate de tener la entidad Student
-import { RolesGuard } from '../../../auth/roles.guard';  // Importa el RolesGuard
-import { Roles } from '../../../auth/roles.decorator';  // Importa el decorador para roles
-import { HierarchyGuard } from '../../../auth/hierarchy.guard';  // Importa el HierarchyGuard
-import { JwtAuthGuard } from '../../../auth/jwt.guard';  // Importa el AuthGuard
+import { StudentsService } from './students.service';  // Importa el servicio
+import { Student } from '../../../../entities/student.entity';  // Entidad de estudiante
+import { RolesGuard } from '../../../../guards/roles.guard';
+import { Roles } from '../../../users/auth/roles.decorator';  // Decorador para roles
+import { HierarchyGuard } from '../../../../guards/hierarchy.guard';
+import { JwtAuthGuard } from '../../../../guards/jwt-auth.guard';
 
 @Controller('subjects/students/manage')  // Ruta para gestionar estudiantes
 export class StudentsController {

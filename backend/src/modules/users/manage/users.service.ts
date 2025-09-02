@@ -136,4 +136,13 @@ export class UsersService {
       throw new BadRequestException('Error al validar usuario: ' + error.message);
     }
   }
+
+  // Métodos para el controlador de lectura
+  async getUserInfo(id: string): Promise<UserResponseDto> {
+    return this.findById(id);
+  }
+
+  async getAllUsers(): Promise<UserResponseDto[]> {
+    return this.findAll();
+  }
 }

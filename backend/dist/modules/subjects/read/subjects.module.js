@@ -12,12 +12,16 @@ const subjects_service_1 = require("./subjects.service");
 const subjects_controller_1 = require("./subjects.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const subject_entity_1 = require("../../../entities/subject.entity");
+const auth_module_1 = require("../../users/auth/auth.module");
 let SubjectsReadModule = class SubjectsReadModule {
 };
 exports.SubjectsReadModule = SubjectsReadModule;
 exports.SubjectsReadModule = SubjectsReadModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([subject_entity_1.Subject])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([subject_entity_1.Subject]),
+            auth_module_1.AuthModule, // Importar AuthModule para usar JwtStrategy
+        ],
         controllers: [subjects_controller_1.SubjectsController],
         providers: [subjects_service_1.SubjectsService],
     })

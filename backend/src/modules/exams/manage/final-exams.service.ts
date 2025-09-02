@@ -25,4 +25,18 @@ export class FinalExamsService {
   async delete(id: number): Promise<void> {
     await this.finalExamsRepository.delete(id);  // Eliminar el examen
   }
+
+  // Métodos para el controlador de lectura
+  async getExamInfo(id: number): Promise<FinalExam | null> {
+    return this.finalExamsRepository.findOne({
+      where: { id },
+      relations: ['subject']
+    });
+  }
+
+  async getAllExams(): Promise<FinalExam[]> {
+    return this.finalExamsRepository.find({
+      relations: ['subject']
+    });
+  }
 }

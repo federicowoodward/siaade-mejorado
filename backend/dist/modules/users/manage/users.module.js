@@ -21,7 +21,7 @@ exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, role_entity_1.Role]),
-            auth_module_1.AuthModule,
+            (0, common_1.forwardRef)(() => auth_module_1.AuthModule),
         ],
         controllers: [users_controller_1.UsersController],
         providers: [users_service_1.UsersService],

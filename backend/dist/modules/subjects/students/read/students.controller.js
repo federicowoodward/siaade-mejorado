@@ -14,10 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StudentsController = void 0;
 const common_1 = require("@nestjs/common");
-const students_service_1 = require("./students.service"); // Importa el servicio de estudiantes
-const roles_guard_1 = require("../../../auth/roles.guard"); // Importa el RolesGuard
-const roles_decorator_1 = require("../../../auth/roles.decorator"); // Importa el decorador para roles
-const jwt_guard_1 = require("../../../auth/jwt.guard"); // Importa el AuthGuard
+const students_service_1 = require("../manage/students.service"); // Importa el servicio
+const roles_guard_1 = require("../../../../guards/roles.guard");
+const roles_decorator_1 = require("../../../users/auth/roles.decorator"); // Decorador para roles
+const jwt_auth_guard_1 = require("../../../../guards/jwt-auth.guard");
 let StudentsController = class StudentsController {
     constructor(studentsService) {
         this.studentsService = studentsService;
@@ -32,7 +32,7 @@ let StudentsController = class StudentsController {
 exports.StudentsController = StudentsController;
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard) // Protege la ruta con los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard) // Protege la ruta con los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los usuarios con estos roles consultar estudiantes
     ,
@@ -43,7 +43,7 @@ __decorate([
 ], StudentsController.prototype, "getStudentInfo", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard) // Protege la ruta con los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard) // Protege la ruta con los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los usuarios con estos roles consultar todos los estudiantes
     ,

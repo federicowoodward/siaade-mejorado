@@ -14,12 +14,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StudentsController = void 0;
 const common_1 = require("@nestjs/common");
-const students_service_1 = require("./students.service"); // Importa el servicio de estudiantes
-const student_entity_1 = require("../../../../entities/student.entity"); // Asegúrate de tener la entidad Student
-const roles_guard_1 = require("../../../auth/roles.guard"); // Importa el RolesGuard
-const roles_decorator_1 = require("../../../auth/roles.decorator"); // Importa el decorador para roles
-const hierarchy_guard_1 = require("../../../auth/hierarchy.guard"); // Importa el HierarchyGuard
-const jwt_guard_1 = require("../../../auth/jwt.guard"); // Importa el AuthGuard
+const students_service_1 = require("./students.service"); // Importa el servicio
+const student_entity_1 = require("../../../../entities/student.entity"); // Entidad de estudiante
+const roles_guard_1 = require("../../../../guards/roles.guard");
+const roles_decorator_1 = require("../../../users/auth/roles.decorator"); // Decorador para roles
+const hierarchy_guard_1 = require("../../../../guards/hierarchy.guard");
+const jwt_auth_guard_1 = require("../../../../guards/jwt-auth.guard");
 let StudentsController = class StudentsController {
     constructor(studentsService) {
         this.studentsService = studentsService;
@@ -37,7 +37,7 @@ let StudentsController = class StudentsController {
 exports.StudentsController = StudentsController;
 __decorate([
     (0, common_1.Post)('enroll'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Aplica los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Aplica los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Solo los usuarios con estos roles pueden inscribir estudiantes
     ,
@@ -48,7 +48,7 @@ __decorate([
 ], StudentsController.prototype, "enrollStudent", null);
 __decorate([
     (0, common_1.Put)('update/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Aplica los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Aplica los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Solo los usuarios con estos roles pueden actualizar estudiantes
     ,
@@ -60,7 +60,7 @@ __decorate([
 ], StudentsController.prototype, "updateStudent", null);
 __decorate([
     (0, common_1.Delete)('unenroll/:id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Aplica los guards
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, hierarchy_guard_1.HierarchyGuard) // Aplica los guards
     ,
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Solo los usuarios con estos roles pueden desinscribir estudiantes
     ,

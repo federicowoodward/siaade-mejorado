@@ -34,6 +34,18 @@ let SubjectsService = class SubjectsService {
     async delete(id) {
         await this.subjectsRepository.delete(id); // Eliminar la materia
     }
+    // Métodos para el controlador de lectura
+    async getSubjectInfo(id) {
+        return this.subjectsRepository.findOne({
+            where: { id },
+            relations: ['teacher', 'preceptor']
+        });
+    }
+    async getAllSubjects() {
+        return this.subjectsRepository.find({
+            relations: ['teacher', 'preceptor']
+        });
+    }
 };
 exports.SubjectsService = SubjectsService;
 exports.SubjectsService = SubjectsService = __decorate([

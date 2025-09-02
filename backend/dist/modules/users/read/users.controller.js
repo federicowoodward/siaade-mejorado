@@ -14,10 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
-const users_service_1 = require("./users.service");
-const roles_guard_1 = require("../../auth/roles.guard"); // Asegúrate de importar el RolesGuard
-const roles_decorator_1 = require("../../auth/roles.decorator"); // Importa el decorador para roles
-const jwt_guard_1 = require("../../auth/jwt.guard"); // Importa el AuthGuard
+const users_service_1 = require("../manage/users.service"); // Servicio de usuarios
+const roles_guard_1 = require("../../../guards/roles.guard");
+const roles_decorator_1 = require("../auth/roles.decorator"); // Decorador para definir los roles
+const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
@@ -32,7 +32,7 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'PRECEPTOR' consultar usuarios
     ,
     __param(0, (0, common_1.Param)('id')),
@@ -42,7 +42,7 @@ __decorate([
 ], UsersController.prototype, "getUserInfo", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'SECRETARIO') // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'SECRETARIO' consultar todos los usuarios
     ,
     __metadata("design:type", Function),

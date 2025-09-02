@@ -14,10 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FinalExamsController = void 0;
 const common_1 = require("@nestjs/common");
-const final_exams_service_1 = require("./final-exams.service");
-const roles_guard_1 = require("../../auth/roles.guard"); // Importa el RolesGuard
-const roles_decorator_1 = require("../../auth/roles.decorator"); // Importa el decorador para roles
-const jwt_guard_1 = require("../../auth/jwt.guard"); // Importa el AuthGuard
+const final_exams_service_1 = require("../manage/final-exams.service"); // Servicio de exámenes finales
+const roles_guard_1 = require("../../../guards/roles.guard");
+const roles_decorator_1 = require("../../users/auth/roles.decorator");
+const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");
 let FinalExamsController = class FinalExamsController {
     constructor(finalExamsService) {
         this.finalExamsService = finalExamsService;
@@ -32,7 +32,7 @@ let FinalExamsController = class FinalExamsController {
 exports.FinalExamsController = FinalExamsController;
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'PRECEPTOR' consultar exámenes
     ,
     __param(0, (0, common_1.Param)('id')),
@@ -42,7 +42,7 @@ __decorate([
 ], FinalExamsController.prototype, "getExamInfo", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN_GENERAL', 'PRECEPTOR') // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'PRECEPTOR' consultar todos los exámenes
     ,
     __metadata("design:type", Function),

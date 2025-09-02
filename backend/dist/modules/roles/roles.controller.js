@@ -16,7 +16,7 @@ exports.RolesController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const roles_service_1 = require("./roles.service");
-const create_role_dto_1 = require("./create-role.dto");
+const create_role_dto_1 = require("./dto/create-role.dto");
 let RolesController = class RolesController {
     constructor(rolesService) {
         this.rolesService = rolesService;

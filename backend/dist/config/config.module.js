@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
 const user_entity_1 = require("../entities/user.entity");
 const subject_entity_1 = require("../entities/subject.entity");
 const final_exam_entity_1 = require("../entities/final-exam.entity");
@@ -21,16 +22,21 @@ exports.ConfigModule = ConfigModule;
 exports.ConfigModule = ConfigModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forRoot({
-                type: 'postgres',
-                host: 'localhost',
-                port: 5433,
-                username: 'postgres',
-                password: 'Joeldatabase*',
-                database: 'dbsiaade',
-                entities: [user_entity_1.User, subject_entity_1.Subject, final_exam_entity_1.FinalExam, role_entity_1.Role, student_entity_1.Student, exam_entity_1.Exam],
-                synchronize: false, // Como ya tenemos la DB creada, no sincronizamos
-                logging: true, // Para debug
+            config_1.ConfigModule.forRoot({ isGlobal: true }),
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                inject: [config_1.ConfigService],
+                useFactory: (config) => ({
+                    type: 'postgres',
+                    host: config.get('DB_HOST'),
+                    port: parseInt(config.get('DB_PORT', '5432'), 10),
+                    username: config.get('DB_USERNAME'),
+                    password: config.get('DB_PASSWORD'),
+                    database: config.get('DB_DATABASE'),
+                    entities: [user_entity_1.User, subject_entity_1.Subject, final_exam_entity_1.FinalExam, role_entity_1.Role, student_entity_1.Student, exam_entity_1.Exam],
+                    synchronize: false,
+                    logging: true,
+                }),
             }),
         ],
     })
