@@ -2,12 +2,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule as NestConfigModule, ConfigService } from '@nestjs/config';
-import { User } from '../entities/user.entity';
-import { Subject } from '../entities/subject.entity';
+import { User } from '../entities/users.entity';
+import { Subject } from '../entities/subjects.entity';
 import { FinalExam } from '../entities/final-exam.entity';
-import { Role } from '../entities/role.entity';
-import { Student } from '../entities/student.entity';
-import { Exam } from '../entities/exam.entity';
+import { Role } from '../entities/roles.entity';
+import { Student } from '../entities/students.entity';
+import { Exam } from '../entities/exams.entity';
 
 @Module({
   imports: [

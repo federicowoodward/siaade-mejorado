@@ -1,6 +1,6 @@
 // src/modules/auth/role.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { User } from '../../entities/user.entity';  // Relaciona el rol con la entidad User
+import { User } from '../../entities/users.entity';  // Relaciona el rol con la entidad User
 
 @Entity()
 export class Role {

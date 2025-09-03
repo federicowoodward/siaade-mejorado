@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ExamsService } from './exams.service';  // Servicio local de exams read
-import { Exam } from '../../../../entities/exam.entity';  // Entidad de examen
+import { Exam } from '../../../../entities/exams.entity';  // Entidad de examen
 import { RolesGuard } from '../../../../guards/roles.guard';
 import { Roles } from '../../../users/auth/roles.decorator';
 import { JwtAuthGuard } from '../../../../guards/jwt-auth.guard';

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Subject } from './subject.entity';
+import { Subject } from './subjects.entity';
 
 @Entity('exams')
 export class Exam {
@@ -9,6 +9,10 @@ export class Exam {
   @Column({ name: 'subject_id' })
   subjectId: number;
 
+  @ManyToOne(() => Subject, (s) => s.exams, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'subject_id' })
+  subject: Subject;
+
   @Column({ nullable: true })
   title: string;
 
@@ -17,8 +21,4 @@ export class Exam {
 
   @Column({ name: 'is_valid', default: true })
   isValid: boolean;
-
-  @ManyToOne(() => Subject)
-  @JoinColumn({ name: 'subject_id' })
-  subject: Subject;
 }

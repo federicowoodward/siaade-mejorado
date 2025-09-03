@@ -6,7 +6,7 @@ import { JwtStrategy } from './jwt.strategy'; // Estrategia personalizada de JWT
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/manage/users.module';  // Asegúrate de tener acceso al módulo de usuarios
-import { User } from '../../entities/user.entity';
+import { User } from '../../entities/users.entity';
 
 @Module({
   imports: [

@@ -6,7 +6,7 @@ import { JwtPayload } from './jwt.payload';  // El tipo de payload que contiene 
 import { UsersService } from '../users/manage/users.service'; // Para obtener los datos del usuario
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
+import { User } from '../../entities/users.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

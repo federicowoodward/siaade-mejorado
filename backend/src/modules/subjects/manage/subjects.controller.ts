@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Put, Param, Delete, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
-import { Subject } from '../../../entities/subject.entity';  // Asegúrate de tener la entidad Subject
+import { Subject } from '../../../entities/subjects.entity';  // Asegúrate de tener la entidad Subject
 import { CreateSubjectDto } from '../dto/create-subject.dto';
 import { RolesGuard } from '../../../guards/roles.guard';
 import { Roles } from '../../users/auth/roles.decorator';  // Importa el decorador para roles
