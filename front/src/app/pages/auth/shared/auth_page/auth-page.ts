@@ -29,7 +29,9 @@ import { AuthService } from '../../../../core/services/auth.service';
 export class AuthPage {
   // Estado: true = login, false = recover
   loginMode = signal(true);
-  modeTitle = computed(() => (this.loginMode() ? 'Iniciar sesión' : 'Recuperar contraseña'));
+  modeTitle = computed(() =>
+    this.loginMode() ? 'Iniciar sesión' : 'Recuperar contraseña'
+  );
   // (Simplificado) Solo modo; se eliminan señales de barrido para transición fluida
   transitioning = signal(false);
   expandPhase = signal(false); // true mientras se expande a full ancho
@@ -51,13 +53,16 @@ export class AuthPage {
     private auth: AuthService,
     private router: Router,
     private message: MessageService
-  ) { }
+  ) {}
 
   changeMode() {
     if (this.transitioning()) return;
     // En móvil (layout compacto) hacemos toggle instantáneo sin animación wipe
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      this.loginMode.update(v => !v);
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 767px)').matches
+    ) {
+      this.loginMode.update((v) => !v);
       return;
     }
     const expandMs = 700; // desktop wipe
@@ -66,7 +71,7 @@ export class AuthPage {
     this.expandPhase.set(true);
     // Al finalizar expansión, cambiar modo y comenzar contracción
     setTimeout(() => {
-      this.loginMode.update(v => !v);
+      this.loginMode.update((v) => !v);
       this.expandPhase.set(false);
     }, expandMs);
     // Al finalizar contracción, limpiar flags
@@ -85,23 +90,26 @@ export class AuthPage {
     if (this.loginForm.invalid || this.submittingLogin()) return;
     const { identity, password } = this.loginForm.value;
     this.submittingLogin.set(true);
-    
+
     try {
-      const success = await this.auth.loginFlexible({ username: identity, password });
+      const success = await this.auth.loginFlexible({
+        username: identity!,
+        password: password!,
+      });
       if (success) {
         this.router.navigate(['/welcome']);
       } else {
-        this.message.add({ 
-          severity: 'error', 
-          summary: 'Error', 
-          detail: 'Usuario o contraseña incorrectos' 
+        this.message.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Usuario o contraseña incorrectos',
         });
       }
     } catch (error) {
-      this.message.add({ 
-        severity: 'error', 
-        summary: 'Error', 
-        detail: 'No se pudo iniciar sesión' 
+      this.message.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo iniciar sesión',
       });
     } finally {
       this.submittingLogin.set(false);
@@ -115,7 +123,11 @@ export class AuthPage {
     // TODO: Integrar endpoint real requestPasswordRecovery
     setTimeout(() => {
       this.submittingRecover.set(false);
-      this.message.add({ severity: 'success', summary: 'Listo', detail: 'Si el correo existe, recibirás un email.' });
+      this.message.add({
+        severity: 'success',
+        summary: 'Listo',
+        detail: 'Si el correo existe, recibirás un email.',
+      });
       this.changeMode();
     }, 1000);
     // Ejemplo real:

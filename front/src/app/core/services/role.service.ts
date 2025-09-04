@@ -1,85 +1,83 @@
-// #ASUMIENDO CODIGO: src/app/core/services/roles.service.ts
-import { Injectable, signal, inject } from '@angular/core';
+// core/services/role.service.ts
+import { Injectable, signal, inject, computed } from '@angular/core';
 import { ApiService } from './api.service';
 
-export type RoleName = 
-  | 'student'
-  | 'teacher'
-  | 'preceptor'
-  | 'secretary';  // ya no incluimos 'admin', lo manejamos vía isDirective
+export type RoleName = 'student' | 'teacher' | 'preceptor' | 'secretary';
+export interface RoleDto {
+  id: number;
+  name: RoleName;
+}
 
 @Injectable({ providedIn: 'root' })
 export class RolesService {
   private api = inject(ApiService);
-  
+
+  readonly roles = signal<RoleDto[]>([]);
   readonly currentRole = signal<RoleName>('student');
   readonly isDirective = signal<boolean>(false);
-  readonly roles = signal<any[]>([]);
+  readonly ready = signal<boolean>(false);
 
-  // #ASUMIENDO NEGOCIO: mapeo numérico → nombre de rol (fallback)
-  private readonly roleMapFallback: Record<number, RoleName> = {
-    1: 'student',
-    2: 'teacher', 
-    3: 'preceptor',
-    4: 'secretary',
-  };
+  readonly idToName = computed<Record<number, RoleName>>(() =>
+    this.roles().reduce((acc, r) => {
+      acc[r.id] = r.name;
+      return acc;
+    }, {} as any)
+  );
+  readonly nameToId = computed<Record<RoleName, number>>(() =>
+    this.roles().reduce((acc, r) => {
+      acc[r.name] = r.id;
+      return acc;
+    }, {} as any)
+  );
 
-  constructor() {
-    // Cargar roles desde el backend
-    this.loadRoles();
+  /** Llamado desde APP_INITIALIZER */
+  async init(): Promise<void> {
+    try {
+      // GET /api/roles -> { data: RoleDto[], message: string }
+      const res = (await this.api.getAll('roles').pipe().toPromise()) as
+        | { data?: any[]; message?: string }
+        | any[]; // si tu ApiService retorna Observable
+      const data = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      const normalized: RoleDto[] = data.map((r: any) => ({
+        id: Number(r.id),
+        name: String(r.name).toLowerCase() as RoleName,
+      }));
+      this.roles.set(normalized);
+      this.ready.set(true);
+    } catch (e) {
+      console.error('[Roles] Error loading roles, using fallback:', e);
+      this.roles.set([
+        { id: 1, name: 'secretary' },
+        { id: 2, name: 'teacher' },
+        { id: 3, name: 'preceptor' },
+        { id: 4, name: 'student' },
+      ]);
+      this.ready.set(true);
+    }
   }
 
-  private loadRoles() {
-    this.api.getAll('roles').subscribe({
-      next: (roles) => {
-        this.roles.set(roles);
-      },
-      error: (error) => {
-        console.error('Error loading roles:', error);
-        // Usar fallback si hay error
-      }
-    });
-  }
-
-  /** Cambia el rol actual y el estado de directivo */
   setRole(role: RoleName, isDirective = false) {
     this.currentRole.set(role);
     this.isDirective.set(isDirective);
   }
-
-  /** Devuelve true si el rol guardado es igual al pedido */
-  isRole(role: RoleName): boolean {
+  isRole(role: RoleName) {
     return this.currentRole() === role;
   }
-
-  /** Devuelve true si el rol guardado está en una lista */
-  isOneOf(roles: RoleName[]): boolean {
+  isOneOf(roles: RoleName[]) {
     return roles.includes(this.currentRole());
   }
-
-  /** Devuelve true si el secretario es directivo (sólo tiene sentido para 'secretary') */
-  isSecretaryDirective(): boolean {
+  isSecretaryDirective() {
     return this.currentRole() === 'secretary' && this.isDirective();
   }
 
-  /** Devuelve el nombre de rol a partir del roleId numérico */
   getRoleNameById(id: number): RoleName | null {
-    const loadedRoles = this.roles();
-    if (loadedRoles.length > 0) {
-      const role = loadedRoles.find(r => r.id === id);
-      if (role) {
-        // Mapear nombres del backend a nuestros tipos
-        const nameMap: Record<string, RoleName> = {
-          'Alumno': 'student',
-          'Docente': 'teacher', 
-          'Preceptor': 'preceptor',
-          'Secretario': 'secretary',
-          'Administrador': 'secretary' // Asumiendo que admin se trata como secretary
-        };
-        return nameMap[role.name] || 'student';
-      }
-    }
-    // Fallback al mapeo hardcodeado
-    return this.roleMapFallback[id] ?? null;
+    return this.idToName()[id] ?? null;
+  }
+  getRoleIdByName(name: RoleName): number | null {
+    return this.nameToId()[name] ?? null;
   }
 }
