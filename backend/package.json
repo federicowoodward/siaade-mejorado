@@ -1,0 +1,53 @@
+{
+  "name": "siaade_mej",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node src/main.ts",
+    "start:watch": "nodemon --exec ts-node src/main.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typeorm": "ts-node ./node_modules/typeorm/cli",
+    "db:migration:generate": "npm run typeorm -- migration:generate src/database/migrations/InitSchema -d src/database/data-source.ts",
+    "db:migration:create": "npm run typeorm -- migration:create src/database/migrations/ManualMigration -d src/database/data-source.ts",
+    "db:migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
+    "db:migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "db:show": "npm run typeorm -- schema:log -d src/database/data-source.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@nestjs/common": "^11.1.5",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.5",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.1.5",
+    "@nestjs/swagger": "^11.2.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "cors": "^2.8.5",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.26"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^24.0.15",
+    "@types/passport-jwt": "^4.0.1",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
+  }
+}
