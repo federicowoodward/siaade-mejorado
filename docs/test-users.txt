@@ -1,11 +1,11 @@
 pass
 
-s.director@example.com
+d.director@example.com
 
 s.secretary@example.com
 
-s.preceptor@example.com
+p.preceptor@example.com
 
 s.student@example.com
 
-s.teacher@example.com
+t.teacher@example.com
