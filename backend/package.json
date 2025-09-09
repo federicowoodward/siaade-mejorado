@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/main.js",
-  "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
-    "start:prod": "npm run migrate:prod && node dist/main.js",
+  "build": "tsc",
+  "start": "node dist/main.js",
+  "migrate:prod": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+  "start:prod": "npm run migrate:prod && node dist/main.js",
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:watch": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -15,7 +15,8 @@
     "db:migration:create": "npm run typeorm -- migration:create src/database/migrations/ManualMigration -d src/database/data-source.ts",
     "db:migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "db:migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
-    "db:show": "npm run typeorm -- schema:log -d src/database/data-source.ts"
+  "db:show": "npm run typeorm -- schema:log -d src/database/data-source.ts",
+  "postinstall": "npm run build"
   },
   "keywords": [],
   "author": "",
