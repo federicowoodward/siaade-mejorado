@@ -1,6 +1,5 @@
 import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { IftaLabelModule } from 'primeng/iftalabel';
 import { Menu } from 'primeng/menu';
@@ -13,7 +12,9 @@ import { Dialog } from 'primeng/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { FieldLabelPipe } from '../../pipes/field-label.pipe';
 import { ToggleButtonModule } from 'primeng/togglebutton';
-
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
+import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-personal-data',
   standalone: true,
@@ -35,7 +36,9 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 })
 export class PersonalDataComponent implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
 
+  /** Si no viene, usa el usuario logueado */
   @Input() userId!: string;
 
   docTypes: MenuItem[] | undefined;
@@ -52,10 +55,7 @@ export class PersonalDataComponent implements OnInit {
   showConfirmDialog = signal(false);
   modifiedFields = signal<string[]>([]);
 
-
-  ngOnInit(): void {
-    if (!this.userId) return;
-
+  async ngOnInit(): Promise<void> {
     this.docTypes = [
       { label: 'DNI', command: () => this.selectDocType('DNI') },
       { label: 'Pasaporte', command: () => this.selectDocType('Pasaporte') },
@@ -70,38 +70,118 @@ export class PersonalDataComponent implements OnInit {
       },
     ];
 
-    this.loadUserData();
+    // 1) Determinar el ID a usar
+    let id = this.userId;
+    if (!id) {
+      // intentar obtener del mock_user
+      const raw = localStorage.getItem('mock_user');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          id = parsed?.id;
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (!id) {
+      console.warn('[PersonalData] No hay userId ni usuario logueado.');
+      return;
+    }
+
+    // 2) Intentar usar un perfil local si existe (opcional)
+    const cachedProfile = this.getCachedProfile();
+    if (cachedProfile && cachedProfile.id === id) {
+      this.applyProfileToSignals(cachedProfile);
+      this.snapshotOriginal();
+      return;
+    }
+
+    // 3) Si no hay cache, pedir al backend el perfil completo
+    await this.loadProfileFromApi(id);
+    this.snapshotOriginal();
   }
 
-  private loadUserData() {
-    this.api.getById('users', this.userId).subscribe((user) => {
-      if (user) this.userData.set(user);
+  // ---- Helpers de carga -----------------------------------------------------
 
-      this.api.getById('user_info', this.userId).subscribe((info) => {
-        if (info) this.userInfo.set({ ...info });
-      });
+  private getCachedProfile(): any | null {
+    // Intentamos leer 'user_profile' si lo estás guardando (quedó opcional)
+    const raw = localStorage.getItem('user_profile');
+    if (!raw) return null;
+    try {
+      const prof = JSON.parse(raw);
+      // Normalizamos por si viene con doble data
+      return this.unwrapData(prof);
+    } catch {
+      return null;
+    }
+  }
 
-      this.api.getById('common_data', this.userId).subscribe((common: any) => {
-        if (common) {
-          this.commonData.set({ ...common });
+  private async loadProfileFromApi(id: string): Promise<void> {
+    try {
+      // GET /api/users/:id (tu ApiService ya suele componer la URL)
+      const resp = await firstValueFrom(
+        this.api.request<any>('GET', `users/${id}`)
+      );
+      const profile = this.unwrapData(resp);
 
-          this.api
-            .getById('address_data', common.addressDataId)
-            .subscribe((address) => {
-              if (address) this.addressData.set({ ...address });
+      if (!profile) {
+        console.warn('[PersonalData] Respuesta vacía para usuario', id, resp);
+        return;
+      }
 
-              // Guardar estado original
-              this.original.set({
-                userData: cloneDeep(this.userData()),
-                userInfo: cloneDeep(this.userInfo()),
-                commonData: cloneDeep(this.commonData()),
-                addressData: cloneDeep(this.addressData()),
-              });
-            });
-        }
-      });
+      this.applyProfileToSignals(profile);
+    } catch (e) {
+      console.error('[PersonalData] Error cargando perfil', e);
+    }
+  }
+
+  private unwrapData(resp: any): any {
+    // Soporta: { data: {...} }, { data: { data: {...} } }, o payload plano
+    if (!resp) return null;
+    if (resp.data?.data) return resp.data.data;
+    if (resp.data) return resp.data;
+    return resp;
+  }
+
+  private applyProfileToSignals(profile: any) {
+    // Perfil ejemplo que mostraste:
+    // {
+    //   id, name, lastName, email, cuil, role:{id,name},
+    //   userInfo: {...} | null,
+    //   commonData: { ... , address: {...} | null } | null
+    // }
+    const uData = {
+      id: profile.id,
+      name: profile.name ?? null,
+      lastName: profile.lastName ?? null,
+      email: profile.email ?? null,
+      cuil: profile.cuil ?? null,
+      role: profile.role?.name ?? null,
+      roleId: profile.role?.id ?? null,
+      isDirective: profile.isDirective ?? null, // por si vino (secretary)
+    };
+
+    const uInfo = profile.userInfo ?? {};
+    const cData = profile.commonData ?? {};
+    const aData = (profile.commonData?.address ?? {}) || {};
+
+    this.userData.set(uData);
+    this.userInfo.set(uInfo);
+    this.commonData.set(cData);
+    this.addressData.set(aData);
+  }
+
+  private snapshotOriginal() {
+    this.original.set({
+      userData: cloneDeep(this.userData()),
+      userInfo: cloneDeep(this.userInfo()),
+      commonData: cloneDeep(this.commonData()),
+      addressData: cloneDeep(this.addressData()),
     });
   }
+
+  // ---- UI actions -----------------------------------------------------------
 
   selectDocType(tipo: string) {
     this.userInfo.update((prev) => ({ ...prev, documentType: tipo }));
@@ -110,12 +190,17 @@ export class PersonalDataComponent implements OnInit {
   checkForChanges() {
     const changes: string[] = [];
     const compare = (section: any, original: any, pathPrefix = '') => {
-      for (const key in section) {
-        if (!isEqual(section[key], original[key])) {
+      const keys = new Set<string>([
+        ...Object.keys(section || {}),
+        ...Object.keys(original || {}),
+      ]);
+      for (const key of keys) {
+        if (!isEqual(section?.[key], original?.[key])) {
           changes.push(`${pathPrefix}${key}`);
         }
       }
     };
+
     compare(this.userData(), this.original().userData, '');
     compare(this.userInfo(), this.original().userInfo, '');
     compare(this.commonData(), this.original().commonData, '');
@@ -135,11 +220,16 @@ export class PersonalDataComponent implements OnInit {
 
   submitChanges() {
     this.showConfirmDialog.set(false);
-    console.log('Guardado con:', {
-      ...this.userData(),
-      ...this.userInfo(),
-      ...this.commonData(),
-      ...this.addressData(),
-    });
+    // Para guardar, armás el payload que te pida tu endpoint de update
+    const payload = {
+      user: this.userData(),
+      userInfo: this.userInfo(),
+      commonData: {
+        ...this.commonData(),
+        address: this.addressData(),
+      },
+    };
+    console.log('[PersonalData] Guardar con payload:', payload);
+    // TODO: this.api.request('PUT', 'users/:id', payload) cuando esté listo el endpoint
   }
 }

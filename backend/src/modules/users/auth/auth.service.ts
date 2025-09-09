@@ -1,12 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-import { LoginDto } from './dto/login.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { User } from '../../../entities/users.entity';
-import { Role } from '../../../entities/roles.entity';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import * as bcrypt from "bcryptjs";
+import { LoginDto } from "./dto/login.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
+import { User } from "../../../entities/users.entity";
+import { Role } from "../../../entities/roles.entity";
+import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
+import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 
 @Injectable()
 export class AuthService {
@@ -16,48 +18,39 @@ export class AuthService {
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly jwtService: JwtService,
+    private readonly userAuthValidator: UserAuthValidatorService,
+    private readonly userReader: UserProfileReaderService
   ) {}
 
   async login(loginDto: LoginDto) {
-    // Buscar usuario por email incluyendo el rol
-    const user = await this.userRepository.findOne({
-      where: { email: loginDto.email },
-      relations: ['role'],
-    });
+    const idOrResult = await this.userAuthValidator.validateUser(
+      loginDto.email,
+      loginDto.password
+    );
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!idOrResult) {
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    // Validar contraseña
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const profile = await this.userReader.findById(idOrResult);
+    const roleName = profile.role?.name;
+    const roleId = profile.role?.id;
 
-    // Generar JWT payload
     const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role.name,
-      roleId: user.roleId,
+      sub: profile.id,
+      email: profile.email,
+      role: roleName,
+      roleId: roleId,
     };
 
-    // Generar tokens
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: "1h" });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
 
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role.name,
-      },
+      profile,
       accessToken,
       refreshToken,
-      tokenType: 'Bearer',
+      tokenType: "Bearer",
     };
   }
 
@@ -66,11 +59,11 @@ export class AuthService {
       const payload = this.jwtService.verify(refreshToken);
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
-        relations: ['role'],
+        relations: ["role"],
       });
 
       if (!user) {
-        throw new UnauthorizedException('Invalid token');
+        throw new UnauthorizedException("Invalid token");
       }
 
       const newPayload = {
@@ -80,21 +73,23 @@ export class AuthService {
         roleId: user.roleId,
       };
 
-      const newAccessToken = this.jwtService.sign(newPayload, { expiresIn: '1h' });
+      const newAccessToken = this.jwtService.sign(newPayload, {
+        expiresIn: "1h",
+      });
 
       return {
         accessToken: newAccessToken,
-        tokenType: 'Bearer',
+        tokenType: "Bearer",
       };
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException("Invalid or expired refresh token");
     }
   }
 
   async validateUser(userId: string) {
     return await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['role', 'secretary'],
+      relations: ["role", "secretary"],
     });
   }
 
@@ -108,13 +103,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException("User not found");
     }
 
     // Aquí implementarías la lógica para enviar email de reset
     // Por ahora solo retornamos un mensaje
     return {
-      message: 'Password reset instructions sent to your email',
+      message: "Password reset instructions sent to your email",
       email: resetPasswordDto.email,
     };
   }

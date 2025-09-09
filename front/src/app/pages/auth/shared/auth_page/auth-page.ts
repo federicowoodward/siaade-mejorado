@@ -54,7 +54,7 @@ export class AuthPage {
     private router: Router,
     private message: MessageService
   ) {}
-
+  
   changeMode() {
     if (this.transitioning()) return;
     // En móvil (layout compacto) hacemos toggle instantáneo sin animación wipe

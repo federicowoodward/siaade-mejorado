@@ -14,9 +14,6 @@ export class Student {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ unique: true })
-  legajo: string;
-
   @OneToMany(() => SubjectStudent, (ss) => ss.student)
   subjectStudents: SubjectStudent[];
 

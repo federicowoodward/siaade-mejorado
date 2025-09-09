@@ -4,8 +4,8 @@ export class InitSchema1690000000000 implements MigrationInterface {
   name = "InitSchema1690000000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-  // Necesario para uuid_generate_v4() en "users"
-  await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+    // Necesario para uuid_generate_v4() en "users"
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
     await queryRunner.query(
       `CREATE TABLE "roles" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE ("name"), CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY ("id"))`
     );
@@ -48,8 +48,9 @@ export class InitSchema1690000000000 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "final_exams_students" ("id" SERIAL NOT NULL, "final_exams_id" integer NOT NULL, "student_id" uuid NOT NULL, "enrolled" boolean, "enrolled_at" date, "score" numeric(4,2), "notes" character varying, CONSTRAINT "PK_b7fdfdbde6b37992dbbc2824abc" PRIMARY KEY ("id"))`
     );
+    // ⬇️ SIN 'legajo'
     await queryRunner.query(
-      `CREATE TABLE "students" ("user_id" uuid NOT NULL, "legajo" character varying NOT NULL, CONSTRAINT "UQ_e8df771e580eb1c9f980d27becc" UNIQUE ("legajo"), CONSTRAINT "PK_fb3eff90b11bddf7285f9b4e281" PRIMARY KEY ("user_id"))`
+      `CREATE TABLE "students" ("user_id" uuid NOT NULL, CONSTRAINT "PK_fb3eff90b11bddf7285f9b4e281" PRIMARY KEY ("user_id"))`
     );
     await queryRunner.query(
       `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying, "last_name" character varying, "email" character varying, "password" character varying, "cuil" character varying, "role_id" integer NOT NULL, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`
@@ -113,9 +114,6 @@ export class InitSchema1690000000000 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "final_exams_students" ADD CONSTRAINT "FK_42368f30908e238aa7d9af5e949" FOREIGN KEY ("student_id") REFERENCES "students"("user_id") ON DELETE CASCADE ON UPDATE NO ACTION`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "students" ADD CONSTRAINT "FK_fb3eff90b11bddf7285f9b4e281" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
       `ALTER TABLE "users" ADD CONSTRAINT "FK_a2cecd1a3531c0b041e29ba46e1" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
