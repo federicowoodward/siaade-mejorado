@@ -130,6 +130,35 @@
                   <label class="block mb-2">Nacionalidad</label>
                   <input pInputText class="w-full" [(ngModel)]="nationality" />
                 </div>
+                <div class="col-12">
+                  <h4 class="mt-3 mb-2">Dirección (opcional)</h4>
+                  <div class="grid">
+                    <div class="col-12 md:col-4">
+                      <label class="block mb-2">Calle</label>
+                      <input pInputText class="w-full" [(ngModel)]="addressStreet" />
+                    </div>
+                    <div class="col-12 md:col-2">
+                      <label class="block mb-2">Número</label>
+                      <input pInputText class="w-full" [(ngModel)]="addressNumber" />
+                    </div>
+                    <div class="col-12 md:col-3">
+                      <label class="block mb-2">Localidad</label>
+                      <input pInputText class="w-full" [(ngModel)]="addressLocality" />
+                    </div>
+                    <div class="col-12 md:col-3">
+                      <label class="block mb-2">Provincia</label>
+                      <input pInputText class="w-full" [(ngModel)]="addressProvince" />
+                    </div>
+                    <div class="col-12 md:col-3">
+                      <label class="block mb-2">País</label>
+                      <input pInputText class="w-full" [(ngModel)]="addressCountry" />
+                    </div>
+                    <div class="col-12 md:col-3">
+                      <label class="block mb-2">Código Postal</label>
+                      <input pInputText class="w-full" [(ngModel)]="addressPostalCode" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -170,7 +199,7 @@
               <p-button label="Cancelar" icon="pi pi-times" variant="outlined" severity="danger" (onClick)="back()" />
             </div>
             <div>
-              <p-button label="Crear" icon="pi pi-check" [disabled]="true" pTooltip="MVP: sin acción" />
+              <p-button label="Crear" icon="pi pi-check" [disabled]="!canCreate()" (onClick)="createUser()" />
             </div>
           </div>
         </ng-template>

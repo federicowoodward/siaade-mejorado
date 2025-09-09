@@ -46,28 +46,107 @@ export class CreateUserPage {
 
   async createUser(): Promise<void> {
     if (this.isCreating) return;
-    
+    if (!this.role) { console.warn('Debe seleccionar rol'); return; }
     this.isCreating = true;
-    
+
     try {
-      const userData = {
-        name: this.name,
-        lastName: this.lastName,
+      const base = {
+        name: this.name || undefined,
+        lastName: this.lastName || undefined,
         email: this.email,
-        cuil: this.cuil,
         password: this.passwordPreview,
-        roleId: this.getRoleId(this.role)
+        cuil: this.cuil || undefined,
       };
 
-      const newUser = await this.api.create('users', userData).toPromise();
-      console.log('Usuario creado:', newUser);
-      
-      // Redirigir a la lista de usuarios o mostrar mensaje de éxito
+      let endpoint = '';
+      let payload: any = {};
+
+      switch (this.role) {
+        case 'secretary': {
+          endpoint = 'users/secretary';
+          payload = { ...base, isDirective: this.isDirective || false };
+          break;
+        }
+        case 'preceptor': {
+          endpoint = 'users/preceptor';
+          payload = {
+            userData: base,
+            userInfo: {
+              documentType: this.documentType,
+              documentValue: this.documentValue,
+              phone: this.phone || undefined,
+              emergencyName: this.emergencyName || undefined,
+              emergencyPhone: this.emergencyPhone || undefined,
+            }
+          };
+          break;
+        }
+        case 'teacher': {
+          endpoint = 'users/teacher';
+          payload = {
+            userData: base,
+            userInfo: {
+              documentType: this.documentType,
+              documentValue: this.documentValue,
+              phone: this.phone || undefined,
+              emergencyName: this.emergencyName || undefined,
+              emergencyPhone: this.emergencyPhone || undefined,
+            },
+            commonData: {
+              sex: this.sex,
+              birthDate: this.birthDate,
+              birthPlace: this.birthPlace,
+              nationality: this.nationality,
+              address: this.hasAddress() ? {
+                street: this.addressStreet || undefined,
+                number: this.addressNumber || undefined,
+                locality: this.addressLocality || undefined,
+                province: this.addressProvince || undefined,
+                country: this.addressCountry || undefined,
+                postalCode: this.addressPostalCode || undefined,
+              } : undefined
+            }
+          };
+          break;
+        }
+        case 'student': {
+          endpoint = 'users/student';
+          payload = {
+            userData: base,
+            userInfo: {
+              documentType: this.documentType,
+              documentValue: this.documentValue,
+              phone: this.phone || undefined,
+              emergencyName: this.emergencyName || undefined,
+              emergencyPhone: this.emergencyPhone || undefined,
+            },
+            commonData: {
+              sex: this.sex,
+              birthDate: this.birthDate,
+              birthPlace: this.birthPlace,
+              nationality: this.nationality,
+              address: this.hasAddress() ? {
+                street: this.addressStreet || undefined,
+                number: this.addressNumber || undefined,
+                locality: this.addressLocality || undefined,
+                province: this.addressProvince || undefined,
+                country: this.addressCountry || undefined,
+                postalCode: this.addressPostalCode || undefined,
+              } : undefined
+            }
+          };
+          break;
+        }
+        default:
+          console.error('Rol no soportado');
+          return;
+      }
+
+      const created = await this.api.create(endpoint, payload).toPromise();
+      console.log('Usuario creado:', created);
       this.router.navigate(['/users']);
-      
-    } catch (error) {
-      console.error('Error al crear usuario:', error);
-      // Aquí podrías mostrar un mensaje de error
+    } catch (err) {
+      console.error('Error al crear usuario', err);
     } finally {
       this.isCreating = false;
     }
@@ -112,6 +191,30 @@ export class CreateUserPage {
   birthDate = ''; // input[type=date] (string yyyy-MM-dd)
   birthPlace = '';
   nationality = '';
+
+  // Dirección (opcional dentro de commonData.address para teacher/student)
+  addressStreet = '';
+  addressNumber = '';
+  addressLocality = '';
+  addressProvince = '';
+  addressCountry = '';
+  addressPostalCode = '';
+
+  hasAddress() {
+    return [this.addressStreet, this.addressNumber, this.addressLocality, this.addressProvince, this.addressCountry, this.addressPostalCode]
+      .some(v => !!v);
+  }
+
+  canCreate(): boolean {
+    if (!this.role || !this.email || !this.passwordPreview) return false;
+    if (this.role === 'secretary') return true; // solo base + isDirective opcional
+    // Requieren userInfo
+    if (!this.documentType || !this.documentValue) return false;
+    if (this.role === 'preceptor') return true; // no commonData obligatoria
+    // teacher / student requieren commonData
+    if (!this.sex || !this.birthDate || !this.birthPlace || !this.nationality) return false;
+    return true;
+  }
 
   // Autocomplete fuentes (solo strings)
   private rolesAll = ['student', 'teacher', 'preceptor', 'secretary'];
