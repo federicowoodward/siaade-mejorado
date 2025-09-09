@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { environment } from '../../../environment/environment';
+import { AppConfigService } from './app-config.service';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -12,9 +12,11 @@ type MaybeWrapped<T> = T | { data: T; error?: any };
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = environment.apiBaseUrl;
+  private baseUrl = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private appConfig: AppConfigService) {
+    this.baseUrl = this.appConfig.apiBaseUrl;
+  }
 
   request<T>(
     method: HttpMethod,

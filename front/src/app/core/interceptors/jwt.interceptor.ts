@@ -3,15 +3,16 @@ import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { environment } from '../../../environment/environment';
+import { AppConfigService } from '../services/app-config.service';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
   private readonly router = inject(Router);
+  private readonly appConfig = inject(AppConfigService);
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Solo aplicar el interceptor a peticiones hacia nuestro backend
-    if (!request.url.startsWith(environment.apiBaseUrl)) {
+    const apiBase = this.appConfig.apiBaseUrl;
+    if (!request.url.startsWith(apiBase)) {
       return next.handle(request);
     }
 
@@ -35,10 +36,8 @@ export class JwtInterceptor implements HttpInterceptor {
 
     return next.handle(authRequest).pipe(
       tap(event => {
-        // Log successful responses in development
-        if (!environment.production) {
-          console.log('✅ [JWT Interceptor] Request successful:', event);
-        }
+        // Log básico (puedes ampliar si deseas distinguir entornos)
+        // console.log('✅ [JWT Interceptor] Request successful:', event);
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('❌ [JWT Interceptor] Request failed:', error);
