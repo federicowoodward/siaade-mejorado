@@ -1,4 +1,10 @@
 {
-  "build": "npm install && npm run build",
-  "start": "npm run deploy:prod"
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "npm run migrate:prod && npm run start:prod"
+  }
 }
