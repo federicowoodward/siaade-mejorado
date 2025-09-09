@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LoginDto } from "./login.dto"; // Asegúrate de importar el DTO para login
+import { LoginDto } from "./login.dto"; 
 
 @Controller("auth")
 export class AuthController {
@@ -8,6 +8,6 @@ export class AuthController {
 
   @Post("login")
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto); // Llama al servicio de autenticación para hacer login
+    return this.authService.login(loginDto); 
   }
 }

@@ -18,8 +18,11 @@
     "removeComments": false,
     "noEmitOnError": false,
     "sourceMap": true,
-    "baseUrl": "./",
-  "incremental": true
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    },
+    "incremental": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

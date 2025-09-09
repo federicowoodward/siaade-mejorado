@@ -16,6 +16,7 @@ import {
   CreateStudentDto,
   UpdateUserDto,
 } from "./dto";
+import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -26,7 +27,8 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
-    private readonly provisioning: UserProvisioningService
+    private readonly provisioning: UserProvisioningService,
+    private readonly userReader: UserProfileReaderService
   ) {}
 
   private async buildUserData(input: {
@@ -137,16 +139,8 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<any> {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-      relations: ["role"],
-    });
-
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-
-    return this.mapToResponseDto(user, user.role);
+    const data = await this.userReader.findById(id);
+    return { data, message: "User profile retrieved successfully" };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<any> {
@@ -216,7 +210,7 @@ export class UsersService {
   }
 
   // Método para validar usuario por email y contraseña (usado por Auth)
-  async validateUser(email: string, password: string): Promise<User | null> {
+  async validateUser(email: string, password: string): Promise<User['id'] | null> {
     try {
       const user = await this.usersRepository.findOne({
         where: { email },
@@ -224,7 +218,7 @@ export class UsersService {
       });
 
       if (user && (await bcrypt.compare(password, user.password))) {
-        return user;
+        return user.id;
       }
       return null;
     } catch (error: any) {

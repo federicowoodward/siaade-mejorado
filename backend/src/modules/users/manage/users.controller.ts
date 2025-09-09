@@ -103,10 +103,7 @@ export class UsersController {
   @Put(":id")
   @ApiOperation({ summary: "Update user" })
   @ApiResponse({ status: 200, description: "User updated successfully" })
-  async updateUser(
-    @Param("id") id: string,
-    @Body() updateUserDto: any
-  ) {
+  async updateUser(@Param("id") id: string, @Body() updateUserDto: any) {
     try {
       const user = await this.usersService.update(id, updateUserDto);
       return {

@@ -13,7 +13,6 @@ import { ServicesModule } from "./shared/services/services.module";
 import { LoggingInterceptor } from "./shared/interceptors/logging.interceptor";
 import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
 import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
-// import { UserApiModule } from "./modules/users/api/user.api.module";
 @Module({
   imports: [
     ConfigModule,
@@ -27,7 +26,6 @@ import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
     InterceptorsModule,
     ServicesModule,
     SubjectApiModule,
-    // UserApiModule,
   ],
   providers: [
     {

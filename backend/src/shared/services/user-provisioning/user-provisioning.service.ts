@@ -25,6 +25,8 @@ import {
 
 type RoleLiteral = NonNullable<CreateUserBaseDto["roleName"]>;
 
+//todas las funcionalidades para crear usuarios de distintos tipos y roles.
+// metodos separados para no mezclar logica de creacion de usuarios con la de los endpoints.
 @Injectable()
 export class UserProvisioningService {
   constructor(
