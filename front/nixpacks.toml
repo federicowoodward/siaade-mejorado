@@ -1,17 +1,1 @@
-[phases.setup]
-# Forzar versión mínima de Node que satisface Angular CLI si Nixpacks ignora .nvmrc
-# Usa canal nodejs-22 (22.12.0) o ajustar a 20.19.0 si prefieres LTS menor.
-nodejs_version = "22"
-
-[phases.install]
-cmds = [
-  "npm install --legacy-peer-deps"
-]
-
-[phases.build]
-cmds = [
-  "npm run build:prod"
-]
-
-[start]
-cmd = "npm run start:prod"
+## Obsoleto: ahora se usa Dockerfile. Archivo dejado vacío intencionalmente.

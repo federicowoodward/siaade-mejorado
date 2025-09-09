@@ -1,19 +1,14 @@
-// Servidor estático para Angular (Railway / producción)
-import express from 'express';
-import { dirname, resolve, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
+// Servidor estático para Angular (CommonJS)
+const express = require('express');
+const { resolve, join } = require('node:path');
+const { existsSync } = require('node:fs');
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
-
 const browserDistFolder = resolve(__dirname, 'dist', 'front', 'browser');
 app.set('trust proxy', true);
 
 app.get('/__health', (_req, res) => res.type('text/plain').send('ok'));
-
 app.use(express.static(browserDistFolder, { maxAge: '1y', index: false }));
-
 app.get(/.*/, (_req, res) => {
   res.sendFile(join(browserDistFolder, 'index.html'));
 });
