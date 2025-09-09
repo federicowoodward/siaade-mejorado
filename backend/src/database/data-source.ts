@@ -39,3 +39,6 @@ export const AppDataSource = new DataSource({
   entities: [path.resolve(__dirname, "..", "entities", "*.{ts,js}")],
   migrations: [path.resolve(__dirname, "migrations", "*.{ts,js}")],
 });
+
+// Exportación por defecto para TypeORM CLI
+export default AppDataSource;

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
+    "migrate:prod": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
     "start:prod": "npm run migrate:prod && node dist/main.js",
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:watch": "nodemon",
@@ -40,7 +40,10 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.26"
+    "typeorm": "^0.3.26",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.5.4"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -48,9 +51,6 @@
     "@types/node": "^24.0.15",
     "@types/passport-jwt": "^4.0.1",
     "nodemon": "^3.1.4",
-    "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.5.4"
+    "ts-node-dev": "^2.0.0"
   }
 }
