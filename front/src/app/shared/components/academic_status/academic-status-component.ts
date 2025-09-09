@@ -46,17 +46,12 @@ export class AcademicStatus implements OnInit {
       // no student input → use the logged-in user
       this.auth.getUser().subscribe((u) => {
         if (!u) return;
-        this.loadData({
-          id: u.id,
-          name: u.name,
-          lastName: u.lastName,
-          cuil: u.cuil,
-        });
+        this.loadData(u);
       });
     }
   }
 
-  private loadData(s: StudentMinimal) {
+  private loadData(s: any) {
     this.user.set({
       name: `${s.name} ${s.lastName}`,
       cuil: s.cuil,
