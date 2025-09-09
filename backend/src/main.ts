@@ -6,9 +6,20 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Configurar CORS para el frontend
+  // Configurar CORS dinámico para frontend (Railway/Local)
+  const defaultOrigins = [
+    'http://localhost:4200',
+    'http://127.0.0.1:4200',
+    'http://localhost:4000',
+    'http://127.0.0.1:4000'
+  ];
+  const extraOrigin = process.env.FRONTEND_ORIGIN;
+  const origins = extraOrigin ? [...defaultOrigins, extraOrigin] : defaultOrigins;
   app.enableCors({
-    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'], // URLs del frontend Angular
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || origins.includes(origin)) return callback(null, true);
+      return callback(new Error('CORS bloqueado: ' + origin));
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
