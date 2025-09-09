@@ -12,11 +12,7 @@ type MaybeWrapped<T> = T | { data: T; error?: any };
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = '';
-
-  constructor(private http: HttpClient, private appConfig: AppConfigService) {
-    this.baseUrl = this.appConfig.apiBaseUrl;
-  }
+  constructor(private http: HttpClient, private appConfig: AppConfigService) {}
 
   request<T>(
     method: HttpMethod,
@@ -25,7 +21,8 @@ export class ApiService {
     params?: Record<string, any>,
     headers?: HttpHeaders
   ): Observable<T> {
-    const fullUrl = `${this.baseUrl}/${url}`;
+  const base = this.appConfig.apiBaseUrl; // siempre actualizado
+  const fullUrl = `${base}/${url}`;
 
     // Crear headers con token JWT si está disponible
     let finalHeaders = headers ?? new HttpHeaders({ 'Content-Type': 'application/json' });
