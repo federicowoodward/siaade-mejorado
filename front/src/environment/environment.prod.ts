@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'http://localhost:3000/api' // Cambiar por la URL de producción cuando sea necesario
+  apiBaseUrl: process.env['BACKEND_URL'] || 'https://siaade-backend-production.up.railway.app/api'
 };
