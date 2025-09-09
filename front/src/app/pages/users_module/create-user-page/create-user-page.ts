@@ -70,7 +70,7 @@ export class CreateUserPage {
         case 'preceptor': {
           endpoint = 'users/preceptor';
           payload = {
-            userData: base,
+            ...base,
             userInfo: {
               documentType: this.documentType,
               documentValue: this.documentValue,
@@ -84,7 +84,7 @@ export class CreateUserPage {
         case 'teacher': {
           endpoint = 'users/teacher';
           payload = {
-            userData: base,
+            ...base,
             userInfo: {
               documentType: this.documentType,
               documentValue: this.documentValue,
@@ -112,7 +112,7 @@ export class CreateUserPage {
         case 'student': {
           endpoint = 'users/student';
           payload = {
-            userData: base,
+            ...base,
             userInfo: {
               documentType: this.documentType,
               documentValue: this.documentValue,
