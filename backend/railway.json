@@ -5,6 +5,6 @@
     "buildCommand": "npm install && npm run build"
   },
   "deploy": {
-  "startCommand": "npm run deploy:prod"
+  "startCommand": "npm run start:with-migrate"
   }
 }
