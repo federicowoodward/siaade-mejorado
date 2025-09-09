@@ -14,15 +14,15 @@ const passport_1 = require("@nestjs/passport");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const jwt_strategy_1 = require("./jwt.strategy");
-const user_entity_1 = require("../../../entities/user.entity");
-const role_entity_1 = require("../../../entities/role.entity");
+const users_entity_1 = require("../../../entities/users.entity");
+const roles_entity_1 = require("../../../entities/roles.entity");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, role_entity_1.Role]),
+            typeorm_1.TypeOrmModule.forFeature([users_entity_1.User, roles_entity_1.Role]),
             passport_1.PassportModule,
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET || 'siaade-secret-key-2025',

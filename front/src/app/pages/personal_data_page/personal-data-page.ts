@@ -6,10 +6,7 @@ import { PersonalDataComponent } from '../../shared/components/personal_data/per
 @Component({
   selector: 'app-personal-data-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    PersonalDataComponent
-],
+  imports: [CommonModule, PersonalDataComponent],
   templateUrl: './personal-data-page.html',
   styleUrls: ['./personal-data-page.scss'],
 })

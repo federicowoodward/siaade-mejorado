@@ -10,11 +10,24 @@ exports.HttpExceptionFilter = void 0;
 const common_1 = require("@nestjs/common");
 let HttpExceptionFilter = class HttpExceptionFilter {
     catch(exception, host) {
-        const response = host.switchToHttp().getResponse(); // Captura la respuesta
-        const status = exception.status || 500; // Si la excepción no tiene un status, ponemos 500
-        response.status(status).json({
+        const res = host.switchToHttp().getResponse();
+        const status = exception?.status || 500;
+        // Si es HttpException, intentamos devolver el body completo (incluye 'message' como array en ValidationPipe)
+        if (exception instanceof common_1.HttpException) {
+            const body = exception.getResponse?.();
+            if (body) {
+                // body puede ser string u objeto
+                if (typeof body === 'string') {
+                    return res.status(status).json({ statusCode: status, message: body });
+                }
+                return res.status(status).json(body);
+            }
+        }
+        // Fallback genérico
+        res.status(status).json({
             statusCode: status,
-            message: exception.message || 'Internal Server Error', // Mensaje de error
+            message: exception?.message || 'Internal Server Error',
+            error: 'UnhandledException',
         });
     }
 };

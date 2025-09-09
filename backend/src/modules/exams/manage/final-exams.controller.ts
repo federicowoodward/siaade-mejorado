@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Put, Param, Delete, UseGuards } from '@nestjs/common';
 import { FinalExamsService } from './final-exams.service';  // Servicio de exámenes finales
-import { FinalExam } from '../../../entities/final-exam.entity';  // Entidad de examen final
+import { FinalExam } from '../../../entities/final_exam.entity';  // Entidad de examen final
 import { RolesGuard } from '../../../guards/roles.guard';
 import { Roles } from '../../users/auth/roles.decorator';
 import { HierarchyGuard } from '../../../guards/hierarchy.guard';

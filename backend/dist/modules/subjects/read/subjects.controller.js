@@ -14,9 +14,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubjectsController = void 0;
 const common_1 = require("@nestjs/common");
-const subjects_service_1 = require("../manage/subjects.service"); // Importa el servicio de materias
+const subjects_service_1 = require("./subjects.service"); // Importa el servicio local de read
 const roles_guard_1 = require("../../../guards/roles.guard");
-const roles_decorator_1 = require("../../users/auth/roles.decorator"); // Importa el decorador para roles
+const roles_decorator_1 = require("../../users/auth/roles.decorator"); // Decorador de roles original
 const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");
 let SubjectsController = class SubjectsController {
     constructor(subjectsService) {
@@ -33,7 +33,7 @@ exports.SubjectsController = SubjectsController;
 __decorate([
     (0, common_1.Get)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('Preceptor', 'Administrador', 'Secretario', 'Profesor'),
+    (0, roles_decorator_1.Roles)('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -42,7 +42,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('Preceptor', 'Administrador', 'Secretario', 'Profesor'),
+    (0, roles_decorator_1.Roles)('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

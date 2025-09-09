@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExamsController = void 0;
 const common_1 = require("@nestjs/common");
 const exams_service_1 = require("./exams.service"); // Servicio de exámenes
-const exam_entity_1 = require("../../../../entities/exam.entity"); // Entidad de examen
+const exams_entity_1 = require("../../../../entities/exams.entity"); // Entidad de examen
 const roles_guard_1 = require("../../../../guards/roles.guard");
 const roles_decorator_1 = require("../../../users/auth/roles.decorator");
 const hierarchy_guard_1 = require("../../../../guards/hierarchy.guard");
@@ -43,7 +43,7 @@ __decorate([
     ,
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [exam_entity_1.Exam]),
+    __metadata("design:paramtypes", [exams_entity_1.Exam]),
     __metadata("design:returntype", Promise)
 ], ExamsController.prototype, "createExam", null);
 __decorate([
@@ -55,7 +55,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, exam_entity_1.Exam]),
+    __metadata("design:paramtypes", [String, exams_entity_1.Exam]),
     __metadata("design:returntype", Promise)
 ], ExamsController.prototype, "updateExam", null);
 __decorate([

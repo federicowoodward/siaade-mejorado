@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FinalExam } from '../../../entities/final-exam.entity';
+import { FinalExam } from '../../../entities/final_exam.entity';
 
 @Injectable()
 export class FinalExamsService {

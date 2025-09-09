@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
 const auth_service_1 = require("./auth.service");
+const roles_util_1 = require("../../../shared/utils/roles.util");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor(authService) {
         super({
@@ -24,15 +25,18 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.authService = authService;
     }
     async validate(payload) {
-        const user = await this.authService.validateUser(payload.sub);
+        const user = await this.authService.validateUserById(payload.sub);
         if (!user) {
             throw new common_1.UnauthorizedException();
         }
+        const isDirective = user.secretary?.isDirective ?? false;
+        const canonical = (0, roles_util_1.toCanonicalRole)(user.role?.name, { isDirective });
         return {
             id: user.id,
             email: user.email,
-            role: user.role.name,
+            role: { name: (canonical ?? user.role?.name) },
             roleId: user.roleId,
+            isDirective,
         };
     }
 };

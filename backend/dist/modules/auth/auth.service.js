@@ -36,6 +36,24 @@ let AuthService = class AuthService {
         // Aquí puedes agregar la lógica para resetear la contraseña
         return { message: 'Password reset functionality not implemented yet' };
     }
+    async validateUserById(userId) {
+        // Reutilizamos el repositorio interno del UsersService con relaciones para guards
+        try {
+            // @ts-ignore: acceso intencional para simplificar wiring sin exponer método
+            const repo = this.usersService["usersRepository"];
+            return await repo.findOne({ where: { id: userId }, relations: ['role', 'secretary'] });
+        }
+        catch {
+            // Fallback a método público si cambia la implementación
+            const dto = await this.usersService.findById(userId);
+            return dto ? {
+                id: dto.id,
+                email: dto.email,
+                roleId: dto.roleId,
+                role: { id: dto.role?.id, name: dto.role?.name },
+            } : null;
+        }
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

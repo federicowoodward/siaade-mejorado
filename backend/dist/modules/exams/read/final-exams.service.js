@@ -16,7 +16,7 @@ exports.FinalExamsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const final_exam_entity_1 = require("../../../entities/final-exam.entity");
+const final_exam_entity_1 = require("../../../entities/final_exam.entity");
 let FinalExamsService = class FinalExamsService {
     constructor(finalExamsRepository) {
         this.finalExamsRepository = finalExamsRepository;

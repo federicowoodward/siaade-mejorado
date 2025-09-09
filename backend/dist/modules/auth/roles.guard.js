@@ -20,13 +20,18 @@ let RolesGuard = class RolesGuard extends jwt_guard_1.JwtAuthGuard {
         this.reflector = reflector;
     }
     canActivate(context) {
-        const roles = this.reflector.get(roles_decorator_1.ROLES_KEY, context.getHandler()); // Recupera los roles permitidos de la metadata de la ruta
-        if (!roles) {
+        const requiredRoles = this.reflector.get(roles_decorator_1.ROLES_KEY, context.getHandler()); // Recupera los roles permitidos de la metadata de la ruta
+        if (!requiredRoles) {
             return true; // Si no hay roles especificados, dejamos que pase
         }
         const request = context.switchToHttp().getRequest();
         const user = request.user; // El usuario que está haciendo la solicitud
-        return roles.some(role => user.roles?.includes(role)); // Verifica si el rol del usuario coincide con alguno de los roles permitidos
+        // Verificar si el usuario existe y tiene rol
+        if (!user || !user.role || !user.role.name) {
+            return false;
+        }
+        // Verificar si el rol del usuario está en la lista de roles permitidos
+        return requiredRoles.includes(user.role.name);
     }
 };
 exports.RolesGuard = RolesGuard;

@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StudentsController = void 0;
 const common_1 = require("@nestjs/common");
-const students_service_1 = require("../manage/students.service"); // Importa el servicio
+const students_service_1 = require("./students.service"); // Servicio local de students read
 const roles_guard_1 = require("../../../../guards/roles.guard");
 const roles_decorator_1 = require("../../../users/auth/roles.decorator"); // Decorador para roles
 const jwt_auth_guard_1 = require("../../../../guards/jwt-auth.guard");

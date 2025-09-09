@@ -16,7 +16,7 @@ exports.ExamsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const exam_entity_1 = require("../../../../entities/exam.entity");
+const exams_entity_1 = require("../../../../entities/exams.entity");
 let ExamsService = class ExamsService {
     constructor(examsRepository) {
         this.examsRepository = examsRepository;
@@ -50,7 +50,7 @@ let ExamsService = class ExamsService {
 exports.ExamsService = ExamsService;
 exports.ExamsService = ExamsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(exam_entity_1.Exam)),
+    __param(0, (0, typeorm_1.InjectRepository)(exams_entity_1.Exam)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], ExamsService);
 //# sourceMappingURL=exams.service.js.map

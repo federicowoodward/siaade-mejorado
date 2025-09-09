@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { FinalExamsService } from './final-exams.service';  // Servicio local de final-exams read
-import { FinalExam } from '../../../entities/final-exam.entity';  // Entidad de examen final
+import { FinalExam } from '../../../entities/final_exam.entity';  // Entidad de examen final
 import { RolesGuard } from '../../../guards/roles.guard';
 import { Roles } from '../../users/auth/roles.decorator';
 import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';

@@ -16,7 +16,7 @@ exports.StudentsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const student_entity_1 = require("../../../../entities/student.entity"); // Asegúrate de tener la entidad Student
+const students_entity_1 = require("../../../../entities/students.entity"); // Asegúrate de tener la entidad Student
 let StudentsService = class StudentsService {
     constructor(studentsRepository) {
         this.studentsRepository = studentsRepository;
@@ -50,7 +50,7 @@ let StudentsService = class StudentsService {
 exports.StudentsService = StudentsService;
 exports.StudentsService = StudentsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(student_entity_1.Student)),
+    __param(0, (0, typeorm_1.InjectRepository)(students_entity_1.Student)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], StudentsService);
 //# sourceMappingURL=students.service.js.map

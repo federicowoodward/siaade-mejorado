@@ -16,7 +16,7 @@ exports.SubjectsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const subject_entity_1 = require("../../../entities/subject.entity");
+const subjects_entity_1 = require("../../../entities/subjects.entity");
 let SubjectsService = class SubjectsService {
     constructor(subjectsRepository) {
         this.subjectsRepository = subjectsRepository;
@@ -33,7 +33,7 @@ let SubjectsService = class SubjectsService {
 exports.SubjectsService = SubjectsService;
 exports.SubjectsService = SubjectsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(subject_entity_1.Subject)),
+    __param(0, (0, typeorm_1.InjectRepository)(subjects_entity_1.Subject)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], SubjectsService);
 //# sourceMappingURL=subjects.service.js.map

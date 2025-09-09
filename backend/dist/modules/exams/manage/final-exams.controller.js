@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FinalExamsController = void 0;
 const common_1 = require("@nestjs/common");
 const final_exams_service_1 = require("./final-exams.service"); // Servicio de exámenes finales
-const final_exam_entity_1 = require("../../../entities/final-exam.entity"); // Entidad de examen final
+const final_exam_entity_1 = require("../../../entities/final_exam.entity"); // Entidad de examen final
 const roles_guard_1 = require("../../../guards/roles.guard");
 const roles_decorator_1 = require("../../users/auth/roles.decorator");
 const hierarchy_guard_1 = require("../../../guards/hierarchy.guard");

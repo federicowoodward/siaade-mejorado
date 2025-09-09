@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { FinalExamsService } from './final-exams.service';
 import { FinalExamsController } from './final-exams.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FinalExam } from '../../../entities/final-exam.entity';
+import { FinalExam } from '../../../entities/final_exam.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([FinalExam])],

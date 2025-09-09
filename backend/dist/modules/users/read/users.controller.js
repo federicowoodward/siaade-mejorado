@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
-const users_service_1 = require("../manage/users.service"); // Servicio de usuarios
+const users_service_1 = require("./users.service"); // Servicio local de users read
 const roles_guard_1 = require("../../../guards/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator"); // Decorador para definir los roles
 const jwt_auth_guard_1 = require("../../../guards/jwt-auth.guard");

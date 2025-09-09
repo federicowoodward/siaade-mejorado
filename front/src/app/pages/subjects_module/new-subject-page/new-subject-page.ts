@@ -125,9 +125,9 @@ export class NewSubjectPage implements OnInit {
         throw new Error('No se encontraron usuarios en el sistema');
       }
 
-      // Filtrar roles
-      this.teachers = users.filter(u => u.roleId === 3);
-      this.preceptors = users.filter(u => u.roleId === 4);
+  // Filtrar roles (IDs según seed: 1=secretary, 2=teacher, 3=preceptor, 4=student)
+  this.teachers = users.filter(u => u.roleId === 2);
+  this.preceptors = users.filter(u => u.roleId === 3);
       
       // Si no hay preceptores, usar admins/secretarios
       if (this.preceptors.length === 0) {
@@ -317,17 +317,25 @@ export class NewSubjectPage implements OnInit {
     this.creating = true;
 
     try {
-      const subjectData = {
+      // Construir payload cuidando tipos y evitando enviar nulls
+      const subjectData: any = {
         subjectName: this.subjectName,
         teacher: teacherId,
         preceptor: preceptorId,
-        courseNum: parseInt(this.courseNum),
-        courseLetter: this.courseLetter,
-        courseYear: this.courseYear,
-        correlative: this.corrSelectedId
+        courseNum: parseInt(String(this.courseNum), 10),
+        courseLetter: String(this.courseLetter),
+        courseYear: String(this.courseYear)
       };
 
-      await firstValueFrom(this.api.create<Subject>('subjects/manage/create', subjectData));
+      // Solo incluir correlative si hay un ID válido (number)
+      if (typeof this.corrSelectedId === 'number' && !Number.isNaN(this.corrSelectedId)) {
+        subjectData.correlative = this.corrSelectedId;
+      }
+
+  // Log de depuración del payload
+  console.debug('[Subjects] Creating with payload:', subjectData);
+
+  await firstValueFrom(this.api.create<Subject>('subjects/manage/create', subjectData));
 
       this.messageService.add({
         severity: 'success',
@@ -342,17 +350,25 @@ export class NewSubjectPage implements OnInit {
 
     } catch (error: any) {
       console.error('Error creating subject:', error);
-      
+      const backendMsg = error?.error?.message;
       let errorMessage = 'Error al crear la materia. Verifique los datos.';
-      
-      if (error?.status === 401) {
-        errorMessage = 'No autorizado. Por favor, inicie sesión nuevamente.';
-      } else if (error?.status === 400) {
-        errorMessage = 'Datos inválidos. Verifique que todos los campos estén completos.';
-      } else if (error?.status === 500) {
-        errorMessage = 'Error del servidor. Intente nuevamente más tarde.';
-      } else if (error?.error?.message) {
-        errorMessage = error.error.message;
+
+      // Si el backend envía mensaje (string o array), priorizarlo SIEMPRE
+      if (backendMsg) {
+        if (Array.isArray(backendMsg)) {
+          errorMessage = backendMsg.join(' | ');
+        } else if (typeof backendMsg === 'string') {
+          errorMessage = backendMsg;
+        }
+      } else {
+        // Fallback por status
+        if (error?.status === 401) {
+          errorMessage = 'No autorizado. Por favor, inicie sesión nuevamente.';
+        } else if (error?.status === 400) {
+          errorMessage = 'Datos inválidos. Verifique que todos los campos estén completos.';
+        } else if (error?.status === 500) {
+          errorMessage = 'Error del servidor. Intente nuevamente más tarde.';
+        }
       }
       
       this.messageService.add({

@@ -94,8 +94,12 @@ export class AuthService {
   async validateUser(userId: string) {
     return await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['role'],
+      relations: ['role', 'secretary'],
     });
+  }
+
+  async validateUserById(userId: string) {
+    return this.validateUser(userId);
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {

@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const final_exams_service_1 = require("./final-exams.service");
 const final_exams_controller_1 = require("./final-exams.controller");
 const typeorm_1 = require("@nestjs/typeorm");
-const final_exam_entity_1 = require("../../../entities/final-exam.entity");
+const final_exam_entity_1 = require("../../../entities/final_exam.entity");
 let FinalExamsModule = class FinalExamsModule {
 };
 exports.FinalExamsModule = FinalExamsModule;

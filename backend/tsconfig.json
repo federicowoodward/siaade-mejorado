@@ -19,7 +19,7 @@
     "noEmitOnError": false,
     "sourceMap": true,
     "baseUrl": "./",
-    "incremental": true
+  "incremental": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

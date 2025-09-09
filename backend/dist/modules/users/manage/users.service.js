@@ -50,8 +50,8 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = __importStar(require("bcryptjs"));
-const user_entity_1 = require("../../../entities/user.entity");
-const role_entity_1 = require("../../../entities/role.entity");
+const users_entity_1 = require("../../../entities/users.entity");
+const roles_entity_1 = require("../../../entities/roles.entity");
 let UsersService = class UsersService {
     constructor(usersRepository, rolesRepository) {
         this.usersRepository = usersRepository;
@@ -171,8 +171,8 @@ let UsersService = class UsersService {
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(1, (0, typeorm_1.InjectRepository)(role_entity_1.Role)),
+    __param(0, (0, typeorm_1.InjectRepository)(users_entity_1.User)),
+    __param(1, (0, typeorm_1.InjectRepository)(roles_entity_1.Role)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository])
 ], UsersService);

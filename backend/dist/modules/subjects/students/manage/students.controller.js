@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StudentsController = void 0;
 const common_1 = require("@nestjs/common");
 const students_service_1 = require("./students.service"); // Importa el servicio
-const student_entity_1 = require("../../../../entities/student.entity"); // Entidad de estudiante
+const students_entity_1 = require("../../../../entities/students.entity"); // Entidad de estudiante
 const roles_guard_1 = require("../../../../guards/roles.guard");
 const roles_decorator_1 = require("../../../users/auth/roles.decorator"); // Decorador para roles
 const hierarchy_guard_1 = require("../../../../guards/hierarchy.guard");
@@ -43,7 +43,7 @@ __decorate([
     ,
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [student_entity_1.Student]),
+    __metadata("design:paramtypes", [students_entity_1.Student]),
     __metadata("design:returntype", Promise)
 ], StudentsController.prototype, "enrollStudent", null);
 __decorate([
@@ -55,7 +55,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, student_entity_1.Student]),
+    __metadata("design:paramtypes", [String, students_entity_1.Student]),
     __metadata("design:returntype", Promise)
 ], StudentsController.prototype, "updateStudent", null);
 __decorate([

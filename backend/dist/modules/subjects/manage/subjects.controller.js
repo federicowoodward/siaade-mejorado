@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubjectsController = void 0;
 const common_1 = require("@nestjs/common");
 const subjects_service_1 = require("./subjects.service");
-const subject_entity_1 = require("../../../entities/subject.entity"); // Asegúrate de tener la entidad Subject
+const subjects_entity_1 = require("../../../entities/subjects.entity"); // Asegúrate de tener la entidad Subject
 const create_subject_dto_1 = require("../dto/create-subject.dto");
 const roles_guard_1 = require("../../../guards/roles.guard");
 const roles_decorator_1 = require("../../users/auth/roles.decorator"); // Importa el decorador para roles
@@ -52,7 +52,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, subject_entity_1.Subject]),
+    __metadata("design:paramtypes", [String, subjects_entity_1.Subject]),
     __metadata("design:returntype", Promise)
 ], SubjectsController.prototype, "updateSubject", null);
 __decorate([
