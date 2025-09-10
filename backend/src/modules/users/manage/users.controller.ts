@@ -10,17 +10,22 @@ import {
   HttpStatus,
   BadRequestException,
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { CreationMode, UsersService } from "./users.service";
 import { CreatePreceptorDto } from "./dto/create-preceptor.dto";
 import { CreateSecretaryDto } from "./dto/create-secretary.dto";
 import { CreateTeacherDto } from "./dto/create-teacher.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
-
+import { UsersPatchService } from "@/shared/services/users-patch/users-patch.service";
+import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 @ApiTags("Users Management")
 @Controller("users")
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly usersPatchService: UsersPatchService,
+    private readonly userReader: UserProfileReaderService
+  ) {}
 
   @Post("secretary")
   @HttpCode(HttpStatus.CREATED)
@@ -101,20 +106,23 @@ export class UsersController {
   }
 
   @Put(":id")
-  @ApiOperation({ summary: "Update user" })
+  @ApiOperation({ summary: "Update user (flat keys)" })
   @ApiResponse({ status: 200, description: "User updated successfully" })
-  async updateUser(@Param("id") id: string, @Body() updateUserDto: any) {
+  @ApiBody({
+    schema: {
+      type: "object",
+      additionalProperties: true,
+      example: { name: "Ana", "userInfo.documentType": "DNI" },
+    },
+  })
+  async updateUser(@Param("id") id: string, @Body() body: Record<string, any>) {
     try {
-      const user = await this.usersService.update(id, updateUserDto);
-      return {
-        data: user,
-        message: "User updated successfully",
-      };
+      await this.usersPatchService.patchUser(id, body);
+      // devolvemos el perfil unificado ya existente en tu lector
+      const data = await this.userReader.findById(id);
+      return { data, message: "User updated successfully" };
     } catch (error: any) {
-      return {
-        error: error?.message || "Unknown error",
-        message: "Failed to update user",
-      };
+      throw new BadRequestException(error?.message || "Failed to update user");
     }
   }
 
