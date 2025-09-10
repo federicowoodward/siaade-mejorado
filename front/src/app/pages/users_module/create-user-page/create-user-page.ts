@@ -14,7 +14,22 @@ import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
 import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
+import { buildPreviewRows } from '../../../shared/utils/create-user/user-preview-table';
 
+import {
+  ROLE_REQUIREMENTS,
+  UserRole,
+} from '../../../shared/utils/create-user/role-config';
+import {
+  buildPayload,
+  hasAnyAddress,
+} from '../../../shared/utils/create-user/user-payload.util';
+import {
+  canCreateBase,
+  canCreateStep2,
+} from '../../../shared/utils/create-user/user-validators.util';
+
+type PreviewRow = { field: string; value: string };
 @Component({
   selector: 'app-create-user-page',
   standalone: true,
@@ -28,7 +43,7 @@ import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
     TooltipModule,
     TableModule,
     FieldLabelPipe,
-    RoleLabelPipe
+    RoleLabelPipe,
   ],
   templateUrl: './create-user-page.html',
   styleUrl: './create-user-page.scss',
@@ -37,110 +52,116 @@ export class CreateUserPage {
   private goBackSvc = inject(GoBackService);
   private api = inject(ApiService);
   private router = inject(Router);
-  
+
   isCreating = false;
 
   back(): void {
     this.goBackSvc.back();
   }
+  // Paso 1 — Usuario básico
+  role: UserRole | null = null;
+  name = '';
+  lastName = '';
+  email = '';
+  cuil = '';
+
+  // Password inicial = CUIL (vista previa)
+  get passwordPreview() {
+    return this.cuil || 'pass1234';
+  }
+
+  // Paso 2 — user_info / common_data (según rol)
+  // user_info
+  documentType = '';
+  documentValue = '';
+  phone = '';
+  emergencyName = '';
+  emergencyPhone = '';
+
+  // common_data
+  sex = '';
+  birthDate = ''; // yyyy-MM-dd
+  birthPlace = '';
+  nationality = '';
+
+  // address (opcional)
+  addressStreet = '';
+  addressNumber = '';
+  addressLocality = '';
+  addressProvince = '';
+  addressCountry = '';
+  addressPostalCode = '';
+
+  private addressObj() {
+    return {
+      street: this.addressStreet || undefined,
+      number: this.addressNumber || undefined,
+      locality: this.addressLocality || undefined,
+      province: this.addressProvince || undefined,
+      country: this.addressCountry || undefined,
+      postalCode: this.addressPostalCode || undefined,
+    };
+  }
+
+  hasAddress() {
+    return hasAnyAddress(this.addressObj());
+  }
+
+  get req() {
+    return this.role ? ROLE_REQUIREMENTS[this.role] : null;
+  }
+
+  canCreate(): boolean {
+    const baseOk = canCreateBase(this.role, this.email, this.cuil);
+    if (!baseOk) return false;
+    if (this.role === 'secretary') return true;
+
+    return canCreateStep2({
+      role: this.role,
+      documentType: this.documentType,
+      documentValue: this.documentValue,
+      sex: this.sex,
+      birthDate: this.birthDate,
+      birthPlace: this.birthPlace,
+      nationality: this.nationality,
+    });
+  }
 
   async createUser(): Promise<void> {
-    if (this.isCreating) return;
-    if (!this.role) { console.warn('Debe seleccionar rol'); return; }
+    if (this.isCreating || !this.role) return;
     this.isCreating = true;
 
     try {
-      const base = {
-        name: this.name || undefined,
-        lastName: this.lastName || undefined,
-        email: this.email,
-        password: this.passwordPreview,
-        cuil: this.cuil || undefined,
-      };
-
-      let endpoint = '';
-      let payload: any = {};
-
-      switch (this.role) {
-        case 'secretary': {
-          endpoint = 'users/secretary';
-          payload = { ...base, isDirective: this.isDirective || false };
-          break;
-        }
-        case 'preceptor': {
-          endpoint = 'users/preceptor';
-          payload = {
-            ...base,
-            userInfo: {
+      const { endpoint, payload } = buildPayload({
+        base: {
+          role: this.role,
+          name: this.name,
+          lastName: this.lastName,
+          email: this.email,
+          cuil: this.cuil,
+        },
+        userInfo: this.req?.needsUserInfo
+          ? {
               documentType: this.documentType,
               documentValue: this.documentValue,
               phone: this.phone || undefined,
               emergencyName: this.emergencyName || undefined,
               emergencyPhone: this.emergencyPhone || undefined,
             }
-          };
-          break;
-        }
-        case 'teacher': {
-          endpoint = 'users/teacher';
-          payload = {
-            ...base,
-            userInfo: {
-              documentType: this.documentType,
-              documentValue: this.documentValue,
-              phone: this.phone || undefined,
-              emergencyName: this.emergencyName || undefined,
-              emergencyPhone: this.emergencyPhone || undefined,
-            },
-            commonData: {
+          : undefined,
+        commonData: this.req?.needsCommonData
+          ? {
               sex: this.sex,
               birthDate: this.birthDate,
               birthPlace: this.birthPlace,
               nationality: this.nationality,
-              address: this.hasAddress() ? {
-                street: this.addressStreet || undefined,
-                number: this.addressNumber || undefined,
-                locality: this.addressLocality || undefined,
-                province: this.addressProvince || undefined,
-                country: this.addressCountry || undefined,
-                postalCode: this.addressPostalCode || undefined,
-              } : undefined
             }
-          };
-          break;
-        }
-        case 'student': {
-          endpoint = 'users/student';
-          payload = {
-            ...base,
-            userInfo: {
-              documentType: this.documentType,
-              documentValue: this.documentValue,
-              phone: this.phone || undefined,
-              emergencyName: this.emergencyName || undefined,
-              emergencyPhone: this.emergencyPhone || undefined,
-            },
-            commonData: {
-              sex: this.sex,
-              birthDate: this.birthDate,
-              birthPlace: this.birthPlace,
-              nationality: this.nationality,
-              address: this.hasAddress() ? {
-                street: this.addressStreet || undefined,
-                number: this.addressNumber || undefined,
-                locality: this.addressLocality || undefined,
-                province: this.addressProvince || undefined,
-                country: this.addressCountry || undefined,
-                postalCode: this.addressPostalCode || undefined,
-              } : undefined
-            }
-          };
-          break;
-        }
-        default:
-          console.error('Rol no soportado');
-          return;
-      }
+          : undefined,
+        address:
+          this.req?.allowsAddress && this.hasAddress()
+            ? this.addressObj()
+            : undefined,
+      });
 
       const created = await this.api.create(endpoint, payload).toPromise();
       console.log('Usuario creado:', created);
@@ -152,95 +173,9 @@ export class CreateUserPage {
     }
   }
 
-  private getRoleId(role: string | null): number {
-    // Mapear roles a IDs (esto debería venir del backend idealmente)
-    const roleMap: Record<string, number> = {
-      'student': 1,
-      'teacher': 2,
-      'preceptor': 3,
-      'secretary': 4
-    };
-    return roleMap[role || 'student'] || 1;
-  }
+  /** Build y Getter consumido por la tabla  de preview*/
 
-  // Paso 1 — Usuario básico
-  role: string | null = null;
-  name = '';
-  lastName = '';
-  email = '';
-  cuil = '';
-
-  // Vista previa de password (CUIL)
-  get passwordPreview() {
-    return this.cuil || '—';
-  }
-
-  // Paso 2 — Datos extra por rol
-  // student
-  legajo = '';
-  // secretary
-  isDirective = false;
-  // user_info
-  documentType = '';
-  documentValue = '';
-  phone = '';
-  emergencyName = '';
-  emergencyPhone = '';
-  // common_data
-  sex = '';
-  birthDate = ''; // input[type=date] (string yyyy-MM-dd)
-  birthPlace = '';
-  nationality = '';
-
-  // Dirección (opcional dentro de commonData.address para teacher/student)
-  addressStreet = '';
-  addressNumber = '';
-  addressLocality = '';
-  addressProvince = '';
-  addressCountry = '';
-  addressPostalCode = '';
-
-  hasAddress() {
-    return [this.addressStreet, this.addressNumber, this.addressLocality, this.addressProvince, this.addressCountry, this.addressPostalCode]
-      .some(v => !!v);
-  }
-
-  canCreate(): boolean {
-    if (!this.role || !this.email || !this.passwordPreview) return false;
-    if (this.role === 'secretary') return true; // solo base + isDirective opcional
-    // Requieren userInfo
-    if (!this.documentType || !this.documentValue) return false;
-    if (this.role === 'preceptor') return true; // no commonData obligatoria
-    // teacher / student requieren commonData
-    if (!this.sex || !this.birthDate || !this.birthPlace || !this.nationality) return false;
-    return true;
-  }
-
-  // Autocomplete fuentes (solo strings)
-  private rolesAll = ['student', 'teacher', 'preceptor', 'secretary'];
-  roleSuggestions: string[] = [];
-  private docTypesAll = ['DNI', 'Pasaporte', 'LE', 'LC'];
-  docTypeSuggestions: string[] = [];
-  private sexesAll = ['F', 'M', 'X'];
-  sexSuggestions: string[] = [];
-
-  // Métodos de sugerencias
-  private filterContains(src: string[], q: string) {
-    const qq = (q || '').toLowerCase().trim();
-    return !qq ? [...src] : src.filter((v) => v.toLowerCase().includes(qq));
-  }
-  searchRoles(e: any) {
-    this.roleSuggestions = this.filterContains(this.rolesAll, e?.query);
-  }
-  searchDocTypes(e: any) {
-    this.docTypeSuggestions = this.filterContains(this.docTypesAll, e?.query);
-  }
-  searchSex(e: any) {
-    this.sexSuggestions = this.filterContains(this.sexesAll, e?.query);
-  }
-
-  // Paso 3 — Preview simple (solo para mostrar captura)
-  getPreview() {
+  buildPreview() {
     return {
       user: {
         role: this.role,
@@ -250,39 +185,66 @@ export class CreateUserPage {
         cuil: this.cuil,
         password: this.passwordPreview,
       },
-      roleExtras: {
-        ...(this.role === 'student' ? { legajo: this.legajo } : {}),
-        ...(this.role === 'secretary' ? { isDirective: this.isDirective } : {}),
-      },
-      user_info: {
-        documentType: this.documentType || undefined,
-        documentValue: this.documentValue || undefined,
-        phone: this.phone || undefined,
-        emergencyName: this.emergencyName || undefined,
-        emergencyPhone: this.emergencyPhone || undefined,
-      },
-      common_data: {
-        sex: this.sex || undefined,
-        birthDate: this.birthDate || undefined,
-        birthPlace: this.birthPlace || undefined,
-        nationality: this.nationality || undefined,
-      },
+      user_info: this.req?.needsUserInfo
+        ? {
+            documentType: this.documentType || undefined,
+            documentValue: this.documentValue || undefined,
+            phone: this.phone || undefined,
+            emergencyName: this.emergencyName || undefined,
+            emergencyPhone: this.emergencyPhone || undefined,
+          }
+        : undefined,
+      common_data: this.req?.needsCommonData
+        ? {
+            sex: this.sex || undefined,
+            birthDate: this.birthDate || undefined,
+            birthPlace: this.birthPlace || undefined,
+            nationality: this.nationality || undefined,
+            address:
+              this.req?.allowsAddress && this.hasAddress()
+                ? this.addressObj()
+                : undefined,
+          }
+        : undefined,
     };
   }
-  get previewRows(): { section: string; field: string; value: string }[] {
-    const data = this.getPreview(); // usa tu método existente
-    const rows: { section: string; field: string; value: string }[] = [];
-    const push = (section: string, obj: any) => {
-      Object.entries(obj || {}).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && v !== '') {
-          rows.push({ section, field: k, value: String(v) });
-        }
-      });
-    };
-    push('user', data.user);
-    push('roleExtras', data.roleExtras);
-    push('user_info', data.user_info);
-    push('common_data', data.common_data);
-    return rows;
+
+  get previewRows(): PreviewRow[] {
+    return buildPreviewRows(this.buildPreview());
+  }
+
+  // ---- SUGERENCIAS / LISTAS ----
+  private rolesAll: UserRole[] = [
+    'student',
+    'teacher',
+    'preceptor',
+    'secretary',
+  ];
+  roleSuggestions: UserRole[] = [];
+
+  private docTypesAll: string[] = ['DNI', 'Pasaporte', 'LE', 'LC'];
+  docTypeSuggestions: string[] = [];
+
+  private sexesAll: string[] = ['F', 'M', 'X'];
+  sexSuggestions: string[] = [];
+
+  // ---- HELPERS ----
+  private filterContains<T extends string>(src: T[], q: string): T[] {
+    const needle = (q ?? '').toLowerCase().trim();
+    if (!needle) return [...src];
+    return src.filter((v) => v.toLowerCase().includes(needle));
+  }
+
+  // ---- MÉTODOS PARA p-autoComplete ----
+  searchRoles(e: { query: string }) {
+    this.roleSuggestions = this.filterContains(this.rolesAll, e?.query);
+  }
+
+  searchDocTypes(e: { query: string }) {
+    this.docTypeSuggestions = this.filterContains(this.docTypesAll, e?.query);
+  }
+
+  searchSex(e: { query: string }) {
+    this.sexSuggestions = this.filterContains(this.sexesAll, e?.query);
   }
 }

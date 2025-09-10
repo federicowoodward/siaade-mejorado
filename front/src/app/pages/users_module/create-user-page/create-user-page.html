@@ -1,6 +1,6 @@
 <div class="card flex justify-center m-w-custom">
-  <p-stepper [value]="1" class="basis-[50rem]" [linear]="true">
-    <p-step-list>
+  <p-stepper [value]="1" class="w-full" [linear]="true">
+    <p-step-list class="w-full">
       <p-step [value]="1">Paso I</p-step>
       <p-step [value]="2">Paso II</p-step>
       <p-step [value]="3">Paso III</p-step>
@@ -9,13 +9,25 @@
     <p-step-panels>
       <!-- PASO 1: rol + usuario básico -->
       <p-step-panel [value]="1">
-        <ng-template #content let-activateCallback="activateCallback">
+        <ng-template
+          #content
+          let-activateCallback="activateCallback"
+          class="min-h-30rem"
+        >
           <div class="grid form-grid">
             <!-- Rol -->
             <div class="col-12">
               <label class="block mb-2">Rol *</label>
-              <p-autoComplete class="w-full" [suggestions]="roleSuggestions" (completeMethod)="searchRoles($event)"
-                [dropdown]="true" [minLength]="0" [(ngModel)]="role" placeholder="Seleccione rol del nuevo usuario">
+              <p-autoComplete
+                class="w-full"
+                [suggestions]="roleSuggestions"
+                (completeMethod)="searchRoles($event)"
+                [dropdown]="true"
+                [minLength]="0"
+                [(ngModel)]="role"
+                [forceSelection]="true"
+                placeholder="Seleccione rol del nuevo usuario"
+              >
                 <!-- items del dropdown -->
                 <ng-template pTemplate="item" let-item>
                   {{ item | roleLabel }}
@@ -39,133 +51,243 @@
 
             <div class="col-12 md:col-6">
               <label class="block mb-2">Email *</label>
-              <input pInputText class="w-full" [(ngModel)]="email" placeholder="mail@dominio.com" />
+              <input
+                pInputText
+                class="w-full"
+                [(ngModel)]="email"
+                placeholder="mail@dominio.com"
+              />
             </div>
             <div class="col-12 md:col-6">
               <label class="block mb-2">CUIL *</label>
-              <input pInputText class="w-full" [(ngModel)]="cuil" placeholder="11 dígitos" />
+              <input
+                pInputText
+                class="w-full"
+                [(ngModel)]="cuil"
+                placeholder="11 dígitos"
+              />
               <small class="text-color-secondary block mt-1">
                 La contraseña inicial será el CUIL: <b>{{ passwordPreview }}</b>
               </small>
             </div>
           </div>
 
-          <div class="flex pt-6 justify-end">
-            <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(2)" />
+          <div class="flex pt-6 justify-content-between">
+            <div class="flex gap-2">
+              <p-button
+                label="Cancelar"
+                icon="pi pi-times"
+                variant="outlined"
+                severity="danger"
+                (onClick)="back()"
+              />
+            </div>
+            <div>
+              <p-button
+                label="Siguiente"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                (onClick)="activateCallback(2)"
+                [disabled]="role == null || name === '' || lastName === '' || email === '' "
+              />
+            </div>
           </div>
         </ng-template>
       </p-step-panel>
 
-      <!-- PASO 2: datos por rol + info común -->
+      <!-- PASO 2 -->
       <p-step-panel [value]="2">
-        <ng-template #content let-activateCallback="activateCallback">
-          <div class="grid form-grid">
-            <!-- Extras por rol -->
-            <div class="col-12" *ngIf="role === 'student'">
-              <h3 class="mb-2">Datos de alumno</h3>
-              <div class="grid">
-                <div class="col-12 md:col-6">
-                  <label class="block mb-2">Legajo *</label>
-                  <input pInputText class="w-full" [(ngModel)]="legajo" placeholder="Ej: 2021xxx" />
+        <ng-template
+          #content
+          let-activateCallback="activateCallback"
+          class="min-h-30rem"
+        >
+          <div class="grid form-grid col-12">
+            <!-- SECRETARY -->
+            <ng-container *ngIf="role === 'secretary'">
+              <div class="col-12 w-full">
+                <p class="text-color-secondary w-full">
+                  Este rol no requiere datos adicionales. Puede continuar al
+                  resumen.
+                </p>
+              </div>
+            </ng-container>
+
+            <!-- USER INFO (preceptor/teacher/student) -->
+            <ng-container *ngIf="req?.needsUserInfo">
+              <div class="col-12">
+                <h3 class="mb-2">Información de contacto</h3>
+                <div class="grid">
+                  <div class="col-12 md:col-3">
+                    <label class="block mb-2">Tipo documento *</label>
+                    <p-autoComplete
+                      class="w-full"
+                      [suggestions]="docTypeSuggestions"
+                      (completeMethod)="searchDocTypes($event)"
+                      [dropdown]="true"
+                      [minLength]="0"
+                      [(ngModel)]="documentType"
+                      placeholder="DNI / Pasaporte / LE / LC"
+                    >
+                    </p-autoComplete>
+                  </div>
+                  <div class="col-12 md:col-3">
+                    <label class="block mb-2">N° documento *</label>
+                    <input
+                      pInputText
+                      class="w-full"
+                      [(ngModel)]="documentValue"
+                    />
+                  </div>
+                  <div class="col-12 md:col-3">
+                    <label class="block mb-2">Teléfono</label>
+                    <input pInputText class="w-full" [(ngModel)]="phone" />
+                  </div>
+                  <div class="col-12 md:col-3">
+                    <label class="block mb-2">Emergencia - Tel.</label>
+                    <input
+                      pInputText
+                      class="w-full"
+                      [(ngModel)]="emergencyPhone"
+                    />
+                    <small class="block mt-1"
+                      >Contacto: {{ emergencyName || '—' }}</small
+                    >
+                  </div>
+                  <div class="col-12 md:col-6">
+                    <label class="block mb-2">Emergencia - Nombre</label>
+                    <input
+                      pInputText
+                      class="w-full"
+                      [(ngModel)]="emergencyName"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            </ng-container>
 
-            <div class="col-12" *ngIf="role === 'secretary'">
-              <h3 class="mb-2">Datos de secretaría</h3>
-              <div class="flex align-items-center gap-2">
-                <input type="checkbox" id="isDirective" [(ngModel)]="isDirective" />
-                <label for="isDirective">Es directivo</label>
-              </div>
-            </div>
+            <!-- COMMON DATA (teacher/student) -->
+            <ng-container *ngIf="req?.needsCommonData">
+              <div class="col-12">
+                <h3 class="mb-2">Datos comunes</h3>
+                <div class="grid">
+                  <div class="col-12 md:col-2">
+                    <label class="block mb-2">Sexo *</label>
+                    <p-autoComplete
+                      class="w-full"
+                      [suggestions]="sexSuggestions"
+                      (completeMethod)="searchSex($event)"
+                      [dropdown]="true"
+                      [minLength]="0"
+                      [(ngModel)]="sex"
+                      placeholder="F / M / X"
+                    >
+                    </p-autoComplete>
+                  </div>
+                  <div class="col-12 md:col-4">
+                    <label class="block mb-2">Fecha de nacimiento *</label>
+                    <input
+                      type="date"
+                      class="w-full p-inputtext p-component"
+                      [(ngModel)]="birthDate"
+                    />
+                  </div>
+                  <div class="col-12 md:col-3">
+                    <label class="block mb-2">Lugar de nacimiento *</label>
+                    <input pInputText class="w-full" [(ngModel)]="birthPlace" />
+                  </div>
+                  <div class="col-12 md:col-3">
+                    <label class="block mb-2">Nacionalidad *</label>
+                    <input
+                      pInputText
+                      class="w-full"
+                      [(ngModel)]="nationality"
+                    />
+                  </div>
 
-            <!-- user_info -->
-            <div class="col-12">
-              <h3 class="mb-2">Información de contacto (user_info)</h3>
-              <div class="grid">
-                <div class="col-12 md:col-3">
-                  <label class="block mb-2">Tipo documento</label>
-                  <p-autoComplete class="w-full" [suggestions]="docTypeSuggestions"
-                    (completeMethod)="searchDocTypes($event)" [dropdown]="true" [minLength]="0"
-                    [(ngModel)]="documentType" placeholder="DNI / Pasaporte / LE / LC"></p-autoComplete>
-                </div>
-                <div class="col-12 md:col-3">
-                  <label class="block mb-2">N° documento</label>
-                  <input pInputText class="w-full" [(ngModel)]="documentValue" />
-                </div>
-                <div class="col-12 md:col-3">
-                  <label class="block mb-2">Teléfono</label>
-                  <input pInputText class="w-full" [(ngModel)]="phone" />
-                </div>
-                <div class="col-12 md:col-3">
-                  <label class="block mb-2">Emergencia - Tel.</label>
-                  <input pInputText class="w-full" [(ngModel)]="emergencyPhone" />
-                  <small class="block mt-1">Contacto: {{ emergencyName || '—' }}</small>
-                </div>
-                <div class="col-12 md:col-6">
-                  <label class="block mb-2">Emergencia - Nombre</label>
-                  <input pInputText class="w-full" [(ngModel)]="emergencyName" />
-                </div>
-              </div>
-            </div>
-
-            <!-- common_data -->
-            <div class="col-12">
-              <h3 class="mb-2">Datos comunes (common_data)</h3>
-              <div class="grid">
-                <div class="col-12 md:col-2">
-                  <label class="block mb-2">Sexo</label>
-                  <p-autoComplete class="w-full" [suggestions]="sexSuggestions" (completeMethod)="searchSex($event)"
-                    [dropdown]="true" [minLength]="0" [(ngModel)]="sex" placeholder="F / M / X"></p-autoComplete>
-                </div>
-                <div class="col-12 md:col-4">
-                  <label class="block mb-2">Fecha de nacimiento</label>
-                  <input type="date" class="w-full p-inputtext p-component" [(ngModel)]="birthDate" />
-                </div>
-                <div class="col-12 md:col-3">
-                  <label class="block mb-2">Lugar de nacimiento</label>
-                  <input pInputText class="w-full" [(ngModel)]="birthPlace" />
-                </div>
-                <div class="col-12 md:col-3">
-                  <label class="block mb-2">Nacionalidad</label>
-                  <input pInputText class="w-full" [(ngModel)]="nationality" />
-                </div>
-                <div class="col-12">
-                  <h4 class="mt-3 mb-2">Dirección (opcional)</h4>
-                  <div class="grid">
-                    <div class="col-12 md:col-4">
-                      <label class="block mb-2">Calle</label>
-                      <input pInputText class="w-full" [(ngModel)]="addressStreet" />
-                    </div>
-                    <div class="col-12 md:col-2">
-                      <label class="block mb-2">Número</label>
-                      <input pInputText class="w-full" [(ngModel)]="addressNumber" />
-                    </div>
-                    <div class="col-12 md:col-3">
-                      <label class="block mb-2">Localidad</label>
-                      <input pInputText class="w-full" [(ngModel)]="addressLocality" />
-                    </div>
-                    <div class="col-12 md:col-3">
-                      <label class="block mb-2">Provincia</label>
-                      <input pInputText class="w-full" [(ngModel)]="addressProvince" />
-                    </div>
-                    <div class="col-12 md:col-3">
-                      <label class="block mb-2">País</label>
-                      <input pInputText class="w-full" [(ngModel)]="addressCountry" />
-                    </div>
-                    <div class="col-12 md:col-3">
-                      <label class="block mb-2">Código Postal</label>
-                      <input pInputText class="w-full" [(ngModel)]="addressPostalCode" />
+                  <!-- Dirección OPCIONAL -->
+                  <div class="col-12" *ngIf="req?.allowsAddress">
+                    <h4 class="mt-3 mb-2">Dirección (opcional)</h4>
+                    <div class="grid">
+                      <div class="col-12 md:col-4">
+                        <label class="block mb-2">Calle</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="addressStreet"
+                        />
+                      </div>
+                      <div class="col-12 md:col-2">
+                        <label class="block mb-2">Número</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="addressNumber"
+                        />
+                      </div>
+                      <div class="col-12 md:col-3">
+                        <label class="block mb-2">Localidad</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="addressLocality"
+                        />
+                      </div>
+                      <div class="col-12 md:col-3">
+                        <label class="block mb-2">Provincia</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="addressProvince"
+                        />
+                      </div>
+                      <div class="col-12 md:col-3">
+                        <label class="block mb-2">País</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="addressCountry"
+                        />
+                      </div>
+                      <div class="col-12 md:col-3">
+                        <label class="block mb-2">Código Postal</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="addressPostalCode"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </ng-container>
           </div>
 
           <div class="flex pt-6 justify-content-between">
-            <p-button label="Volver" severity="secondary" icon="pi pi-arrow-left" (onClick)="activateCallback(1)" />
-            <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(3)" />
+            <div class="flex gap-2">
+              <p-button
+                label="Volver"
+                severity="secondary"
+                icon="pi pi-arrow-left"
+                (onClick)="activateCallback(1)"
+              />
+              <p-button
+                label="Cancelar"
+                icon="pi pi-times"
+                variant="outlined"
+                severity="danger"
+                (onClick)="back()"
+              />
+            </div>
+            <div>
+              <p-button
+                label="Siguiente"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                (onClick)="activateCallback(3)"
+              />
+            </div>
           </div>
         </ng-template>
       </p-step-panel>
@@ -176,7 +298,11 @@
           <div class="m-w-custom">
             <h3 class="mb-3">Resumen (demo)</h3>
 
-            <p-table [value]="previewRows" showGridlines [tableStyle]="{ 'min-width': '50rem' }">
+            <p-table
+              [value]="previewRows"
+              showGridlines
+              [tableStyle]="{ 'min-width': '50rem' }"
+            >
               <ng-template pTemplate="header">
                 <tr>
                   <th>Campo</th>
@@ -195,11 +321,27 @@
 
           <div class="flex pt-6 justify-content-between">
             <div class="flex gap-2">
-              <p-button label="Volver" severity="secondary" icon="pi pi-arrow-left" (onClick)="activateCallback(1)" />
-              <p-button label="Cancelar" icon="pi pi-times" variant="outlined" severity="danger" (onClick)="back()" />
+              <p-button
+                label="Volver"
+                severity="secondary"
+                icon="pi pi-arrow-left"
+                (onClick)="activateCallback(2)"
+              />
+              <p-button
+                label="Cancelar"
+                icon="pi pi-times"
+                variant="outlined"
+                severity="danger"
+                (onClick)="back()"
+              />
             </div>
             <div>
-              <p-button label="Crear" icon="pi pi-check" [disabled]="!canCreate()" (onClick)="createUser()" />
+              <p-button
+                label="Crear"
+                icon="pi pi-check"
+                [disabled]="!canCreate()"
+                (onClick)="createUser()"
+              />
             </div>
           </div>
         </ng-template>
