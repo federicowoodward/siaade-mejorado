@@ -10,15 +10,15 @@ export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
   async getSubjectInfo(@Param('id') id: string): Promise<Subject | null> {
     return this.subjectsService.getSubjectInfo(parseInt(id));
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
   async getAllSubjects(): Promise<Subject[]> {
     return this.subjectsService.getAllSubjects();
   }
