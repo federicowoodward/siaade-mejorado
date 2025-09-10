@@ -2,19 +2,21 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+// PrimeNG (modo clásico con módulos)
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TooltipModule } from 'primeng/tooltip';
-import { AutoCompleteModule, AutoComplete } from 'primeng/autocomplete';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { SelectModule } from 'primeng/select';
+
 
 import { ActivatedRoute } from '@angular/router';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ApiService } from '../../../core/services/api.service';
-
 
 type User = { id: string; name: string; lastName: string; email: string };
 type Subject = { id: number; subjectName: string };
@@ -43,18 +45,59 @@ type ExamResult = {
     CommonModule,
     FormsModule,
     TableModule,
-    Button,
+    ButtonModule,
     DialogModule,
     InputTextModule,
     InputNumberModule,
     TooltipModule,
     AutoCompleteModule,
     SelectButtonModule,
-],
+    SelectModule,
+  ],
   templateUrl: './grades-page.html',
-  styleUrl: './grades-page.scss',
+  styleUrl: './grades-page.scss', 
 })
 export class GradesPage implements OnInit {
+
+isGradeApproved(score: number | null): boolean {
+  // Ahora, aprobado es solo entre 4 y 6
+  return score !== null && score >= 4 && score < 7;
+}
+isGradePromoted(score: number | null): boolean {
+  return score !== null && score >= 7;
+}
+
+
+isGradeDisapproved(score: number | null): boolean {
+  return score !== null && score < 4;
+}
+
+  getTooltipText(score: number | null): string {
+  if (score === null) {
+    return '';
+  }
+  if (this.isGradePromoted(score)) {
+    return 'Promocionado';
+  }
+  if (this.isGradeApproved(score)) {
+    return 'Aprobado';
+  }
+  return 'Desaprobado';
+}
+
+  getAverageTooltipText(average: number | null): string {
+  if (average === null) {
+    return '';
+  }
+  if (this.isGradePromoted(average)) {
+    return 'Promocionado';
+  }
+  if (this.isGradeApproved(average)) {
+    return 'Aprobado';
+  }
+  return 'Desaprobado';
+}
+
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private goBackSvc = inject(GoBackService);
@@ -166,26 +209,23 @@ export class GradesPage implements OnInit {
   // Helpers de nota
 getScore(examId: number, studentId: string, index: number): number | null {
   const allScores = this.scores.get(this.key(examId, studentId));
-  return allScores ? allScores[index] ?? null : null;
+  if (!allScores || index >= allScores.length) {
+    return null;
+  }
+  return allScores[index];
 }
+
 setScore(examId: number, studentId: string, index: number, value: number | null) {
   const key = this.key(examId, studentId);
-  
-  // 1. Obtiene el array de notas, o crea uno si no existe.
-  let allScores = this.scores.get(key);
-  if (!allScores) {
-    allScores = [];
-    this.scores.set(key, allScores);
+  let scoresToUpdate = this.scores.get(key);
+  if (!scoresToUpdate) {
+    scoresToUpdate = [];
+    this.scores.set(key, scoresToUpdate);
   }
-  
-  // 2. Asegura que el array tenga el tamaño suficiente.
-  //    Rellena con 'null' hasta el índice deseado.
-  while (allScores.length <= index) {
-    allScores.push(null);
+  while (scoresToUpdate.length <= index) {
+    scoresToUpdate.push(null);
   }
-
-  // 3. Asigna el valor en el índice correcto.
-  allScores[index] = value;
+  scoresToUpdate[index] = value;
 }
 // funcion que toma array de notas y devuelve el promedio
 getAverage(examId: number, studentId: string): number | null {
@@ -193,7 +233,7 @@ getAverage(examId: number, studentId: string): number | null {
   if (!allScores || allScores.length === 0) {
     return null;
   }
-  const validScores = allScores.filter(score => score !== null);
+  const validScores = allScores.filter((score): score is number => typeof score === 'number' && score !== null && !isNaN(score));
   if (validScores.length === 0) {
     return null;
   }
@@ -226,5 +266,40 @@ getAverage(examId: number, studentId: string): number | null {
   );
   this.exams.set(next);
   this.showAddExam.set(false);
+  
+
+}
+getFinalAverage(studentId: string): number | null {
+  const exams = this.exams();
+  if (!exams || exams.length === 0) return null;
+
+  const finalScores: number[] = [];
+
+  for (const ex of exams) {
+    const scores = this.scores.get(this.key(ex.id, studentId));
+
+    if (!scores || scores.length === 0) continue;
+
+    if (ex.type === 'practico') {
+      // promedio interno de las notas prácticas
+      const valid = scores.filter((s): s is number => s !== null && !isNaN(s));
+      if (valid.length > 0) {
+        const practAvg = valid.reduce((a, b) => a + b, 0) / valid.length;
+        finalScores.push(practAvg);
+      }
+    } else {
+      // examen común o recuperatorio: solo una nota
+      const valid = scores.filter((s): s is number => s !== null && !isNaN(s));
+      if (valid.length > 0) {
+        // siempre 1 nota en estos casos
+        finalScores.push(valid[0]);
+      }
+    }
+  }
+
+  if (finalScores.length === 0) return null;
+
+  const sum = finalScores.reduce((a, b) => a + b, 0);
+  return sum / finalScores.length;
 }
 }

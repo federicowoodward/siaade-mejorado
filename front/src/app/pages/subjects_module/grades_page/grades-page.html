@@ -11,154 +11,139 @@
     </div>
   </div>
 
-  <p-table
-    [value]="studentsInSubject()"
-    [paginator]="true"
-    [rows]="10"
-    responsiveLayout="scroll"
+<p-table [value]="studentsInSubject()"
+  [paginator]="true"
+  [rows]="10"
+  responsiveLayout="scroll"
 >
-<ng-template pTemplate="header">
+  <!-- Encabezado -->
+  <ng-template pTemplate="header">
   <tr>
-    <th [attr.rowspan]="hasPracticalExam() ? 2 : 1" style="width: 6rem">Alumno</th>
+    <th rowspan="2" class="col-alumno">Alumno</th>
     <ng-container *ngFor="let ex of exams()">
-      <th [attr.colspan]="(ex.type ?? 'comun') === 'practico' ? (ex.gradesCount ?? 1) + 1 : 1"
-          [ngClass]="examTypeColors[ex.type ?? 'comun']"
-          [attr.rowspan]="(ex.type ?? 'comun') === 'practico' ? 1 : 2">
+      <th
+        [attr.colspan]="ex.type === 'practico' ? ex.gradesCount : 1"
+        class="exam-header"
+      >
         <div class="flex flex-column">
           <span class="font-medium">{{ ex.title }}</span>
           <small class="text-color-secondary">{{ ex.date }}</small>
         </div>
       </th>
     </ng-container>
+    <th rowspan="2" class="col-final">Promedio Final</th>
   </tr>
-  <tr *ngIf="hasPracticalExam()">
-    <ng-container *ngFor="let ex of exams()">
-      <ng-container *ngIf="(ex.type ?? 'comun') === 'practico'">
-        <th *ngFor="let nota of [].constructor(ex.gradesCount ?? 1); let i = index"class="nota-header"> 
-        Nota {{ i + 1 }}
-        </th>
-        
-        <th class="nota-header">Promedio</th>
-      </ng-container>
-    </ng-container>
-  </tr>
-</ng-template>
 
-
-
-    <ng-template pTemplate="body" let-row>
   <tr>
-    <td>
-      <div class="flex flex-column">
-        <span class="font-medium">{{ row.name }}</span>
-        <small class="text-color-secondary">Legajo: {{ row.legajo }}</small>
-      </div>
-    </td>
-
     <ng-container *ngFor="let ex of exams()">
-  <ng-container *ngIf="(ex.type ?? 'comun') === 'practico'">
-    <td *ngFor="let nota of [].constructor(ex.gradesCount ?? 1); let i = index">
-      <p-inputNumber
-        [min]="0"
-        [max]="10"
-        [useGrouping]="false"
-        mode="decimal"
-        [ngModel]="getScore(ex.id, row.userId, i)"
-        (ngModelChange)="setScore(ex.id, row.userId, i, $event)"
-        inputStyleClass="w-6rem"
-        [showButtons]="false"
-      ></p-inputNumber>
-    </td>
-    <td>
-          <p-inputNumber
-            [ngModel]="getAverage(ex.id, row.userId)"
-            mode="decimal"
-            [disabled]="true"
-            inputStyleClass="w-6rem"
-          ></p-inputNumber>
-        </td>
+      <!-- SOLO prácticos muestran subencabezados -->
+      <ng-container *ngIf="ex.type === 'practico'">
+        <ng-container *ngFor="let nota of [].constructor(ex.gradesCount); let i = index">
+          <th class="practico-sub">Nota {{ i + 1 }}</th>
+        </ng-container>
       </ng-container>
-
-      <td *ngIf="(ex.type ?? 'comun') !== 'practico'">
-        <p-inputNumber
-          [min]="0"
-          [max]="10"
-          [useGrouping]="false"
-          mode="decimal"
-          [ngModel]="getScore(ex.id, row.userId, 0)"
-          (ngModelChange)="setScore(ex.id, row.userId, 0, $event)"
-          inputStyleClass="w-6rem"
-          [showButtons]="false"
-        ></p-inputNumber>
-      </td>
+      <!-- 👆 exámenes comunes y recuperatorios no muestran “Nota 1” -->
     </ng-container>
   </tr>
 </ng-template>
 
+  <!-- Cuerpo -->
+  <ng-template pTemplate="body" let-row>
+    <tr>
+      <td class="col-alumno">
+        <div class="flex flex-column">
+          <span class="font-medium">{{ row.name }}</span>
+          <small class="text-color-secondary">Legajo: {{ row.legajo }}</small>
+        </div>
+      </td>
 
-  </p-table>
+      <ng-container *ngFor="let ex of exams()">
+        <ng-container *ngFor="let i of [].constructor(ex.gradesCount); let index = index">
+          <td class="nota">
+            <p-inputNumber
+              [min]="0"
+              [max]="10"
+              [useGrouping]="false"
+              mode="decimal"
+              [ngModel]="getScore(ex.id, row.userId, index)"
+              (ngModelChange)="setScore(ex.id, row.userId, index, $event)"
+              inputStyleClass="nota-input"
+              [showButtons]="false"
+            ></p-inputNumber>
+          </td>
+        </ng-container>
+      </ng-container>
 
-  <div class="flex justify-end gap-2 mt-3">
-    <p-button
-      label="Guardar cambios"
-      icon="pi pi-check"
-      [disabled]="true"
-      pTooltip="MVP: sin persistencia"
-    />
-  </div>
-</div>
+      <!-- Promedio final -->
+      <td
+        class="col-final"
+        [ngClass]="{
+          'nota-aprobada': isGradeApproved(getFinalAverage(row.userId)),
+          'nota-desaprobada': isGradeDisapproved(getFinalAverage(row.userId)),
+          'nota-promocionada': isGradePromoted(getFinalAverage(row.userId))
+        }"
+        [pTooltip]="getAverageTooltipText(getFinalAverage(row.userId))"
+      >
+        {{ getFinalAverage(row.userId) ?? '-' }}
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
 
+<!-- Diálogo: Agregar examen -->
 <p-dialog
-  [header]="'Agregar examen'"
+  header="Agregar examen"
   [visible]="showAddExam()"
   (visibleChange)="showAddExam.set($event)"
   [modal]="true"
   [style]="{ width: '480px', maxWidth: '95vw' }"
-
 >
-<div>
-    <label for="examType" class="block mb-1">Tipo de examen</label>
-    <p-selectButton
+  <div>
+    <label for="examType" class="block mb-2">Tipo de examen</label>
+    <p-select
       id="examType"
       [(ngModel)]="newExamType"
       [options]="examTypes"
       optionLabel="label"
       optionValue="value"
-      class="w-full"
-    ></p-selectButton>
+      placeholder="Seleccionar tipo"
+      class="w-full exam-type-selector"
+    ></p-select>
 
-   <div *ngIf="newExamType === 'practico'" class="mt-3">
-    <label for="gradesCount" class="block mb-1">Notas</label>
-    <p-selectButton
-      id="gradesCount"
-      [(ngModel)]="numberOfPracticalGrades"
-      [options]="practicalGradesOptions"
-      optionLabel="label"
-      optionValue="value"
-      class="w-full"
-    ></p-selectButton>
-  </div>
-
-  <div class="flex flex-column gap-3">
-    <div>
-      <label class="block mb-1">Título</label>
-      <input
-        pInputText
+    <div *ngIf="newExamType === 'practico'" class="mt-3">
+      <label for="gradesCount" class="block mb-1">Cantidad de notas</label>
+      <p-select
+        id="gradesCount"
+        [(ngModel)]="numberOfPracticalGrades"
+        [options]="practicalGradesOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Seleccionar cantidad"
         class="w-full"
-        [(ngModel)]="newExamTitle"
-        placeholder="Ej: Parcial 2"
-      />
+      ></p-select>
     </div>
-    <div>
-      <label class="block mb-1">Fecha</label>
-      <input
-        type="date"
-        class="w-full p-inputtext p-component"
-        [(ngModel)]="newExamDate"
-      />
+
+    <div class="flex flex-column gap-3 mt-3">
+      <div>
+        <label class="block mb-1">Título</label>
+        <input
+          pInputText
+          class="w-full"
+          [(ngModel)]="newExamTitle"
+          placeholder="Ej: Parcial 2"
+        />
+      </div>
+      <div>
+        <label class="block mb-1">Fecha</label>
+        <input
+          type="date"
+          class="w-full p-inputtext p-component"
+          [(ngModel)]="newExamDate"
+        />
+      </div>
     </div>
   </div>
-</div>
+
   <ng-template pTemplate="footer">
     <p-button
       label="Cancelar"
@@ -167,4 +152,4 @@
     />
     <p-button label="Agregar" icon="pi pi-check" (onClick)="addExamConfirm()" />
   </ng-template>
-<p-dialog/>
+</p-dialog>

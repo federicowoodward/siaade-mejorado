@@ -1302,20 +1302,7 @@
   ],
 
   "exams": [
-    {
-      "id": 1,
-      "subjectId": 1,
-      "title": "Midterm 1",
-      "date": "2024-05-10",
-      "isValid": true
-    },
-    {
-      "id": 2,
-      "subjectId": 1,
-      "title": "Recovery 1",
-      "date": "2024-05-20",
-      "isValid": false
-    },
+    
     {
       "id": 3,
       "subjectId": 2,
