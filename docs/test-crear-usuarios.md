@@ -2,32 +2,33 @@
 
 ```
 {
-"name": "Ana",
-"lastName": "García",
-"email": "ana.student@example.com",
-"password": "pass1234",
-"cuil": "20123456789",
-"userInfo": {
-"documentType": "DNI",
-"documentValue": "45999111",
-"phone": "3515555555",
-"emergencyName": "Mamá",
-"emergencyPhone": "3514444444"
-},
-"commonData": {
-"sex": "F",
-"birthDate": "2005-05-10",
-"birthPlace": "Córdoba",
-"nationality": "Argentina",
-"address": {
-"street": "Belgrano",
-"number": "567",
-"locality": "Córdoba",
-"province": "Córdoba",
-"country": "Argentina"
+  "name": "Ana",
+  "lastName": "García",
+  "email": "ana.student@example.com",
+  "password": "pass1234",
+  "cuil": "20123456789",
+  "userInfo": {
+    "documentType": "DNI",
+    "documentValue": "45999111",
+    "phone": "3515555555",
+    "emergencyName": "Mamá",
+    "emergencyPhone": "3514444444"
+  },
+  "commonData": {
+    "sex": "F",
+    "birthDate": "2005-05-10",
+    "birthPlace": "Córdoba",
+    "nationality": "Argentina",
+    "address": {
+      "street": "Belgrano",
+      "number": "567",
+      "locality": "Córdoba",
+      "province": "Córdoba",
+      "country": "Argentina"
+    }
+  }
 }
-}
-}
+
 ```
 
 ### teacher
@@ -57,7 +58,6 @@
     }
   }
 }
-
 ```
 
 ### preceptor
