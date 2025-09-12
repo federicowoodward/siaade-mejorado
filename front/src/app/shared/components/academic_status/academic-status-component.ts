@@ -93,12 +93,14 @@ export class AcademicStatus implements OnInit {
     switch (condition) {
       case 'Aprobado':
         return 'success';
-      case 'Libre':
-        return 'warn';
       case 'Desaprobado':
+        return 'warn';
+      case 'Libre':
         return 'danger';
-      default:
+      case 'Inscripto':
         return 'info';
+      default:
+        return 'secondary';
     }
   }
 }
