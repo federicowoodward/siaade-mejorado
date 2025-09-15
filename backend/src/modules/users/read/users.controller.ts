@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';  // Servicio local de users read
-import { UserResponseDto } from '../manage/dto/user.dto';  // DTO de respuesta de usuario
+import { UserResponseDto } from '../manage/dto/create-user.dto';  // DTO de respuesta de usuario
 import { RolesGuard } from '../../../guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';  // Decorador para definir los roles
 import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
