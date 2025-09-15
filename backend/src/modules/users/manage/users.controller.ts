@@ -127,7 +127,7 @@ export class UsersController {
   }
 
   @Delete(":id")
-  @HttpCode(HttpStatus.OK)
+  // @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete user" })
   @ApiResponse({ status: 200, description: "User deleted successfully" })
   async deleteUser(@Param("id") id: string) {
