@@ -132,7 +132,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: "User deleted successfully" })
   async deleteUser(@Param("id") id: string) {
     try {
-      await this.usersService.delete(id);
+      await this.usersService.deleteTx(id);
       return {
         data: { deleted: true },
         message: "User deleted successfully",
