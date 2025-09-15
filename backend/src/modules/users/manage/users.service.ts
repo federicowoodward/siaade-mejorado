@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -17,6 +18,7 @@ import {
   UpdateUserDto,
 } from "./dto";
 import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
+import { Subject } from "../../../entities/subjects.entity";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -27,6 +29,8 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
+    @InjectRepository(Subject)
+    private subjectsRepository: Repository<Subject>,
     private readonly provisioning: UserProvisioningService,
     private readonly userReader: UserProfileReaderService
   ) {}
@@ -143,7 +147,10 @@ export class UsersService {
     return { data, message: "User profile retrieved successfully" };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<any> {
+  async update(
+    id: string,
+    updateUserDto: Partial<UpdateUserDto>
+  ): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ["role"],
@@ -170,7 +177,8 @@ export class UsersService {
       role = newRole;
     }
 
-    await this.usersRepository.update(id, updateUserDto);
+    // update parcial tal cual venga el body
+    await this.usersRepository.update(id, updateUserDto as any);
     const updatedUser = await this.usersRepository.findOne({
       where: { id },
       relations: ["role"],
@@ -184,12 +192,154 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<void> {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
+    // Dejar método para compatibilidad pero usar transacción con QB
+    await this.deleteTx(id);
+  }
 
-    await this.usersRepository.delete(id);
+  // Borrado transaccional con QueryBuilder/QueryRunner y rollback automático
+  async deleteTx(id: string): Promise<void> {
+    const ds = this.usersRepository.manager.connection; // DataSource
+    const qr = ds.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const user = await qr.manager.findOne(User, {
+        where: { id },
+        relations: {
+          role: true,
+          userInfo: true,
+          commonData: { address: true },
+          student: true,
+          teacher: true,
+          preceptor: true,
+          secretary: true,
+        },
+      });
+      if (!user) throw new NotFoundException("User not found");
+
+      const roleName = user.role.name as
+        | "student"
+        | "teacher"
+        | "preceptor"
+        | "secretary";
+
+      // ✅ Guard: si es teacher/preceptor y está vinculado a alguna materia, abortar con 409
+      if (roleName === "teacher") {
+        const subj = await qr.manager.findOne(Subject, {
+          where: { teacher: id }, // tu columna se llama 'teacher'
+          select: ["id", "subjectName"],
+        });
+        if (subj) {
+          throw new ConflictException({
+            message:
+              "No se puede borrar el docente: existe al menos una materia vinculada.",
+            subject: { id: subj.id, subjectName: subj.subjectName },
+          });
+        }
+      } else if (roleName === "preceptor") {
+        const subj = await qr.manager.findOne(Subject, {
+          where: { preceptor: id }, // tu columna se llama 'preceptor'
+          select: ["id", "subjectName"],
+        });
+        if (subj) {
+          throw new ConflictException({
+            message:
+              "No se puede borrar el preceptor: existe al menos una materia vinculada.",
+            subject: { id: subj.id, subjectName: subj.subjectName },
+          });
+        }
+      }
+      // Borrar específico por rol
+      switch (roleName) {
+        case "student":
+          if (user.student) {
+            await qr.manager
+              .createQueryBuilder()
+              .delete()
+              .from("students")
+              .where({ userId: id })
+              .execute();
+          }
+          break;
+        case "teacher":
+          if (user.teacher) {
+            await qr.manager
+              .createQueryBuilder()
+              .delete()
+              .from("teachers")
+              .where({ userId: id })
+              .execute();
+          }
+          break;
+        case "preceptor":
+          if (user.preceptor) {
+            await qr.manager
+              .createQueryBuilder()
+              .delete()
+              .from("preceptors")
+              .where({ userId: id })
+              .execute();
+          }
+          break;
+        case "secretary":
+          if (user.secretary) {
+            await qr.manager
+              .createQueryBuilder()
+              .delete()
+              .from("secretaries")
+              .where({ userId: id })
+              .execute();
+          }
+          break;
+        default:
+          break;
+      }
+
+      // Borrar user_info si existe
+      if (user.userInfo) {
+        await qr.manager
+          .createQueryBuilder()
+          .delete()
+          .from("user_info")
+          .where({ userId: id })
+          .execute();
+      }
+
+      // Borrar common_data y address_data si existen
+      if (user.commonData) {
+        const addressId = user.commonData.addressDataId;
+        await qr.manager
+          .createQueryBuilder()
+          .delete()
+          .from("common_data")
+          .where({ userId: id })
+          .execute();
+
+        if (addressId) {
+          await qr.manager
+            .createQueryBuilder()
+            .delete()
+            .from("address_data")
+            .where({ id: addressId })
+            .execute();
+        }
+      }
+
+      // Por último, borrar el usuario
+      await qr.manager
+        .createQueryBuilder()
+        .delete()
+        .from("users")
+        .where({ id })
+        .execute();
+
+      await qr.commitTransaction();
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
   }
 
   private mapToResponseDto(user: User, role?: Role): any {
@@ -210,7 +360,10 @@ export class UsersService {
   }
 
   // Método para validar usuario por email y contraseña (usado por Auth)
-  async validateUser(email: string, password: string): Promise<User['id'] | null> {
+  async validateUser(
+    email: string,
+    password: string
+  ): Promise<User["id"] | null> {
     try {
       const user = await this.usersRepository.findOne({
         where: { email },
