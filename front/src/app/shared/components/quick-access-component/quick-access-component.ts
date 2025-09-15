@@ -2,7 +2,6 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { RoleName, RolesService } from '../../../core/services/role.service';
-import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Panel } from 'primeng/panel'; 
 
@@ -16,7 +15,7 @@ interface QuickAccess {
 @Component({
   selector: 'app-quick-access',
   standalone: true,
-  imports: [CommonModule, Button, Card, RouterModule, Panel],
+  imports: [CommonModule, Card, RouterModule, Panel],
   templateUrl: './quick-access-component.html',
   styleUrls: ['./quick-access-component.scss'],
 })

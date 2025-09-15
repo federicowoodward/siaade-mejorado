@@ -1,0 +1,18 @@
+.new-notice-form {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    background: #fff;
+
+    h3 {
+    margin-bottom: 1rem;
+    }
+
+    input, select {
+    display: block;
+    margin-bottom: 1rem;
+    width: 100%;
+    padding: .5rem;
+}
+}

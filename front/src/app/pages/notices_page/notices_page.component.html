@@ -1,0 +1,44 @@
+<div class="notices-page">
+    <h2 class="page-title">
+    <i class="pi pi-bell text-primary mr-2"></i>
+    Avisos importantes
+    </h2>
+
+    <!-- SOLO PRECEPTOR -->
+  <div *ngIf="userRole === 'preceptor'" class="new-notice-form">
+    <h3>Crear nuevo aviso</h3>
+
+    <input
+        type="text"
+        placeholder="Título"
+        [(ngModel)]="newNotice.title"
+        class="p-inputtext p-mb-2"
+    />
+
+    <p-editor
+        [(ngModel)]="newNotice.content"
+        [style]="{ height: '200px' }"
+        placeholder="Escriba el contenido del aviso..."
+    ></p-editor>
+
+    <label>Visible para:</label>
+    <select [(ngModel)]="newNotice.visibleFor" class="p-inputtext">
+    <option value="alumno">Alumnos</option>
+    <option value="profesor">Profesores</option>
+    </select>
+
+    <button pButton type="button" label="Publicar" (click)="addNotice()" class="p-mt-2"></button>
+    </div>
+
+<ul class="notices-list">
+    <li *ngFor="let aviso of filteredNotices">
+    <div class="notice-item">
+        <h3>{{ aviso.title }}</h3>
+        <div class="content" [innerHTML]="aviso.content"></div>
+        <small class="meta">
+        Publicado por {{ aviso.createdBy }} - {{ aviso.createdAt | date:'short' }}
+        </small>
+    </div>
+    </li>
+    </ul>
+</div>
