@@ -1,4 +1,4 @@
-# Docker base para generar instancia de DB. 
+# Docker base para generar instancia de DB.
 services:
   postgres:
     image: postgres:15
@@ -9,3 +9,30 @@ services:
       POSTGRES_PASSWORD: Joeldatabase*
     ports:
       - "5433:5432"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: siaade-api
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    env_file:
+      - backend/.env.prod
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: siaade-front
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
