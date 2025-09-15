@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -17,6 +18,7 @@ import {
   UpdateUserDto,
 } from "./dto";
 import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
+import { Subject } from "../../../entities/subjects.entity";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -27,6 +29,8 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
+    @InjectRepository(Subject)
+    private subjectsRepository: Repository<Subject>,
     private readonly provisioning: UserProvisioningService,
     private readonly userReader: UserProfileReaderService
   ) {}
@@ -143,7 +147,10 @@ export class UsersService {
     return { data, message: "User profile retrieved successfully" };
   }
 
-  async update(id: string, updateUserDto: Partial<UpdateUserDto>): Promise<any> {
+  async update(
+    id: string,
+    updateUserDto: Partial<UpdateUserDto>
+  ): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ["role"],
@@ -198,17 +205,50 @@ export class UsersService {
     try {
       const user = await qr.manager.findOne(User, {
         where: { id },
-        relations: { role: true, userInfo: true, commonData: { address: true }, student: true, teacher: true, preceptor: true, secretary: true },
+        relations: {
+          role: true,
+          userInfo: true,
+          commonData: { address: true },
+          student: true,
+          teacher: true,
+          preceptor: true,
+          secretary: true,
+        },
       });
       if (!user) throw new NotFoundException("User not found");
 
-      const roleName = user.role?.name as
+      const roleName = user.role.name as
         | "student"
         | "teacher"
         | "preceptor"
-        | "secretary"
-        | undefined;
+        | "secretary";
 
+      // ✅ Guard: si es teacher/preceptor y está vinculado a alguna materia, abortar con 409
+      if (roleName === "teacher") {
+        const subj = await qr.manager.findOne(Subject, {
+          where: { teacher: id }, // tu columna se llama 'teacher'
+          select: ["id", "subjectName"],
+        });
+        if (subj) {
+          throw new ConflictException({
+            message:
+              "No se puede borrar el docente: existe al menos una materia vinculada.",
+            subject: { id: subj.id, subjectName: subj.subjectName },
+          });
+        }
+      } else if (roleName === "preceptor") {
+        const subj = await qr.manager.findOne(Subject, {
+          where: { preceptor: id }, // tu columna se llama 'preceptor'
+          select: ["id", "subjectName"],
+        });
+        if (subj) {
+          throw new ConflictException({
+            message:
+              "No se puede borrar el preceptor: existe al menos una materia vinculada.",
+            subject: { id: subj.id, subjectName: subj.subjectName },
+          });
+        }
+      }
       // Borrar específico por rol
       switch (roleName) {
         case "student":
@@ -320,7 +360,10 @@ export class UsersService {
   }
 
   // Método para validar usuario por email y contraseña (usado por Auth)
-  async validateUser(email: string, password: string): Promise<User['id'] | null> {
+  async validateUser(
+    email: string,
+    password: string
+  ): Promise<User["id"] | null> {
     try {
       const user = await this.usersRepository.findOne({
         where: { email },

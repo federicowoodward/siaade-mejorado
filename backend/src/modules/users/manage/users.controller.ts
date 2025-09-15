@@ -10,7 +10,14 @@ import {
   HttpStatus,
   BadRequestException,
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiOkResponse,
+  ApiConflictResponse,
+} from "@nestjs/swagger";
 import { CreationMode, UsersService } from "./users.service";
 import { CreatePreceptorDto } from "./dto/create-preceptor.dto";
 import { CreateSecretaryDto } from "./dto/create-secretary.dto";
@@ -125,23 +132,31 @@ export class UsersController {
       throw new BadRequestException(error?.message || "Failed to update user");
     }
   }
-
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete user" })
-  @ApiResponse({ status: 200, description: "User deleted successfully" })
-  async deleteUser(@Param("id") id: string) {
-    try {
-      await this.usersService.deleteTx(id);
-      return {
+  @ApiOkResponse({
+    description: "User deleted successfully",
+    schema: {
+      example: {
         data: { deleted: true },
         message: "User deleted successfully",
-      };
-    } catch (error: any) {
-      return {
-        error: error?.message || "Unknown error",
-        message: "Failed to delete user",
-      };
-    }
+      },
+    },
+  })
+  @ApiConflictResponse({
+    description: "User cannot be deleted due to linked subjects",
+    schema: {
+      example: {
+        statusCode: 409,
+        message:
+          "No se puede borrar el docente: existe al menos una materia vinculada.",
+        subject: { id: 12, subjectName: "Matemática I" },
+      },
+    },
+  })
+  async deleteUser(@Param("id") id: string) {
+    await this.usersService.deleteTx(id);
+    return { data: { deleted: true }, message: "User deleted successfully" };
   }
 }
