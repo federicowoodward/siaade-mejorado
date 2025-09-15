@@ -1,6 +1,42 @@
-<div class="quick-access-grid px-4">
-  <p-card *ngFor="let access of accesses()" [header]="access.label" [subheader]="access.description"
-    class="quick-access-card">
-    <p-button [label]="access.label" [icon]="access.icon" [routerLink]="access.route"></p-button>
-  </p-card>
+
+
+  <!-- Bienvenida -->
+  <h2 class="mb-4 text-2xl font-semibold">
+  👋 Bienvenido, {{ rolesService.currentRole() | titlecase }}
+</h2>                                                                     
+  <!-- Avisos --> 
+  <p-panel header="Avisos importantes" styleClass="mb-4">
+    <ul class="m-0 p-0 list-none">
+      <li *ngFor="let aviso of avisos" class="mb-2">
+        <i class="pi pi-bell text-yellow-500 mr-2"></i>{{ aviso }}
+      </li>
+    </ul>
+  </p-panel>
+
+  <!-- Accesos rápidos -->
+  <div class="grid">
+  <div *ngFor="let acc of accesses()" class="col-12 sm:col-6 lg:col-3">
+    <p-card 
+      [header]="acc.label"
+      [subheader]="acc.description"
+      [style]="{cursor:'pointer'}"
+      aria-label="{{ acc.label }}"
+      (click)="navigate(acc.route)"
+      class="quick-card"
+    >
+      <div class="card-content">
+        <i [class]="acc.icon + ' text-5xl text-primary'"></i>
+      </div>
+    </p-card>
+  </div>
 </div>
+
+  <!-- Resumen / Stats -->
+  <div class="grid mt-4">
+    <div class="col-12 sm:col-6 lg:col-3" *ngFor="let stat of stats">
+      <p-card [style]="{textAlign:'center'}" class="stat-card">
+        <h3 class="text-2xl font-bold">{{ stat.value }}</h3>
+        <p class="text-sm text-gray-500">{{ stat.label }}</p>
+      </p-card>
+    </div>
+  </div>

@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { RoleName, RolesService } from '../../../core/services/role.service';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
+import { Panel } from 'primeng/panel'; 
 
 interface QuickAccess {
   label: string;
@@ -15,12 +16,12 @@ interface QuickAccess {
 @Component({
   selector: 'app-quick-access',
   standalone: true,
-  imports: [CommonModule, Button, Card, RouterModule],
+  imports: [CommonModule, Button, Card, RouterModule, Panel],
   templateUrl: './quick-access-component.html',
   styleUrls: ['./quick-access-component.scss'],
 })
 export class QuickAccessComponent {
-  private rolesService = inject(RolesService);
+  public rolesService = inject(RolesService);
   private router = inject(Router);
 
   accesses = signal<QuickAccess[]>([]);
@@ -60,5 +61,14 @@ export class QuickAccessComponent {
     });
   }
 
- 
+avisos = [
+  'Ya están abiertas las inscripciones a finales de noviembre',
+  'Se actualizó el reglamento académico',
+];
+
+stats = [
+  { label: 'Materias activas', value: 5 },
+  { label: 'Exámenes próximos', value: 2 },
+  { label: 'Usuarios nuevos', value: 12 },
+];
 }

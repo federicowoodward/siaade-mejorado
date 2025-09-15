@@ -1,10 +1,20 @@
-<div class="banner h-10rem absolute top-0 left-0 right-0">
-  <div class="m-w-custom flex flex-column gap-2 h-10rem justify-content-center px-4">
-    <h2>#SomosQuality</h2>
-    <p>Bienvenido/a {{ userName() }}!</p>
+<!-- Banner principal -->
+<div class="banner h-10rem flex align-items-center px-4 bg-primary text-white">
+  <div class="flex align-items-center gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Sistema Académico Quality</h1>
+      <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
+    </div>
   </div>
+  <div class="ml-auto text-right">
+  </div>
+</div>
 
-  <div class="m-w-custom pt-4">
-    <app-quick-access></app-quick-access>
-  </div>
+<!-- Quick Access -->
+<div class="p-4">
+  <p class="text-gray-500 mb-4">
+    Aquí encontrarás tus accesos rápidos e información importante.
+  </p>
+
+  <app-quick-access></app-quick-access>
 </div>

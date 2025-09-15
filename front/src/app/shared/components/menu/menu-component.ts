@@ -32,44 +32,49 @@ export class MenuComponent {
   private readonly generalMenuItems: MenuItem[] = [];
 
   /** Diccionario de menús por rol */
-  private readonly menuByRole: Record<RoleName, MenuItem[]> = {
-    student: [
-      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      {
-        label: 'Inscripciones',
-        icon: 'pi pi-pencil',
-        routerLink: ['/students/enrollments'],
-      },
-      {
-        label: 'Documentación',
-        icon: 'pi pi-calendar',
-        routerLink: ['/students/appointments-documents'],
-      },
-      {
-        label: 'Situación académica',
-        icon: 'pi pi-book',
-        routerLink: ['/students/academic-status'],
-      },
-    ],
-    teacher: [
-      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
-      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
-      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-    ],
-    preceptor: [
-      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
-      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
-      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-    ],
-    secretary: [
-      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
-      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
-      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-    ],
-  };
+private readonly menuByRole: Record<RoleName, MenuItem[]> = {
+  student: [
+    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+    {
+      label: 'Inscripciones',
+      icon: 'pi pi-pencil',
+      routerLink: ['/students/enrollments'],
+    },
+    {
+      label: 'Documentación',
+      icon: 'pi pi-calendar',
+      routerLink: ['/students/appointments-documents'],
+    },
+    {
+      label: 'Situación académica',
+      icon: 'pi pi-book',
+      routerLink: ['/students/academic-status'],
+    },
+    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/avisos'] },
+  ],
+  teacher: [
+    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+    { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+    { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+    { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/avisos'] },
+  ],
+  preceptor: [
+    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+    { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+    { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+    { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/avisos'] },
+  ],
+  secretary: [
+    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+    { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+    { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+    { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/avisos'] },
+  ],
+};
+
 
   onMenuItemClick() {
     this.drawerVisibility.closeSidebar();
