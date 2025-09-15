@@ -2,28 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { buildCorsOptions } from './config/cors.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Configurar CORS dinámico para frontend (Railway/Local)
-  const defaultOrigins = [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
-    'http://localhost:4000',
-    'http://127.0.0.1:4000'
-  ];
-  const extraOrigin = process.env.FRONTEND_ORIGIN;
-  const origins = extraOrigin ? [...defaultOrigins, extraOrigin] : defaultOrigins;
-  app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin || origins.includes(origin)) return callback(null, true);
-      return callback(new Error('CORS bloqueado: ' + origin));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  });
+  // Configurar CORS centralizado
+  app.enableCors(buildCorsOptions());
 
   // Usar un pipe global para validar los datos de entrada
   app.useGlobalPipes(new ValidationPipe({
