@@ -1,17 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
-
-interface Notice {
-    id: number;
-    title: string;
-    content: string;
-    visibleFor: 'alumno' | 'profesor';
-    createdBy: string;
-    createdAt: Date;
-}
+import { NoticesService, Notice } from '../../core/services/notices.service';
 
 @Component({
     selector: 'app-notices-page',
@@ -21,40 +13,30 @@ interface Notice {
     styleUrls: ['./notices_page.component.scss']
 })
 export class NoticesPageComponent {
-  userRole: 'alumno' | 'profesor' | 'preceptor' = 'preceptor'; // ejemplo: cambiar para probar
+    private noticesSrv = inject(NoticesService);
 
-notices: Notice[] = [
-    {
-    id: 1,
-    title: 'Inscripciones abiertas',
-    content: '<p>Desde el 1 al 30 de Noviembre</p>',
-    visibleFor: 'alumno',
-    createdBy: 'Preceptor Juan',
-    createdAt: new Date()
-    }
-];
+  // Signal de avisos (leer con notices())
+    notices = this.noticesSrv.notices;
 
-    newNotice: Partial<Notice> = { title: '', content: '', visibleFor: 'alumno' };
-
-get filteredNotices(): Notice[] {
-    if (this.userRole === 'preceptor') {
-      return this.notices; // ve todo
-    }
-    return this.notices.filter(n => n.visibleFor === this.userRole);
-}
+  // formulario
+    newNotice: Partial<Notice> = { title: '', content: '', visibleFor: 'student' };
 
     addNotice() {
-    if (!this.newNotice.title || !this.newNotice.content) return;
+    if (!this.newNotice.title?.trim() || !this.newNotice.content?.trim()) return;
 
-    this.notices.push({
-    id: this.notices.length + 1,
-    title: this.newNotice.title!,
-    content: this.newNotice.content!,
-    visibleFor: this.newNotice.visibleFor!,
+    this.noticesSrv.add({
+    id: Date.now(),
+    title: this.newNotice.title!.trim(),
+    content: this.newNotice.content!,            // HTML del editor
+    visibleFor: this.newNotice.visibleFor!,      // 'student' | 'teacher'
     createdBy: 'Preceptor Demo',
     createdAt: new Date()
     });
 
-    this.newNotice = { title: '', content: '', visibleFor: 'alumno' };
-    }
+    this.newNotice = { title: '', content: '', visibleFor: 'student' };
+}
+
+    deleteNotice(id: number) {
+    this.noticesSrv.remove(id);
+}
 }

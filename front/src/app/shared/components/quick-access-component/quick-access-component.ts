@@ -1,9 +1,10 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { RoleName, RolesService } from '../../../core/services/role.service';
+import { NoticesService, Notice } from '../../../core/services/notices.service';
 import { Card } from 'primeng/card';
-import { Panel } from 'primeng/panel'; 
+
 
 interface QuickAccess {
   label: string;
@@ -15,13 +16,14 @@ interface QuickAccess {
 @Component({
   selector: 'app-quick-access',
   standalone: true,
-  imports: [CommonModule, Card, RouterModule, Panel],
+  imports: [CommonModule, Card, RouterModule],
   templateUrl: './quick-access-component.html',
   styleUrls: ['./quick-access-component.scss'],
 })
 export class QuickAccessComponent {
   public rolesService = inject(RolesService);
   private router = inject(Router);
+  private noticesSrv = inject(NoticesService);
 
   accesses = signal<QuickAccess[]>([]);
 
@@ -60,14 +62,20 @@ export class QuickAccessComponent {
     });
   }
 
-avisos = [
-  'Ya están abiertas las inscripciones a finales de noviembre',
-  'Se actualizó el reglamento académico',
-];
+  // ✅ Avisos
+  role = this.rolesService.currentRole;
+  allNotices = this.noticesSrv.notices;
 
-stats = [
-  { label: 'Materias activas', value: 5 },
-  { label: 'Exámenes próximos', value: 2 },
-  { label: 'Usuarios nuevos', value: 12 },
-];
+  noticesForHome = computed<Notice[]>(() => {
+    const role = this.role();
+    const all = this.allNotices();
+    if (role === 'preceptor' || role === 'secretary') return all;
+    return all.filter(n => n.visibleFor === role);
+  });
+
+  stats = [
+    { label: 'Materias activas', value: 5 },
+    { label: 'Exámenes próximos', value: 2 },
+    { label: 'Usuarios nuevos', value: 12 },
+  ];
 }
