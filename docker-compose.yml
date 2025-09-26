@@ -1,38 +1,51 @@
-# Docker base para generar instancia de DB.
 services:
   postgres:
     image: postgres:15
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: dbsiaade2
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Joeldatabase*
     ports:
-      - "5433:5432"
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -p 5432 -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: siaade-api
+    restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-    env_file:
-      - backend/.env.prod
 
   front:
     build:
       context: ./front
       dockerfile: Dockerfile
     container_name: siaade-front
+    restart: unless-stopped
     ports:
       - "4200:80"
     depends_on:
-      - api
+      api:
+        condition: service_started
 
 volumes:
   postgres_data:

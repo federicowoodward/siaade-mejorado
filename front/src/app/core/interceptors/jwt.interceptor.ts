@@ -1,18 +1,26 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { AppConfigService } from '../services/app-config.service';
+import { environment as enviroment } from '../../../environments/environment';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
   private readonly router = inject(Router);
-  private readonly appConfig = inject(AppConfigService);
+  private readonly apiBase = enviroment.apiBaseUrl;
 
-  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const apiBase = this.appConfig.apiBaseUrl;
-    if (!request.url.startsWith(apiBase)) {
+  intercept(
+    request: HttpRequest<any>,
+    next: HttpHandler
+  ): Observable<HttpEvent<any>> {
+    if (!request.url.startsWith(this.apiBase)) {
       return next.handle(request);
     }
 
@@ -20,14 +28,14 @@ export class JwtInterceptor implements HttpInterceptor {
 
     // Obtener token del localStorage
     const token = localStorage.getItem('access_token');
-    
+
     // Clonar la petición y agregar el token si existe
     let authRequest = request;
     if (token && !this.isPublicEndpoint(request.url)) {
       authRequest = request.clone({
         setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       console.log('🔐 [JWT Interceptor] Token added to request');
     } else {
@@ -35,21 +43,25 @@ export class JwtInterceptor implements HttpInterceptor {
     }
 
     return next.handle(authRequest).pipe(
-      tap(event => {
+      tap((event) => {
         // Log básico (puedes ampliar si deseas distinguir entornos)
         // console.log('✅ [JWT Interceptor] Request successful:', event);
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('❌ [JWT Interceptor] Request failed:', error);
-        
+
         // Manejar errores específicos
         if (error.status === 401) {
-          console.warn('🚨 [JWT Interceptor] Unauthorized - clearing auth data');
+          console.warn(
+            '🚨 [JWT Interceptor] Unauthorized - clearing auth data'
+          );
           this.handleUnauthorized();
         }
-        
+
         if (error.status === 403) {
-          console.warn('🚫 [JWT Interceptor] Forbidden - insufficient permissions');
+          console.warn(
+            '🚫 [JWT Interceptor] Forbidden - insufficient permissions'
+          );
         }
 
         return throwError(() => error);
@@ -65,12 +77,10 @@ export class JwtInterceptor implements HttpInterceptor {
       '/auth/login',
       '/auth/sign-in',
       '/auth/reset-password',
-      '/auth/refresh-token'
+      '/auth/refresh-token',
     ];
 
-    return publicEndpoints.some(endpoint => 
-      url.includes(endpoint)
-    );
+    return publicEndpoints.some((endpoint) => url.includes(endpoint));
   }
 
   /**
@@ -80,11 +90,11 @@ export class JwtInterceptor implements HttpInterceptor {
     // Limpiar datos de autenticación
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_data');
-    
+
     // Redirigir al login si no está ya ahí
     if (!this.router.url.includes('/auth/login')) {
       this.router.navigate(['/auth/login'], {
-        queryParams: { returnUrl: this.router.url }
+        queryParams: { returnUrl: this.router.url },
       });
     }
   }

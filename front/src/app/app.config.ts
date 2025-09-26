@@ -38,7 +38,6 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
-    // 👇 APP_INITIALIZER para cargar /roles antes de renderizar
     {
       provide: APP_INITIALIZER,
       useFactory: initRolesFactory,

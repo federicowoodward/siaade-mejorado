@@ -4,7 +4,10 @@ import { JwtAuthGuard } from '../../users/auth/jwt-auth.guard';
 import { RolesGuard } from '../../../guards/roles.guard';
 import { HierarchyGuard } from '../../../guards/hierarchy.guard';
 import { Roles } from '../../users/auth/roles.decorator';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Subject API')
+@ApiBearerAuth()
 @Controller('subject')
 export class SubjectApiController {
   constructor(private readonly service: SubjectApiService) {}
@@ -37,7 +40,7 @@ export class SubjectApiController {
   @Post('enroll-student')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SECRETARIO', 'PRECEPTOR', 'ADMIN_GENERAL')
-  enroll(@Body() body: { subject_id: number; student_id: string }) {
+  enroll(@Body() body: { subject_id: number; student_id: string | string[] }) {
     return this.service.enroll(body);
   }
 
@@ -45,7 +48,7 @@ export class SubjectApiController {
   @Post('unenroll-student')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SECRETARIO', 'PRECEPTOR', 'ADMIN_GENERAL')
-  unenroll(@Body() body: { subject_id: number; student_id: string }) {
+  unenroll(@Body() body: { subject_id: number; student_id: string | string[] }) {
     return this.service.unenroll(body);
   }
 
@@ -95,5 +98,13 @@ export class SubjectApiController {
   @Roles('DOCENTE', 'PRECEPTOR', 'SECRETARIO', 'ADMIN_GENERAL')
   editScore(@Body() body: { exam_id: number; student_id: string; score: number }) {
     return this.service.editScore(body);
+  }
+
+  // /detail/:id - información completa de la materia
+  @Get('detail/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('DOCENTE', 'PRECEPTOR', 'SECRETARIO', 'ADMIN_GENERAL')
+  getDetail(@Param('id') id: string) {
+    return this.service.getSubjectDetail(parseInt(id));
   }
 }

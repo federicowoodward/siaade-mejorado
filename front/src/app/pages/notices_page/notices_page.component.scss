@@ -1,0 +1,25 @@
+.notices-page {
+    padding: 1.5rem;
+
+.page-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex; align-items: center;
+    } 
+
+    .new-notice-form {
+    padding: 1rem; background: #fff; border: 1px solid #e7e7e7;
+    border-radius: .5rem; margin-bottom: 1.5rem;
+
+    input, select { width: 100%; margin: .5rem 0; padding: .5rem; }
+    }
+
+    .notices-list { list-style: none; padding: 0; margin: 0; }
+
+    .notice-item {
+    background: #f9fafb; border-radius: .5rem; padding: 1rem; margin-bottom: .75rem;
+    h3 { margin: 0 0 .5rem 0; }
+    .meta { color:#666; font-size:.85rem; }
+}
+}

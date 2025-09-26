@@ -29,33 +29,40 @@ export class LoggingInterceptor implements NestInterceptor {
     // Lista adicional de rutas públicas por URL
     const publicUrls = [
       '/api/docs',
-      '/api',
       '/api/auth/login',
       '/api/auth/sign-in', 
       '/api/auth/reset-password',
+      '/api/auth/refresh-token',
     ];
 
     const isPublicUrl = publicUrls.some(route => url.startsWith(route));
 
     if (!isPublic && !isPublicUrl) {
+      // Permitir preflight CORS sin exigir token
+      if (method === 'OPTIONS') {
+        console.log(`🌐 Preflight allowed: ${method} ${url} from ${ip}`);
+        return next.handle().pipe(tap(() => {
+          const responseTime = Date.now() - now;
+          const statusCode = response.statusCode;
+          console.log(`📤 ${method} ${url} - ${statusCode} - ${responseTime}ms`);
+        }));
+      }
       // Extraer token JWT del header Authorization
       const authHeader = request.headers.authorization;
       
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.log(`❌ Unauthorized access attempt to ${method} ${url} from ${ip}`);
-        throw new UnauthorizedException('Token de acceso requerido');
-      }
-
-      const token = authHeader.substring(7); // Remover 'Bearer '
-      
-      try {
-        // Verificar y decodificar el token
-        const payload = this.jwtService.verify(token);
-        request.user = payload; // Agregar usuario al request
-        console.log(`🔐 JWT validated for user: ${payload.email || payload.username} accessing ${method} ${url}`);
-      } catch (error) {
-        console.log(`❌ Invalid JWT token for ${method} ${url} from ${ip}`);
-        throw new UnauthorizedException('Token inválido o expirado');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7); // Remover 'Bearer '
+        try {
+          const payload = this.jwtService.verify(token);
+          request.user = payload; // Agregar usuario al request
+          console.log(`🔐 JWT validated for user: ${payload.email || payload.username} accessing ${method} ${url}`);
+        } catch (error) {
+          console.log(`❌ Invalid JWT token for ${method} ${url} from ${ip}`);
+          // No lanzamos aquí; dejamos que los guards manejen la autorización
+        }
+      } else {
+        // Sin token: solo log y que la autorización la manejen los guards específicos
+        console.log(`⚠️ No JWT provided for ${method} ${url} from ${ip}`);
       }
     } else {
       console.log(`🌐 Public route accessed: ${method} ${url} from ${ip}`);

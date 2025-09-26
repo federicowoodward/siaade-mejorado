@@ -39,8 +39,15 @@ export class CommonDataDto {
 
 // UserInfo (requerido para preceptor/teacher/student)
 export class UserInfoDto {
-  @ApiProperty() @IsString() documentType!: string;
-  @ApiProperty() @IsString() documentValue!: string;
+  @ApiPropertyOptional({ default: 'DNI' })
+  @IsOptional()
+  @IsString()
+  documentType?: string; // por defecto 'DNI' si no se envía
+
+  @ApiProperty()
+  @IsString()
+  documentValue!: string; // requerido
+
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() emergencyName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() emergencyPhone?: string;

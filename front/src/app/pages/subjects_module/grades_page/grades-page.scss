@@ -1,21 +1,40 @@
-.exam-common {
-  background-color: var(--p-cyan-200); /* Azul de PrimeNG */
+/* Todas las cabeceras del mismo color */
+th,
+.col-alumno,
+.col-final {
+  background-color: var(--p-blue-50); /* mismo tono suave */
+  text-align: center;
+  vertical-align: middle;
 }
 
-.exam-recovery {
-  background-color: var(--p-cyan-300); /* Naranja de PrimeNG */
+
+/* Notas */
+td.nota {
+  text-align: center;
+  vertical-align: middle;
 }
 
-/* Opcional: Estilo para la barra dentro del modal */
-.exam-type-selector {
-margin-bottom: 15px;
-}
-.exam-practical {
-  background-color: var(--p-cyan-300); /* Verde de PrimeNG */
-    border: none
-    
+/* Cabeceras */
+.col-alumno,
+.col-final,
+.exam-header,
+.practico-sub {
+  background-color: var(--p-blue-50);
+  text-align: center;
+  vertical-align: middle;
 }
 
-.nota-header {
-  background-color: var(--p-cyan-300); /* Variable de PrimeNG para un azul muy claro */
+/* Celda de nota */
+td.nota {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Input de nota más chico */
+.nota-input {
+  text-align: center;
+  width: 3rem !important;   /* más chico (antes 6rem) */
+  height: 2rem;
+  font-size: 0.9rem;
+  margin: 0 auto;           /* centrado en la celda */
 }

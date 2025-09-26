@@ -1,5 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
@@ -14,8 +14,41 @@ export class AuthController {
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "User login" })
-  @ApiResponse({ status: 200, description: "Login successful" })
-  @ApiResponse({ status: 401, description: "Invalid credentials" })
+  @ApiResponse({
+    status: 200,
+    description: "Login successful",
+    schema: {
+      example: {
+        data: {
+          access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        },
+        message: "Login successful",
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Invalid credentials",
+    schema: {
+      example: {
+        error: "Invalid credentials",
+        message: "Login failed",
+      },
+    },
+  })
+  @ApiBody({
+    description: "Login credentials",
+    type: LoginDto,
+    examples: {
+      default: {
+        summary: "Preceptor example",
+        value: {
+          email: "p.preceptor@example.com",
+          password: "pass",
+        },
+      },
+    },
+  })
   async login(@Body() loginDto: LoginDto) {
     try {
       const result = await this.authService.login(loginDto);

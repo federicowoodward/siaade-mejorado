@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Put, Param, Delete, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SubjectsService } from './subjects.service';
 import { Subject } from '../../../entities/subjects.entity';  // Asegúrate de tener la entidad Subject
 import { CreateSubjectDto } from '../dto/create-subject.dto';
@@ -7,6 +8,8 @@ import { Roles } from '../../users/auth/roles.decorator';  // Importa el decorad
 import { HierarchyGuard } from '../../../guards/hierarchy.guard';
 import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
 
+@ApiTags('Subjects')
+@ApiBearerAuth()
 @Controller('subjects/manage')
 export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}

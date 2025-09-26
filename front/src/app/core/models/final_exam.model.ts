@@ -1,8 +1,8 @@
 export interface FinalExam {
-    id: number;
-    examTableId: string; // UUID
-    subjectId: number;
-    examDate: string;    // YYYY-MM-DD
-    aula: string;
-  }
-  
+  id: number;
+  subject_id: number;
+  subject_name: string;
+  exam_date: string;
+  exam_time: string;
+  aula?: string;
+}

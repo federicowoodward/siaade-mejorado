@@ -26,3 +26,6 @@ export class Student {
   @OneToMany(() => FinalExamsStudent, (fes) => fes.student)
   finals: FinalExamsStudent[];
 }
+
+// Este export es para que la entidad sea detectada en la build.
+export const __students_entity_marker = true;

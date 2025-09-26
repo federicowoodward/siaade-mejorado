@@ -1,31 +1,38 @@
-import { ConfigService } from '@nestjs/config';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import * as path from 'path';
+import { ConfigService } from "@nestjs/config";
+import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+import * as path from "path";
 
-export function createTypeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
-  const databaseUrl = config.get<string>('DATABASE_URL');
-  const useSsl = config.get<string>('DB_SSL') === 'true';
+export function createTypeOrmConfig(
+  config: ConfigService
+): TypeOrmModuleOptions {
+  const databaseUrl = config.get<string>("DATABASE_URL");
 
   if (databaseUrl) {
     return {
-      type: 'postgres', // 👈 literal correcto
+      type: "postgres", // 👈 literal correcto
       url: databaseUrl,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-      entities: [path.resolve(__dirname, '..', 'entities', '*.{ts,js}')],
+      ssl: false,
+      entities: [path.resolve(__dirname, "..", "entities", "*.{ts,js}")],
       synchronize: false,
       logging: true,
     };
   }
-
+  console.log ({
+    host: config.get("DB_HOST"),
+    port: parseInt(config.get("DB_PORT", "5432"), 10),
+    username: config.get("DB_USERNAME"),
+    password: config.get("DB_PASSWORD"),
+    database: config.get("DB_DATABASE"),
+  })
   return {
-    type: 'postgres',
-    host: config.get('DB_HOST'),
-    port: parseInt(config.get('DB_PORT', '5432'), 10),
-    username: config.get('DB_USERNAME'),
-    password: config.get('DB_PASSWORD'),
-    database: config.get('DB_DATABASE'),
-    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-    entities: [path.resolve(__dirname, '..', 'entities', '*.{ts,js}')],
+    type: "postgres",
+    host: config.get("DB_HOST"),
+    port: parseInt(config.get("DB_PORT", "5432"), 10),
+    username: config.get("DB_USERNAME"),
+    password: config.get("DB_PASSWORD"),
+    database: config.get("DB_DATABASE"),
+    ssl: false,
+    entities: [path.resolve(__dirname, "..", "entities", "*.{ts,js}")],
     synchronize: false,
     logging: true,
   };

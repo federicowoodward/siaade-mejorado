@@ -203,4 +203,8 @@ export class AuthService {
       localStorage.removeItem('mock_user');
     }
   }
+
+  getUserId(): string | null {
+    return this.user$.getValue()?.id ?? null;
+  }
 }

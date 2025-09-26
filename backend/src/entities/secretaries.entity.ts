@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from './users.entity';
-import { ExamTable } from './exam_table.entity';
+import { FinalExamTable } from './final_exam_table.entity';
 
 @Entity('secretaries')
 export class Secretary {
@@ -14,6 +14,4 @@ export class Secretary {
   @Column({ name: 'is_directive', default: false })
   isDirective: boolean;
 
-  @OneToMany(() => ExamTable, (et) => et.createdByRel)
-  createdExamTables: ExamTable[];
 }

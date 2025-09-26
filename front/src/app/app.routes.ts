@@ -10,6 +10,7 @@ import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
 import { UnAuthGuard } from './core/guards/unauth.guard';
 import { FINAL_EXAMS_ROUTES } from './pages/final_examns_module/final_examns_module.routes';
+import { NoticesPageComponent } from './pages/notices_page/notices_page.component';
 
 export const routes: Routes = [
   {
@@ -47,6 +48,13 @@ export const routes: Routes = [
     component: PersonalDataPage,
     canActivate: [AuthGuard, RoleGuard],
   },
+  {
+    path: 'notices',
+    component: NoticesPageComponent,
+    canActivate: [AuthGuard, RoleGuard],
+  },
   { path: '', redirectTo: 'welcome', pathMatch: 'full' },
   { path: '**', redirectTo: 'welcome' },
+
+
 ];

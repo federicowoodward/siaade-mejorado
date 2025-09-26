@@ -1,5 +1,10 @@
 ::ng-deep {
-    .p-drawer-left {
-        width: 9.9rem !important;
-    }
+  .p-drawer-left {
+    width: 9.9rem !important;
+  }
+
+  :root {
+    //tool tip de primeng con width extendido
+    --p-tooltip-max-width: 250px !important;
+  }
 }

@@ -69,12 +69,13 @@ export class UsersService {
   // /preceptor -> users + preceptors + user_info
   async createPreceptor(dto: CreatePreceptorDto) {
     const userData = await this.buildUserData(dto);
-    // Validación mínima de user_info
-    if (!dto.userInfo?.documentType || !dto.userInfo?.documentValue) {
+    // Validación mínima de user_info: sólo documentValue requerido; documentType por defecto 'DNI'
+    if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentType y userInfo.documentValue son requeridos para preceptor"
+        "userInfo.documentValue (DNI) es requerido para preceptor"
       );
     }
+    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
     return this.provisioning.createPreceptor({
       userData: { ...userData, roleName: "preceptor", email: userData.email },
       userInfo: dto.userInfo,
@@ -85,12 +86,13 @@ export class UsersService {
   // /teacher   -> users + teachers + user_info + common_data (+ address_data opcional)
   async createTeacher(dto: CreateTeacherDto) {
     const userData = await this.buildUserData(dto);
-    // Validaciones mínimas
-    if (!dto.userInfo?.documentType || !dto.userInfo?.documentValue) {
+    // Validaciones mínimas: sólo documentValue requerido; documentType por defecto 'DNI'
+    if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentType y userInfo.documentValue son requeridos para teacher"
+        "userInfo.documentValue (DNI) es requerido para teacher"
       );
     }
+    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
     if (
       !dto.commonData?.sex ||
       !dto.commonData?.birthDate ||
@@ -112,11 +114,12 @@ export class UsersService {
   async createStudent(dto: CreateStudentDto) {
     const userData = await this.buildUserData(dto);
 
-    if (!dto.userInfo?.documentType || !dto.userInfo?.documentValue) {
+    if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentType y userInfo.documentValue son requeridos para student"
+        "userInfo.documentValue (DNI) es requerido para student"
       );
     }
+    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
     if (
       !dto.commonData?.sex ||
       !dto.commonData?.birthDate ||

@@ -3,27 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/main.js",
-    "migrate:prod": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
-    "start:prod": "npm run migrate:prod && ts-node -r tsconfig-paths/register src/main.ts",
+    "build": "nest build && tsc-alias -p tsconfig.build.json",
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
-    "start:watch": "nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "typeorm": "ts-node ./node_modules/typeorm/cli",
-    "db:migration:generate": "npm run typeorm -- migration:generate src/database/migrations/InitSchema -d src/database/data-source.ts",
-    "db:migration:create": "npm run typeorm -- migration:create src/database/migrations/ManualMigration -d src/database/data-source.ts",
-    "db:migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
-    "db:migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
-    "db:show": "npm run typeorm -- schema:log -d src/database/data-source.ts"
+    "start:watch": "nodemon --watch src --ext ts,js --exec ts-node -r tsconfig-paths/register src/main.ts",
+    "db:migration:generate": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations/AutoMigration -d src/database/datasource.ts",
+    "db:migration:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:create src/database/migrations/ManualMigration -d src/database/datasource.ts",
+    "db:migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/datasource.ts",
+    "db:migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/datasource.ts",
+    "db:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:log -d src/database/datasource.ts",
+    "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
+    "start:prod": "npm run migrate:prod && node dist/main.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
-  "engines": {
-    "node": "20.x"
-  },
   "dependencies": {
     "@nestjs/common": "^11.1.5",
     "@nestjs/config": "^4.0.2",
@@ -43,10 +37,12 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.26",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.5.4"
+    "typeorm": "^0.3.26",
+    "typescript": "^5.5.4",
+    "@nestjs/cli": "^11.0.0",
+    "tsc-alias": "^1.8.16"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -54,6 +50,7 @@
     "@types/node": "^24.0.15",
     "@types/passport-jwt": "^4.0.1",
     "nodemon": "^3.1.4",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.16"
   }
 }

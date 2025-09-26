@@ -1,0 +1,62 @@
+<p-dialog
+  header="Crear examen"
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [style]="{ width: '520px', maxWidth: '95vw' }"
+>
+  <div class="flex flex-column gap-3">
+    <div>
+      <label class="block mb-1">Materia</label>
+      <p-autocomplete
+        [(ngModel)]="selectedSubject"
+        [suggestions]="subjectOptions()"
+        (completeMethod)="getSubjectsOptions()"
+        optionLabel="label"
+        [dropdown]="true"
+        [forceSelection]="true"
+        (onSelect)="selectedSubject = $event.value"
+        (onClear)="selectedSubject = null"
+      ></p-autocomplete>
+    </div>
+
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <label class="block mb-1">Fecha y hora</label>
+        <p-datepicker
+          inputId="calendar-24h"
+          [(ngModel)]="dateTime"
+          [showTime]="true"
+          [hourFormat]="'24'"
+          [minDate]="minDate"
+          [maxDate]="maxDate"
+          [readonlyInput]="true"
+          [showIcon]="true"
+          appendTo="body"
+        ></p-datepicker>
+      </div>
+      <div class="col-12 md:col-6">
+        <label class="block mb-1">Aula</label>
+        <input
+          pInputText
+          class="w-full"
+          [(ngModel)]="aula"
+          placeholder="Ej: Aula 12"
+        />
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      (onClick)="onCancel()"
+    ></p-button>
+    <p-button
+      label="Crear"
+      icon="pi pi-check"
+      (onClick)="onConfirm()"
+    ></p-button>
+  </ng-template>
+</p-dialog>

@@ -21,9 +21,6 @@ export class FinalExamsStudent {
   @JoinColumn({ name: 'student_id', referencedColumnName: 'userId' })
   student: Student;
 
-  @Column({ nullable: true })
-  enrolled: boolean;
-
   @Column({ name: 'enrolled_at', type: 'date', nullable: true })
   enrolledAt: Date | null;
 

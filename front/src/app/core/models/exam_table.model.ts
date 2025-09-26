@@ -1,9 +1,15 @@
+export interface ExamTableUser {
+  id: string;
+  name: string;
+  last_name?: string;
+  email?: string;
+}
+
 export interface ExamTable {
-    id: number;
-    name: string;
-    startDate: string;   // YYYY-MM-DD
-    endDate: string;     // YYYY-MM-DD
-    createdBy: number;   // user_id de secretario
-  }
-  
-   // posible busqueda idea: busqueda por creadted y por fechas
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;  
+  created_by: string; 
+  created_by_user?: ExamTableUser; 
+}

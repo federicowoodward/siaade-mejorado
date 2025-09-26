@@ -40,15 +40,14 @@ export class InitSchema1690000000000 implements MigrationInterface {
       `CREATE TABLE "secretaries" ("user_id" uuid NOT NULL, "is_directive" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_81e71815c5d4bed8e8dae6ce734" PRIMARY KEY ("user_id"))`
     );
     await queryRunner.query(
-      `CREATE TABLE "exam_table" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "start_date" date NOT NULL, "end_date" date NOT NULL, "created_by" uuid NOT NULL, CONSTRAINT "PK_7f3870bb63b95ce8bc0a5256464" PRIMARY KEY ("id"))`
+      `CREATE TABLE "final_exam_table" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "start_date" date NOT NULL, "end_date" date NOT NULL, "created_by" uuid NOT NULL, CONSTRAINT "PK_7f3870bb63b95ce8bc0a5256464" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
-      `CREATE TABLE "final_exams" ("id" SERIAL NOT NULL, "exam_table_id" integer NOT NULL, "subject_id" integer NOT NULL, "exam_date" date NOT NULL, "aula" character varying, CONSTRAINT "PK_bed2774da6b883bb80b9672d7ed" PRIMARY KEY ("id"))`
+      `CREATE TABLE "final_exams" ("id" SERIAL NOT NULL, "final_exam_table_id" integer NOT NULL, "subject_id" integer NOT NULL, "exam_date" date NOT NULL, "exam_time" time, "aula" character varying, CONSTRAINT "PK_bed2774da6b883bb80b9672d7ed" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
-      `CREATE TABLE "final_exams_students" ("id" SERIAL NOT NULL, "final_exams_id" integer NOT NULL, "student_id" uuid NOT NULL, "enrolled" boolean, "enrolled_at" date, "score" numeric(4,2), "notes" character varying, CONSTRAINT "PK_b7fdfdbde6b37992dbbc2824abc" PRIMARY KEY ("id"))`
+      `CREATE TABLE "final_exams_students" ("id" SERIAL NOT NULL, "final_exams_id" integer NOT NULL, "student_id" uuid NOT NULL, "enrolled_at" date, "score" numeric(4,2), "notes" character varying, CONSTRAINT "PK_b7fdfdbde6b37992dbbc2824abc" PRIMARY KEY ("id"))`
     );
-    // ⬇️ SIN 'legajo'
     await queryRunner.query(
       `CREATE TABLE "students" ("user_id" uuid NOT NULL, CONSTRAINT "PK_fb3eff90b11bddf7285f9b4e281" PRIMARY KEY ("user_id"))`
     );
@@ -100,11 +99,12 @@ export class InitSchema1690000000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "secretaries" ADD CONSTRAINT "FK_81e71815c5d4bed8e8dae6ce734" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "idx_final_exam_table_created_by"
+      ON "final_exam_table" ("created_by");
+    `);
     await queryRunner.query(
-      `ALTER TABLE "exam_table" ADD CONSTRAINT "FK_28c2ce85b8df8b34419f052206b" FOREIGN KEY ("created_by") REFERENCES "secretaries"("user_id") ON DELETE NO ACTION ON UPDATE NO ACTION`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "final_exams" ADD CONSTRAINT "FK_dda384e0515ed5b3fb0b63c18e2" FOREIGN KEY ("exam_table_id") REFERENCES "exam_table"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+      `ALTER TABLE "final_exams" ADD CONSTRAINT "FK_dda384e0515ed5b3fb0b63c18e2" FOREIGN KEY ("final_exam_table_id") REFERENCES "final_exam_table"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
       `ALTER TABLE "final_exams" ADD CONSTRAINT "FK_e0559f3f8c20b1fd6597becb959" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
@@ -146,7 +146,7 @@ export class InitSchema1690000000000 implements MigrationInterface {
       `ALTER TABLE "final_exams" DROP CONSTRAINT "FK_dda384e0515ed5b3fb0b63c18e2"`
     );
     await queryRunner.query(
-      `ALTER TABLE "exam_table" DROP CONSTRAINT "FK_28c2ce85b8df8b34419f052206b"`
+      `ALTER TABLE "final_exam_table" DROP CONSTRAINT "FK_28c2ce85b8df8b34419f052206b"`
     );
     await queryRunner.query(
       `ALTER TABLE "secretaries" DROP CONSTRAINT "FK_81e71815c5d4bed8e8dae6ce734"`
@@ -195,7 +195,7 @@ export class InitSchema1690000000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "students"`);
     await queryRunner.query(`DROP TABLE "final_exams_students"`);
     await queryRunner.query(`DROP TABLE "final_exams"`);
-    await queryRunner.query(`DROP TABLE "exam_table"`);
+    await queryRunner.query(`DROP TABLE "final_exam_table"`);
     await queryRunner.query(`DROP TABLE "secretaries"`);
     await queryRunner.query(`DROP TABLE "exam_results"`);
     await queryRunner.query(`DROP TABLE "subject_students"`);

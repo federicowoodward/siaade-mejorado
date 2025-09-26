@@ -3,86 +3,136 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { TableModule } from 'primeng/table';
-import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
 import { Button } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-
+import { MessageService } from 'primeng/api';
+import { FinalExamCreateDialogComponent } from '../shared/components/final-exam-create-dialog/final-exam-create-dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ExamsMockService, ExamTable, FinalExam } from '../exams-mock.service';
+import { ExamTablesService } from '../../../core/services/final-exam-tables.service';
+import { FinalExamsService } from '../../../core/services/final-exams.service';
+import { ExamTable } from '../../../core/models/exam_table.model';
+import { FinalExam } from '../../../core/models/final_exam.model';
 
 @Component({
   selector: 'app-exam-table-page',
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
-    TableModule, DialogModule, InputTextModule,
-    Button, TooltipModule
+    CommonModule,
+    FormsModule,
+    TableModule,
+    Button,
+    TooltipModule,
+    FinalExamCreateDialogComponent,
   ],
   templateUrl: './exam-table-page.html',
   styleUrls: ['./exam-table-page.scss'],
+  providers: [MessageService],
 })
 export class ExamTablePage implements OnInit {
-  private svc = inject(ExamsMockService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private tablesSvc = inject(ExamTablesService);
+  private finalsSvc = inject(FinalExamsService);
+  private messages = inject(MessageService);
 
   tableId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 
   table = signal<ExamTable | null>(null);
   finals = signal<FinalExam[]>([]);
+  loading = signal<boolean>(false);
 
-  // diálogo crear examen (MVP)
+  // diálogo
   showCreate = signal(false);
-  subject_name = '';
-  exam_date = '';
-  aula = '';
+
+  // límites para el datepicker 24h (se los pasamos al diálogo)
+  minDate: Date | null = null;
+  maxDate: Date | null = null;
 
   ngOnInit(): void {
-    this.table.set(this.svc.getTable(this.tableId));
+    this.loadTable();
     this.refreshFinals();
+  }
+
+  private loadTable() {
+    this.tablesSvc.getOne(this.tableId).subscribe({
+      next: (t) => {
+        this.table.set(t);
+        this.minDate = t?.start_date
+          ? new Date(t.start_date + 'T00:00:00')
+          : null;
+        this.maxDate = t?.end_date ? new Date(t.end_date + 'T23:59:59') : null;
+      },
+      error: () => this.table.set(null),
+    });
   }
 
   refreshFinals() {
-    this.finals.set(
-      this.svc.listFinalsByTable(this.tableId).sort((a, b) => a.exam_date.localeCompare(b.exam_date))
-    );
+    this.loading.set(true);
+    this.finalsSvc.listByTable(this.tableId).subscribe({
+      next: (rows) => {
+        this.finals.set(rows);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
   }
 
   openCreate() {
-    this.subject_name = '';
-    this.exam_date = '';
-    this.aula = '';
     this.showCreate.set(true);
   }
 
-  confirmCreate() {
-    if (!this.subject_name || !this.exam_date) {
-      this.showCreate.set(false);
-      return;
-    }
-    this.svc.createFinal({
-      exam_table_id: this.tableId,
-      subject_id: Math.floor(Math.random() * 1000) + 1, // mock
-      subject_name: this.subject_name,
-      exam_date: this.exam_date,
-      aula: this.aula || undefined,
-    });
-    this.refreshFinals();
-    this.showCreate.set(false);
+  handleCreate(payload: {
+    subject_id: number;
+    exam_date: string;
+    exam_time?: string;
+    aula?: string;
+  }) {
+    this.finalsSvc
+      .create({
+        final_exam_table_id: this.tableId,
+        subject_id: payload.subject_id,
+        exam_date: payload.exam_date,
+        exam_time: payload.exam_time,
+        aula: payload.aula,
+      })
+      .subscribe({
+        next: () => {
+          this.messages.add({ severity: 'success', summary: 'Final creado' });
+          this.refreshFinals();
+          this.showCreate.set(false);
+        },
+        error: (e) => {
+          const raw = e?.error?.message;
+          const detail = Array.isArray(raw)
+            ? raw.join(' • ')
+            : raw ?? 'Ver consola';
+          this.messages.add({
+            severity: 'error',
+            summary: 'Error al crear',
+            detail,
+          });
+          this.showCreate.set(false);
+        },
+      });
   }
 
   openFinal(f: FinalExam) {
     this.router.navigate(['final_examns/final', f.id]);
   }
 
-  openCalendar() {
-    this.router.navigate(['final_examns/calendar', this.tableId]);
-  }
-
   deleteFinal(f: FinalExam) {
-    this.svc.deleteFinal(f.id);
-    this.refreshFinals();
+    this.finalsSvc.delete(f.id).subscribe({
+      next: () => {
+        this.messages.add({ severity: 'success', summary: 'Final eliminado' });
+        this.refreshFinals();
+      },
+      error: (e) =>
+        this.messages.add({
+          severity: 'error',
+          summary: 'No se pudo eliminar',
+          detail: e?.error?.message,
+        }),
+    });
   }
 
   back() {

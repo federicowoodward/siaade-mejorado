@@ -5,7 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   OneToOne,
-  OneToMany,
 } from "typeorm";
 import { Role } from "./roles.entity";
 import { UserInfo } from "./user_info.entity";

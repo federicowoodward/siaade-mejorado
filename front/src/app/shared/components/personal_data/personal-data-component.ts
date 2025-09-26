@@ -7,7 +7,7 @@ import { MenuItem } from 'primeng/api';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputGroup } from 'primeng/inputgroup';
 import { Button } from 'primeng/button';
-import { cloneDeep, isEqual } from 'lodash';
+import { cloneDeep, isEqual } from 'lodash-es';
 import { Dialog } from 'primeng/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { FieldLabelPipe } from '../../pipes/field-label.pipe';
