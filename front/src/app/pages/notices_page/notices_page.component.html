@@ -19,11 +19,11 @@
     placeholder="Escribí el contenido del aviso…"
     ></p-editor>
 
-    <label class="mt-2">Visible para:</label>
-    <select [(ngModel)]="newNotice.visibleFor">
-    <option value="student">Alumnos</option>
-    <option value="teacher">Profesores</option>
-    </select>
+    <label for="visibleFor">Visible para:</label>
+    <select [(ngModel)]="newNotice.visibleFor" id="visibleFor">
+    <option value="alumno">Alumnos</option>
+    <option value="profesor">Profesores</option>
+</select>
 
     <button pButton type="button" label="Publicar" (click)="addNotice()" class="mt-2"></button>     
     </div>

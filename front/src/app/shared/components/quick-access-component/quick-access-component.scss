@@ -48,3 +48,9 @@ button:focus {
   border-radius: 1rem;
   background: #f9fafb;
 }
+
+.notice-card {
+  margin-bottom: 1rem;
+  border-left: 5px solid #f59e0b; // Amarillo estilo campana
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}

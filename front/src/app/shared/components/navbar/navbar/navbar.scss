@@ -1,3 +1,75 @@
-::ng-deep .navbar .p-menu.p-menu-overlay {
-  top: 62px !important;
+// Example SCSS for navbar component
+
+.navbar {
+  box-shadow: var(--shadow-1);
+  background: var(--surface-ground);
+  padding: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: var(--text-900);
+  text-decoration: none;
+  border-radius: 0.375rem;
+  transition: background 0.2s;
+  &:hover,
+  &.active-link {
+    background: var(--surface-100);
+    color: var(--primary-700);
+  }
+}
+
+.notif-popover {
+  position: absolute;
+  top: 2.5rem;
+  right: 0;
+  min-width: 20rem;
+  background: var(--surface-overlay);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-3);
+  padding: 1rem;
+  z-index: 200;
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: background 0.2s;
+  &:hover {
+    background: var(--surface-100);
+  }
+}
+
+.navbar-menu {
+  min-width: 12rem;
+}
+
+@media (max-width: 1024px) {
+  .navbar .logo-link span {
+    display: none;
+  }
+  .navbar .nav-link {
+    padding: 0.5rem;
+  }
+}
+.avatar-sm {
+  width: 2rem !important;
+  height: 2rem !important;
+  font-size: .875rem; /* tamaño de letra interno */
+  line-height: 2rem;  /* centra el texto */
 }

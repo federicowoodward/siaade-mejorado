@@ -1,3 +1,4 @@
+/* ===== Banner ===== */
 .banner {
   background: #0ea5e9;
   background: -webkit-linear-gradient(
@@ -15,5 +16,41 @@
     rgba(14, 165, 233, 0.46) 0%,
     rgb(214, 220, 240) 93%
   );
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#0EA5E9", endColorstr="#EEF2FF", GradientType=0);
+  color: #0b1520;
+}
+
+/* Redondeo sutil del borde inferior del banner */
+.border-round-bottom {
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+}
+
+/* Chips del banner */
+.welcome-badge {
+  background: rgba(255,255,255,.75);
+  color: #0b1520;
+  padding: .2rem .5rem;
+  border-radius: .5rem;
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+/* Mini tarjetas del banner (derecha) */
+.hi-card {
+  min-width: 120px;
+}
+
+/* KPI cards */
+.kpi-card .p-card-content {
+  padding-top: .25rem;
+}
+
+/* Ajustes generales */
+.text-100 { color: rgba(0,0,0,.7); }
+.opacity-90 { opacity: .9; }
+.shadow-1 { box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+
+/* Responsivo suave */
+@media (max-width: 768px) {
+  .hi-card { display: none; }
 }

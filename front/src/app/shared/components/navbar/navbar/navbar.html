@@ -1,39 +1,134 @@
-<div
-  class="py-2 px-4 md:px-6 flex justify-content-between align-items-center shrink-0"
-  *ngIf="authService.isLoggedIn()"
+<!-- Contenedor principal -->
+<nav
+  class="navbar shadow-1 surface-ground"
+  role="navigation"
+  aria-label="Barra de navegación principal"
 >
-  <!-- Botón hamburguesa -->
-  <div>
-    <p-button
-      (click)="openSidebar()"
-      aria-label="Abrir menú"
-      icon="pi pi-bars"
-      class="lg:hidden block"
-    ></p-button>
-  </div>
 
-  <!-- Logo -->
-  <div>
-    <img src="assets/images/logo.png" alt="Logo" class="w-4rem" />
-  </div>
-
-  <!-- Usuario y menú -->
   <div
-    class="flex align-items-center gap-2 cursor-pointer p-2 px-3"
-    (click)="menu.toggle($event); this.isMenuOpen = !this.isMenuOpen;"
+    class="py-2 px-4 md:px-6 flex justify-content-between align-items-center gap-3 shrink-0"
+    *ngIf="authService.isLoggedIn()"
   >
-    <p>{{ userName }}</p>
-    <p
+    <!-- Izquierda: Hamburguesa + Logo -->
+    <div class="flex align-items-center gap-2">
+      <p-button
+        (click)="openSidebar()"
+        aria-label="Abrir menú lateral"
+        icon="pi pi-bars"
+        class="lg:hidden block"
+      ></p-button>
+
+      <a [routerLink]="['/']" class="flex align-items-center gap-2 logo-link">
+        <img src="assets/images/logo.png" alt="Logo" class="w-4rem h-auto" />
+        <span class="hidden md:inline text-lg font-semibold text-900">SIADE</span>
+      </a>
+    </div>
+
+    <!-- Centro: Links (se ocultan en mobile) -->
+    <ul class="hidden lg:flex gap-2 m-0 p-0 list-none">
+      <li *ngFor="let item of centerLinks">
+        <a
+          [routerLink]="item.link"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+          class="nav-link"
+          [attr.aria-label]="item.label"
+        >
+          <i [class]="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      </li>
+    </ul>
+<!-- Derecha: Notificaciones + Usuario -->
+<div class="flex align-items-center gap-2">
+  <!-- Notificaciones -->
+  <div class="relative">
+    <button
+      pButton
+      type="button"
+      class="p-button-text p-button-rounded p-button-plain"
+      aria-label="Ver notificaciones"
+      [attr.aria-expanded]="isNotifOpen"
+      [attr.aria-controls]="'notif-popover'"
+      (click)="isNotifOpen = !isNotifOpen"
+    >
+      <i class="pi pi-bell"></i>
+      <span
+        *ngIf="notifCount() > 0"
+        class="p-badge p-component p-badge-warning ml-1"
+      >{{ notifCount() }}</span>
+    </button>
+
+    <!-- Dropdown de notificaciones (reemplazo de p-overlayPanel) -->
+    <div
+      *ngIf="isNotifOpen"
+      id="notif-popover"
+      role="dialog"
+      aria-label="Notificaciones"
+      class="notif-popover surface-overlay border-round shadow-3"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex align-items-center justify-content-between mb-2">
+        <h4 class="m-0">Notificaciones</h4>
+        <button
+          pButton
+          class="p-button-text p-button-sm"
+          label="Ver todas"
+          (click)="goToAllNotices(); isNotifOpen=false"
+        ></button>
+      </div>
+
+      <div *ngIf="notifList().length === 0" class="text-600 text-sm">
+        No hay notificaciones nuevas.
+      </div>
+
+      <ul class="m-0 p-0 list-none">
+        <li
+          *ngFor="let n of notifList()"
+          class="p-2 border-round hover:surface-100 transition-colors"
+        >
+          <div class="flex align-items-start gap-2">
+            <i class="pi pi-bell text-yellow-500 mt-1"></i>
+            <div class="flex-1">
+              <div class="font-medium">{{ n.title }}</div>
+              <div class="text-sm text-700" [innerHTML]="n.content"></div>
+              <small class="text-500">{{ n.createdAt | date:'short' }}</small>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Usuario -->
+  <div
+    class="user-trigger flex align-items-center gap-2 cursor-pointer p-2 px-3 border-round"
+    tabindex="0"
+    role="button"
+    aria-haspopup="menu"
+    (click)="menu.toggle($event); isMenuOpen = !isMenuOpen"
+    (keydown.enter)="menu.toggle($event); isMenuOpen = !isMenuOpen"
+  >
+  <p-avatar
+  [label]="userInitials"
+  shape="circle"
+  size="normal"
+  styleClass="bg-primary-100 text-primary-700 avatar-sm"
+></p-avatar>
+    <span class="hidden sm:inline text-900">{{ userName }}</span>
+    <i
+      class="pi text-lg"
       [class.pi-angle-down]="!isMenuOpen"
       [class.pi-angle-up]="isMenuOpen"
-      class="pi text-lg"
-    ></p>
+    ></i>
   </div>
 </div>
+
+<!-- Menú popup de usuario -->
 <p-menu
   #menu
   [model]="items"
   [popup]="true"
-  class="navbar"
+  class="navbar-menu"
   (onHide)="isMenuOpen = false"
-/>
+></p-menu>

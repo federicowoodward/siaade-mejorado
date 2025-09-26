@@ -1,20 +1,114 @@
-<!-- Banner principal -->
-<div class="banner h-10rem flex align-items-center px-4 bg-primary text-white">
-  <div class="flex align-items-center gap-3">
-    <div>
-      <h1 class="text-2xl font-bold">Sistema Académico Quality</h1>
-      <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
+<!-- ===== Banner principal ===== -->
+<section class="banner flex align-items-center px-4 md:px-6 py-3 border-round-bottom">
+  <div class="flex align-items-center gap-3 w-full">
+    <!-- Izquierda: saludo -->
+    <div class="flex-1">
+      <div class="flex align-items-center gap-2 mb-2">
+        <span class="welcome-badge">👋 Bienvenido</span>
+        <p-tag [value]="userRole() | titlecase" severity="info"></p-tag>
+        <p-tag [value]="todayStr" severity="secondary" styleClass="hidden sm:inline-block"></p-tag>
+      </div>
+
+      <h1 class="m-0 text-2xl md:text-3xl font-bold line-height-2">
+        {{ userName() || 'Usuario' }}
+      </h1>
+      <p class="m-0 text-100 opacity-90">
+        Gestión académica simple, accesos rápidos y métricas al día.
+      </p>
+    </div>
+
+    <!-- Derecha: highlights -->
+    <div class="hidden md:flex gap-3">
+      <div class="hi-card surface-card border-round p-3 shadow-1 text-center">
+        <div class="text-xs text-600">Mesas hoy</div>
+        <div class="text-2xl font-semibold">{{ todayExams }}</div>
+      </div>
+      <div class="hi-card surface-card border-round p-3 shadow-1 text-center">
+        <div class="text-xs text-600">% Inscripción</div>
+        <div class="text-2xl font-semibold">{{ enrollmentPct }}%</div>
+      </div>
     </div>
   </div>
-  <div class="ml-auto text-right">
+</section>
+
+<!-- ===== Contenido ===== -->
+<section class="px-4 md:px-6 py-4">
+  <div class="grid">
+    <!-- Columna izquierda: Accesos + KPIs -->
+    <div class="col-12 lg:col-8">
+      <!-- Explicación -->
+      <p class="text-600 mb-3">
+        Aquí encontrarás tus accesos rápidos e información importante.
+      </p>
+
+      <!-- Accesos rápidos -->
+      <app-quick-access></app-quick-access>
+
+      <!-- KPIs -->
+      <div class="grid mt-3">
+        <div class="col-12 sm:col-6 xl:col-3" *ngFor="let k of kpis">
+          <p-card class="shadow-1 kpi-card">
+            <div class="text-600 text-sm">{{ k.label }}</div>
+            <div class="text-2xl font-bold my-1">{{ k.value }}</div>
+            <p-progressBar *ngIf="k.progress !== undefined" [value]="k.progress"></p-progressBar>
+          </p-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna derecha: Avisos + Eventos -->
+    <div class="col-12 lg:col-4">
+      <!-- Avisos recientes -->
+      <p-card class="shadow-1 mb-3">
+        <div class="flex align-items-center justify-content-between mb-2">
+          <h3 class="m-0 text-lg">📢 Avisos recientes</h3>
+          <button pButton class="p-button-text p-button-sm" label="Ver todos" (click)="goToAllNotices()"></button>
+        </div>
+
+        <div *ngIf="recentNotices().length === 0" class="text-600 text-sm">No hay avisos para tu rol.</div>
+
+        <ul class="m-0 p-0 list-none">
+          <li *ngFor="let n of recentNotices()" class="p-2 border-round hover:surface-100 transition-colors">
+            <div class="flex align-items-start gap-2">
+              <i class="pi pi-bell text-yellow-500 mt-1"></i>
+              <div class="flex-1">
+                <div class="font-medium">{{ n.title }}</div>
+                <div class="text-sm text-700" [innerHTML]="n.content"></div>
+                <small class="text-500">{{ n.createdAt | date:'short' }}</small>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </p-card>
+
+      <!-- Próximos eventos -->
+      <p-card class="shadow-1">
+        <div class="flex align-items-center justify-content-between mb-2">
+          <h3 class="m-0 text-lg">📅 Próximos eventos</h3>
+          <button pButton class="p-button-text p-button-sm" label="Nueva mesa" (click)="createExamTable()"></button>
+        </div>
+
+        <div *ngIf="events.length === 0" class="text-600 text-sm">No hay eventos próximos.</div>
+
+        <ul class="m-0 p-0 list-none">
+          <li *ngFor="let ev of events" class="p-2 border-round hover:surface-100 transition-colors">
+            <div class="flex align-items-start justify-content-between gap-2">
+              <div class="flex align-items-start gap-2">
+                <i class="pi pi-calendar text-primary mt-1"></i>
+                <div>
+                  <div class="font-medium">{{ ev.title }}</div>
+                  <div class="text-600 text-sm">{{ ev.location }}</div>
+                  <p-tag [value]="ev.type" [severity]="eventSeverity(ev.type)" class="mt-2"></p-tag>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-semibold">{{ ev.date | date:'EEE dd/MM' }}</div>
+                <small class="text-500">{{ ev.date | date:'shortTime' }}</small>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </p-card>
+    </div>
   </div>
-</div>
-
-<!-- Quick Access -->
-<div class="p-4">
-  <p class="text-gray-500 mb-4">
-    Aquí encontrarás tus accesos rápidos e información importante.
-  </p>
-
-  <app-quick-access></app-quick-access>
-</div>
+</section>

@@ -1,54 +1,173 @@
-<!-- Avisos importantes -->
-<div class="card mt-4">
-  <h3>Avisos importantes</h3>
+<!-- ====== AVISOS IMPORTANTES ====== -->
+<p-card class="mb-4">
+  <div class="flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">📢 Avisos importantes</h3>
 
-  <ul class="list-none p-0">
-    <li *ngFor="let aviso of noticesForHome()" class="mb-3">
-      <i class="pi pi-bell text-yellow-500 mr-2"></i>
-      <div>
-        <strong>{{ aviso.title }}</strong> —
-        <span [innerHTML]="aviso.content"></span>
-        <br />
-        <small class="text-gray-500">
-          Publicado por {{ aviso.createdBy }} ·
-          {{ aviso.createdAt | date:'short' }}
-        </small>
+    <!-- Acciones -->
+    <p-toolbar styleClass="p-0 bg-transparent border-none">
+      <div class="p-toolbar-group-end gap-2">
+        <button pButton label="Ver todos" icon="pi pi-list" class="p-button-text" (click)="onSeeAllNotices()"></button>
       </div>
-    </li>
-  </ul>
+    </p-toolbar>
+  </div>
 
-  <p *ngIf="!noticesForHome().length">No hay avisos para tu rol.</p>
-</div>
+  <ng-container *ngIf="noticesForHome() as notices">
+    <p-message *ngIf="notices.length === 0" severity="info" text="No hay avisos para tu rol."></p-message>
 
-<!-- Bienvenida -->
-<h2 class="mb-4 text-2xl font-semibold">
+    <p-dataView
+      *ngIf="notices.length > 0"
+      [value]="notices"
+      [layout]="'list'"
+      [paginator]="true"
+      [rows]="5"
+      [sortField]="'createdAt'"
+      [sortOrder]="-1"
+      emptyMessage="No se encontraron avisos">
+      <ng-template pTemplate="listItem" let-aviso>
+        <div class="flex align-items-start gap-3 p-3 border-round surface-card w-full">
+          <i class="pi pi-bell text-2xl text-yellow-500"></i>
+          <div class="flex-1">
+            <div class="flex align-items-center gap-2 mb-1">
+              <strong class="text-lg">{{ aviso.title }}</strong>
+              <p-tag *ngIf="aviso.tag" [value]="aviso.tag" [severity]="tagSeverity(aviso.tag)"></p-tag>
+            </div>
+            <div class="text-sm" [innerHTML]="aviso.content"></div>
+            <small class="text-500">
+              Publicado por {{ aviso.createdBy }} · {{ aviso.createdAt | date: 'short' }}
+            </small>
+          </div>
+          <div class="flex flex-column gap-2">
+            <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="editNotice(aviso)"></button>
+            <button pButton icon="pi pi-trash" class="p-button-text p-button-sm" (click)="deleteNotice(aviso)"></button>
+          </div>
+        </div>
+      </ng-template>
+    </p-dataView>
+  </ng-container>
+
+  <!-- Debajo de los avisos: Timeline de actividad reciente -->
+  <p-divider></p-divider>
+  <h4 class="mb-3">🕘 Actividad reciente</h4>
+  <p-timeline [value]="recentActivities" align="left" class="w-full">
+    <ng-template pTemplate="marker" let-event>
+      <span class="custom-marker">
+        <i [class]="event.icon"></i>
+      </span>
+    </ng-template>
+    <ng-template pTemplate="content" let-event>
+      <div class="mb-2 font-medium">{{ event.title }}</div>
+      <div class="text-sm mb-1">{{ event.description }}</div>
+      <small class="text-500">{{ event.when | date:'short' }}</small>
+    </ng-template>
+  </p-timeline>
+</p-card>
+
+<!-- ====== BIENVENIDA ====== -->
+<h2 class="mb-3 text-2xl font-semibold">
   👋 Bienvenido, {{ rolesService.currentRole() | titlecase }}
-</h2>                                                                     
+</h2>
 
-<!-- Accesos rápidos -->
+<!-- ====== ACCESOS RÁPIDOS ====== -->
 <div class="grid">
   <div *ngFor="let acc of accesses()" class="col-12 sm:col-6 lg:col-3">
-    <p-card 
+    <p-card
       [header]="acc.label"
       [subheader]="acc.description"
-      [style]="{cursor:'pointer'}"
+      [style]="{ cursor: 'pointer' }"
       aria-label="{{ acc.label }}"
       (click)="navigate(acc.route)"
-      class="quick-card"
-    >
-      <div class="card-content">
-        <i [class]="acc.icon + ' text-5xl text-primary'"></i>
+      class="quick-card">
+      <div class="flex align-items-center justify-content-between">
+        <i [class]="acc.icon + ' text-4xl text-primary'"></i>
+        <button pButton icon="pi pi-arrow-right" class="p-button-text"></button>
       </div>
     </p-card>
   </div>
 </div>
 
-<!-- Resumen / Stats -->
+<!-- ====== KPIs / STATS ====== -->
 <div class="grid mt-4">
   <div class="col-12 sm:col-6 lg:col-3" *ngFor="let stat of stats">
-    <p-card [style]="{textAlign:'center'}" class="stat-card">
-      <h3 class="text-2xl font-bold">{{ stat.value }}</h3>
-      <p class="text-sm text-gray-500">{{ stat.label }}</p>
+    <p-card class="stat-card text-center">
+      <div class="text-xl font-bold mb-1">{{ stat.value }}</div>
+      <div class="text-600 mb-2">{{ stat.label }}</div>
+      <p-progressBar *ngIf="stat.progress !== undefined" [value]="stat.progress"></p-progressBar>
     </p-card>
   </div>
 </div>
+
+<!-- ====== PRÓXIMOS EVENTOS ====== -->
+<p-card class="mt-4">
+  <div class="flex align-items-center justify-content-between mb-2">
+    <h3 class="m-0">📅 Próximos eventos</h3>
+    <button pButton label="Nueva mesa de examen" icon="pi pi-calendar-plus" (click)="createExamTable()"></button>
+  </div>
+
+  <div class="grid">
+    <div class="col-12 md:col-6" *ngFor="let ev of nextEvents">
+      <p-card>
+        <div class="flex align-items-start justify-content-between">
+          <div>
+            <div class="font-medium">{{ ev.title }}</div>
+            <div class="text-600 text-sm">{{ ev.location }}</div>
+            <p-tag [value]="ev.type" [severity]="eventSeverity(ev.type)" class="mt-2"></p-tag>
+          </div>
+          <div class="text-right">
+            <div class="font-semibold">{{ ev.date | date:'EEE dd/MM' }}</div>
+            <small class="text-500">{{ ev.date | date:'shortTime' }}</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+</p-card>
+
+<!-- ====== VISTA DE MATERIAS (Matriculadas / pendientes / avisos) ====== -->
+<p-card class="mt-4">
+  <div class="flex align-items-center justify-content-between mb-2">
+    <h3 class="m-0">📚 Materias</h3>
+
+    <!-- Filtros sin dropdown -->
+    <div class="flex gap-2 align-items-center">
+      <div class="btn-filter-group flex gap-1">
+        <button pButton label="Todas"
+                [class]="materiaFilter === 'all' ? 'p-button p-button-sm' : 'p-button-text p-button-sm'"
+                (click)="setMateriaFilter('all')">
+        </button>
+        <button pButton label="Inscripto"
+                [class]="materiaFilter === 'Inscripto' ? 'p-button p-button-sm' : 'p-button-text p-button-sm'"
+                (click)="setMateriaFilter('Inscripto')">
+        </button>
+        <button pButton label="Pendiente"
+                [class]="materiaFilter === 'Pendiente' ? 'p-button p-button-sm' : 'p-button-text p-button-sm'"
+                (click)="setMateriaFilter('Pendiente')">
+        </button>
+        <button pButton label="Faltan docs"
+                [class]="materiaFilter === 'Faltan docs' ? 'p-button p-button-sm' : 'p-button-text p-button-sm'"
+                (click)="setMateriaFilter('Faltan docs')">
+        </button>
+      </div>
+
+      <!-- Buscador compatible -->
+      <input pInputText [(ngModel)]="materiaSearch" placeholder="Buscar materia..." />
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col-12 md:col-6 lg:col-4" *ngFor="let m of filteredMaterias()">
+      <p-card>
+        <div class="font-medium mb-1">{{ m.nombre }}</div>
+        <div class="text-600 text-sm mb-2">Prof.: {{ m.profesor }}</div>
+        <div class="text-sm">
+          <i class="pi pi-calendar mr-2"></i><strong>Inscripción:</strong> {{ m.inscripcion | date:'dd/MM' }}<br>
+          <i class="pi pi-clock mr-2"></i><strong>Mesa:</strong> {{ m.horaMesa }}<br>
+          <i class="pi pi-map-marker mr-2"></i><strong>Lugar:</strong> {{ m.lugar }}
+        </div>
+        <div class="mt-2 flex gap-2">
+          <p-tag [value]="m.estado" [severity]="stateSeverity(m.estado)"></p-tag>
+          <p-tag *ngIf="m.promedio !== undefined" icon="pi pi-chart-line" [value]="'Prom: ' + m.promedio"></p-tag>
+        </div>
+      </p-card>
+    </div>
+  </div>
+</p-card>
