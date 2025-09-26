@@ -1,13 +1,12 @@
 <div class="m-w-custom">
-  <p-button
-    label="Volver"
-    icon="pi-arrow-rigth"
-    iconPos="left"
-    (onClick)="back()"
-  ></p-button>
+  <p-button label="Volver" icon="pi pi-arrow-left" iconPos="left" (onClick)="back()"></p-button>
   <h2 class="my-3">Estudiantes de la materia</h2>
+
   <app-users-table
-    [config]="'onlystudents'"
-    [config_users_filtered]="students"
-  ></app-users-table>
+    [viewerRole]="viewerRole"
+    [context]="'subject-students'"
+    [roleFilterEnabled]="false"
+    [rows]="rows()"
+    (rowAction)="onRowAction($event)"
+  />
 </div>

@@ -1,136 +1,84 @@
 <div class="m-w-custom">
   <p-table
     #dt
-    [value]="users()"
+    [value]="getVisibleRows()"
     [paginator]="true"
     [rows]="10"
     responsiveLayout="scroll"
-    [globalFilterFields]="['name', 'email', 'cuil']"
+    [globalFilterFields]="['name', 'lastName', 'cuil', 'role']"
   >
     <ng-template pTemplate="caption">
       <div class="flex justify-content-between align-items-center">
-        <p-button
-          label="Limpiar filtros"
-          [outlined]="true"
-          icon="pi pi-filter-slash"
-          (click)="clear(dt, filterInput)"
-        ></p-button>
-        <p-button
-          icon="pi pi-filter"
-          label="Filtros"
-          iconPos="right"
-          (onClick)="this.showFilterDialog.set(!showFilterDialog())"
-        ></p-button>
-      </div>
-      <div [@expandCollapse]="showFilterDialog() ? 'open' : 'closed'">
-        <div class="p-fluid p-formgrid p-grid py-4">
-          <div class="flex flex-column gap-1 mb-3">
-            <label class="font-light text-sm">Buscar usuario</label>
-            <input
-              pInputText
-              #filterInput
-              (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-              placeholder="Nombre, email o CUIL"
-            />
-          </div>
+        <div class="flex gap-2">
+          <p-button
+            label="Limpiar filtros"
+            [outlined]="true"
+            icon="pi pi-filter-slash"
+            (click)="clear(dt, filterInput)"
+          ></p-button>
+        </div>
 
-          <div class="flex flex-column gap-1 w-5" *ngIf="config === 'allroles'">
-            <label class="font-light text-sm">Filtrar por rol</label>
-            <p-select
-              [(ngModel)]="selectedDialogRole"
-              [options]="roleOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Seleccione un rol"
-              [showClear]="true"
-              (onChange)="dt.filter($event.value, 'role', 'equals')"
-            ></p-select>
-          </div>
+        <div class="flex gap-3 align-items-center">
+          <input
+            pInputText
+            #filterInput
+            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+            placeholder="Nombre, email o CUIL"
+          />
+          <p-select
+            *ngIf="roleFilterEnabled"
+            [options]="[
+              { label: 'Todos', value: null },
+              { label: 'Alumno', value: 'student' },
+              { label: 'Docente', value: 'teacher' },
+              { label: 'Preceptor', value: 'preceptor' },
+              { label: 'Secretario', value: 'secretary' },
+              { label: 'Director', value: 'director' },
+              { label: 'Admin', value: 'admin' }
+            ]"
+            [(ngModel)]="selectedRole"
+            (onChange)="
+              dt.filter(
+                $event.value,
+                'role',
+                $event.value ? 'equals' : 'contains'
+              )
+            "
+            placeholder="Filtrar por rol"
+            [showClear]="true"
+          >
+          </p-select>
         </div>
       </div>
     </ng-template>
+
     <ng-template pTemplate="header">
       <tr>
         <th>Nombre</th>
-        <th>Dni</th>
+        <th>DNI/CUIL</th>
         <th>Rol</th>
-        <th>Acciones</th>
+        <th style="width: 260px">Acciones</th>
       </tr>
     </ng-template>
+
     <ng-template pTemplate="body" let-user>
-      <tr>
+      <tr (click)="rowClick.emit(user)">
         <td>{{ user.name }} {{ user.lastName }}</td>
         <td>{{ user.cuil }}</td>
         <td>{{ user.role | roleLabel }}</td>
+
         <td class="flex gap-2 justify-content-start align-items-center">
-          <p-button
-            icon="pi pi-user"
-            (click)="viewDetails(user)"
-            pTooltip="Ver usuario"
-            tooltipPosition="bottom"
-          />
-
-          <p-button
-            icon="pi pi-file-pdf"
-            (click)="generateCertificate(user)"
-            pTooltip="Generar certificados"
-            tooltipPosition="bottom"
-          />
-
-          <p-button
-            *ngIf="user.role === 'student'"
-            icon="pi pi-graduation-cap"
-            (click)="viewAcademicStatus(user)"
-            pTooltip="Situacion academica"
-            tooltipPosition="bottom"
-          />
-
-          <p-button
-            *ngIf="user.role === 'teacher'"
-            icon="pi pi-book"
-            (click)="viewSubjects(user)"
-            pTooltip="Materias a cargo"
-            tooltipPosition="bottom"
-          />
+          <ng-container *ngFor="let action of getRowActions(user)">
+            <p-button
+              [icon]="action.icon"
+              (click)="onActionClick(action, user); $event.stopPropagation()"
+              [pTooltip]="action.hint || action.label"
+              tooltipPosition="bottom"
+              [disabled]="action.disabled"
+            />
+          </ng-container>
         </td>
       </tr>
     </ng-template>
   </p-table>
-
-  <p-dialog
-    header="Generar archivos"
-    [visible]="showCertDialog()"
-    (visibleChange)="showCertDialog.set($event)"
-    [modal]="true"
-    resizable="false"
-    draggable="false"
-    [style]="{ width: '400px' }"
-  >
-    <p>¿Qué certificado quieres generar para {{ selectedUser()?.name }}?</p>
-    <div class="flex mt-3 gap-2">
-      <p-button
-        pButton
-        label="Constancia de alumno regular"
-        (click)="downloadCertificate()"
-      />
-    </div>
-  </p-dialog>
-
-  <!-- Diálogo para Materias -->
-  <p-dialog
-    header="Materias a Cargo"
-    [visible]="showSubjectsDialog()"
-    (visibleChange)="showSubjectsDialog.set($event)"
-    [modal]="true"
-    resizable="false"
-    draggable="false"
-    [style]="{ width: '400px' }"
-  >
-    <p-listbox
-      [options]="subjetsOfTheTeacher"
-      [(ngModel)]="subjetsOfTheTeacher"
-      optionLabel="a"
-      class="w-full md:w-56"
-    />
-  </p-dialog>
 </div>
