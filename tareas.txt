@@ -1,0 +1,60 @@
+faltan acciones en gestion de usuarios: 
+- ver materias de docente
+- pantalla ediccion lista
+
+- ver materias esta, ver alumnos inscriptos tambien, ver situacion academica tambien, ver usuario tambien.
+
+- falta: 
+- ver correlativas de materia en materias,  (listo)
+- crear materia y usuario tambien (listo)
+
+- ver detalles de materia tambien falta! se podria simplificar y quizas ni haga falta teniendo la tabla (o un dropdown en la falta con la info que falte) 
+- asignar notas alumnos y asistencia tambien.
+
+- examenes, crear mesa, ver examen, crear examen, ver calendario. (TODO ESTO FALTA) 
+  
+
+
+
+08/09 
+
+personal data: error de consulta. 
+
+
+Dejar estas rutas: 
+UserApi
+POST
+/api/users
+Create new user
+DELETE
+/api/user/delete/{id}
+PUT
+/api/user/edit/{id}
+GET
+/api/user/list/{rol}
+GET
+/api/user/list-all/{rol}
+GET
+/api/user/list-user/{id}
+
+
+
+Sacar mock de datos de todas las mesas de examen
+
+-> terminar pantalla de examines de la mesa
+
+FALTA ESO:::::
+falta: q se pueda buscar la materia directamente desde el crear y que el crear funcione xd
+sacar correctamente 
+
+se crean los alumnos! falta que se consulte eso correctamente.
+enrolled de final exams student entity (dejarlo mas simple como en notion), y asegurarse que se agreguen los alumnos cuando se crea el examen. 
+lo de arriba funciona, me falta: que el estado corresponda a si esta inscripto o no, si ya esta inscripto muestra la fecha directamente. (poner un ejemplo de cada cosa en la migracion)
+-> terminar pantalla de estado de alumnos.  (con cruds completo ambas cosas) 
+-------- ready
+
+==> Estudiantes de la materia falta que funcione el get para la tabla ( no existe el get en la api)
+
+-> alertas creacion y lectura modulo backcompleto. 
+
+-> estadisticas lo mismo q arriba
