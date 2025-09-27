@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
 import { NoticesService, Notice } from '../../core/services/notices.service';
+import { RolesService } from '../../core/services/role.service';
 
 @Component({
     selector: 'app-notices-page',
@@ -14,9 +15,11 @@ import { NoticesService, Notice } from '../../core/services/notices.service';
 })
 export class NoticesPageComponent {
     private noticesSrv = inject(NoticesService);
+  private roles = inject(RolesService);
 
-  // Signal de avisos (leer con notices())
     notices = this.noticesSrv.notices;
+
+  canManage = computed(() => this.roles.isOneOf(['secretary', 'preceptor']));
 
   // formulario
     newNotice: Partial<Notice> = { title: '', content: '', visibleFor: 'student' };
@@ -24,19 +27,17 @@ export class NoticesPageComponent {
     addNotice() {
     if (!this.newNotice.title?.trim() || !this.newNotice.content?.trim()) return;
 
-    this.noticesSrv.add({
-    id: Date.now(),
-    title: this.newNotice.title!.trim(),
-    content: this.newNotice.content!,            // HTML del editor
-    visibleFor: this.newNotice.visibleFor!,      // 'student' | 'teacher'
-    createdBy: 'Preceptor Demo',
-    createdAt: new Date()
+    this.noticesSrv.create({
+      title: this.newNotice.title!.trim(),
+      content: this.newNotice.content!,
+      // visibleFor 'student' | 'teacher' | 'all'
+      visibleFor: (this.newNotice.visibleFor as any) ?? 'all',
     });
 
     this.newNotice = { title: '', content: '', visibleFor: 'student' };
 }
 
     deleteNotice(id: number) {
-    this.noticesSrv.remove(id);
+  this.noticesSrv.remove(id);
 }
 }

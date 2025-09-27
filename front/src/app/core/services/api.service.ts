@@ -159,13 +159,20 @@ export class ApiService {
       }),
       map((resp: any) => ('data' in resp ? (resp.data as T) : (resp as T))),
       tap(async () => {
-        // Política simple: invalidar todas las claves GET del mismo "recurso" (prefijo por path)
-        // Ej: POST/PUT/PATCH/DELETE a /subjects/1 => invalida 'GET:/.../subjects'
-        const short = shortPathFrom(fullUrl); // /subjects/1
-        const basePath =
-          short.split('?')[0]?.split('/').filter(Boolean)[0] ?? '';
-        if (basePath) {
-          const baseUrl = `${enviroment.apiBaseUrl}/${basePath}`;
+        let relative = fullUrl;
+        const base = enviroment.apiBaseUrl.replace(/\/$/, '');
+        if (relative.startsWith(base + '/')) {
+          relative = relative.substring((base + '/').length);
+        } else {
+          try {
+            const u = new URL(fullUrl);
+            relative = u.pathname.replace(/^\/+/, '');
+            if (relative.startsWith('api/')) relative = relative.substring(4);
+          } catch {}
+        }
+        const topSegment = relative.split('?')[0].split('/')[0] || '';
+        if (topSegment) {
+          const baseUrl = `${base}/${topSegment}`;
           const prefix = `GET:${baseUrl}`;
           await this.cache.invalidateByPrefix(prefix);
           console.groupCollapsed(`[CACHE ♻️] Invalidado prefijo "${prefix}"`);

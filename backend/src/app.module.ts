@@ -12,6 +12,7 @@ import { LoggingInterceptor } from "./shared/interceptors/logging.interceptor";
 import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
 import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
 import { FinalExamsModule } from "./modules/final_exams/final_exams.module";
+import { NoticesModule } from "./modules/notices/notices.module";
 
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
@@ -21,7 +22,10 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [TYPEORM_OPTIONS],
-      useFactory: (opts) => opts,
+      useFactory: (opts) => ({
+        ...opts,
+        autoLoadEntities: true,
+      }),
     }),
     AuthModule,
     UsersModule,
@@ -32,6 +36,7 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     InterceptorsModule,
     SubjectApiModule,
     FinalExamsModule,
+    NoticesModule,
   ],
   providers: [
     {

@@ -13,30 +13,41 @@ export class RolesGuard extends JwtAuthGuard implements CanActivate {
     super();
   }
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
-  const requiredRoles = this.reflector.get<string[]>(ROLES_KEY, context.getHandler());
-  if (!requiredRoles) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const requiredRoles = this.reflector.get<string[]>(ROLES_KEY, context.getHandler());
+    if (!requiredRoles) {
+      // Si el handler no especifica roles, no aplicamos control aquí
       return true;
     }
+
+    // Ejecutar primero el guard JWT para poblar request.user
+    const jwtOk = await super.canActivate(context);
+    if (!jwtOk) return false;
+
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
-  if (!user || !user.role || !user.role.name) {
+
+    if (!user || !user.role || !user.role.name) {
       this.logger.warn(`Denied: user or role missing`);
       return false;
     }
-  const canonicalUser = toCanonicalRole(user.role.name, { isDirective: user.isDirective });
-  const requiredCanonical = normalizeRequiredRoles(requiredRoles);
-  if (!canonicalUser) {
-      this.logger.warn(`Denied: cannot map user role '${user.role.name}' (isDirective=${user.isDirective ?? false})`);
+
+    const canonicalUser = toCanonicalRole(user.role.name, { isDirective: user.isDirective });
+    const requiredCanonical = normalizeRequiredRoles(requiredRoles);
+    if (!canonicalUser) {
+      this.logger.warn(
+        `Denied: cannot map user role '${user.role.name}' (isDirective=${user.isDirective ?? false})`,
+      );
       return false;
     }
-  const allowed = requiredCanonical.includes(canonicalUser) || canonicalUser === 'ADMIN_GENERAL' || canonicalUser === 'SECRETARIO_DIRECTIVO';
-  if (!allowed) {
+
+    const allowed =
+      requiredCanonical.includes(canonicalUser) ||
+      canonicalUser === 'ADMIN_GENERAL' ||
+      canonicalUser === 'SECRETARIO_DIRECTIVO';
+    if (!allowed) {
       this.logger.warn(`Denied: user=${canonicalUser} required=${requiredCanonical.join(',')}`);
     }
-  return allowed;
+    return allowed;
   }
 }

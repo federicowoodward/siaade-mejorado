@@ -39,6 +39,19 @@ export class InitSchema1690000000000 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "secretaries" ("user_id" uuid NOT NULL, "is_directive" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_81e71815c5d4bed8e8dae6ce734" PRIMARY KEY ("user_id"))`
     );
+    // Tabla de avisos/foro
+    await queryRunner.query(`
+      CREATE TABLE "notices" (
+        "id" SERIAL NOT NULL,
+        "title" character varying(200) NOT NULL,
+        "content" text NOT NULL,
+        "visible_role_id" integer,
+        "created_by" uuid,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_notices_id" PRIMARY KEY ("id")
+      )
+    `);
     await queryRunner.query(
       `CREATE TABLE "final_exam_table" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "start_date" date NOT NULL, "end_date" date NOT NULL, "created_by" uuid NOT NULL, CONSTRAINT "PK_7f3870bb63b95ce8bc0a5256464" PRIMARY KEY ("id"))`
     );
@@ -98,6 +111,13 @@ export class InitSchema1690000000000 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "secretaries" ADD CONSTRAINT "FK_81e71815c5d4bed8e8dae6ce734" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+    );
+    // FKs de notices
+    await queryRunner.query(
+      `ALTER TABLE "notices" ADD CONSTRAINT "FK_notices_visible_role" FOREIGN KEY ("visible_role_id") REFERENCES "roles"("id") ON DELETE SET NULL`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "notices" ADD CONSTRAINT "FK_notices_created_by" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL`
     );
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "idx_final_exam_table_created_by"
@@ -195,6 +215,7 @@ export class InitSchema1690000000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "students"`);
     await queryRunner.query(`DROP TABLE "final_exams_students"`);
     await queryRunner.query(`DROP TABLE "final_exams"`);
+    await queryRunner.query(`DROP TABLE "notices"`);
     await queryRunner.query(`DROP TABLE "final_exam_table"`);
     await queryRunner.query(`DROP TABLE "secretaries"`);
     await queryRunner.query(`DROP TABLE "exam_results"`);

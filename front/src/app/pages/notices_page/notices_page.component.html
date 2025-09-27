@@ -4,8 +4,7 @@
     Avisos (Administración)
     </h2>
 
-    <!-- Form de creación -->
-    <div class="new-notice-form">
+    <div class="new-notice-form" *ngIf="canManage()">
     <input
     type="text"
     placeholder="Título"
@@ -21,6 +20,7 @@
 
     <label class="mt-2">Visible para:</label>
     <select [(ngModel)]="newNotice.visibleFor">
+    <option value="all">Todos</option>
     <option value="student">Alumnos</option>
     <option value="teacher">Profesores</option>
     </select>
@@ -39,7 +39,7 @@
         {{ n.createdBy }} · {{ n.createdAt | date:'short' }}
         </small>
 
-        <button pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)"></button>
+        <button *ngIf="canManage()" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)"></button>
     </div>
     </li>
 </ul>
