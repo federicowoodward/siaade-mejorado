@@ -27,8 +27,8 @@ export class NoticesController {
 
   // Crear post (preceptor/secretaría/admin)
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
   @ApiOperation({ summary: 'Crear aviso/post' })
   create(@Body() dto: CreateNoticeDto, @Req() req: any) {
     const userId = req.user?.id as string | undefined;
@@ -37,8 +37,8 @@ export class NoticesController {
 
   // Editar post
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
   @ApiOperation({ summary: 'Editar aviso/post' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -49,8 +49,8 @@ export class NoticesController {
 
   // Borrar post
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
   @ApiOperation({ summary: 'Eliminar aviso/post' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);

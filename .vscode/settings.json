@@ -6,7 +6,7 @@
     "**/front": false,
   },
   "search.exclude": {
-    "**/backend": true,
+    "**/backend": false,
     "/database": true,
     "**/docs": true,
     "**/front": false,
