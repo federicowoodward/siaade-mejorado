@@ -14,6 +14,7 @@
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
     "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "reseed:prod": "npm run revert:prod && npm run migrate:prod",
+    "reset:prod": "sh -lc 'while node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js; do echo Reverted one migration; sleep 1; done && node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js'",
     "start:prod": "npm run migrate:prod && node dist/main.js"
   },
   "keywords": [],
