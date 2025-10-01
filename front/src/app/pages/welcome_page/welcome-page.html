@@ -4,7 +4,6 @@
     <!-- Izquierda: saludo -->
     <div class="flex-1">
       <div class="flex align-items-center gap-2 mb-2">
-        <span class="welcome-badge">👋 Bienvenido</span>
         <p-tag [value]="userRole() | titlecase" severity="info"></p-tag>
         <p-tag [value]="todayStr" severity="secondary" styleClass="hidden sm:inline-block"></p-tag>
       </div>
@@ -36,36 +35,8 @@
   <div class="grid">
     <!-- Columna izquierda: Accesos + KPIs -->
     <div class="col-12 lg:col-8">
-      <!-- Explicación -->
-      <p class="text-600 mb-3">
-        Aquí encontrarás tus accesos rápidos e información importante.
-      </p>
-
       <!-- Accesos rápidos -->
       <app-quick-access></app-quick-access>
-
-      <!-- KPIs -->
-      <div class="grid mt-3">
-        <div class="col-12 sm:col-6 xl:col-3" *ngFor="let k of kpis">
-          <p-card class="shadow-1 kpi-card">
-            <div class="text-600 text-sm">{{ k.label }}</div>
-            <div class="text-2xl font-bold my-1">{{ k.value }}</div>
-            <p-progressBar *ngIf="k.progress !== undefined" [value]="k.progress"></p-progressBar>
-          </p-card>
-        </div>
-      </div>
-    </div>
-
-    <!-- Columna derecha: Avisos + Eventos -->
-    <div class="col-12 lg:col-4">
-      <!-- Avisos recientes -->
-      <p-card class="shadow-1 mb-3">
-        <div class="flex align-items-center justify-content-between mb-2">
-          <h3 class="m-0 text-lg">📢 Avisos recientes</h3>
-          <button pButton class="p-button-text p-button-sm" label="Ver todos" (click)="goToAllNotices()"></button>
-        </div>
-
-        <div *ngIf="recentNotices().length === 0" class="text-600 text-sm">No hay avisos para tu rol.</div>
 
         <ul class="m-0 p-0 list-none">
           <li *ngFor="let n of recentNotices()" class="p-2 border-round hover:surface-100 transition-colors">
@@ -79,7 +50,6 @@
             </div>
           </li>
         </ul>
-      </p-card>
 
       <!-- Próximos eventos -->
       <p-card class="shadow-1">
@@ -111,4 +81,3 @@
       </p-card>
     </div>
   </div>
-</section>

@@ -53,9 +53,6 @@ export class QuickAccessComponent {
       { label: 'Inscripciones a Finales', icon: 'pi pi-pencil', description: 'Inscríbete o cancela inscripción a exámenes finales.', route: ['/students/enrollments'] },
     ],
     teacher: [
-      { label: 'Mis Materias', icon: 'pi pi-briefcase', description: 'Gestiona las materias a tu cargo.', route: ['/subjects'] },
-      { label: 'Finales', icon: 'pi pi-book', description: 'Consulta y administra mesas de examen.', route: ['/final_examns'] },
-      { label: 'Usuarios', icon: 'pi pi-users', description: 'Visualiza información de los estudiantes.', route: ['/users'] },
     ],
     preceptor: [
       { label: 'Materias', icon: 'pi pi-briefcase', description: 'Consulta materias y asistencia.', route: ['/subjects'] },
@@ -92,13 +89,6 @@ export class QuickAccessComponent {
     return all.filter(n => n.visibleFor === role);
   });
 
-  // ===== KPIs =====
-  stats: Stat[] = [
-    { label: 'Estudiantes activos', value: 1240 },
-    { label: 'Docentes', value: 86 },
-    { label: 'Mesas activas', value: 14 },
-    { label: '% Inscripción', value: '72%', progress: 72 },
-  ];
 
   // ===== Timeline de actividad reciente =====
   recentActivities = [

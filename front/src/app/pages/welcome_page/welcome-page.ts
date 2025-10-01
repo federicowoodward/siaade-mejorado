@@ -54,13 +54,7 @@ export class WelcomePage implements OnInit {
   todayExams = 2;
   enrollmentPct = 72;
 
-  // KPIs (grid)
-  kpis: KPI[] = [
-    { label: 'Estudiantes activos', value: 1240 },
-    { label: 'Docentes', value: 86 },
-    { label: 'Mesas activas', value: 14 },
-    { label: '% Inscripción', value: '72%', progress: 72 },
-  ];
+
 
   // Próximos eventos (mock)
   events: EventItem[] = [
