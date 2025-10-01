@@ -22,5 +22,5 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/.env.prod .env
 
 EXPOSE 3000
-# OJO: usar shell para '&&'
-CMD ["sh", "-c", "npm run start:prod"]
+# Inicia migraciones y la app. Si RESEED_ON_START=true, hace revert+run (reseed)
+CMD ["sh", "-c", "if [ \"$RESEED_ON_START\" = \"true\" ]; then echo '[BOOT] RESEED_ON_START=true → running reseed:prod'; npm run reseed:prod; else echo '[BOOT] RESEED_ON_START not set → running migrate:prod'; npm run migrate:prod; fi && node dist/main.js"]

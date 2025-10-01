@@ -12,6 +12,8 @@
     "db:migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/datasource.ts",
     "db:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:log -d src/database/datasource.ts",
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
+    "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
+    "reseed:prod": "npm run revert:prod && npm run migrate:prod",
     "start:prod": "npm run migrate:prod && node dist/main.js"
   },
   "keywords": [],
