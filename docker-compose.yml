@@ -47,5 +47,27 @@ services:
       api:
         condition: service_started
 
+  bot:
+    build:
+      context: ./Bot
+      dockerfile: Dockerfile
+    container_name: siaade-bot
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      BOT_HTTP_PORT: 5001
+      BACKEND_URL: http://api:3000
+      # Pega aquí el access token JWT obtenido del backend para que el bot pueda leer /api/users
+      # BOT_BACKEND_TOKEN: "<ACCESS_TOKEN>"
+      # (Opcional) Si querés proteger el bot con token interno para el front
+      # BOT_API_TOKEN: "token-interno-seguro"
+      # (Opcional) Lista fija de emails si no querés que llame al backend
+      # TEST_EMAILS: demo1@test.com,demo2@test.com
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "5001:5001"
+
 volumes:
   postgres_data:

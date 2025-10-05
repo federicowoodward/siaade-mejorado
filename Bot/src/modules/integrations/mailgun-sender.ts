@@ -12,7 +12,11 @@ export async function sendMailGun(input: MailGunSendInput) {
   const apiKey = process.env.MAILGUN_API_KEY;
   const domain = process.env.MAILGUN_DOMAIN;
   const from = process.env.MAIL_FROM || `no-reply@${domain}`;
-  if (!apiKey || !domain) throw new Error('MAILGUN_API_KEY o MAILGUN_DOMAIN faltante');
+  if (!apiKey || !domain) {
+    // Modo simulación: no hay credenciales todavía
+    logger.info({ to: input.to, subject: input.subject }, 'Simulación envío (sin Mailgun creds)');
+    return;
+  }
 
   const auth = Buffer.from(`api:${apiKey}`).toString('base64');
   const params = new URLSearchParams();

@@ -7,7 +7,15 @@ import { CreateBatchCriteria } from '../batch/batch.types.js';
 
 export async function resolveCriteriaEmails(criteria: CreateBatchCriteria): Promise<string[]> {
   const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) throw new Error('BACKEND_URL no definido');
+  if (!backendUrl) {
+    const test = process.env.TEST_EMAILS;
+    if (test) {
+      return test.split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+    }
+    throw new Error('BACKEND_URL no definido (y sin TEST_EMAILS)');
+  }
 
   // Lógica simple: traer todos y filtrar en bot (optimizable server-side)
   const resp = await axios.get(`${backendUrl}/api/users` , {

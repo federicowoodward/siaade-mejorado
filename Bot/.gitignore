@@ -1,0 +1,63 @@
+# ==============================
+# Git Ignore para carpeta Bot
+# ==============================
+
+# Dependencias
+node_modules/
+
+# Compilados / build output
+dist/
+build/
+tmp/
+temp/
+
+# Logs y debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Entornos / credenciales (mantener sólo el ejemplo)
+.env
+.env.*
+!.env.example
+
+# Coverage / tests
+coverage/
+.nyc_output/
+
+# IDE / editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.iml
+
+# SO / miscelánea
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Cache / tooling
+.eslintcache
+*.tsbuildinfo
+.cache/
+
+# Archivos de bloqueo (mantenemos package-lock para reproducibilidad)
+yarn.lock
+pnpm-lock.yaml
+
+# Dumps / varios
+*.pid
+*.seed
+*.orig
+
+# Mailgun u otros secretos generados
+mailgun.*.json
+
+# Cualquier archivo temporal iniciado con ~
+~*
+
+# Fin

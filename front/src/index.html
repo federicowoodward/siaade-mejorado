@@ -6,6 +6,11 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script>
+    // Configuración runtime para el bot (ajustar en deploy)
+    window.__BOT_BASE_URL__ = window.__BOT_BASE_URL__ || 'http://localhost:5001';
+    // window.__BOT_TOKEN__ = 'TOKEN_INTERNO'; // opcional si proteges el bot
+  </script>
 </head>
 <body>
   <app-root></app-root>
