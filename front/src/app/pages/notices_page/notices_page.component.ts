@@ -5,11 +5,12 @@ import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
 import { NoticesService, Notice } from '../../core/services/notices.service';
 import { RolesService } from '../../core/services/role.service';
+import { BotFabComponent } from '../../bot/bot-fab.component';
 
 @Component({
     selector: 'app-notices-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, EditorModule, ButtonModule],
+  imports: [CommonModule, FormsModule, EditorModule, ButtonModule, BotFabComponent],
     templateUrl: './notices_page.component.html',
     styleUrls: ['./notices_page.component.scss']
 })
