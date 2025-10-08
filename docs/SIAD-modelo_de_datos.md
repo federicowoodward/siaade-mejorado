@@ -1,4 +1,4 @@
-# Modelo de Datos SIAD — Guía completa (según SVG)
+# Modelo de Datos SIAD — VER SIAD-DB.svg
 
 Este documento describe, en **español y con detalle de campos**, el esquema de base de datos diseñado en el SVG adjunto. Incluye **tabla por tabla** con bloques de código comentados para facilitar su lectura e implementación.
 
