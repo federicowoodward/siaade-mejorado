@@ -14,7 +14,9 @@
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
     "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "reseed:prod": "npm run revert:prod && npm run migrate:prod",
-    "start:prod": "npm run migrate:prod && node dist/main.js"
+    "start:prod": "npm run migrate:prod && node dist/main.js",
+    "smoke:siad": "ts-node -r tsconfig-paths/register src/scripts/smoke-siad.ts",
+    "smoke:endpoints": "ts-node -r tsconfig-paths/register src/scripts/smoke-endpoints.ts"
   },
   "keywords": [],
   "author": "",

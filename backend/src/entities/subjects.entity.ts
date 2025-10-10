@@ -4,6 +4,7 @@ import { Preceptor } from './preceptors.entity';
 import { SubjectStudent } from './subject_student.entity';
 import { Exam } from './exams.entity';
 import { SubjectAbsence } from './subject_absence.entity';
+import { AcademicPeriod } from './academic_period.entity';
 
 @Entity('subjects')
 export class Subject {
@@ -38,8 +39,32 @@ export class Subject {
   @Column({ name: 'course_year', type: 'text', nullable: true })
   courseYear: string;
 
+  // DBML sugiere TEXT; hoy es int en esquema actual. Mantener como está a nivel DB, pero dejamos compat aquí.
   @Column({ name: 'correlative', type: 'int', nullable: true })
   correlative: number | null;
+
+  // Nuevos campos según DBML (opcionales para no romper):
+  @Column({ name: 'academic_period_id', type: 'int', nullable: true, select: false })
+  academicPeriodId: number | null;
+
+  @ManyToOne(() => AcademicPeriod, { nullable: true })
+  @JoinColumn({ name: 'academic_period_id', referencedColumnName: 'academicPeriodId' })
+  academicPeriod?: AcademicPeriod | null;
+
+  @Column({ name: 'order_no', type: 'int', nullable: true, select: false })
+  orderNo: number | null;
+
+  @Column({ name: 'teacher_formation', type: 'text', nullable: true, select: false })
+  teacherFormation?: string | null;
+
+  @Column({ name: 'subject_format', type: 'text', nullable: true, select: false })
+  subjectFormat?: string | null;
+
+  @Column({ name: 'annual_workload', type: 'text', nullable: true, select: false })
+  annualWorkload?: string | null;
+
+  @Column({ name: 'weekly_workload', type: 'text', nullable: true, select: false })
+  weeklyWorkload?: string | null;
 
   @OneToMany(() => SubjectStudent, (ss) => ss.subject)
   subjectStudents: SubjectStudent[];
