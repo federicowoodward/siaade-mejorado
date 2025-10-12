@@ -13,8 +13,9 @@ app.get(/.*/, (_req, res) => {
   res.sendFile(join(browserDistFolder, 'index.html'));
 });
 
-const port = Number(process.env.SPA_PORT || process.env.PORT || 4000);
+const port = Number(process.env.PORT || process.env.SPA_PORT || 4000);
 app.listen(port, '0.0.0.0', () => {
   console.log(`[FRONT] Sirviendo Angular en http://0.0.0.0:${port}`);
   console.log('Dist path:', browserDistFolder, 'exists:', existsSync(browserDistFolder));
+  console.log('ENV PORT:', process.env.PORT, 'SPA_PORT:', process.env.SPA_PORT);
 });

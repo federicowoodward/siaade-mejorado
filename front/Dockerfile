@@ -6,11 +6,22 @@ COPY package*.json ./
 RUN npm install --force
 
 COPY . .
-RUN npm run build:qa
+# Build de producción (usa environment.prod.ts)
+RUN npm run build:prod
 
-FROM nginx:1.25-alpine
-COPY --from=build /app/dist/front/browser /usr/share/nginx/html
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+# Etapa 2: runtime con Node/Express sirviendo la carpeta dist
+FROM node:22-alpine
+WORKDIR /app
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Solo dependencias de runtime (express ya está en deps)
+COPY package*.json ./
+RUN npm install --omit=dev --force
+
+# Copiamos el build y el servidor estático
+COPY --from=build /app/dist ./dist
+COPY ./server.js ./server.js
+
+# Railway inyecta $PORT; server.js lo respeta
+ENV NODE_ENV=production
+EXPOSE 4000
+CMD ["node", "server.js"]

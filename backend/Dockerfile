@@ -20,7 +20,8 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/.env.prod .env
+COPY ./docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 3000
-# OJO: usar shell para '&&'
-CMD ["sh", "-c", "npm run start:prod"]
+CMD ["/app/docker-entrypoint.sh"]
