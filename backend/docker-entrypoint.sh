@@ -3,8 +3,10 @@ set -e
 
 echo "[BOOT] Starting backend container..."
 
-# Determinar qué tipo de migración ejecutar
-if [ "$RESET_ON_START" = "true" ]; then
+# Permitir omitir migraciones en runtime (útil en entornos donde ya se corrieron desde afuera)
+if [ "$SKIP_MIGRATIONS" = "true" ]; then
+  echo "[BOOT] SKIP_MIGRATIONS=true → Saltando ejecución de migraciones"
+elif [ "$RESET_ON_START" = "true" ]; then
   echo "[BOOT] RESET_ON_START=true → Reverting ALL migrations then running fresh"
   # Revertir todas las migraciones (loop hasta que falle)
   while node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js 2>/dev/null; do

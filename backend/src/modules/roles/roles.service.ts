@@ -16,8 +16,8 @@ export class RolesService {
     return this.rolesRepository.save(role);
   }
 
-  async getRoles(): Promise<Role[]> {
-    return this.rolesRepository.find();
+  async getRoles(opts?: { skip?: number; take?: number }): Promise<[Role[], number]> {
+    return this.rolesRepository.findAndCount({ skip: opts?.skip, take: opts?.take, order: { id: 'ASC' } });
   }
 
   async getRoleById(id: number): Promise<Role> {

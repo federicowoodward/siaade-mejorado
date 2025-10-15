@@ -1,14 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-} from "@nestjs/common";
-import { FinalExamService } from "../services/final-exam.service";
-import { CreateFinalExamDto } from "../dto/final-exam.dto";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
+import { FinalExamService } from "@/modules/final_exams/services/final-exam.service";
+import { CreateFinalExamDto } from "@/modules/final_exams/dto/final-exam.dto";
+import { ApproveFinalDto, RecordFinalDto } from "@/modules/final_exams/dto/final-exam-admin.dto";
+import { normalizePagination, buildPageMeta } from '@/shared/utils/pagination';
 
 import {
   ApiBearerAuth,
@@ -76,8 +70,13 @@ export class FinalExamController {
   @ApiParam({ name: "final_exam_table_id", type: Number, required: true })
   @ApiOkResponse({ type: FinalExamListItemDto, isArray: true })
   @Get("list-all/:final_exam_table_id")
-  listAll(@Param("final_exam_table_id") tableId: string) {
-    return this.svc.listAllByTable(+tableId);
+  listAll(
+    @Param("final_exam_table_id") tableId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const { page: p, limit: l, offset } = normalizePagination({ page, limit });
+    return this.svc.listAllByTable(+tableId, { skip: offset, take: l }).then(([rows, total]) => ({ data: rows, meta: buildPageMeta(total, p, l) }));
   }
 
   @ApiOperation({ summary: "Obtener examen final por ID y sus estudiantes" })
@@ -87,5 +86,19 @@ export class FinalExamController {
   @Get("list/:final_exam_id")
   getOne(@Param("final_exam_id") examId: string) {
     return this.svc.getOne(+examId);
+  }
+
+  @ApiOperation({ summary: "Registrar nota de final (estado: registrado)" })
+  @ApiBody({ type: RecordFinalDto })
+  @Post('record')
+  record(@Body() dto: RecordFinalDto) {
+    return this.svc.record(dto);
+  }
+
+  @ApiOperation({ summary: "Aprobación administrativa del final (estado: aprobado_admin)" })
+  @ApiBody({ type: ApproveFinalDto })
+  @Post('approve')
+  approve(@Body() dto: ApproveFinalDto) {
+    return this.svc.approve(dto);
   }
 }

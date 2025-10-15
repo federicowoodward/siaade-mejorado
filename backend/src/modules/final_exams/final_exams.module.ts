@@ -13,6 +13,9 @@ import { FinalExamService } from "./services/final-exam.service";
 import { FinalExamTableController } from "./controllers/final-exam-table.controller";
 import { FinalExamController } from "./controllers/final-exam.controller";
 import { Student } from "@/entities/students.entity";
+import { FinalExamStatus } from "@/entities/final_exam_status.entity";
+import { Teacher } from "@/entities/teachers.entity";
+import { Secretary } from "@/entities/secretaries.entity";
 
 @Module({
   imports: [
@@ -23,6 +26,9 @@ import { Student } from "@/entities/students.entity";
       Subject,
       SubjectStudent,
       Student,
+      FinalExamStatus,
+      Teacher,
+      Secretary,
     ]),
   ],
   controllers: [FinalExamTableController, FinalExamController],

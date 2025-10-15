@@ -199,7 +199,7 @@ async function main() {
 
       const fesRepo2 = qr.manager.getRepository(FinalExamsStudent);
       const fesRow = fesRepo2.create({
-        finalExamsId: fe.id, // legacy FK vigente
+        finalExamId: fe.id,
         studentId: student.userId,
         enrolledAt: new Date(),
         statusId: fes.id, // apuntamos al status creado arriba

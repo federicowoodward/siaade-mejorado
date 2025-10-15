@@ -7,17 +7,18 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { FinalExam } from "../../../entities/final_exam.entity";
-import { FinalExamsStudent } from "../../../entities/final_exams_student.entity";
-import { FinalExamTable } from "../../../entities/final_exam_table.entity";
-import { Subject } from "../../../entities/subjects.entity";
-import { SubjectStudent } from "../../../entities/subject_student.entity";
+import { FinalExam } from "@/entities/final_exam.entity";
+import { FinalExamsStudent } from "@/entities/final_exams_student.entity";
+import { FinalExamTable } from "@/entities/final_exam_table.entity";
+import { Subject } from "@/entities/subjects.entity";
+import { SubjectStudent } from "@/entities/subject_student.entity";
 
-import {
-  CreateFinalExamDto,
-  FinalExamDto,
-} from "../dto/final-exam.dto";
-import { isoToDate, dateInRange } from "../utils/date-utils";
+import { CreateFinalExamDto, FinalExamDto } from "@/modules/final_exams/dto/final-exam.dto";
+import { isoToDate, dateInRange } from "@/modules/final_exams/utils/date-utils";
+import { RecordFinalDto, ApproveFinalDto } from "@/modules/final_exams/dto/final-exam-admin.dto";
+import { FinalExamStatus } from "@/entities/final_exam_status.entity";
+import { Teacher } from "@/entities/teachers.entity";
+import { Secretary } from "@/entities/secretaries.entity";
 
 @Injectable()
 export class FinalExamService {
@@ -29,11 +30,14 @@ export class FinalExamService {
     private tableRepo: Repository<FinalExamTable>,
     @InjectRepository(Subject) private subjRepo: Repository<Subject>,
     @InjectRepository(SubjectStudent)
-    private subjStudRepo: Repository<SubjectStudent>
+    private subjStudRepo: Repository<SubjectStudent>,
+    @InjectRepository(FinalExamStatus) private statusRepo: Repository<FinalExamStatus>,
+    @InjectRepository(Teacher) private teacherRepo: Repository<Teacher>,
+    @InjectRepository(Secretary) private secretaryRepo: Repository<Secretary>,
   ) {}
 
-  async listAllByTable(finalExamTableId: number) {
-    const rows = await this.finalRepo
+  async listAllByTable(finalExamTableId: number, opts?: { skip?: number; take?: number }) {
+    const qb = this.finalRepo
       .createQueryBuilder("f")
       .leftJoin("f.subject", "s")
       .select([
@@ -47,10 +51,22 @@ export class FinalExamService {
       .where("f.final_exam_table_id = :id", { id: finalExamTableId })
       .orderBy("f.exam_date", "ASC")
       .addOrderBy("f.exam_time", "ASC", "NULLS LAST")
-      .addOrderBy("f.id", "ASC")
-      .getRawMany();
+      .addOrderBy("f.id", "ASC");
 
-    return rows; // ya viene con subject_name y exam_date en ISO corto
+    // Paginación
+    if (opts?.skip !== undefined) qb.skip(opts.skip);
+    if (opts?.take !== undefined) qb.take(opts.take);
+
+    const [rows, total] = await qb.getRawMany().then(async (r) => {
+      // total con mismo filtro, sin paginación
+      const count = await this.finalRepo
+        .createQueryBuilder('f')
+        .where('f.final_exam_table_id = :id', { id: finalExamTableId })
+        .getCount();
+      return [r, count] as [any[], number];
+    });
+
+    return [rows, total] as const; // ya viene con subject_name y exam_date en ISO corto
   }
 
   async getOne(finalExamId: number): Promise<FinalExamDto> {
@@ -90,7 +106,7 @@ export class FinalExamService {
         "fes.score::float AS score",
         "fes.notes AS notes",
       ])
-      .where("fes.finalExamsId = :id", { id: finalExamId })
+  .where("fes.finalExamId = :id", { id: finalExamId })
       .orderBy("u.last_name", "ASC")
       .addOrderBy("u.name", "ASC")
       .getRawMany();
@@ -145,7 +161,7 @@ export class FinalExamService {
     if (subjStudents.length) {
       const links = subjStudents.map((ss) =>
         this.linkRepo.create({
-          finalExamsId: saved.id,
+          finalExamId: saved.id,
           studentId: (ss as any).studentId,
           enrolledAt: null,
           score: null,
@@ -163,5 +179,35 @@ export class FinalExamService {
     if (!row) throw new NotFoundException("Final exam not found");
     await this.finalRepo.remove(row); // FK/ON DELETE CASCADE debe limpiar links si lo configuraste así
     return { deleted: true };
+  }
+
+  async record(dto: RecordFinalDto) {
+    const link = await this.linkRepo.findOne({ where: { id: dto.final_exams_student_id } });
+    if (!link) throw new NotFoundException('Final exam student not found');
+    const teacher = await this.teacherRepo.findOne({ where: { userId: dto.recorded_by } });
+    if (!teacher) throw new NotFoundException('Teacher not found');
+    const status = await this.statusRepo.findOne({ where: { name: 'registrado' } });
+    if (!status) throw new NotFoundException('FinalExamStatus "registrado" not found');
+    link.score = (dto.score ?? null) as any;
+    link.notes = dto.notes ?? link.notes;
+    (link as any).statusId = status.id;
+    (link as any).recordedById = teacher.userId;
+    (link as any).recordedAt = new Date();
+    await this.linkRepo.save(link);
+    return { ok: true };
+  }
+
+  async approve(dto: ApproveFinalDto) {
+    const link = await this.linkRepo.findOne({ where: { id: dto.final_exams_student_id } });
+    if (!link) throw new NotFoundException('Final exam student not found');
+    const sec = await this.secretaryRepo.findOne({ where: { userId: dto.approved_by } });
+    if (!sec) throw new NotFoundException('Secretary not found');
+    const status = await this.statusRepo.findOne({ where: { name: 'aprobado_admin' } });
+    if (!status) throw new NotFoundException('FinalExamStatus "aprobado_admin" not found');
+    (link as any).statusId = status.id;
+    (link as any).approvedById = sec.userId;
+    (link as any).approvedAt = new Date();
+    await this.linkRepo.save(link);
+    return { ok: true };
   }
 }

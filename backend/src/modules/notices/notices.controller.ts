@@ -12,6 +12,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { normalizePagination, buildPageMeta } from '@/shared/utils/pagination';
 import { NoticesService } from './notices.service';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
@@ -59,8 +60,16 @@ export class NoticesController {
   // Listar posts por audiencia
   @Get()
   @ApiQuery({ name: 'audience', required: false, enum: ['student', 'teacher', 'all'] })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOperation({ summary: 'Listar avisos por audiencia (student/teacher/all)' })
-  findAll(@Query('audience') audience?: 'student' | 'teacher' | 'all') {
-    return this.service.findAllByAudience(audience);
+  async findAll(
+    @Query('audience') audience?: 'student' | 'teacher' | 'all',
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const { page: p, limit: l, offset } = normalizePagination({ page, limit });
+    const [rows, total] = await this.service.findAllByAudience(audience, { skip: offset, take: l });
+    return { data: rows, meta: buildPageMeta(total, p, l) };
   }
 }

@@ -53,19 +53,23 @@ export class NoticesService {
     return { id, affected: 1 } as any;
   }
 
-  async findAllByAudience(audience?: 'student' | 'teacher' | 'all') {
+  async findAllByAudience(audience?: 'student' | 'teacher' | 'all', opts?: { skip?: number; take?: number }) {
     let rows: Notice[] = [];
+    let total = 0;
     if (!audience || audience === 'all') {
-      rows = await this.repo.find({ where: { visibleRoleId: IsNull() }, order: { createdAt: 'DESC' } });
+      [rows, total] = await this.repo.findAndCount({ where: { visibleRoleId: IsNull() }, order: { createdAt: 'DESC' }, skip: opts?.skip, take: opts?.take });
     } else {
       const roleId = await this.resolveRoleId(audience);
-      rows = await this.repo
+      const qb = this.repo
         .createQueryBuilder('n')
         .where('n.visible_role_id IS NULL OR n.visible_role_id = :roleId', { roleId })
-        .orderBy('n.created_at', 'DESC')
-        .getMany();
+        .orderBy('n.created_at', 'DESC');
+      if (opts?.skip !== undefined) qb.skip(opts.skip);
+      if (opts?.take !== undefined) qb.take(opts.take);
+      const [r, t] = await qb.getManyAndCount();
+      rows = r; total = t;
     }
-    return rows.map((r) => ({
+    const mapped = rows.map((r) => ({
       id: r.id,
       title: r.title,
       content: r.content,
@@ -74,6 +78,7 @@ export class NoticesService {
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));
+    return [mapped, total] as const;
   }
 
   private async resolveRoleId(audience: 'student' | 'teacher'): Promise<number> {

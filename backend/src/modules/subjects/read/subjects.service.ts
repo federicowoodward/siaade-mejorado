@@ -16,7 +16,7 @@ export class SubjectsService {
     });  // Buscar una materia por su ID
   }
 
-  async getAllSubjects(): Promise<Subject[]> {
-    return this.subjectsRepository.find();  // Obtener todas las materias
+  async getAllSubjects(opts?: { skip?: number; take?: number }): Promise<[Subject[], number]> {
+    return this.subjectsRepository.findAndCount({ skip: opts?.skip, take: opts?.take });
   }
 }

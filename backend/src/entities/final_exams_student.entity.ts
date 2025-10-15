@@ -11,12 +11,12 @@ export class FinalExamsStudent {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Campo legacy vigente en DB actual
-  @Column({ name: 'final_exams_id', type: 'int' })
-  finalExamsId: number;
+  // FK nueva consolidada
+  @Column({ name: 'final_exam_id', type: 'int' })
+  finalExamId: number;
 
   @ManyToOne(() => FinalExam, (fe) => fe.students, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'final_exams_id' })
+  @JoinColumn({ name: 'final_exam_id' })
   finalExam: FinalExam;
 
   @Column({ name: 'student_id', type: 'uuid' })
@@ -61,7 +61,5 @@ export class FinalExamsStudent {
   @Column({ name: 'approved_at', type: 'timestamptz', nullable: true, select: false })
   approvedAt: Date | null;
 
-  // Nuevo campo propuesto en DBML (sin uso aún hasta migración)
-  @Column({ name: 'final_exam_id', type: 'int', nullable: true, select: false })
-  finalExamId: number | null;
+  // (legacy retirado por migración)
 }
