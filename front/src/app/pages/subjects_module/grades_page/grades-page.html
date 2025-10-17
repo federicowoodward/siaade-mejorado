@@ -3,153 +3,66 @@
   <div class="flex justify-content-between align-items-center mb-3">
     <h2 class="m-0">Notas • {{ subjectName() }}</h2>
     <div class="flex gap-2">
-      <p-button
-        label="Agregar examen"
-        icon="pi pi-plus"
-        (onClick)="openAddExam()"
-      />
+      <p-button label="Agregar examen" icon="pi pi-plus" (onClick)="openAddExam()" />
     </div>
   </div>
 
-<p-table [value]="studentsInSubject()"
-  [paginator]="true"
-  [rows]="10"
-  responsiveLayout="scroll"
->
-  <!-- Encabezado -->
-  <ng-template pTemplate="header">
-  <tr>
-    <th rowspan="2" class="col-alumno">Alumno</th>
-    <ng-container *ngFor="let ex of exams()">
-      <th
-        [attr.colspan]="ex.type === 'practico' ? ex.gradesCount : 1"
-        class="exam-header"
-      >
-        <div class="flex flex-column">
-          <span class="font-medium">{{ ex.title }}</span>
-          <small class="text-color-secondary">{{ ex.date }}</small>
-        </div>
-      </th>
-    </ng-container>
-    <th rowspan="2" class="col-final">Promedio Final</th>
-  </tr>
+  <p-table [value]="studentsInSubject()" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+    <!-- Encabezado -->
+    <ng-template pTemplate="header">
+      <tr>
+        <th rowspan="2" class="col-alumno">Alumno</th>
+        <th rowspan="2" class="col-alumno">Nota 1</th>
+        <th rowspan="2" class="col-alumno">Nota 2</th>
+        <!-- esta seccion aparece solo en anuales -->
+        <th rowspan="2" class="col-alumno">Nota 3</th>
+        <th rowspan="2" class="col-alumno">Nota 4</th>
 
-  <tr>
-    <ng-container *ngFor="let ex of exams()">
-      <!-- SOLO prácticos muestran subencabezados -->
-      <ng-container *ngIf="ex.type === 'practico'">
-        <ng-container *ngFor="let nota of [].constructor(ex.gradesCount); let i = index">
-          <th class="practico-sub">Nota {{ i + 1 }}</th>
+        <th rowspan="2" class="col-final">Nota Final</th>
+        <th rowspan="2" class="col-alumno">Asistencia</th>
+        <th rowspan="2" class="col-alumno">Condicion</th>
+        <!-- seguimos sin saber que es esto: -->
+        <th rowspan="2" class="col-alumno">Acreditacion</th>
+      </tr>
+    </ng-template>
+
+    <!-- Cuerpo -->
+    <!-- revisar todo el cuerpo -->
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td class="col-alumno">
+          <div class="flex flex-column">
+            <span class="font-medium">{{ row.name }}</span>
+            <small class="text-color-secondary">Legajo: {{ row.legajo }}</small>
+          </div>
+        </td>
+
+        <ng-container *ngFor="let ex of exams()">
+          <ng-container *ngFor="let i of [].constructor(ex.gradesCount); let index = index">
+            <td class="nota">
+              <p-inputNumber [min]="0" [max]="10" [useGrouping]="false" mode="decimal"
+                [ngModel]="getScore(ex.id, row.userId, index)"
+                (ngModelChange)="setScore(ex.id, row.userId, index, $event)" inputStyleClass="nota-input"
+                [showButtons]="false"></p-inputNumber>
+            </td>
+          </ng-container>
         </ng-container>
-      </ng-container>
-      <!-- 👆 exámenes comunes y recuperatorios no muestran “Nota 1” -->
-    </ng-container>
-  </tr>
-</ng-template>
 
-  <!-- Cuerpo -->
-  <ng-template pTemplate="body" let-row>
-    <tr>
-      <td class="col-alumno">
-        <div class="flex flex-column">
-          <span class="font-medium">{{ row.name }}</span>
-          <small class="text-color-secondary">Legajo: {{ row.legajo }}</small>
-        </div>
-      </td>
-
-      <ng-container *ngFor="let ex of exams()">
-        <ng-container *ngFor="let i of [].constructor(ex.gradesCount); let index = index">
-          <td class="nota">
-            <p-inputNumber
-              [min]="0"
-              [max]="10"
-              [useGrouping]="false"
-              mode="decimal"
-              [ngModel]="getScore(ex.id, row.userId, index)"
-              (ngModelChange)="setScore(ex.id, row.userId, index, $event)"
-              inputStyleClass="nota-input"
-              [showButtons]="false"
-            ></p-inputNumber>
-          </td>
-        </ng-container>
-      </ng-container>
-
-      <!-- Promedio final -->
-      <td
-        class="col-final"
-        [ngClass]="{
+        <!-- Promedio final -->
+        <td class="col-final" [ngClass]="{
           'nota-aprobada': isGradeApproved(getFinalAverage(row.userId)),
           'nota-desaprobada': isGradeDisapproved(getFinalAverage(row.userId)),
           'nota-promocionada': isGradePromoted(getFinalAverage(row.userId))
-        }"
-        [pTooltip]="getAverageTooltipText(getFinalAverage(row.userId))"
-      >
-        {{ getFinalAverage(row.userId) ?? '-' }}
-      </td>
-    </tr>
-  </ng-template>
-</p-table>
-
-<!-- Diálogo: Agregar examen -->
-<p-dialog
-  header="Agregar examen"
-  [visible]="showAddExam()"
-  (visibleChange)="showAddExam.set($event)"
-  [modal]="true"
-  [style]="{ width: '480px', maxWidth: '95vw' }"
->
-  <div>
-    <label for="examType" class="block mb-2">Tipo de examen</label>
-    <p-select
-      id="examType"
-      [(ngModel)]="newExamType"
-      [options]="examTypes"
-      optionLabel="label"
-      optionValue="value"
-      placeholder="Seleccionar tipo"
-      class="w-full exam-type-selector"
-    ></p-select>
-
-    <div *ngIf="newExamType === 'practico'" class="mt-3">
-      <label for="gradesCount" class="block mb-1">Cantidad de notas</label>
-      <p-select
-        id="gradesCount"
-        [(ngModel)]="numberOfPracticalGrades"
-        [options]="practicalGradesOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Seleccionar cantidad"
-        class="w-full"
-      ></p-select>
-    </div>
-
-    <div class="flex flex-column gap-3 mt-3">
-      <div>
-        <label class="block mb-1">Título</label>
-        <input
-          pInputText
-          class="w-full"
-          [(ngModel)]="newExamTitle"
-          placeholder="Ej: Parcial 2"
-        />
-      </div>
-      <div>
-        <label class="block mb-1">Fecha</label>
-        <input
-          type="date"
-          class="w-full p-inputtext p-component"
-          [(ngModel)]="newExamDate"
-        />
-      </div>
-    </div>
-  </div>
+        }" [pTooltip]="getAverageTooltipText(getFinalAverage(row.userId))">
+          {{ getFinalAverage(row.userId) ?? '-' }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 
   <ng-template pTemplate="footer">
-    <p-button
-      label="Cancelar"
-      severity="secondary"
-      (onClick)="showAddExam.set(false)"
-    />
+    <p-button label="Cancelar" severity="secondary" (onClick)="showAddExam.set(false)" />
+    <!--ya no se van a agregar exaemnes, solo se actualiza la tabla o se cancelan los cambios. -->
     <p-button label="Agregar" icon="pi pi-check" (onClick)="addExamConfirm()" />
   </ng-template>
-</p-dialog>
+  </p-dialog>
