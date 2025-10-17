@@ -1,4 +1,3 @@
-// #ASUMIENDO CODIGO: src/app/shared/components/academic_status/academic-status-component.ts
 import {
   Component,
   Input,

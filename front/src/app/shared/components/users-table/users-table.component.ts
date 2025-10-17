@@ -1,3 +1,4 @@
+// este componetne queda igual, no deberia recibir mod
 import {
   Component, Input, Output, EventEmitter, signal, OnChanges, SimpleChanges, ViewChild
 } from '@angular/core';

@@ -1,0 +1,4 @@
+este componente lleva la estructura curricular de la carrera, un get de los datos completos de 
+la carrera para simplemente mostrarlos, no lleva edicion.
+
+ademas boton "Ver alumnos" -> llevar a lista de alumnos (y ya no se accede materia x materia)
