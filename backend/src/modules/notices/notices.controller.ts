@@ -11,7 +11,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { normalizePagination, buildPageMeta } from '@/shared/utils/pagination';
 import { NoticesService } from './notices.service';
 import { CreateNoticeDto } from './dto/create-notice.dto';
@@ -63,6 +63,10 @@ export class NoticesController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOperation({ summary: 'Listar avisos por audiencia (student/teacher/all)' })
+  @ApiOkResponse({
+    description: 'Lista paginada de avisos',
+    schema: { type: 'object', properties: { data: { type: 'array', items: { type: 'object' } }, meta: { type: 'object' } } }
+  })
   async findAll(
     @Query('audience') audience?: 'student' | 'teacher' | 'all',
     @Query('page') page?: number,

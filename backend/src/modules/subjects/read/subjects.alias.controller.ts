@@ -1,5 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiQuery, ApiOkResponse } from '@nestjs/swagger';
 import { SubjectsService } from './subjects.service';
 import { Subject } from '../../../entities/subjects.entity';
 import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
@@ -16,6 +16,7 @@ export class SubjectsAliasController {
   @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ description: 'Lista paginada de materias', schema: { type: 'object', properties: { data: { type: 'array', items: { type: 'object' } }, meta: { type: 'object' } } } })
   async getAllSubjects(@Query('page') page?: number, @Query('limit') limit?: number): Promise<any> {
     const { page: p, limit: l, offset } = normalizePagination({ page, limit });
     const [rows, total] = await this.subjectsService.getAllSubjects({ skip: offset, take: l });

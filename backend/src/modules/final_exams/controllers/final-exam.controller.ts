@@ -13,6 +13,7 @@ import {
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
 
@@ -66,9 +67,40 @@ export class FinalExamController {
     return this.svc.remove(+id);
   }
 
-  @ApiOperation({ summary: "Listar exámenes de una mesa" })
+  @ApiOperation({ summary: "Listar exámenes de una mesa (paginado por page/limit)" })
   @ApiParam({ name: "final_exam_table_id", type: Number, required: true })
-  @ApiOkResponse({ type: FinalExamListItemDto, isArray: true })
+  @ApiOkResponse({
+    description: 'Lista paginada de exámenes de una mesa',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 10 },
+              subject_id: { type: 'number', example: 3 },
+              subject_name: { type: 'string', example: 'Matemática I' },
+              exam_date: { type: 'string', example: '2025-07-10' },
+              aula: { type: 'string', nullable: true, example: 'Aula 3' },
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 12 },
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 10 },
+            pages: { type: 'number', example: 2 },
+          },
+        },
+      },
+    },
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @Get("list-all/:final_exam_table_id")
   listAll(
     @Param("final_exam_table_id") tableId: string,
