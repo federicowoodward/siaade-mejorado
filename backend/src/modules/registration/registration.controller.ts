@@ -46,6 +46,24 @@ export class RegistrationController {
   @ApiQuery({ name: 'active_only', required: false, type: Boolean })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({
+    description: 'Lista paginada de etapas',
+    schema: {
+      type: 'object',
+      properties: {
+        data: { type: 'array', items: { type: 'object' } },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 0 },
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 10 },
+            pages: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
+  })
   @Get('stages')
   async listStages(
     @Query('career_id') careerId: string,
