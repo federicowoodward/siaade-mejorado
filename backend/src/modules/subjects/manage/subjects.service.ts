@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Subject } from '../../../entities/subjects.entity';
+import { Subject } from '@/entities/subjects/subject.entity';
 
 @Injectable()
 export class SubjectsService {
@@ -10,33 +10,35 @@ export class SubjectsService {
     private subjectsRepository: Repository<Subject>,
   ) {}
 
-  async create(subjectData: Subject): Promise<Subject> {
+  async create(subjectData: Partial<Subject>): Promise<Subject> {
     const subject = this.subjectsRepository.create(subjectData);
-    return this.subjectsRepository.save(subject);  // Guardar la nueva materia en la base de datos
+    return this.subjectsRepository.save(subject);
   }
 
-  async update(id: number, subjectData: Subject): Promise<Subject | null> {
-    await this.subjectsRepository.update(id, subjectData);  // Actualizar la materia
+  async update(id: number, subjectData: Partial<Subject>): Promise<Subject | null> {
+    await this.subjectsRepository.update(id, subjectData);
     return this.subjectsRepository.findOne({
-      where: { id }
-    });  // Devolver la materia actualizada
+      where: { id },
+      relations: ['academicPeriod', 'commissions'],
+    });
   }
 
   async delete(id: number): Promise<void> {
-    await this.subjectsRepository.delete(id);  // Eliminar la materia
+    await this.subjectsRepository.delete(id);
   }
 
-  // Métodos para el controlador de lectura
   async getSubjectInfo(id: number): Promise<Subject | null> {
     return this.subjectsRepository.findOne({
       where: { id },
-      relations: ['teacher', 'preceptor']
+      relations: ['academicPeriod', 'commissions'],
     });
   }
 
   async getAllSubjects(): Promise<Subject[]> {
     return this.subjectsRepository.find({
-      relations: ['teacher', 'preceptor']
+      relations: ['academicPeriod', 'commissions'],
     });
   }
 }
+
+

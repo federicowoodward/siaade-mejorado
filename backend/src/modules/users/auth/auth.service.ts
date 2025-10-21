@@ -4,8 +4,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 
@@ -113,3 +113,5 @@ export class AuthService {
     };
   }
 }
+
+

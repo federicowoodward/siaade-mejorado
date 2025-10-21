@@ -1,19 +1,19 @@
 import AppDataSource from "../database/datasource";
 import { QueryRunner } from "typeorm";
-import { AcademicPeriod } from "../entities/academic_period.entity";
-import { FinalExamStatus } from "../entities/final_exam_status.entity";
-import { SubjectStatusType } from "../entities/subject_status_type.entity";
-import { Commission } from "../entities/commission.entity";
-import { Subject } from "../entities/subjects.entity";
-import { SubjectCommission } from "../entities/subject_commissions.entity";
-import { Student } from "../entities/students.entity";
-import { StudentSubjectProgress } from "../entities/student_subject_progress.entity";
-import { Career } from "../entities/careers.entity";
-import { CareerStudent } from "../entities/career_students.entity";
-import { CareerSubject, SubjectPrerequisiteByOrder } from "../entities/career_subjects.entity";
-import { ExamTable } from "../entities/exam_table.entity";
-import { FinalExam } from "../entities/final_exam.entity";
-import { FinalExamsStudent } from "../entities/final_exams_student.entity";
+import { AcademicPeriod } from "@/entities/catalogs/academic-period.entity";
+import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
+import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
+import { Commission } from "@/entities/catalogs/commission.entity";
+import { Subject } from "@/entities/subjects/subject.entity";
+import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
+import { Student } from "@/entities/users/student.entity";
+import { StudentSubjectProgress } from "@/entities/subjects/student-subject-progress.entity";
+import { Career } from "@/entities/registration/career.entity";
+import { CareerStudent } from "@/entities/registration/career-student.entity";
+import { CareerSubject, SubjectPrerequisiteByOrder } from "@/entities/registration/career-subject.entity";
+import { ExamTable } from "@/entities/finals/exam-table.entity";
+import { FinalExam } from "@/entities/finals/final-exam.entity";
+import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
 
 async function main() {
   await AppDataSource.initialize();
@@ -24,46 +24,44 @@ async function main() {
   const nowTag = Date.now();
 
   try {
-    // 1) Insertar catÃ¡logos simples
-  const apRepo = qr.manager.getRepository(AcademicPeriod);
-  const fesRepo = qr.manager.getRepository(FinalExamStatus);
-  const sstRepo = qr.manager.getRepository(SubjectStatusType);
-  const comRepo = qr.manager.getRepository(Commission);
+    // 1) Insertar catálogos simples
+    const apRepo = qr.manager.getRepository(AcademicPeriod);
+    const fesRepo = qr.manager.getRepository(FinalExamStatus);
+    const sstRepo = qr.manager.getRepository(SubjectStatusType);
+    const comRepo = qr.manager.getRepository(Commission);
 
-  const ap = apRepo.create({ periodName: `2025 - PerÃ­odo de Prueba ${nowTag}` , partialsScoreNeeded: 2 });
-  await apRepo.save(ap);
+    const ap = apRepo.create({ periodName: `2025 - Período de Prueba ${nowTag}`, partialsScoreNeeded: 2 });
+    await apRepo.save(ap);
     log("academic_period OK", ap.academicPeriodId);
 
-  // Crear un status de final Ãºnico para poder borrarlo sin afectar otros
-  const fes = fesRepo.create({ name: `APROBADO (SMOKE) ${nowTag}` });
-  await fesRepo.save(fes);
+    // Crear un status de final único para poder borrarlo sin afectar otros
+    const fes = fesRepo.create({ name: `APROBADO (SMOKE) ${nowTag}` });
+    await fesRepo.save(fes);
     log("final_exam_status OK", fes.id);
 
-  const sst = sstRepo.create({ statusName: `CURSANDO (SMOKE) ${nowTag}` });
-  await sstRepo.save(sst);
+    const sst = sstRepo.create({ statusName: `CURSANDO (SMOKE) ${nowTag}` });
+    await sstRepo.save(sst);
     log("subject_status_type OK", sst.id);
 
-  const com = comRepo.create({ commissionLetter: `Z (SMOKE) ${nowTag}` });
-  await comRepo.save(com);
+    const com = comRepo.create({ commissionLetter: `Z (SMOKE) ${nowTag}` });
+    await comRepo.save(com);
     log("commission OK", com.id);
 
-  // 2) Si hay un subject + teacher vÃ¡lido, intentar crear subject_commission
-    const subject = await qr.manager.getRepository(Subject)
+    // 2) Si hay un subject + teacher válido, intentar crear subject_commission
+    const subject = await qr.manager
+      .getRepository(Subject)
       .createQueryBuilder("s")
-      .select(["s.id", "s.teacher"]) // evitar select:false
+      .select(["s.id"])
       .orderBy("s.id", "ASC")
       .getOne();
 
     let sc: SubjectCommission | null = null;
-    if (subject?.id && subject.teacher) {
-      // Verificar que el teacher exista en tabla teachers
-      const teacherExists = await qr.query(
-        `select 1 from teachers where user_id = $1 limit 1`,
-        [subject.teacher]
-      );
-      if (teacherExists?.length) {
+    if (subject?.id) {
+      const teacherRow = await qr.query(`select user_id from teachers limit 1`);
+      const teacherId: string | undefined = teacherRow?.[0]?.user_id;
+      if (teacherId) {
         const scRepo = qr.manager.getRepository(SubjectCommission);
-        // Primero intentamos obtener existente para evitar violaciones de unicidad dentro de la transacciÃ³n
+        // Primero intentamos obtener existente para evitar violaciones de unicidad dentro de la transacción
         let existing = await scRepo.findOne({ where: { subjectId: subject.id, commissionId: com.id } });
         if (existing) {
           sc = existing;
@@ -72,21 +70,22 @@ async function main() {
           sc = scRepo.create({
             subjectId: subject.id,
             commissionId: com.id,
-            teacherId: subject.teacher,
+            teacherId,
             active: true,
           });
           await scRepo.save(sc);
           log("subject_commission OK", sc.id);
         }
       } else {
-        log("SKIP subject_commission: teacher no encontrado para subject", subject.id);
+        log("SKIP subject_commission: no hay teachers disponibles");
       }
     } else {
-      log("SKIP subject_commission: no hay subjects en DB o subject.teacher vacÃ­o");
+      log("SKIP subject_commission: no hay subjects en DB");
     }
 
-  // 3) Si hay student y subject_commission, crear progreso
-    const student = await qr.manager.getRepository(Student)
+    // 3) Si hay student y subject_commission, crear progreso
+    const student = await qr.manager
+      .getRepository(Student)
       .createQueryBuilder("st")
       .select(["st.userId"]) // columna PK/UUID
       .orderBy("st.userId", "ASC")
@@ -104,7 +103,7 @@ async function main() {
         await sspRepo.save(ssp);
         log("student_subject_progress OK", ssp.id);
       } catch {
-        log("student_subject_progress ya existente (Ã­ndice Ãºnico)");
+        log("student_subject_progress ya existente (índice único)");
       }
     } else {
       log("SKIP student_subject_progress: falta subject_commission o student");
@@ -123,7 +122,7 @@ async function main() {
       await careerRepo.save(career);
       log("career OK", career.id);
     } else {
-      log("SKIP career: no hay preceptor en DB");
+      log("SKIP career: no hay preceptores disponibles");
     }
 
     // 5) CareerSubjects y SubjectPrerequisiteByOrder
@@ -132,13 +131,13 @@ async function main() {
       const cso1 = csRepo.create({ careerId: career.id, subjectId: subject.id, orderNo: 1, yearNo: 1, periodOrder: 1 });
       await csRepo.save(cso1);
       log("career_subjects OK", cso1.id);
-      // Intento duplicado esperado (mismo careerId, orderNo) usando savepoint para no abortar la transacciÃ³n
+      // Intento duplicado esperado (mismo careerId, orderNo) usando savepoint para no abortar la transacción
       const sp1 = `sp_cs_${nowTag}`;
       await qr.query(`SAVEPOINT ${sp1}`);
       try {
         const dup = csRepo.create({ careerId: career.id, subjectId: subject.id, orderNo: 1 });
         await csRepo.save(dup);
-        log("WARN: career_subjects duplicate no lanzÃ³ error (revisar Ã­ndice Ãºnico)");
+        log("WARN: career_subjects duplicate no lanzó error (revisar índice único)");
       } catch {
         log("career_subjects UNIQUE (careerId, orderNo) OK (fallo esperado)");
       } finally {
@@ -154,7 +153,7 @@ async function main() {
       try {
         const sproDup = spRepo.create({ careerId: career.id, subjectOrderNo: 2, prereqOrderNo: 1 });
         await spRepo.save(sproDup);
-        log("WARN: subject_prerequisites_by_order duplicate no lanzÃ³ error");
+        log("WARN: subject_prerequisites_by_order duplicate no lanzó error");
       } catch {
         log("subject_prerequisites_by_order UNIQUE OK (fallo esperado)");
       } finally {
@@ -165,7 +164,8 @@ async function main() {
     }
 
     // 6) CareerStudent
-    const studentForCareer = await qr.manager.getRepository(Student)
+    const studentForCareer = await qr.manager
+      .getRepository(Student)
       .createQueryBuilder("st")
       .select(["st.userId"]) // PK
       .orderBy("st.userId", "ASC")
@@ -191,7 +191,6 @@ async function main() {
         subjectId: subject.id,
         examTableId: et.id,
         examDate: new Date(),
-        examTime: "10:00:00",
         aula: "A1",
       });
       await feRepo.save(fe);
@@ -209,10 +208,7 @@ async function main() {
 
       // Probar ON DELETE SET NULL en status
       await qr.manager.getRepository(FinalExamStatus).delete({ id: fes.id });
-      const afterStatus = await qr.query(
-        `select status_id from final_exams_students where id = $1`,
-        [fesRow.id]
-      );
+      const afterStatus = await qr.query(`select status_id from final_exams_students where id = $1`, [fesRow.id]);
       log("final_exams_students.status_id tras borrar status:", afterStatus?.[0]?.status_id);
 
       // Probar CASCADE: borrar exam_table -> borra finals
@@ -225,18 +221,18 @@ async function main() {
 
     // 8) Validar tipos de columnas migradas (timestamptz)
     const examDateType = await qr.query(
-      `SELECT data_type FROM information_schema.columns WHERE table_name='final_exams' AND column_name='exam_date'`
+      `SELECT data_type FROM information_schema.columns WHERE table_name='final_exams' AND column_name='exam_date'`,
     );
     log("final_exams.exam_date data_type:", examDateType?.[0]?.data_type);
 
     const enrolledAtType = await qr.query(
-      `SELECT data_type FROM information_schema.columns WHERE table_name='final_exams_students' AND column_name='enrolled_at'`
+      `SELECT data_type FROM information_schema.columns WHERE table_name='final_exams_students' AND column_name='enrolled_at'`,
     );
     log("final_exams_students.enrolled_at data_type:", enrolledAtType?.[0]?.data_type);
 
     // Rollback para no dejar datos de prueba
     await qr.rollbackTransaction();
-    log("TransacciÃ³n revertida (DB limpia)");
+    log("Transacción revertida (DB limpia)");
   } catch (err) {
     await qr.rollbackTransaction();
     console.error("[SMOKE] Error:", err);
@@ -248,3 +244,4 @@ async function main() {
 }
 
 main();
+

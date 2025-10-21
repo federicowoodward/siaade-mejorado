@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { FinalExamTable } from "../../../entities/final_exam_table.entity";
+import { ExamTable } from "@/entities/finals/exam-table.entity";
 
 import {
   InitFinalExamTableDto,
@@ -15,69 +15,60 @@ import {
 } from "../dto/final-exam-table.dto";
 import { isoToDate, dateInRange } from "../utils/date-utils";
 import { hasRankAtLeast } from "../utils/rbac-utils";
-import { FinalExam } from "@/entities/final_exam.entity";
+import { FinalExam } from "@/entities/finals/final-exam.entity";
 
 @Injectable()
 export class FinalExamTableService {
   constructor(
-    @InjectRepository(FinalExamTable)
-    private tableRepo: Repository<FinalExamTable>,
-    @InjectRepository(FinalExam) private finalRepo: Repository<FinalExam>
+    @InjectRepository(ExamTable)
+    private tableRepo: Repository<ExamTable>,
+    @InjectRepository(FinalExam) private finalRepo: Repository<FinalExam>,
   ) {}
 
   async list(id?: number) {
     if (id) {
-      const row = await this.tableRepo.findOne({
-        where: { id },
-        relations: ["createdByUser"], 
-      });
-      if (!row) throw new NotFoundException("Final exam table not found");
+      const row = await this.tableRepo.findOne({ where: { id } });
+      if (!row) throw new NotFoundException("Exam table not found");
       return row;
     }
 
     return this.tableRepo.find({
-      relations: ["createdByUser"], // 👈
       order: { startDate: "DESC", id: "DESC" },
     });
   }
 
-  async init(dto: InitFinalExamTableDto, createdBy: string) {
+  async init(dto: InitFinalExamTableDto) {
     const start = isoToDate(dto.start_date);
     const end = isoToDate(dto.end_date);
-    if (start > end)
+    if (start > end) {
       throw new BadRequestException("start_date must be <= end_date");
+    }
 
     const row = this.tableRepo.create({
       name: dto.name,
       startDate: start,
       endDate: end,
-      createdBy,
     });
     return this.tableRepo.save(row);
   }
 
   async edit(id: number, dto: EditFinalExamTableDto) {
     const row = await this.tableRepo.findOne({ where: { id } });
-    if (!row) throw new NotFoundException("Final exam table not found");
+    if (!row) throw new NotFoundException("Exam table not found");
 
-    const nextStart = dto.start_date
-      ? isoToDate(dto.start_date)
-      : row.startDate;
+    const nextStart = dto.start_date ? isoToDate(dto.start_date) : row.startDate;
     const nextEnd = dto.end_date ? isoToDate(dto.end_date) : row.endDate;
-    if (nextStart > nextEnd)
+    if (nextStart > nextEnd) {
       throw new BadRequestException("start_date must be <= end_date");
+    }
 
-    // Evitar que queden finales fuera de rango
-    const finals = await this.finalRepo.find({
-      where: { finalExamTableId: id },
-    });
-    const outOfRange = finals.find(
-      (f) => !dateInRange(f.examDate, nextStart, nextEnd)
-    );
-    if (outOfRange)
+    const finals = await this.finalRepo.find({ where: { examTableId: id } });
+    const outOfRange = finals.find((f) => !dateInRange(f.examDate, nextStart, nextEnd));
+    if (outOfRange) {
       throw new BadRequestException(
-        "There are final exams outside the new date range"
+        "There are final exams outside the new date range",
       );
+    }
 
     row.name = dto.name ?? row.name;
     row.startDate = nextStart;
@@ -86,20 +77,17 @@ export class FinalExamTableService {
   }
 
   /**
-   * Regla: si la mesa es "vieja" (+2 meses), PRECEPTOR no puede borrar (SECRETARIO/ADMIN sí).
+   * Regla: si la mesa es "vieja" (+2 meses), PRECEPTOR no puede borrar (SECRETARIO/ADMIN s�).
    */
   async remove(id: number, requesterRole: string) {
     const row = await this.tableRepo.findOne({ where: { id } });
-    if (!row) throw new NotFoundException("Final exam table not found");
+    if (!row) throw new NotFoundException("Exam table not found");
 
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-    if (
-      row.endDate < twoMonthsAgo &&
-      !hasRankAtLeast(requesterRole, "SECRETARIO")
-    ) {
+    if (row.endDate < twoMonthsAgo && !hasRankAtLeast(requesterRole, "SECRETARIO")) {
       throw new ForbiddenException(
-        "Insufficient hierarchy to delete old final exam tables"
+        "Insufficient hierarchy to delete old exam tables",
       );
     }
 
@@ -107,3 +95,4 @@ export class FinalExamTableService {
     return { deleted: true };
   }
 }
+

@@ -7,12 +7,12 @@ import { DataSource, QueryRunner, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import * as bcrypt from "bcryptjs";
 
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
-import { UserInfo } from "../../../entities/user_info.entity";
-import { CommonData } from "../../../entities/common_data.entity";
-import { AddressData } from "../../../entities/address_data.entity";
-import { Secretary } from "../../../entities/secretaries.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { UserInfo } from "@/entities/users/user-info.entity";
+import { CommonData } from "@/entities/users/common-data.entity";
+import { AddressData } from "@/entities/users/address-data.entity";
+import { Secretary } from "@/entities/users/secretary.entity";
 
 type FlatChanges = Record<string, any>;
 
@@ -292,3 +292,5 @@ export class UsersPatchService {
     await qr.manager.update(Secretary, { id: sec.userId }, { isDirective });
   }
 }
+
+

@@ -1,11 +1,11 @@
 // src/shared/services/user-profile-reader/user-profile-reader.module.ts
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
-import { UserInfo } from "../../../entities/user_info.entity";
-import { CommonData } from "../../../entities/common_data.entity";
-import { AddressData } from "../../../entities/address_data.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { UserInfo } from "@/entities/users/user-info.entity";
+import { CommonData } from "@/entities/users/common-data.entity";
+import { AddressData } from "@/entities/users/address-data.entity";
 import { UserProfileReaderService } from "./user-profile-reader.service";
 
 @Module({
@@ -16,3 +16,5 @@ import { UserProfileReaderService } from "./user-profile-reader.service";
   exports: [UserProfileReaderService],
 })
 export class UserProfileReaderModule {}
+
+

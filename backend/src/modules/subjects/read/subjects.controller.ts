@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiQuery } from '@nestjs/swagger';
 import { SubjectsService } from './subjects.service';  // Importa el servicio local de read
-import { Subject } from '../../../entities/subjects.entity';  // Entidad de materia para el tipo de retorno
+import { Subject } from '@/entities/subjects/subject.entity';  // Entidad de materia para el tipo de retorno
 import { RolesGuard } from '../../../guards/roles.guard';
 import { Roles } from '../../users/auth/roles.decorator';  // Decorador de roles original
 import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
@@ -29,3 +29,4 @@ export class SubjectsController {
     return { data: rows, meta: buildPageMeta(total, p, l) };
   }
 }
+

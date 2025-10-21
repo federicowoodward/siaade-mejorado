@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { StudentsService } from './students.service';  // Importa el servicio
-import { Student } from '../../../../entities/students.entity';  // Entidad de estudiante
+import { Student } from '@/entities/users/student.entity';  // Entidad de estudiante
 import { RolesGuard } from '../../../../guards/roles.guard';
 import { Roles } from '../../../users/auth/roles.decorator';  // Decorador para roles
 import { HierarchyGuard } from '../../../../guards/hierarchy.guard';
@@ -31,3 +31,5 @@ export class StudentsController {
     return this.studentsService.unenroll(id);  // Eliminar la inscripción de un estudiante
   }
 }
+
+

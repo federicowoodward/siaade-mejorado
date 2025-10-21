@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RegistrationEnrollment, RegistrationStage, RegistrationStageType } from '@/entities/registration_stage.entity';
-import { Career } from '@/entities/careers.entity';
-import { SubjectCommission } from '@/entities/subject_commissions.entity';
-import { Student } from '@/entities/students.entity';
+import { RegistrationEnrollment, RegistrationStage, RegistrationStageType } from '@/entities/registration/registration-stage.entity';
+import { Career } from '@/entities/registration/career.entity';
+import { SubjectCommission } from '@/entities/subjects/subject-commission.entity';
+import { Student } from '@/entities/users/student.entity';
 
 @Injectable()
 export class RegistrationService {
@@ -89,3 +89,7 @@ export class RegistrationService {
     return { deleted: true };
   }
 }
+
+
+
+

@@ -7,8 +7,8 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
 import { UserProvisioningService } from "../../../shared/services/user-provisioning/user-provisioning.service";
 import {
   CreateSecretaryDto,
@@ -18,7 +18,8 @@ import {
   UpdateUserDto,
 } from "./dto";
 import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
-import { Subject } from "../../../entities/subjects.entity";
+import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
+import { Career } from "@/entities/registration/career.entity";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -29,8 +30,6 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
-    @InjectRepository(Subject)
-    private subjectsRepository: Repository<Subject>,
     private readonly provisioning: UserProvisioningService,
     private readonly userReader: UserProfileReaderService
   ) {}
@@ -131,10 +130,21 @@ export class UsersService {
       );
     }
 
+    if (dto.studentStartYear && (dto.studentStartYear < 1990 || dto.studentStartYear > 2100)) {
+      throw new BadRequestException("studentStartYear must be between 1990 and 2100");
+    }
+
     return this.provisioning.createStudent({
       userData: { ...userData, roleName: "student", email: userData.email },
       userInfo: dto.userInfo,
       commonData: dto.commonData,
+      studentData: {
+        legajo: dto.legajo,
+        commissionId: dto.commissionId ?? null,
+        canLogin: dto.canLogin ?? true,
+        isActive: dto.isActive ?? true,
+        studentStartYear: dto.studentStartYear ?? null,
+      },
     });
   }
 
@@ -226,31 +236,34 @@ export class UsersService {
         | "preceptor"
         | "secretary";
 
-      // ✅ Guard: si es teacher/preceptor y está vinculado a alguna materia, abortar con 409
+      // Guard: si es teacher o preceptor y esta vinculado a recursos dependientes, abortar con 409
       if (roleName === "teacher") {
-        const subj = await qr.manager.findOne(Subject, {
-          where: { teacher: id }, // tu columna se llama 'teacher'
-          select: ["id", "subjectName"],
+        const commission = await qr.manager.findOne(SubjectCommission, {
+          where: { teacherId: id },
+          relations: { subject: true },
         });
-        if (subj) {
+        if (commission) {
           throw new ConflictException({
             message:
-              "No se puede borrar el docente: existe al menos una materia vinculada.",
-            subject: { id: subj.id, subjectName: subj.subjectName },
+              "No se puede borrar el docente: existe al menos una comision vinculada a una materia.",
+            subject: commission.subject
+              ? { id: commission.subject.id, subjectName: commission.subject.subjectName }
+              : undefined,
           });
         }
       } else if (roleName === "preceptor") {
-        const subj = await qr.manager.findOne(Subject, {
-          where: { preceptor: id }, // tu columna se llama 'preceptor'
-          select: ["id", "subjectName"],
+        const career = await qr.manager.findOne(Career, {
+          where: { preceptorId: id },
+          select: ["id", "careerName"],
         });
-        if (subj) {
+        if (career) {
           throw new ConflictException({
             message:
-              "No se puede borrar el preceptor: existe al menos una materia vinculada.",
-            subject: { id: subj.id, subjectName: subj.subjectName },
+              "No se puede borrar el preceptor: existe al menos una carrera vinculada.",
+            career: { id: career.id, careerName: career.careerName },
           });
         }
+      
       }
       // Borrar específico por rol
       switch (roleName) {
@@ -393,3 +406,12 @@ export class UsersService {
     return this.findAll();
   }
 }
+
+
+
+
+
+
+
+
+

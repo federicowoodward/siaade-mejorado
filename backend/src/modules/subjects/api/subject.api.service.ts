@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Subject } from '../../../entities/subjects.entity';
-import { SubjectAbsence } from '../../../entities/subject_absence.entity';
-import { SubjectStudent } from '../../../entities/subject_student.entity';
-import { Exam } from '../../../entities/exams.entity';
-import { ExamResult } from '../../../entities/exam_result.entity';
-import { Student } from '../../../entities/students.entity';
+import { Subject } from '@/entities/subjects/subject.entity';
+import { SubjectAbsence } from '@/entities/subjects/subject-absence.entity';
+import { SubjectStudent } from '@/entities/subjects/subject-student.entity';
+import { Exam } from '@/entities/subjects/exam.entity';
+import { ExamResult } from '@/entities/subjects/exam-result.entity';
+import { Student } from '@/entities/users/student.entity';
 
 @Injectable()
 export class SubjectApiService {
@@ -143,10 +143,11 @@ export class SubjectApiService {
   async getSubjectDetail(id: number) {
     const qb = this.subjectRepo
       .createQueryBuilder('s')
-      .leftJoinAndSelect('s.teacherRel', 't')
-      .leftJoinAndSelect('t.user', 'tuser')
-      .leftJoinAndSelect('s.preceptorRel', 'p')
-      .leftJoinAndSelect('p.user', 'puser')
+      .leftJoinAndSelect('s.academicPeriod', 'ap')
+      .leftJoinAndSelect('s.commissions', 'comm')
+      .leftJoinAndSelect('comm.teacher', 'teacher')
+      .leftJoinAndSelect('teacher.user', 'teacherUser')
+      .leftJoinAndSelect('comm.commission', 'commission')
       .leftJoinAndSelect('s.subjectStudents', 'ss')
       .leftJoinAndSelect('ss.student', 'stu')
       .leftJoinAndSelect('stu.user', 'stuuser')
@@ -158,7 +159,7 @@ export class SubjectApiService {
     if (!subject) throw new NotFoundException('Subject not found');
 
     const examIds = (subject.exams || []).map((e) => e.id);
-    let resultsByExam: Record<number, { student_id: string; score: string | null }[]> = {};
+    const resultsByExam: Record<number, { student_id: string; score: string | null }[]> = {};
     if (examIds.length) {
       const results = await this.examResultRepo.find({ where: { examId: In(examIds) } });
       for (const r of results) {
@@ -167,17 +168,35 @@ export class SubjectApiService {
       }
     }
 
-    const mapUser = (u?: any) => (u ? { id: u.id, name: u.name, lastName: u.lastName, email: u.email } : null);
+    const mapUser = (u?: any) =>
+      u ? { id: u.id, name: u.name, lastName: u.lastName, email: u.email } : null;
+
+    const primaryCommission = subject.commissions?.[0];
+    const primaryTeacherUser = primaryCommission?.teacher?.user;
 
     return {
       id: subject.id,
       subjectName: subject.subjectName,
-      courseNum: subject.courseNum,
-      courseLetter: subject.courseLetter,
-      courseYear: subject.courseYear,
+      orderNo: subject.orderNo,
       correlative: subject.correlative,
-      teacher: mapUser(subject.teacherRel?.user),
-      preceptor: mapUser(subject.preceptorRel?.user),
+      teacherFormation: subject.teacherFormation,
+      subjectFormat: subject.subjectFormat,
+      annualWorkload: subject.annualWorkload,
+      weeklyWorkload: subject.weeklyWorkload,
+      academicPeriod: subject.academicPeriod
+        ? {
+            id: subject.academicPeriod.academicPeriodId,
+            name: subject.academicPeriod.periodName,
+            partialsScoreNeeded: subject.academicPeriod.partialsScoreNeeded,
+          }
+        : null,
+      teacher: mapUser(primaryTeacherUser),
+      commissions: (subject.commissions || []).map((c) => ({
+        id: c.id,
+        commissionId: c.commissionId,
+        teacherId: c.teacherId,
+        active: c.active,
+      })),
       students: (subject.subjectStudents || []).map((ss) => ({
         userId: ss.studentId,
         ...mapUser(ss.student?.user),
@@ -193,3 +212,5 @@ export class SubjectApiService {
     };
   }
 }
+
+

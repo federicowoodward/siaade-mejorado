@@ -2,15 +2,27 @@
 import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class InitFinalExamTableDto {
-  @IsString() @IsNotEmpty() name: string;
-  @IsDateString() start_date: string; // YYYY-MM-DD
-  @IsDateString() end_date: string;
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
 
-  @IsString() @IsOptional() created_by?: string; // UUID del usuario que crea la mesa
+  @IsDateString()
+  start_date!: string; // YYYY-MM-DD
+
+  @IsDateString()
+  end_date!: string;
 }
 
 export class EditFinalExamTableDto {
-  @IsString() @IsOptional() name?: string;
-  @IsDateString() @IsOptional() start_date?: string;
-  @IsDateString() @IsOptional() end_date?: string;
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsDateString()
+  @IsOptional()
+  start_date?: string;
+
+  @IsDateString()
+  @IsOptional()
+  end_date?: string;
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Subject } from '../../../entities/subjects.entity';
+import { Subject } from '@/entities/subjects/subject.entity';
 
 @Injectable()
 export class SubjectsService {
@@ -20,3 +20,4 @@ export class SubjectsService {
     return this.subjectsRepository.findAndCount({ skip: opts?.skip, take: opts?.take });
   }
 }
+

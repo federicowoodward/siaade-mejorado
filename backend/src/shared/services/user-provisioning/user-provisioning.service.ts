@@ -3,15 +3,15 @@ import { Injectable, BadRequestException } from "@nestjs/common";
 import { DataSource, QueryRunner, Repository, DeepPartial } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
-import { UserInfo } from "../../../entities/user_info.entity";
-import { CommonData } from "../../../entities/common_data.entity";
-import { AddressData } from "../../../entities/address_data.entity";
-import { Student } from "../../../entities/students.entity";
-import { Teacher } from "../../../entities/teachers.entity";
-import { Preceptor } from "../../../entities/preceptors.entity";
-import { Secretary } from "../../../entities/secretaries.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { UserInfo } from "@/entities/users/user-info.entity";
+import { CommonData } from "@/entities/users/common-data.entity";
+import { AddressData } from "@/entities/users/address-data.entity";
+import { Student } from "@/entities/users/student.entity";
+import { Teacher } from "@/entities/users/teacher.entity";
+import { Preceptor } from "@/entities/users/preceptor.entity";
+import { Secretary } from "@/entities/users/secretary.entity";
 
 import {
   CreateStudentUserDto,
@@ -54,11 +54,20 @@ export class UserProvisioningService {
       const role = await this.resolveRole(qr, dto.userData, "student");
       const user = await this.createUser(qr, dto.userData, role.id);
 
+      if (!dto.studentData?.legajo) {
+        throw new BadRequestException("studentData.legajo is required");
+      }
+
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
       await this.maybeCreateCommonData(qr, user.id, dto.commonData);
 
       const student = this.studentsRepo.create({
         userId: user.id,
+        legajo: dto.studentData.legajo,
+        commissionId: dto.studentData.commissionId ?? null,
+        canLogin: dto.studentData.canLogin ?? true,
+        isActive: dto.studentData.isActive ?? true,
+        studentStartYear: dto.studentData.studentStartYear ?? null,
       } as DeepPartial<Student>);
       const savedStudent = await qr.manager.save(Student, student);
 
@@ -237,3 +246,5 @@ export class UserProvisioningService {
     return await qr.manager.save(CommonData, cdEntity);
   }
 }
+
+

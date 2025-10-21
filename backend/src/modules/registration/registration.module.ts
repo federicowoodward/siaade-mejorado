@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RegistrationController } from '@/modules/registration/registration.controller';
 import { RegistrationService } from '@/modules/registration/registration.service';
-import { RegistrationEnrollment, RegistrationStage, RegistrationStageType } from '@/entities/registration_stage.entity';
-import { Career } from '@/entities/careers.entity';
-import { SubjectCommission } from '@/entities/subject_commissions.entity';
-import { Student } from '@/entities/students.entity';
-import { Secretary } from '@/entities/secretaries.entity';
+import { RegistrationEnrollment, RegistrationStage, RegistrationStageType } from '@/entities/registration/registration-stage.entity';
+import { Career } from '@/entities/registration/career.entity';
+import { SubjectCommission } from '@/entities/subjects/subject-commission.entity';
+import { Student } from '@/entities/users/student.entity';
+import { Secretary } from '@/entities/users/secretary.entity';
 
 @Module({
   imports: [
@@ -25,3 +25,7 @@ import { Secretary } from '@/entities/secretaries.entity';
   exports: [RegistrationService],
 })
 export class RegistrationModule {}
+
+
+
+

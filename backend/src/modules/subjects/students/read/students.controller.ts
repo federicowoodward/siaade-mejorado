@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { StudentsService } from './students.service';  // Servicio local de students read
-import { Student } from '../../../../entities/students.entity';  // Entidad de estudiante
+import { Student } from '@/entities/users/student.entity';  // Entidad de estudiante
 import { RolesGuard } from '../../../../guards/roles.guard';
 import { Roles } from '../../../users/auth/roles.decorator';  // Decorador para roles
 import { JwtAuthGuard } from '../../../../guards/jwt-auth.guard';
@@ -23,3 +23,5 @@ export class StudentsController {
     return this.studentsService.getAllStudents();  // Consultar todos los estudiantes
   }
 }
+
+

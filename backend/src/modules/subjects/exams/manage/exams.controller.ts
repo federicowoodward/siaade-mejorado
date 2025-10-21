@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ExamsService } from './exams.service';  // Servicio de exámenes
-import { Exam } from '../../../../entities/exams.entity';  // Entidad de examen
+import { Exam } from '@/entities/subjects/exam.entity';  // Entidad de examen
 import { RolesGuard } from '../../../../guards/roles.guard';
 import { Roles } from '../../../users/auth/roles.decorator';
 import { HierarchyGuard } from '../../../../guards/hierarchy.guard';
@@ -31,3 +31,5 @@ export class ExamsController {
     return this.examsService.delete(id);  // Eliminar un examen de una materia
   }
 }
+
+

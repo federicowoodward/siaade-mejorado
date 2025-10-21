@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogsController } from './catalogs.controller';
 import { CatalogsService } from './catalogs.service';
-import { AcademicPeriod } from '@/entities/academic_period.entity';
-import { Career } from '@/entities/careers.entity';
-import { Commission } from '@/entities/commission.entity';
-import { SubjectCommission } from '@/entities/subject_commissions.entity';
-import { FinalExamStatus } from '@/entities/final_exam_status.entity';
-import { SubjectStatusType } from '@/entities/subject_status_type.entity';
+import { AcademicPeriod } from '@/entities/catalogs/academic-period.entity';
+import { Career } from '@/entities/registration/career.entity';
+import { Commission } from '@/entities/catalogs/commission.entity';
+import { SubjectCommission } from '@/entities/subjects/subject-commission.entity';
+import { FinalExamStatus } from '@/entities/finals/final-exam-status.entity';
+import { SubjectStatusType } from '@/entities/catalogs/subject-status-type.entity';
 
 @Module({
   imports: [
@@ -24,3 +24,5 @@ import { SubjectStatusType } from '@/entities/subject_status_type.entity';
   providers: [CatalogsService],
 })
 export class CatalogsModule {}
+
+

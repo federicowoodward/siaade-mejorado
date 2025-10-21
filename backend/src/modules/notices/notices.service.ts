@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
-import { Notice } from '../../entities/notice.entity';
-import { Role } from '../../entities/roles.entity';
+import { Notice } from '@/entities/notices/notice.entity';
+import { Role } from '@/entities/roles/role.entity';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
 
@@ -13,16 +13,14 @@ export class NoticesService {
     private readonly repo: Repository<Notice>,
     @InjectRepository(Role)
     private readonly rolesRepo: Repository<Role>,
-  ) { }
+  ) {}
 
   async create(dto: CreateNoticeDto, createdByUserId?: string) {
     let visibleRoleId: number | null = null;
     if (dto.visibleFor === 'teacher') visibleRoleId = 2;
     else if (dto.visibleFor === 'student') visibleRoleId = 4;
-    else visibleRoleId = null;
 
     const notice = this.repo.create({
-      title: dto.title,
       content: dto.content,
       visibleRoleId,
       createdByUserId: createdByUserId ?? null,
@@ -30,10 +28,9 @@ export class NoticesService {
     const saved = await this.repo.save(notice);
     return {
       id: saved.id,
-      title: saved.title,
       content: saved.content,
       visibleFor: saved.visibleRoleId === 2 ? 'teacher' : saved.visibleRoleId === 4 ? 'student' : 'all',
-      createdBy: 'Secretaría',
+      createdBy: 'Secretaria',
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,
     } as any;
@@ -71,10 +68,9 @@ export class NoticesService {
     }
     const mapped = rows.map((r) => ({
       id: r.id,
-      title: r.title,
       content: r.content,
       visibleFor: r.visibleRoleId === 2 ? 'teacher' : r.visibleRoleId === 4 ? 'student' : 'all',
-      createdBy: 'Secretaría',
+      createdBy: 'Secretaria',
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));
@@ -96,3 +92,5 @@ export class NoticesService {
     return role.id;
   }
 }
+
+

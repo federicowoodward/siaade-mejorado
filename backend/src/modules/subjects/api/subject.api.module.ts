@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubjectApiService } from './subject.api.service';
 import { SubjectApiController } from './subject.api.controller';
-import { Subject } from '../../../entities/subjects.entity';
-import { SubjectAbsence } from '../../../entities/subject_absence.entity';
-import { SubjectStudent } from '../../../entities/subject_student.entity';
-import { Exam } from '../../../entities/exams.entity';
-import { ExamResult } from '../../../entities/exam_result.entity';
-import { Student } from '../../../entities/students.entity';
+import { Subject } from '@/entities/subjects/subject.entity';
+import { SubjectAbsence } from '@/entities/subjects/subject-absence.entity';
+import { SubjectStudent } from '@/entities/subjects/subject-student.entity';
+import { Exam } from '@/entities/subjects/exam.entity';
+import { ExamResult } from '@/entities/subjects/exam-result.entity';
+import { Student } from '@/entities/users/student.entity';
 
 @Module({
   imports: [
@@ -17,3 +17,5 @@ import { Student } from '../../../entities/students.entity';
   providers: [SubjectApiService],
 })
 export class SubjectApiModule {}
+
+

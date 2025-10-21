@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { FinalExamService } from "@/modules/final_exams/services/final-exam.service";
 import { CreateFinalExamDto } from "@/modules/final_exams/dto/final-exam.dto";
 import { ApproveFinalDto, RecordFinalDto } from "@/modules/final_exams/dto/final-exam-admin.dto";
@@ -17,12 +17,11 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 
-/** ---------- Swagger DTOs de respuesta ---------- */
 class FinalExamDto {
   id!: number;
-  finalExamTableId!: number; // = final_exam_table_id
-  subjectId!: number; // = subject_id
-  examDate!: string; // YYYY-MM-DD
+  exam_table_id!: number;
+  subject_id!: number;
+  exam_date!: string;
   aula?: string | null;
 }
 
@@ -30,14 +29,13 @@ class FinalExamListItemDto {
   id!: number;
   subject_id!: number;
   subject_name!: string;
-  exam_date!: string; // YYYY-MM-DD
+  exam_date!: string;
   aula?: string | null;
 }
 
 class DeletedResponseDto {
   deleted!: boolean;
 }
-/** ---------------------------------------------- */
 
 @ApiTags("Finals / Exam")
 @ApiBearerAuth()
@@ -45,17 +43,27 @@ class DeletedResponseDto {
 export class FinalExamController {
   constructor(private readonly svc: FinalExamService) {}
 
+  private mapExamEntity(entity: any): FinalExamDto {
+    return {
+      id: entity.id,
+      exam_table_id: entity.examTableId ?? entity.exam_table_id,
+      subject_id: entity.subjectId ?? entity.subject_id,
+      exam_date: (entity.examDate ?? entity.exam_date)?.toISOString?.().slice(0, 10) ?? entity.exam_date,
+      aula: entity.aula ?? null,
+    };
+  }
+
   @ApiOperation({ summary: "Crear examen final dentro de una mesa" })
   @ApiBody({ type: CreateFinalExamDto })
   @ApiCreatedResponse({ type: FinalExamDto })
   @ApiBadRequestResponse({ description: "Fecha fuera de rango" })
   @ApiNotFoundResponse({
-    description: "Final exam table not found / Subject not found",
+    description: "Exam table not found / Subject not found",
   })
   @Post("create")
-  create(@Body() dto: CreateFinalExamDto) {
-    console.log("FinalExamController.create(): dto:", dto);
-    return this.svc.create(dto);
+  async create(@Body() dto: CreateFinalExamDto) {
+    const saved = await this.svc.create(dto);
+    return this.mapExamEntity(saved);
   }
 
   @ApiOperation({ summary: "Eliminar examen final" })
@@ -67,10 +75,10 @@ export class FinalExamController {
     return this.svc.remove(+id);
   }
 
-  @ApiOperation({ summary: "Listar exámenes de una mesa (paginado por page/limit)" })
-  @ApiParam({ name: "final_exam_table_id", type: Number, required: true })
+  @ApiOperation({ summary: "Listar examenes de una mesa (paginado por page/limit)" })
+  @ApiParam({ name: "exam_table_id", type: Number, required: true })
   @ApiOkResponse({
-    description: 'Lista paginada de exámenes de una mesa',
+    description: 'Lista paginada de examenes de una mesa',
     schema: {
       type: 'object',
       properties: {
@@ -81,7 +89,7 @@ export class FinalExamController {
             properties: {
               id: { type: 'number', example: 10 },
               subject_id: { type: 'number', example: 3 },
-              subject_name: { type: 'string', example: 'Matemática I' },
+              subject_name: { type: 'string', example: 'Matematica I' },
               exam_date: { type: 'string', example: '2025-07-10' },
               aula: { type: 'string', nullable: true, example: 'Aula 3' },
             },
@@ -101,9 +109,9 @@ export class FinalExamController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @Get("list-all/:final_exam_table_id")
+  @Get("list-all/:exam_table_id")
   listAll(
-    @Param("final_exam_table_id") tableId: string,
+    @Param("exam_table_id") tableId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
@@ -127,10 +135,11 @@ export class FinalExamController {
     return this.svc.record(dto);
   }
 
-  @ApiOperation({ summary: "Aprobación administrativa del final (estado: aprobado_admin)" })
+  @ApiOperation({ summary: "Aprobacion administrativa del final (estado: aprobado_admin)" })
   @ApiBody({ type: ApproveFinalDto })
   @Post('approve')
   approve(@Body() dto: ApproveFinalDto) {
     return this.svc.approve(dto);
   }
 }
+

@@ -37,28 +37,31 @@ export class CreateUserInfoDto {
   emergencyPhone?: string;
 }
 
-// Student
 export class CreateStudentUserDto {
   userData: CreateUserBaseDto;
   userInfo?: CreateUserInfoDto | null;
   commonData?: CreateCommonDataDto | null;
+  studentData: {
+    legajo: string;
+    commissionId?: number | null;
+    canLogin?: boolean | null;
+    isActive?: boolean | null;
+    studentStartYear?: number | null;
+  };
 }
 
-// Teacher
 export class CreateTeacherUserDto {
   userData: CreateUserBaseDto;
   userInfo?: CreateUserInfoDto | null;
   commonData?: CreateCommonDataDto | null;
 }
 
-// Preceptor
 export class CreatePreceptorUserDto {
   userData: CreateUserBaseDto;
   userInfo?: CreateUserInfoDto | null;
   commonData?: CreateCommonDataDto | null;
 }
 
-// Secretary
 export class CreateSecretaryUserDto {
   userData: CreateUserBaseDto;
   isDirective?: boolean;
