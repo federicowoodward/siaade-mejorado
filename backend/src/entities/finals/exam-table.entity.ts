@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { FinalExam } from './final_exam.entity';
+import { FinalExam } from './final-exam.entity';
 
 @Entity('exam_table')
 export class ExamTable {
@@ -16,5 +16,5 @@ export class ExamTable {
   endDate: Date;
 
   @OneToMany(() => FinalExam, (fe) => fe.examTable)
-  finals: FinalExam[];
+  finalExams?: FinalExam[];
 }

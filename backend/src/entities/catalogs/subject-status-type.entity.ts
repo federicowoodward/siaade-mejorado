@@ -5,6 +5,6 @@ export class SubjectStatusType {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'status_name', unique: true })
+  @Column({ name: 'status_name', type: 'text', unique: true })
   statusName: string;
 }

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
-import { AcademicPeriod } from './academic_period.entity';
-import { Preceptor } from './preceptors.entity';
+import { AcademicPeriod } from '@/entities/catalogs/academic-period.entity';
+import { Preceptor } from '@/entities/users/preceptor.entity';
 
 @Entity('careers')
 export class Career {
@@ -26,6 +26,4 @@ export class Career {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
-
-  // Relaciones inversas se agregan en tablas hijas para evitar ciclos fuertes
 }

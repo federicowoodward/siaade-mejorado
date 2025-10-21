@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Exam } from './exams.entity';
-import { Student } from './students.entity';
+import { Exam } from './exam.entity';
+import { Student } from '@/entities/users/student.entity';
 
 @Entity('exam_results')
 export class ExamResult {

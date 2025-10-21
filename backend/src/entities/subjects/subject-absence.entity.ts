@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Subject } from './subjects.entity';
-import { Student } from './students.entity';
+import { Subject } from './subject.entity';
+import { Student } from '@/entities/users/student.entity';
 
 @Entity('subject_absences')
 export class SubjectAbsence {

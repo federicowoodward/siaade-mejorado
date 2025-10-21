@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { Career } from './careers.entity';
-import { Subject } from './subjects.entity';
+import { Career } from './career.entity';
+import { Subject } from '@/entities/subjects/subject.entity';
 
 @Entity('career_subjects')
 @Index(['careerId', 'subjectId'], { unique: true })

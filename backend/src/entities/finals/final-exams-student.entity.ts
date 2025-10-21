@@ -1,9 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { FinalExam } from './final_exam.entity';
-import { Student } from './students.entity';
-import { FinalExamStatus } from './final_exam_status.entity';
-import { Teacher } from './teachers.entity';
-import { Secretary } from './secretaries.entity';
+import { FinalExam } from './final-exam.entity';
+import { Student } from '@/entities/users/student.entity';
+import { FinalExamStatus } from './final-exam-status.entity';
+import { Teacher } from '@/entities/users/teacher.entity';
+import { Secretary } from '@/entities/users/secretary.entity';
 
 @Entity('final_exams_students')
 @Index(['finalExamId', 'studentId'], { unique: true })
@@ -11,7 +11,6 @@ export class FinalExamsStudent {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // FK nueva consolidada
   @Column({ name: 'final_exam_id', type: 'int' })
   finalExamId: number;
 
@@ -32,34 +31,31 @@ export class FinalExamsStudent {
   @Column({ type: 'decimal', precision: 4, scale: 2, nullable: true })
   score: string | null;
 
-  @Column({ nullable: true })
-  notes: string;
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
 
-  // Nuevos campos de estado/registro/validación
-  @Column({ name: 'status_id', type: 'int', nullable: true, select: false })
+  @Column({ name: 'status_id', type: 'int', nullable: true })
   statusId: number | null;
 
   @ManyToOne(() => FinalExamStatus, (s) => s.finals, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'status_id' })
   status?: FinalExamStatus | null;
 
-  @Column({ name: 'recorded_by', type: 'uuid', nullable: true, select: false })
+  @Column({ name: 'recorded_by', type: 'uuid', nullable: true })
   recordedById: string | null;
   @ManyToOne(() => Teacher, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'recorded_by', referencedColumnName: 'userId' })
   recordedBy?: Teacher | null;
 
-  @Column({ name: 'recorded_at', type: 'timestamptz', nullable: true, select: false })
+  @Column({ name: 'recorded_at', type: 'timestamptz', nullable: true })
   recordedAt: Date | null;
 
-  @Column({ name: 'approved_by', type: 'uuid', nullable: true, select: false })
+  @Column({ name: 'approved_by', type: 'uuid', nullable: true })
   approvedById: string | null;
   @ManyToOne(() => Secretary, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'approved_by', referencedColumnName: 'userId' })
   approvedBy?: Secretary | null;
 
-  @Column({ name: 'approved_at', type: 'timestamptz', nullable: true, select: false })
+  @Column({ name: 'approved_at', type: 'timestamptz', nullable: true })
   approvedAt: Date | null;
-
-  // (legacy retirado por migración)
 }

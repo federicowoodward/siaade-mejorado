@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { Subject } from './subjects.entity';
-import { Commission } from './commission.entity';
-import { Teacher } from './teachers.entity';
+import { Subject } from './subject.entity';
+import { Commission } from '@/entities/catalogs/commission.entity';
+import { Teacher } from '@/entities/users/teacher.entity';
 
 @Entity('subject_commissions')
 @Index(['subjectId', 'commissionId'], { unique: true })
@@ -14,7 +14,7 @@ export class SubjectCommission {
   @Column({ name: 'subject_id', type: 'int' })
   subjectId: number;
 
-  @ManyToOne(() => Subject, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Subject, (s) => s.commissions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
@@ -28,10 +28,10 @@ export class SubjectCommission {
   @Column({ name: 'teacher_id', type: 'uuid' })
   teacherId: string;
 
-  @ManyToOne(() => Teacher, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Teacher, (t) => t.subjectCommissions, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'teacher_id', referencedColumnName: 'userId' })
   teacher: Teacher;
 
-  @Column({ name: 'active', type: 'bool', default: true })
+  @Column({ name: 'active', type: 'boolean', default: true })
   active: boolean;
 }

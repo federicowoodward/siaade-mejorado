@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { Career } from './careers.entity';
-import { Secretary } from './secretaries.entity';
-import { SubjectCommission } from './subject_commissions.entity';
-import { Student } from './students.entity';
+import { Career } from './career.entity';
+import { Secretary } from '@/entities/users/secretary.entity';
+import { SubjectCommission } from '@/entities/subjects/subject-commission.entity';
+import { Student } from '@/entities/users/student.entity';
 
 @Entity('registration_stage_type')
 export class RegistrationStageType {

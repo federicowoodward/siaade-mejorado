@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { FinalExamsStudent } from './final_exams_student.entity';
+import { FinalExamsStudent } from './final-exams-student.entity';
 
 @Entity('final_exam_status')
 export class FinalExamStatus {
@@ -10,5 +10,5 @@ export class FinalExamStatus {
   name: string; // registrado | aprobado_admin | anulado
 
   @OneToMany(() => FinalExamsStudent, (fes) => fes.status)
-  finals: FinalExamsStudent[];
+  finals?: FinalExamsStudent[];
 }

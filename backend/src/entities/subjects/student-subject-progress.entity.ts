@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { SubjectCommission } from './subject_commissions.entity';
-import { Student } from './students.entity';
-import { SubjectStatusType } from './subject_status_type.entity';
+import { SubjectCommission } from './subject-commission.entity';
+import { Student } from '@/entities/users/student.entity';
+import { SubjectStatusType } from '@/entities/catalogs/subject-status-type.entity';
 
 @Entity('student_subject_progress')
 @Index(['subjectCommissionId', 'studentId'], { unique: true })

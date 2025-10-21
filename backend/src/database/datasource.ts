@@ -13,7 +13,7 @@ function buildDataSourceOptionsFromEnv(): DataSourceOptions {
   const isTs = __filename.endsWith('.ts');
 
   const entities = [
-    path.resolve(__dirname, isTs ? '../entities/*.entity.ts' : '../entities/*.entity.js'),
+    path.resolve(__dirname, isTs ? '../entities/**/*.entity.ts' : '../entities/**/*.entity.js'),
   ];
 
   const migrations = [
@@ -51,3 +51,4 @@ function buildDataSourceOptionsFromEnv(): DataSourceOptions {
 
 const AppDataSource = new DataSource(buildDataSourceOptionsFromEnv());
 export default AppDataSource;
+

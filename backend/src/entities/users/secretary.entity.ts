@@ -1,6 +1,5 @@
-import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn, OneToMany } from 'typeorm';
-import { User } from './users.entity';
-import { FinalExamTable } from './final_exam_table.entity';
+import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { User } from './user.entity';
 
 @Entity('secretaries')
 export class Secretary {
@@ -11,7 +10,6 @@ export class Secretary {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ name: 'is_directive', default: false })
+  @Column({ name: 'is_directive', type: 'boolean', default: false })
   isDirective: boolean;
-
 }

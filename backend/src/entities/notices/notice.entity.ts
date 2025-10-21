@@ -7,16 +7,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Role } from './roles.entity';
-import { User } from './users.entity';
+import { Role } from '@/entities/roles/role.entity';
+import { User } from '@/entities/users/user.entity';
 
 @Entity('notices')
 export class Notice {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column({ length: 200 })
-  title: string;
 
   @Column({ type: 'text' })
   content: string;
