@@ -177,8 +177,6 @@ export class UsersPatchService {
     const patch: Partial<UserInfo> = {};
 
     const map: Record<string, keyof UserInfo> = {
-      documentType: "documentType",
-      documentValue: "documentValue",
       phone: "phone",
       emergencyName: "emergencyName",
       emergencyPhone: "emergencyPhone",

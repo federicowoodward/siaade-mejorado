@@ -23,7 +23,7 @@ export class UserProfileReaderService {
     @InjectRepository(AddressData)
     private readonly addressRepo: Repository<AddressData>
   ) {}
-  
+
   // funcion que busca un perfil de usuario por id y devuelve todos sus datos relacionados.
   async findById(id: string): Promise<UserProfileResult> {
     const user = await this.usersRepo.findOne({
@@ -51,8 +51,6 @@ export class UserProfileReaderService {
     const ui = user.userInfo
       ? {
           id: user.userInfo.id,
-          documentType: user.userInfo.documentType ?? null,
-          documentValue: user.userInfo.documentValue ?? null,
           phone: user.userInfo.phone ?? null,
           emergencyName: user.userInfo.emergencyName ?? null,
           emergencyPhone: user.userInfo.emergencyPhone ?? null,
@@ -86,11 +84,9 @@ export class UserProfileReaderService {
     switch (roleName) {
       case "student":
       case "teacher":
-        result.userInfo = ui;
         result.commonData = cd;
         break;
       case "preceptor":
-        result.userInfo = ui;
         break;
       case "secretary":
       default:
@@ -100,6 +96,3 @@ export class UserProfileReaderService {
     return result;
   }
 }
-
-
-

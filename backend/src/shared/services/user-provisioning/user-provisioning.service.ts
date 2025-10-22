@@ -198,8 +198,6 @@ export class UserProvisioningService {
 
     const toCreate: DeepPartial<UserInfo> = {
       userId,
-      documentType: dto.documentType || 'DNI',
-      documentValue: dto.documentValue,
       phone: dto.phone,
       emergencyName: dto.emergencyName,
       emergencyPhone: dto.emergencyPhone,
