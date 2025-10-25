@@ -1,7 +1,7 @@
 export type PageParams = { page?: number; limit?: number };
 export type PageMeta = { page: number; limit: number; total: number; pages: number };
 
-export function normalizePagination(q: PageParams, defaults: PageParams = { page: 1, limit: 20 }): { page: number; limit: number; offset: number } {
+export function normalizePagination(q: PageParams, defaults: PageParams = { page: 1, limit: 50 }): { page: number; limit: number; offset: number } {
   const page = Math.max(1, Number(q.page ?? defaults.page ?? 1));
   const rawLimit = Number(q.limit ?? defaults.limit ?? 20);
   const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 20 : rawLimit));
