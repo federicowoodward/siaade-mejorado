@@ -4,13 +4,13 @@ import { ConfigModule } from "./config/config.module";
 import { AuthModule } from "./modules/users/auth/auth.module";
 import { UsersModule } from "./modules/users/manage/users.module";
 import { RolesModule } from "./modules/roles/roles.module";
-import { SubjectsManageModule } from "./modules/subjects/manage/subjects.module";
-import { SubjectsReadModule } from "./modules/subjects/read/subjects.module";
 import { FiltersModule } from "./shared/filters/filters.module";
 import { InterceptorsModule } from "./shared/interceptors/interceptors.module";
 import { LoggingInterceptor } from "./shared/interceptors/logging.interceptor";
 import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
-import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
+// import { SubjectsReadModule } from "./modules/subjects/read/subjects.module";
+// import { SubjectsManageModule } from "./modules/subjects/manage/subjects.module";
+// import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
 import { FinalExamsModule } from "./modules/final_exams/final_exams.module";
 import { NoticesModule } from "./modules/notices/notices.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
@@ -31,11 +31,11 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     AuthModule,
     UsersModule,
     RolesModule,
-    SubjectsManageModule,
-    SubjectsReadModule,
+    // SubjectsManageModule,
+    // SubjectsReadModule,
+    // SubjectApiModule,
     FiltersModule,
     InterceptorsModule,
-    SubjectApiModule,
     FinalExamsModule,
     NoticesModule,
     CatalogsModule,
