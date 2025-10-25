@@ -163,7 +163,7 @@ Table "students" {
   "commission" int4
   "can_login" bool [default: true]
   "is_active" bool [default: true]
-  "student_start_year" int2
+  "student_start_year" int2 [not null]
 }
 
 Table "preceptors" {
@@ -208,7 +208,6 @@ Table "careers" {
   "preceptor_id" uuid [not null]
   "created_at" timestamptz [not null, default: `now()`]
 }
-
 
 Table "career_subjects" {
   "id" int4 [pk, not null, increment]

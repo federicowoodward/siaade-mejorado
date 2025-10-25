@@ -130,8 +130,21 @@ export class UsersService {
       );
     }
 
-    if (dto.studentStartYear && (dto.studentStartYear < 1990 || dto.studentStartYear > 2100)) {
-      throw new BadRequestException("studentStartYear must be between 1990 and 2100");
+    const rawStartYear =
+      dto.studentStartYear !== undefined && dto.studentStartYear !== null
+        ? dto.studentStartYear
+        : new Date().getFullYear();
+
+    const startYear = Number(rawStartYear);
+
+    if (!Number.isInteger(startYear)) {
+      throw new BadRequestException("studentStartYear must be an integer year");
+    }
+
+    if (startYear < 1990 || startYear > 2100) {
+      throw new BadRequestException(
+        "studentStartYear must be between 1990 and 2100"
+      );
     }
 
     return this.provisioning.createStudent({
@@ -143,7 +156,7 @@ export class UsersService {
         commissionId: dto.commissionId ?? null,
         canLogin: dto.canLogin ?? true,
         isActive: dto.isActive ?? true,
-        studentStartYear: dto.studentStartYear ?? null,
+        studentStartYear: startYear,
       },
     });
   }

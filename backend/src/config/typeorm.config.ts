@@ -12,7 +12,9 @@ export function createTypeOrmConfig(
       type: "postgres", // 👈 literal correcto
       url: databaseUrl,
       ssl: false,
-      entities: [path.resolve(__dirname, "..", "entities", "*.{ts,js}")],
+      entities: [
+        path.join(__dirname, "..", "entities", "**", "*.entity{.ts,.js}"),
+      ],
       synchronize: false,
       logging: true,
     };
@@ -32,7 +34,9 @@ export function createTypeOrmConfig(
     password: config.get("DB_PASSWORD"),
     database: config.get("DB_DATABASE"),
     ssl: false,
-    entities: [path.resolve(__dirname, "..", "entities", "*.{ts,js}")],
+    entities: [
+      path.join(__dirname, "..", "entities", "**", "*.entity{.ts,.js}"),
+    ],
     synchronize: false,
     logging: true,
   };

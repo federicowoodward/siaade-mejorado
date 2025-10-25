@@ -43,8 +43,8 @@ export class Student {
   @Column({ name: 'is_active', type: 'bool', nullable: true })
   isActive: boolean | null;
 
-  @Column({ name: 'student_start_year', type: 'smallint', nullable: true })
-  studentStartYear: number | null; // CHECK enforced via migration
+  @Column({ name: 'student_start_year', type: 'smallint', nullable: false })
+  studentStartYear: number; // CHECK enforced via migration
 }
 
 // Este export es para que la entidad sea detectada en la build.

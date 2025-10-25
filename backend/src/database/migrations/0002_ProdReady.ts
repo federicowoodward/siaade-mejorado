@@ -128,8 +128,7 @@ const SUBJECTS: SubjectSeed[] = [
     periodOrder: 1,
     subjectOrder: 2,
   },
-
-  // SEGUNDO AÑO — Anuales (2027, anual)
+// SEGUNDO AÑO — Anuales (2027, anual)
   {
     name: "Arquitectura de las computadoras",
     field: "FF",
@@ -417,12 +416,10 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       .createQueryBuilder()
       .insert()
       .values(
-        Object.entries(DEFAULT_SUBJECT_STATUS_TYPE).map(
-          ([id, statusName]) => ({
-            id: Number(id),
-            statusName,
-          })
-        )
+        Object.entries(DEFAULT_SUBJECT_STATUS_TYPE).map(([id, statusName]) => ({
+          id: Number(id),
+          statusName,
+        }))
       )
       .orIgnore()
       .execute();
@@ -436,9 +433,7 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       DEFAULT_SUBJECT_STATUS_TYPE
     ).filter(
       (status) =>
-        !subjectStatusTypes.some(
-          (persisted) => persisted.statusName === status
-        )
+        !subjectStatusTypes.some((persisted) => persisted.statusName === status)
     );
     if (missingSubjectStatusTypes.length > 0) {
       throw new Error(

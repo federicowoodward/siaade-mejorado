@@ -14,6 +14,7 @@ import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
 import { FinalExamsModule } from "./modules/final_exams/final_exams.module";
 import { NoticesModule } from "./modules/notices/notices.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
+import { SubjectsModule } from "./subjects/subjects.module";
 
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
@@ -39,6 +40,7 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     FinalExamsModule,
     NoticesModule,
     CatalogsModule,
+    SubjectsModule,
   ],
   providers: [
     {

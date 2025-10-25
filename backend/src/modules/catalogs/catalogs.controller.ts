@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Param, ParseIntPipe } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Query,
+  Param,
+  ParseIntPipe,
+  BadRequestException,
+} from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -15,32 +22,6 @@ import { CatalogsService } from "./catalogs.service";
 @Controller("catalogs")
 export class CatalogsController {
   constructor(private readonly service: CatalogsService) {}
-
-  @Get("academic-periods")
-  @ApiOperation({ summary: "Listar períodos académicos" })
-  @ApiQuery({ name: "page", required: false, type: Number })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiOkResponse({
-    description: "Lista paginada de períodos académicos",
-    schema: {
-      type: "object",
-      properties: {
-        data: { type: "array", items: { type: "object" } },
-        meta: { type: "object" },
-      },
-    },
-  })
-  async findAcademicPeriods(
-    @Query("page") page?: number,
-    @Query("limit") limit?: number
-  ) {
-    const { page: p, limit: l, offset } = normalizePagination({ page, limit });
-    const [rows, total] = await this.service.findAcademicPeriods({
-      skip: offset,
-      take: l,
-    });
-    return { data: rows, meta: buildPageMeta(total, p, l) };
-  }
 
   @Get("careers")
   @ApiOperation({ summary: "Listar carreras" })
@@ -62,6 +43,88 @@ export class CatalogsController {
   ) {
     const { page: p, limit: l, offset } = normalizePagination({ page, limit });
     const [rows, total] = await this.service.findCareers({
+      skip: offset,
+      take: l,
+    });
+    return { data: rows, meta: buildPageMeta(total, p, l) };
+  }
+
+  @Get("career-full-data/:careerId")
+  @ApiOperation({ summary: "Obtener datos completos de una carrera" })
+  @ApiParam({ name: "careerId", type: Number, required: true })
+  @ApiOkResponse({
+    description: "Datos completos de la carrera",
+    schema: {
+      type: "object",
+      properties: {
+        career: { type: "object" },
+        preceptor: { type: "object" },
+        academicPeriods: { type: "array", items: { type: "object" } },
+      },
+    },
+  })
+  async findCareerFullData(@Param("careerId", ParseIntPipe) careerId: number) {
+    return this.service.findCareerFullData(careerId);
+  }
+
+  @Get("career-students-by-commission/:careerId")
+  @ApiOperation({
+    summary: "Listar alumnos de una carrera agrupados por comisión",
+  })
+  @ApiParam({ name: "careerId", type: Number, required: true })
+  @ApiQuery({ name: "studentStartYear", required: false, type: Number })
+  @ApiOkResponse({
+    description: "Detalle de alumnos agrupados por comisión",
+    schema: {
+      type: "object",
+      properties: {
+        career: { type: "object" },
+        filters: { type: "object" },
+        commissions: { type: "array", items: { type: "object" } },
+      },
+    },
+  })
+  async findCareerStudentsByCommission(
+    @Param("careerId", ParseIntPipe) careerId: number,
+    @Query("studentStartYear") studentStartYear?: number
+  ) {
+    const parsedStartYear =
+      studentStartYear !== undefined && studentStartYear !== null
+        ? Number(studentStartYear)
+        : undefined;
+
+    if (
+      parsedStartYear !== undefined &&
+      (Number.isNaN(parsedStartYear) || !Number.isInteger(parsedStartYear))
+    ) {
+      throw new BadRequestException("studentStartYear must be an integer year");
+    }
+
+    return this.service.findCareerStudentsByCommission(careerId, {
+      studentStartYear: parsedStartYear,
+    });
+  }
+
+  @Get("academic-periods")
+  @ApiOperation({ summary: "Listar períodos académicos" })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
+  @ApiOkResponse({
+    description: "Lista paginada de períodos académicos",
+    schema: {
+      type: "object",
+      properties: {
+        data: { type: "array", items: { type: "object" } },
+        meta: { type: "object" },
+      },
+    },
+  })
+  async findAcademicPeriods(
+    @Query("page") page?: number,
+    @Query("limit") limit?: number
+  ) {
+    const { page: p, limit: l, offset } = normalizePagination({ page, limit });
+    const [rows, total] = await this.service.findAcademicPeriods({
       skip: offset,
       take: l,
     });

@@ -43,8 +43,8 @@ export class AuthController {
       default: {
         summary: "Preceptor example",
         value: {
-          email: "p.preceptor@example.com",
-          password: "pass",
+          email: "secretario_directivo@test.com",
+          password: "changeme",
         },
       },
     },

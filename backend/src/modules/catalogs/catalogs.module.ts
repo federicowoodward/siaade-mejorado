@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CatalogsController } from './catalogs.controller';
-import { CatalogsService } from './catalogs.service';
-import { AcademicPeriod } from '@/entities/catalogs/academic-period.entity';
-import { Career } from '@/entities/registration/career.entity';
-import { Commission } from '@/entities/catalogs/commission.entity';
-import { SubjectCommission } from '@/entities/subjects/subject-commission.entity';
-import { FinalExamStatus } from '@/entities/finals/final-exam-status.entity';
-import { SubjectStatusType } from '@/entities/catalogs/subject-status-type.entity';
+import { CatalogsController } from "./catalogs.controller";
+import { CatalogsService } from "./catalogs.service";
+import { AcademicPeriod } from "@/entities/catalogs/academic-period.entity";
+import { Career } from "@/entities/registration/career.entity";
+import { Commission } from "@/entities/catalogs/commission.entity";
+import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
+import { CareerSubject } from "@/entities/registration/career-subject.entity";
+import { CareerStudent } from "@/entities/registration/career-student.entity";
+import { Student } from "@/entities/users/student.entity";
+import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
+import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { SubjectStatusType } from '@/entities/catalogs/subject-status-type.entit
       Career,
       Commission,
       SubjectCommission,
+      CareerSubject,
+      CareerStudent,
+      Student,
       FinalExamStatus,
       SubjectStatusType,
     ]),

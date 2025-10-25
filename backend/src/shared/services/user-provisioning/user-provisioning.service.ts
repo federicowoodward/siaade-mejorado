@@ -58,6 +58,21 @@ export class UserProvisioningService {
         throw new BadRequestException("studentData.legajo is required");
       }
 
+      const rawStartYear =
+        dto.studentData.studentStartYear ?? new Date().getFullYear();
+
+      const startYear = Number(rawStartYear);
+
+      if (!Number.isInteger(startYear)) {
+        throw new BadRequestException("studentStartYear must be an integer year");
+      }
+
+      if (startYear < 1990 || startYear > 2100) {
+        throw new BadRequestException(
+          "studentStartYear must be between 1990 and 2100"
+        );
+      }
+
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
       await this.maybeCreateCommonData(qr, user.id, dto.commonData);
 
@@ -67,7 +82,7 @@ export class UserProvisioningService {
         commissionId: dto.studentData.commissionId ?? null,
         canLogin: dto.studentData.canLogin ?? true,
         isActive: dto.studentData.isActive ?? true,
-        studentStartYear: dto.studentData.studentStartYear ?? null,
+        studentStartYear: startYear,
       } as DeepPartial<Student>);
       const savedStudent = await qr.manager.save(Student, student);
 
