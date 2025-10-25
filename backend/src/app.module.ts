@@ -13,7 +13,6 @@ import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
 import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
 import { FinalExamsModule } from "./modules/final_exams/final_exams.module";
 import { NoticesModule } from "./modules/notices/notices.module";
-import { RegistrationModule } from "./modules/registration/registration.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
 
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -39,7 +38,6 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     SubjectApiModule,
     FinalExamsModule,
     NoticesModule,
-    RegistrationModule,
     CatalogsModule,
   ],
   providers: [
