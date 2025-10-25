@@ -25,7 +25,7 @@ type StudentSeed = UserSeed & {
 };
 
 const CAREER_NAME = "Tecnicatura de desarrollo en software";
-const SUBJECT_NAME = "Programacion I";
+const SUBJECT_NAME = "Programación I";
 const COMMISSIONS = ["A", "B"] as const;
 
 const createCuilGenerator = () => {
@@ -77,9 +77,9 @@ const STUDENTS: StudentSeed[] = Array.from({ length: 10 }, (_, index) => ({
     email: `alumno${index + 1}@test.com`,
     role: "alumno",
     cuil: nextCuil(),
-    legajo: `LEG-2025-${(index + 1).toString().padStart(3, "0")}`,
+    legajo: `LEG-2026-${(index + 1).toString().padStart(3, "0")}`,
     commission: index < 5 ? "A" : "B",
-    startYear: 2025,
+    startYear: 2026,
 }));
 
 const SUBJECT_COMMISSION_ASSIGNMENTS = [
@@ -95,7 +95,9 @@ const ROLES_REQUIRED: RoleName[] = [
     "alumno",
 ];
 
-export class Initial0002DummyTest implements MigrationInterface {
+export class Initial0002DummyTest1761015167693 implements MigrationInterface {
+    public readonly name = "Initial0002DummyTest1761015167693";
+
     public async up(queryRunner: QueryRunner): Promise<void> {
         const roleRows: Array<{ id: number; name: RoleName }> = await queryRunner.query(
             `SELECT id, name FROM roles WHERE name = ANY($1::text[])`,
@@ -113,7 +115,9 @@ export class Initial0002DummyTest implements MigrationInterface {
             [CAREER_NAME],
         );
         if (careerRows.length === 0) {
-            throw new Error(`Career '${CAREER_NAME}' not found.`);
+            throw new Error(
+                `Career '${CAREER_NAME}' not found. Run Initial0001ProdReady first.`,
+            );
         }
         const careerId: number = careerRows[0].id;
 
@@ -322,4 +326,3 @@ export class Initial0002DummyTest implements MigrationInterface {
         );
     }
 }
-
