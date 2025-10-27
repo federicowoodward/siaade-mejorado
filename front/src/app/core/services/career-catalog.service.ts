@@ -18,6 +18,7 @@ type ApiResponse = {
         teacherFormation: string;
         annualWorkload: string;
         weeklyWorkload: string;
+        teacherId: string | null;
       };
     }>;
   }>;
@@ -29,7 +30,9 @@ export class CareerCatalogService {
 
   private _careerId = signal<number | null>(null);
   private _raw = signal<ApiResponse | null>(null);
-  private _basicSubjects = signal<{ id: number; name: string }[]>([]);
+  private _basicSubjects = signal<
+    { id: number; name: string; teacherId: string | null }[]
+  >([]);
 
   career = () => this._raw()?.career ?? null;
   preceptor = () => this._raw()?.preceptor ?? null;
@@ -37,9 +40,7 @@ export class CareerCatalogService {
   basicSubjects = () => this._basicSubjects();
 
   loadCareer(careerId: number): Observable<void> {
-    if (this._raw() && this._careerId() === careerId) {
-      return of(void 0);
-    }
+    if (this._raw() && this._careerId() === careerId) return of(void 0);
 
     return this.api
       .request<ApiResponse>('GET', `catalogs/career-full-data/${careerId}`)
@@ -48,22 +49,42 @@ export class CareerCatalogService {
           this._careerId.set(careerId);
           this._raw.set(res);
 
-          const subjectsMap = new Map<number, string>();
+          // ✅ Guardamos también el teacherId
+          const subjectsMap = new Map<
+            number,
+            { name: string; teacherId: string | null }
+          >();
+
           for (const period of res.academicPeriods) {
             for (const subject of period.subjects) {
-              subjectsMap.set(subject.id, subject.subjectName);
+              subjectsMap.set(subject.id, {
+                name: subject.subjectName,
+                teacherId: subject.metadata.teacherId ?? null,
+              });
             }
           }
-          const subjects: { id: number; name: string }[] = Array.from(
-            subjectsMap.entries()
-          ).map(([id, name]) => ({ id, name }));
+
+          const subjects = Array.from(subjectsMap.entries()).map(([id, s]) => ({
+            id,
+            name: s.name,
+            teacherId: s.teacherId,
+          }));
+
           this._basicSubjects.set(subjects);
         }),
         map(() => void 0)
       );
   }
 
+  // Devuelve teacherId de una materia específica
+  getTeacherId(subjectId: number): string | null {
+    const subj = this._basicSubjects().find((s) => s.id === subjectId);
+    return subj?.teacherId ?? null;
+  }
+
   getTeacherName(subjectId: number): string {
-    return 'Sin asignar';
+    // Si más adelante tenés un endpoint o lista de docentes, podés reemplazar esto
+    const teacherId = this.getTeacherId(subjectId);
+    return teacherId ? `Profesor ID: ${teacherId}` : 'Sin asignar';
   }
 }

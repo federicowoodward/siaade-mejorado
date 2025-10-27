@@ -1,8 +1,10 @@
+// src/app/shared/components/subjects-table/subject-table.component.ts
 import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { CareerCatalogService } from '../../../core/services/career-catalog.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-subjects-table',
@@ -13,9 +15,12 @@ import { CareerCatalogService } from '../../../core/services/career-catalog.serv
 })
 export class SubjectTableComponent implements OnInit {
   private catalog = inject(CareerCatalogService);
+  private router = inject(Router);
   loading = signal(true);
 
-  basicSubjects = signal<{ id: number; name: string }[]>([]);
+  basicSubjects = signal<
+    { id: number; name: string; teacherId: string | null }[]
+  >([]);
   private syncSubjects = effect(() => {
     this.basicSubjects.set(this.catalog.basicSubjects());
   });
@@ -23,9 +28,7 @@ export class SubjectTableComponent implements OnInit {
   ngOnInit(): void {
     const careerId = 1;
     this.catalog.loadCareer(careerId).subscribe({
-      next: () => {
-        this.loading.set(false);
-      },
+      next: () => this.loading.set(false),
       error: (err) => {
         this.loading.set(false);
         console.error(err);
@@ -34,13 +37,15 @@ export class SubjectTableComponent implements OnInit {
   }
 
   viewTeacher(id: number): void {
-    const subject = this.basicSubjects().find((s) => s.id === id);
-    const name = subject?.name ?? 'Materia';
-    const teacher = this.catalog.getTeacherName(id);
-    alert(`Profesor de "${name}": ${teacher} (id: ${id})`);
+    const teacherId = this.catalog.getTeacherId(id);
+    if (!teacherId) {
+      alert('Sin docente asignado para esta materia.');
+      return;
+    }
+    this.router.navigate(['/users', 'user_detail', teacherId]);
   }
 
   viewStatus(id: number): void {
-    alert(`Situacion de la materia (id: ${id})`);
+    alert(`Situación de la materia (id: ${id})`);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { AcademicPeriod } from "@/entities/catalogs/academic-period.entity";
 import { Career } from "@/entities/registration/career.entity";
 import { Commission } from "@/entities/catalogs/commission.entity";
@@ -80,6 +80,33 @@ export class CatalogsService {
       .addOrderBy("cs.orderNo", "ASC")
       .getMany();
 
+    const subjectIds = new Set<number>();
+    for (const cs of careerSubjects) {
+      if (cs.subject) {
+        subjectIds.add(cs.subject.id);
+      }
+    }
+
+    const subjectTeacherMap = new Map<number, string>();
+    if (subjectIds.size > 0) {
+      const commissions = await this.subjectCommissionRepo.find({
+        where: {
+          subjectId: In(Array.from(subjectIds)),
+          active: true,
+        },
+        order: { subjectId: "ASC", id: "ASC" },
+        select: ["id", "subjectId", "teacherId"],
+      });
+      for (const commission of commissions) {
+        if (
+          commission.teacherId &&
+          !subjectTeacherMap.has(commission.subjectId)
+        ) {
+          subjectTeacherMap.set(commission.subjectId, commission.teacherId);
+        }
+      }
+    }
+
     type PeriodKey = number | "no_period";
     const periods = new Map<
       PeriodKey,
@@ -101,6 +128,7 @@ export class CatalogsService {
             teacherFormation: string | null;
             annualWorkload: string | null;
             weeklyWorkload: string | null;
+            teacherId: string | null;
           };
         }>;
       }
@@ -134,6 +162,7 @@ export class CatalogsService {
           teacherFormation: cs.subject.teacherFormation ?? null,
           annualWorkload: cs.subject.annualWorkload ?? null,
           weeklyWorkload: cs.subject.weeklyWorkload ?? null,
+          teacherId: subjectTeacherMap.get(cs.subject.id) ?? null,
         },
       });
     }

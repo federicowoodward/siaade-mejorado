@@ -36,7 +36,6 @@ import { FormsModule } from '@angular/forms';
 })
 export class PersonalDataComponent implements OnInit {
   private api = inject(ApiService);
-  private auth = inject(AuthService);
 
   /** Si no viene, usa el usuario logueado */
   @Input() userId!: string;
@@ -73,27 +72,7 @@ export class PersonalDataComponent implements OnInit {
     // 1) Determinar el ID a usar
     let id = this.userId;
     if (!id) {
-      // intentar obtener del mock_user
-      const raw = localStorage.getItem('mock_user');
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          id = parsed?.id;
-        } catch {
-          // ignore
-        }
-      }
-    }
-    if (!id) {
       console.warn('[PersonalData] No hay userId ni usuario logueado.');
-      return;
-    }
-
-    // 2) Intentar usar un perfil local si existe (opcional)
-    const cachedProfile = this.getCachedProfile();
-    if (cachedProfile && cachedProfile.id === id) {
-      this.applyProfileToSignals(cachedProfile);
-      this.snapshotOriginal();
       return;
     }
 
@@ -104,22 +83,8 @@ export class PersonalDataComponent implements OnInit {
 
   // ---- Helpers de carga -----------------------------------------------------
 
-  private getCachedProfile(): any | null {
-    // Intentamos leer 'user_profile' si lo estás guardando (quedó opcional)
-    const raw = localStorage.getItem('user_profile');
-    if (!raw) return null;
-    try {
-      const prof = JSON.parse(raw);
-      // Normalizamos por si viene con doble data
-      return this.unwrapData(prof);
-    } catch {
-      return null;
-    }
-  }
-
   private async loadProfileFromApi(id: string): Promise<void> {
     try {
-      // GET /api/users/:id (tu ApiService ya suele componer la URL)
       const resp = await firstValueFrom(
         this.api.request<any>('GET', `users/${id}`)
       );
