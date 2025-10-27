@@ -1,0 +1,55 @@
+:host {
+  display: block;
+  padding: 1rem 2rem;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  height: 220px;
+}
+
+.career-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.year-block {
+  margin-bottom: 2rem;
+}
+
+.year-title {
+  margin: 1rem 0 0.5rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.section-title {
+  margin: 0.75rem 0;
+  font-weight: 600;
+}
+
+.cuatri-block {
+  margin-top: 0.5rem;
+}
+
+.cuatri-title {
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.muted {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  text-align: center;
+  background: #f5f5f5;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: center;
+}

@@ -1,12 +1,17 @@
 <div class="m-w-custom">
   <h2 class="mb-4">Gestión de Materias</h2>
-  <div class="flex justify-content-end mb-3">
+  <div class="flex justify-content-end mb-3 gap-3">
     <p-button
-        (onClick)="goToNewSubject()"
+      (onClick)="goToCareerInfo()"
+      icon="pi pi-info-circle"
+      label="Informacion de la carrera"
+    ></p-button>
+    <!-- <p-button
+      (onClick)="goToNewSubject()"
       icon="pi pi-plus"
       label="Nueva materia"
       variant="outlined"
-    ></p-button>
+    ></p-button> -->
   </div>
   <app-subjects-table></app-subjects-table>
 </div>

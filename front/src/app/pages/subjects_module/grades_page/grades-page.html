@@ -3,11 +3,20 @@
   <div class="flex justify-content-between align-items-center mb-3">
     <h2 class="m-0">Notas • {{ subjectName() }}</h2>
     <div class="flex gap-2">
-      <p-button label="Agregar examen" icon="pi pi-plus" (onClick)="openAddExam()" />
+      <p-button
+        label="Agregar examen"
+        icon="pi pi-plus"
+        (onClick)="openAddExam()"
+      />
     </div>
   </div>
 
-  <p-table [value]="studentsInSubject()" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+  <p-table
+    [value]="studentsInSubject()"
+    [paginator]="true"
+    [rows]="10"
+    responsiveLayout="scroll"
+  >
     <!-- Encabezado -->
     <ng-template pTemplate="header">
       <tr>
@@ -38,22 +47,34 @@
         </td>
 
         <ng-container *ngFor="let ex of exams()">
-          <ng-container *ngFor="let i of [].constructor(ex.gradesCount); let index = index">
+          <ng-container
+            *ngFor="let i of [].constructor(ex.gradesCount); let index = index"
+          >
             <td class="nota">
-              <p-inputNumber [min]="0" [max]="10" [useGrouping]="false" mode="decimal"
+              <p-inputNumber
+                [min]="0"
+                [max]="10"
+                [useGrouping]="false"
+                mode="decimal"
                 [ngModel]="getScore(ex.id, row.userId, index)"
-                (ngModelChange)="setScore(ex.id, row.userId, index, $event)" inputStyleClass="nota-input"
-                [showButtons]="false"></p-inputNumber>
+                (ngModelChange)="setScore(ex.id, row.userId, index, $event)"
+                inputStyleClass="nota-input"
+                [showButtons]="false"
+              ></p-inputNumber>
             </td>
           </ng-container>
         </ng-container>
 
         <!-- Promedio final -->
-        <td class="col-final" [ngClass]="{
+        <td
+          class="col-final"
+          [ngClass]="{
           'nota-aprobada': isGradeApproved(getFinalAverage(row.userId)),
           'nota-desaprobada': isGradeDisapproved(getFinalAverage(row.userId)),
           'nota-promocionada': isGradePromoted(getFinalAverage(row.userId))
-        }" [pTooltip]="getAverageTooltipText(getFinalAverage(row.userId))">
+        }"
+          [pTooltip]="getAverageTooltipText(getFinalAverage(row.userId))"
+        >
           {{ getFinalAverage(row.userId) ?? '-' }}
         </td>
       </tr>
@@ -61,8 +82,12 @@
   </p-table>
 
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" (onClick)="showAddExam.set(false)" />
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      (onClick)="showAddExam.set(false)"
+    />
     <!--ya no se van a agregar exaemnes, solo se actualiza la tabla o se cancelan los cambios. -->
     <p-button label="Agregar" icon="pi pi-check" (onClick)="addExamConfirm()" />
   </ng-template>
-  </p-dialog>
+</div>
