@@ -11,7 +11,7 @@
     "db:migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/datasource.ts",
     "db:migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/datasource.ts",
     "db:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:log -d src/database/datasource.ts",
-    "db:dbml": "db2dbml postgres 'postgresql://postgres:Joeldatabase*@localhost:5432/dbsiaade2?schemas=public' -o database.dbml",
+    "dbml": "db2dbml postgres \"postgresql://postgres:Joeldatabase%2A@localhost:5432/dbsiaade2?schemas=public\" -o database.dbml",
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
     "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "reseed:prod": "npm run revert:prod && npm run migrate:prod",
