@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-  "build": "tsc --build tsconfig.build.json --force && tsc-alias -p tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json --force && tsc-alias -p tsconfig.build.json",
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:watch": "nodemon --watch src --ext ts,js --exec ts-node -r tsconfig-paths/register src/main.ts",
     "db:migration:generate": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations/AutoMigration -d src/database/datasource.ts",
@@ -11,13 +11,19 @@
     "db:migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/datasource.ts",
     "db:migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/datasource.ts",
     "db:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:log -d src/database/datasource.ts",
+    "db:dbml": "db2dbml postgres 'postgresql://postgres:Joeldatabase*@localhost:5432/dbsiaade2?schemas=public' -o database.dbml",
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
     "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "reseed:prod": "npm run revert:prod && npm run migrate:prod",
     "start:prod": "npm run migrate:prod && node dist/main.js",
     "smoke:siad": "ts-node -r tsconfig-paths/register src/scripts/smoke-siad.ts",
-    "smoke:endpoints": "ts-node -r tsconfig-paths/register src/scripts/smoke-endpoints.ts"
-    ,"test:finals-admin": "ts-node -r tsconfig-paths/register src/scripts/test-finals-admin.ts"
+    "smoke:endpoints": "ts-node -r tsconfig-paths/register src/scripts/smoke-endpoints.ts",
+    "test:finals-admin": "ts-node -r tsconfig-paths/register src/scripts/test-finals-admin.ts",
+    "migration:run": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
+    "migration:revert": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
+    "seed:prod": "npm run migration:run",
+    "seed:dummy": "npm run migration:run",
+    "unseed:dummy": "npm run migration:revert"
   },
   "keywords": [],
   "author": "",

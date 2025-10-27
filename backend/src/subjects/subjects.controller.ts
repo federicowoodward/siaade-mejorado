@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Get,
@@ -6,27 +6,29 @@ import {
   ParseIntPipe,
   Patch,
   Put,
-  Query,
   Req,
   UseGuards,
   BadRequestException,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
-  ApiBody,
 } from "@nestjs/swagger";
 import { Request } from "express";
+
 import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
 import { RolesGuard } from "@/guards/roles.guard";
+import { Roles } from "@/modules/users/auth/roles.decorator";
+import { ROLE_NAMES } from "@/shared/constants/roles";
+
 import { SubjectsService } from "./subjects.service";
 import { GradeRowDto } from "./dto/grade-row.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
-import { Roles } from "@/modules/users/auth/roles.decorator";
 import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
 
 type AuthenticatedUser = {
@@ -38,32 +40,33 @@ type AuthenticatedUser = {
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("SECRETARIO_DIRECTIVO", "SECRETARIO", "PRECEPTOR", "DOCENTE", "ALUMNO")
+@Roles(
+  ROLE_NAMES.SECRETARIO_DIRECTIVO,
+  ROLE_NAMES.SECRETARIO,
+  ROLE_NAMES.PRECEPTOR,
+  ROLE_NAMES.PROFESOR
+)
 @Controller("subject-commissions")
 export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Get(":subjectCommissionId/grades")
-  @ApiOperation({
-    summary: "Listar notas y asistencia de una comisión",
-  })
-  @ApiParam({
-    name: "subjectCommissionId",
-    type: Number,
-  })
+  @ApiOperation({ summary: "Listar notas y asistencia de una comisión" })
+  @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiOkResponse({ type: GradeRowDto, isArray: true })
   async getGrades(
-    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
-    @Req() req: Request
+    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number
   ): Promise<GradeRowDto[]> {
-    return this.subjectsService.getGrades(
-      subjectCommissionId,
-      req.user as AuthenticatedUser
-    );
+    return this.subjectsService.getGrades(subjectCommissionId);
   }
 
   @Patch(":subjectCommissionId/grades/:studentId")
-  @Roles("SECRETARIO_DIRECTIVO", "SECRETARIO", "PRECEPTOR", "DOCENTE")
+  @Roles(
+    ROLE_NAMES.SECRETARIO_DIRECTIVO,
+    ROLE_NAMES.SECRETARIO,
+    ROLE_NAMES.PRECEPTOR,
+    ROLE_NAMES.PROFESOR
+  )
   @ApiOperation({
     summary: "Actualizar una celda de notas/asistencia para un alumno",
   })
@@ -86,10 +89,13 @@ export class SubjectsController {
   }
 
   @Put(":subjectCommissionId/grades")
-  @Roles("SECRETARIO_DIRECTIVO", "SECRETARIO", "PRECEPTOR", "DOCENTE")
-  @ApiOperation({
-    summary: "Actualizar notas/asistencia de múltiples alumnos",
-  })
+  @Roles(
+    ROLE_NAMES.SECRETARIO_DIRECTIVO,
+    ROLE_NAMES.SECRETARIO,
+    ROLE_NAMES.PRECEPTOR,
+    ROLE_NAMES.PROFESOR
+  )
+  @ApiOperation({ summary: "Actualizar notas/asistencia de múltiples alumnos" })
   @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiBody({ type: UpsertGradeDto })
   async upsertGrades(
@@ -100,6 +106,7 @@ export class SubjectsController {
     if (!dto?.rows?.length) {
       throw new BadRequestException("rows payload is required");
     }
+
     return this.subjectsService.upsertGrades(
       subjectCommissionId,
       dto,
@@ -111,7 +118,85 @@ export class SubjectsController {
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("SECRETARIO_DIRECTIVO", "SECRETARIO", "PRECEPTOR", "DOCENTE", "ALUMNO")
+@Roles(
+  ROLE_NAMES.SECRETARIO_DIRECTIVO,
+  ROLE_NAMES.SECRETARIO,
+  ROLE_NAMES.PRECEPTOR,
+  ROLE_NAMES.PROFESOR
+)
+@Controller("subjects")
+export class SubjectGradesController {
+  constructor(private readonly subjectsService: SubjectsService) {}
+
+  @Get(":subjectId/grades")
+  @ApiOperation({
+    summary:
+      "Listar notas y asistencia agrupadas por comisión para una materia",
+  })
+  @ApiParam({ name: "subjectId", type: Number })
+  @ApiOkResponse({
+    schema: {
+      type: "object",
+      properties: {
+        subject: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            name: { type: "string" },
+          },
+        },
+        commissions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              commission: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  letter: { type: "string", nullable: true },
+                },
+              },
+              rows: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    studentId: { type: "string" },
+                    fullName: { type: "string" },
+                    legajo: { type: "string" },
+                    note1: { type: "number", nullable: true },
+                    note2: { type: "number", nullable: true },
+                    note3: { type: "number", nullable: true },
+                    note4: { type: "number", nullable: true },
+                    attendancePercentage: { type: "number" },
+                    condition: { type: "string", nullable: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getSubjectGrades(
+    @Param("subjectId", ParseIntPipe) subjectId: number
+  ): ReturnType<SubjectsService["getSubjectGradesBySubject"]> {
+    return this.subjectsService.getSubjectGradesBySubject(subjectId);
+  }
+}
+
+@ApiTags("subjects")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  ROLE_NAMES.SECRETARIO_DIRECTIVO,
+  ROLE_NAMES.SECRETARIO,
+  ROLE_NAMES.PRECEPTOR,
+  ROLE_NAMES.PROFESOR,
+  ROLE_NAMES.ALUMNO
+)
 @Controller("subject-status")
 export class SubjectStatusController {
   constructor(private readonly subjectsService: SubjectsService) {}
@@ -134,4 +219,3 @@ export class SubjectStatusController {
     return this.subjectsService.getSubjectStatuses();
   }
 }
-

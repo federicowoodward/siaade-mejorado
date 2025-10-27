@@ -2,11 +2,10 @@ export class GradeRowDto {
   studentId: string;
   fullName: string;
   legajo: string;
-  partial1: number | null;
-  partial2: number | null;
-  final: number | null;
-  attendance: number;
+  note1: number | null;
+  note2: number | null;
+  note3: number | null;
+  note4: number | null;
+  attendancePercentage: number;
   condition: string | null;
-  absencesCount?: number;
 }
-

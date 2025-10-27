@@ -48,13 +48,6 @@ Table "exams" {
   "is_valid" bool [not null, default: true]
 }
 
-Table "subject_absences" {
-  "id" int4 [pk, not null, increment]
-  "subject_id" int4 [not null]
-  "student_id" uuid [not null]
-  "dates" "date[]" [not null]
-}
-
 Table "academic_period" {
   "academic_period_id" int4 [pk, not null, increment]
   "period_name" text [not null]
@@ -163,7 +156,7 @@ Table "students" {
   "commission" int4
   "can_login" bool [default: true]
   "is_active" bool [default: true]
-  "student_start_year" int2 [not null]
+  "student_start_year" int2 [not null, default: `(EXTRACT(year FROM CURRENT_DATE))::smallint`]
 }
 
 Table "preceptors" {
@@ -306,10 +299,6 @@ Ref "FK_f991f9825a87d94bd3a21bd74d8":"subject_commissions"."id" < "student_subje
 Ref "FK_d3f279d8d86937741d42867f40f":"commission"."id" < "students"."commission"
 
 Ref "FK_fb3eff90b11bddf7285f9b4e281":"users"."id" < "students"."user_id"
-
-Ref "FK_8570c778e8561ea9f899fb95507":"students"."user_id" < "subject_absences"."student_id" [delete: cascade]
-
-Ref "FK_c007bd0497bcebf84d706974e81":"subjects"."id" < "subject_absences"."subject_id" [delete: cascade]
 
 Ref "FK_ad9281a6a38148ce7d9674a2a59":"subjects"."id" < "subject_commissions"."subject_id" [delete: cascade]
 

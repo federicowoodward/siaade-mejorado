@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -10,6 +10,7 @@ import { StudentSubjectProgress } from "@/entities/subjects/student-subject-prog
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
+import { Subject } from "@/entities/subjects/subject.entity";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { GradeRowDto } from "./dto/grade-row.dto";
@@ -37,20 +38,14 @@ export class SubjectsService {
     private readonly statusRepo: Repository<SubjectStatusType>,
     @InjectRepository(SubjectStudent)
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
+    @InjectRepository(Subject)
+    private readonly subjectRepo: Repository<Subject>,
     private readonly dataSource: DataSource
   ) {}
 
-  async getGrades(
-    subjectCommissionId: number,
-    user?: AuthenticatedUser
-  ): Promise<GradeRowDto[]> {
-    const { role } = await this.ensureAccess(subjectCommissionId, user, {
-      allowStudent: true,
-    });
+  async getGrades(subjectCommissionId: number): Promise<GradeRowDto[]> {
+    await this.ensureCommissionExists(subjectCommissionId);
     const rows = await this.fetchGradeRows(subjectCommissionId, undefined);
-    if (role === "ALUMNO" && user?.id) {
-      return rows.filter((row) => row.studentId === user.id);
-    }
     return rows;
   }
 
@@ -60,14 +55,10 @@ export class SubjectsService {
     dto: PatchCellDto,
     user?: AuthenticatedUser
   ): Promise<GradeRowDto> {
-    const { commission } = await this.ensureAccess(
-      subjectCommissionId,
-      user,
-      {
-        allowStudent: false,
-        targetStudentId: studentId,
-      }
-    );
+    const { commission } = await this.ensureAccess(subjectCommissionId, user, {
+      allowStudent: false,
+      targetStudentId: studentId,
+    });
 
     let progress = await this.progressRepo.findOne({
       where: { subjectCommissionId, studentId },
@@ -85,22 +76,38 @@ export class SubjectsService {
     }
 
     switch (dto.path) {
+      case "note1":
+      case "note2":
+      case "note3":
+      case "note4":
       case "partial1":
       case "partial2":
       case "final": {
-        const key =
-          dto.path === "partial1" ? "1" : dto.path === "partial2" ? "2" : "final";
-        const value = this.normalizeScore(dto.value);
+        const expected = await this.getExpectedPartialsForSubject(
+          commission.subjectId
+        );
+        const { notes } = this.mapAliasToNotes(
+          { [dto.path]: dto.value },
+          expected
+        );
         const scores = { ...(progress.partialScores ?? {}) };
-        if (value === null) {
-          delete scores[key];
-        } else {
-          scores[key] = value;
-        }
-        progress.partialScores =
-          Object.keys(scores).length > 0 ? scores : null;
+        (["1", "2", "3", "4"] as const).forEach((key) => {
+          const value = notes[key];
+          if (value === undefined) {
+            return;
+          }
+          const normalized = this.normalizeScore(value);
+          if (normalized === null) {
+            delete scores[key];
+            return;
+          }
+          scores[key] = normalized;
+        });
+        delete (scores as Record<string, number>)["final"];
+        progress.partialScores = Object.keys(scores).length > 0 ? scores : null;
         break;
       }
+      case "percentage":
       case "attendance": {
         const attendance = this.normalizeAttendance(dto.value);
         progress.attendancePercentage = attendance.toFixed(2);
@@ -136,11 +143,9 @@ export class SubjectsService {
     dto: UpsertGradeDto,
     user?: AuthenticatedUser
   ): Promise<{ updated: number }> {
-    const { commission } = await this.ensureAccess(
-      subjectCommissionId,
-      user,
-      { allowStudent: false }
-    );
+    const { commission } = await this.ensureAccess(subjectCommissionId, user, {
+      allowStudent: false,
+    });
 
     const updated = await this.dataSource.transaction(async (manager) => {
       let count = 0;
@@ -159,7 +164,9 @@ export class SubjectsService {
     return { updated };
   }
 
-  async getSubjectStatuses(): Promise<Array<{ id: number; statusName: string }>> {
+  async getSubjectStatuses(): Promise<
+    Array<{ id: number; statusName: string }>
+  > {
     const rows = await this.statusRepo.find({
       order: { id: "ASC" },
     });
@@ -167,6 +174,77 @@ export class SubjectsService {
       id,
       statusName,
     }));
+  }
+
+  async getSubjectGradesBySubject(subjectId: number): Promise<{
+    subject: { id: number; name: string };
+    commissions: Array<{
+      commission: { id: number; letter: string | null };
+      rows: GradeRowDto[];
+    }>;
+  }> {
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId },
+    });
+    if (!subject) {
+      throw new NotFoundException(`Subject ${subjectId} was not found`);
+    }
+
+    const commissions = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .where("sc.subjectId = :subjectId", { subjectId })
+      .orderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("sc.id", "ASC")
+      .getMany();
+
+    if (commissions.length === 0) {
+      return {
+        subject: { id: subject.id, name: subject.subjectName },
+        commissions: [],
+      };
+    }
+
+    const rows = await this.fetchGradeRowsBySubject(subjectId);
+
+    const grouped = new Map<
+      number,
+      {
+        commission: { id: number; letter: string | null };
+        rows: GradeRowDto[];
+      }
+    >();
+
+    for (const commission of commissions) {
+      grouped.set(commission.id, {
+        commission: {
+          id: commission.id,
+          letter: commission.commission?.commissionLetter ?? null,
+        },
+        rows: [],
+      });
+    }
+
+    for (const row of rows) {
+      const bucket = grouped.get(row._commissionId);
+      if (!bucket) continue;
+      bucket.rows.push({
+        studentId: row.studentId,
+        fullName: row.fullName,
+        legajo: row.legajo,
+        note1: row.note1,
+        note2: row.note2,
+        note3: row.note3,
+        note4: row.note4,
+        attendancePercentage: row.attendancePercentage,
+        condition: row.condition,
+      });
+    }
+
+    return {
+      subject: { id: subject.id, name: subject.subjectName },
+      commissions: Array.from(grouped.values()),
+    };
   }
 
   private async ensureAccess(
@@ -222,66 +300,256 @@ export class SubjectsService {
     subjectCommissionId: number,
     studentIds?: string[]
   ): Promise<GradeRowDto[]> {
-    const qb = this.progressRepo
-      .createQueryBuilder("ssp")
-      .innerJoin("ssp.student", "student")
-      .innerJoin("student.user", "u")
-      .leftJoin("ssp.status", "status")
-      .leftJoin("ssp.subjectCommission", "sc")
-      .where("ssp.subjectCommissionId = :subjectCommissionId", {
-        subjectCommissionId,
-      });
+    const qb = this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .innerJoin("commission", "c", "c.id = sc.commission_id")
+      .innerJoin("subject_students", "ss", "ss.subject_id = sc.subject_id")
+      .innerJoin("students", "st", "st.user_id = ss.student_id")
+      .innerJoin("users", "u", "u.id = st.user_id")
+      .leftJoin(
+        "student_subject_progress",
+        "ssp",
+        "ssp.subject_commission_id = sc.id AND ssp.student_id = st.user_id"
+      )
+      .leftJoin("subject_status_type", "status", "status.id = ssp.status_id")
+      .where("sc.id = :subjectCommissionId", { subjectCommissionId });
 
-    if (studentIds && studentIds.length > 0) {
-      qb.andWhere("ssp.studentId IN (:...studentIds)", { studentIds });
+    if (studentIds?.length) {
+      qb.andWhere("st.user_id IN (:...studentIds)", { studentIds });
     }
 
     qb.select([
-      "ssp.student_id AS student_id",
-      "student.legajo AS legajo",
+      "st.user_id AS student_id",
+      "st.legajo AS legajo",
       "u.name AS user_name",
       "u.last_name AS user_last_name",
-      "(ssp.partial_scores ->> '1')::numeric AS partial1",
-      "(ssp.partial_scores ->> '2')::numeric AS partial2",
-      "(ssp.partial_scores ->> 'final')::numeric AS final",
-      "COALESCE(ssp.attendance_percentage::numeric, 0) AS attendance",
+      "(ssp.partial_scores ->> '1')::numeric AS note1",
+      "(ssp.partial_scores ->> '2')::numeric AS note2",
+      "(ssp.partial_scores ->> '3')::numeric AS note3",
+      "(ssp.partial_scores ->> '4')::numeric AS note4",
+      "COALESCE(ssp.attendance_percentage::numeric, 0) AS percentage",
       "status.status_name AS condition",
-      `(
-        SELECT COALESCE(SUM(array_length(sa.dates, 1)), 0)
-        FROM subject_absences sa
-        WHERE sa.student_id = ssp.student_id
-          AND sa.subject_id = sc.subject_id
-      ) AS absences_count`,
     ])
       .orderBy("u.last_name", "ASC")
       .addOrderBy("u.name", "ASC");
 
-    const rows = await qb.getRawMany();
-    return rows.map((raw) => {
-      const partial1 = raw["partial1"];
-      const partial2 = raw["partial2"];
-      const finalScore = raw["final"];
-      const attendance = raw["attendance"];
-      const absences = raw["absences_count"];
+    const rawRows = await qb.getRawMany();
 
-      return {
+    const expected = await this.getExpectedPartialsForCommission(
+      subjectCommissionId
+    );
+
+    return rawRows.map((raw) => {
+      const row: GradeRowDto = {
         studentId: raw["student_id"],
         fullName: [raw["user_name"], raw["user_last_name"]]
           .filter(Boolean)
           .join(" ")
           .trim(),
         legajo: raw["legajo"],
-        partial1: partial1 !== null ? Number(partial1) : null,
-        partial2: partial2 !== null ? Number(partial2) : null,
-        final: finalScore !== null ? Number(finalScore) : null,
-        attendance: attendance !== null ? Number(attendance) : 0,
+        note1: raw["note1"] != null ? Number(raw["note1"]) : null,
+        note2: raw["note2"] != null ? Number(raw["note2"]) : null,
+        note3: raw["note3"] != null ? Number(raw["note3"]) : null,
+        note4: raw["note4"] != null ? Number(raw["note4"]) : null,
+        attendancePercentage:
+          raw["percentage"] != null ? Number(raw["percentage"]) : 0,
         condition: raw["condition"] ?? null,
-        absencesCount:
-          absences !== undefined && absences !== null
-            ? Number(absences)
-            : undefined,
       };
+
+      if (expected === 2) {
+        row.note3 = null;
+        row.note4 = null;
+      }
+
+      return row;
     });
+  }
+
+  private async ensureCommissionExists(
+    subjectCommissionId: number
+  ): Promise<void> {
+    const exists = await this.subjectCommissionRepo.exist({
+      where: { id: subjectCommissionId },
+    });
+    if (!exists) {
+      throw new NotFoundException(
+        `Subject commission ${subjectCommissionId} was not found`
+      );
+    }
+  }
+
+  private async fetchGradeRowsBySubject(subjectId: number): Promise<
+    Array<
+      GradeRowDto & {
+        _commissionId: number;
+      }
+    >
+  > {
+    const qb = this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .innerJoin("sc.subject", "s")
+      .innerJoin("subject_students", "ss", "ss.subject_id = sc.subject_id")
+      .innerJoin("students", "st", "st.user_id = ss.student_id")
+      .innerJoin("users", "u", "u.id = st.user_id")
+      .leftJoin(
+        "student_subject_progress",
+        "ssp",
+        "ssp.subject_commission_id = sc.id AND ssp.student_id = st.user_id"
+      )
+      .leftJoin("subject_status_type", "status", "status.id = ssp.status_id")
+      .leftJoin("commission", "c", "c.id = sc.commission_id")
+      .where("sc.subject_id = :subjectId", { subjectId })
+      .select([
+        "sc.id AS commission_id",
+        "c.commission_letter AS commission_letter",
+        "st.user_id AS student_id",
+        "st.legajo AS legajo",
+        "u.name AS user_name",
+        "u.last_name AS user_last_name",
+        "(ssp.partial_scores ->> '1')::numeric AS note1",
+        "(ssp.partial_scores ->> '2')::numeric AS note2",
+        "(ssp.partial_scores ->> '3')::numeric AS note3",
+        "(ssp.partial_scores ->> '4')::numeric AS note4",
+        "COALESCE(ssp.attendance_percentage::numeric, 0) AS percentage",
+        "status.status_name AS condition",
+      ])
+      .orderBy("c.commission_letter", "ASC", "NULLS LAST")
+      .addOrderBy("sc.id", "ASC")
+      .addOrderBy("u.last_name", "ASC")
+      .addOrderBy("u.name", "ASC");
+
+    const rawRows = await qb.getRawMany();
+
+    const expected = await this.getExpectedPartialsForSubject(subjectId);
+
+    return rawRows.map((raw) => {
+      const row: GradeRowDto & { _commissionId: number } = {
+        _commissionId: Number(raw["commission_id"]),
+        studentId: raw["student_id"],
+        fullName: [raw["user_name"], raw["user_last_name"]]
+          .filter(Boolean)
+          .join(" ")
+          .trim(),
+        legajo: raw["legajo"],
+        note1: raw["note1"] != null ? Number(raw["note1"]) : null,
+        note2: raw["note2"] != null ? Number(raw["note2"]) : null,
+        note3: raw["note3"] != null ? Number(raw["note3"]) : null,
+        note4: raw["note4"] != null ? Number(raw["note4"]) : null,
+        attendancePercentage:
+          raw["percentage"] != null ? Number(raw["percentage"]) : 0,
+        condition: raw["condition"] ?? null,
+      };
+
+      if (expected === 2) {
+        row.note3 = null;
+        row.note4 = null;
+      }
+
+      return row;
+    });
+  }
+
+  private async getExpectedPartialsForSubject(
+    subjectId: number
+  ): Promise<2 | 4> {
+    const row = await this.subjectRepo
+      .createQueryBuilder("s")
+      .leftJoin("s.academicPeriod", "ap")
+      .select("COALESCE(ap.partialsScoreNeeded, 2)", "partials")
+      .where("s.id = :subjectId", { subjectId })
+      .getRawOne<{ partials: string }>();
+
+    const value = Number(row?.partials ?? 2);
+    return value === 4 ? 4 : 2;
+  }
+
+  private async getExpectedPartialsForCommission(
+    commissionId: number
+  ): Promise<2 | 4> {
+    const row = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .innerJoin("sc.subject", "s")
+      .leftJoin("s.academicPeriod", "ap")
+      .select("COALESCE(ap.partialsScoreNeeded, 2)", "partials")
+      .where("sc.id = :commissionId", { commissionId })
+      .getRawOne<{ partials: string }>();
+
+    const value = Number(row?.partials ?? 2);
+    return value === 4 ? 4 : 2;
+  }
+
+  private mapAliasToNotes(
+    input: {
+      note1?: any;
+      note2?: any;
+      note3?: any;
+      note4?: any;
+      partial1?: any;
+      partial2?: any;
+      final?: any;
+      percentage?: any;
+      attendance?: any;
+    },
+    expected: 2 | 4
+  ): {
+    notes: Record<"1" | "2" | "3" | "4", number | null | undefined>;
+    percentage: number | null | undefined;
+  } {
+    type NoteKey = "1" | "2" | "3" | "4";
+    const notes: Record<NoteKey, number | null | undefined> = {
+      "1": undefined,
+      "2": undefined,
+      "3": undefined,
+      "4": undefined,
+    };
+
+    const pick = (value: any): number | null => {
+      if (value === null || value === "" || value === undefined) {
+        return null;
+      }
+      const numeric = Number(value);
+      return numeric;
+    };
+
+    const hasOwn = (prop: keyof typeof input) =>
+      Object.prototype.hasOwnProperty.call(input, prop);
+
+    if (hasOwn("note1")) {
+      notes["1"] = pick(input.note1);
+    } else if (hasOwn("partial1")) {
+      notes["1"] = pick(input.partial1);
+    }
+
+    if (hasOwn("note2")) {
+      notes["2"] = pick(input.note2);
+    } else if (hasOwn("partial2")) {
+      notes["2"] = pick(input.partial2);
+    }
+
+    if (hasOwn("note3")) {
+      notes["3"] = pick(input.note3);
+    }
+
+    if (hasOwn("note4")) {
+      notes["4"] = pick(input.note4);
+    }
+
+    if (hasOwn("final")) {
+      const finalValue = pick(input.final);
+      const target: NoteKey = expected === 4 ? "4" : "2";
+      if (notes[target] === undefined) {
+        notes[target] = finalValue;
+      }
+    }
+
+    let percentage: number | null | undefined;
+    if (hasOwn("percentage")) {
+      percentage = pick(input.percentage);
+    } else if (hasOwn("attendance")) {
+      percentage = pick(input.attendance);
+    }
+
+    return { notes, percentage };
   }
 
   private normalizeScore(value: any): number | null {
@@ -369,35 +637,30 @@ export class SubjectsService {
       });
     }
 
+    const expected = await this.getExpectedPartialsForSubject(
+      commission.subjectId
+    );
+    const { notes, percentage } = this.mapAliasToNotes(row, expected);
+
     const scores = { ...(progress.partialScores ?? {}) };
-
-    if (row.partial1 !== undefined) {
-      if (row.partial1 === null) {
-        delete scores["1"];
-      } else {
-        scores["1"] = Number(row.partial1);
+    (["1", "2", "3", "4"] as const).forEach((key) => {
+      const value = notes[key];
+      if (value === undefined) {
+        return;
       }
-    }
-    if (row.partial2 !== undefined) {
-      if (row.partial2 === null) {
-        delete scores["2"];
-      } else {
-        scores["2"] = Number(row.partial2);
+      const normalized = this.normalizeScore(value);
+      if (normalized === null) {
+        delete scores[key];
+        return;
       }
-    }
-    if (row.final !== undefined) {
-      if (row.final === null) {
-        delete scores["final"];
-      } else {
-        scores["final"] = Number(row.final);
-      }
-    }
+      scores[key] = normalized;
+    });
+    delete (scores as Record<string, number>)["final"];
 
-    progress.partialScores =
-      Object.keys(scores).length > 0 ? scores : null;
+    progress.partialScores = Object.keys(scores).length > 0 ? scores : null;
 
-    if (row.attendance !== undefined) {
-      const attendance = this.normalizeAttendance(row.attendance);
+    if (percentage !== undefined && percentage !== null) {
+      const attendance = this.normalizeAttendance(percentage);
       progress.attendancePercentage = attendance.toFixed(2);
     }
 
