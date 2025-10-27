@@ -10,7 +10,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "address_data" ("id" SERIAL NOT NULL, "street" text, "number" text, "floor" text, "apartment" text, "neighborhood" text, "locality" text, "province" text, "postal_code" text, "country" text, CONSTRAINT "PK_c1379677a0a5f11d46e510491b0" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "common_data" ("id" SERIAL NOT NULL, "user_id" uuid NOT NULL, "address_data_id" integer, "sex" text, "birth_date" date, "birth_place" text, "nationality" text, CONSTRAINT "REL_e5f11ef95c7821a3b30897fc9d" UNIQUE ("user_id"), CONSTRAINT "PK_89ec4d90815af0ed75e7fc42076" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "exams" ("id" SERIAL NOT NULL, "subject_id" integer NOT NULL, "title" character varying, "date" date, "is_valid" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_b43159ee3efa440952794b4f53e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "subject_absences" ("id" SERIAL NOT NULL, "subject_id" integer NOT NULL, "student_id" uuid NOT NULL, "dates" date[] NOT NULL, CONSTRAINT "PK_ef87b566f7ed9d022b662398dfe" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "academic_period" ("academic_period_id" SERIAL NOT NULL, "period_name" text NOT NULL, "partials_score_needed" smallint NOT NULL, CONSTRAINT "PK_c84fec2739f0343e5930990a8c3" PRIMARY KEY ("academic_period_id"))`);
         await queryRunner.query(`ALTER TABLE "academic_period" ADD CONSTRAINT "CHK_academic_period_partials" CHECK (partials_score_needed = ANY (ARRAY[2,4]))`);
         await queryRunner.query(`CREATE TABLE "commission" ("id" SERIAL NOT NULL, "commission_letter" text, CONSTRAINT "PK_d108d70411783e2a3a84e386601" PRIMARY KEY ("id"))`);
@@ -54,8 +53,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "common_data" ADD CONSTRAINT "FK_e5f11ef95c7821a3b30897fc9d7" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "common_data" ADD CONSTRAINT "FK_1ef323c6e620f95c60adab91908" FOREIGN KEY ("address_data_id") REFERENCES "address_data"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "exams" ADD CONSTRAINT "FK_432eeeb62e8ff8de6c2a341cd10" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "subject_absences" ADD CONSTRAINT "FK_c007bd0497bcebf84d706974e81" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "subject_absences" ADD CONSTRAINT "FK_8570c778e8561ea9f899fb95507" FOREIGN KEY ("student_id") REFERENCES "students"("user_id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "teachers" ADD CONSTRAINT "FK_4668d4752e6766682d1be0b346f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "subject_commissions" ADD CONSTRAINT "FK_ad9281a6a38148ce7d9674a2a59" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "subject_commissions" ADD CONSTRAINT "FK_b3b410787bedfa50358315cd538" FOREIGN KEY ("commission_id") REFERENCES "commission"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
@@ -131,8 +128,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "subject_commissions" DROP CONSTRAINT "FK_b3b410787bedfa50358315cd538"`);
         await queryRunner.query(`ALTER TABLE "subject_commissions" DROP CONSTRAINT "FK_ad9281a6a38148ce7d9674a2a59"`);
         await queryRunner.query(`ALTER TABLE "teachers" DROP CONSTRAINT "FK_4668d4752e6766682d1be0b346f"`);
-        await queryRunner.query(`ALTER TABLE "subject_absences" DROP CONSTRAINT "FK_8570c778e8561ea9f899fb95507"`);
-        await queryRunner.query(`ALTER TABLE "subject_absences" DROP CONSTRAINT "FK_c007bd0497bcebf84d706974e81"`);
         await queryRunner.query(`ALTER TABLE "exams" DROP CONSTRAINT "FK_432eeeb62e8ff8de6c2a341cd10"`);
         await queryRunner.query(`ALTER TABLE "common_data" DROP CONSTRAINT "FK_1ef323c6e620f95c60adab91908"`);
         await queryRunner.query(`ALTER TABLE "common_data" DROP CONSTRAINT "FK_e5f11ef95c7821a3b30897fc9d7"`);
@@ -171,7 +166,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "teachers"`);
         await queryRunner.query(`DROP TABLE "commission"`);
         await queryRunner.query(`DROP TABLE "academic_period"`);
-        await queryRunner.query(`DROP TABLE "subject_absences"`);
         await queryRunner.query(`DROP TABLE "exams"`);
         await queryRunner.query(`DROP TABLE "common_data"`);
         await queryRunner.query(`DROP TABLE "address_data"`);

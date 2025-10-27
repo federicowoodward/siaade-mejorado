@@ -1,3 +1,4 @@
+// SEED PROD - DO NOT CHANGE
 import { In, MigrationInterface, QueryRunner } from "typeorm";
 import { Role } from "../../entities/roles/role.entity";
 import { User } from "../../entities/users/user.entity";
@@ -128,7 +129,7 @@ const SUBJECTS: SubjectSeed[] = [
     periodOrder: 1,
     subjectOrder: 2,
   },
-// SEGUNDO AÑO — Anuales (2027, anual)
+  // PRIMER AÑO — Cuatrimestrales (2026, 2er cuatr)
   {
     name: "Arquitectura de las computadoras",
     field: "FF",
@@ -137,7 +138,7 @@ const SUBJECTS: SubjectSeed[] = [
     hoursCatedra: 4,
     hoursReloj: 43,
     year: 2,
-    periodOrder: 3,
+    periodOrder: 2,
     subjectOrder: 1,
   },
   {
@@ -148,7 +149,7 @@ const SUBJECTS: SubjectSeed[] = [
     hoursCatedra: 3,
     hoursReloj: 32,
     year: 2,
-    periodOrder: 3,
+    periodOrder: 2,
     subjectOrder: 2,
   },
   {
@@ -159,9 +160,10 @@ const SUBJECTS: SubjectSeed[] = [
     hoursCatedra: 3,
     hoursReloj: 32,
     year: 2,
-    periodOrder: 3,
+    periodOrder: 2,
     subjectOrder: 3,
   },
+  // SEGUNDO AÑO — Anuales (2027, anual)
   {
     name: "Inglés",
     field: "FF",
