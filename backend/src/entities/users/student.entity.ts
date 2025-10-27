@@ -2,7 +2,6 @@ import { Entity, PrimaryColumn, Column, OneToMany, OneToOne, JoinColumn, ManyToO
 import { User } from './user.entity';
 import { SubjectStudent } from '@/entities/subjects/subject-student.entity';
 import { ExamResult } from '@/entities/subjects/exam-result.entity';
-import { SubjectAbsence } from '@/entities/subjects/subject-absence.entity';
 import { FinalExamsStudent } from '@/entities/finals/final-exams-student.entity';
 import { Commission } from '@/entities/catalogs/commission.entity';
 
@@ -20,9 +19,6 @@ export class Student {
 
   @OneToMany(() => ExamResult, (er) => er.student)
   examResults: ExamResult[];
-
-  @OneToMany(() => SubjectAbsence, (sa) => sa.student)
-  subjectAbsences: SubjectAbsence[];
 
   @OneToMany(() => FinalExamsStudent, (fes) => fes.student)
   finals: FinalExamsStudent[];

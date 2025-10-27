@@ -8,7 +8,6 @@ import {
 } from "typeorm";
 import { SubjectStudent } from "./subject-student.entity";
 import { Exam } from "./exam.entity";
-import { SubjectAbsence } from "./subject-absence.entity";
 import { AcademicPeriod } from "@/entities/catalogs/academic-period.entity";
 import { SubjectCommission } from "./subject-commission.entity";
 
@@ -57,6 +56,4 @@ export class Subject {
   @OneToMany(() => Exam, (e) => e.subject)
   exams?: Exam[];
 
-  @OneToMany(() => SubjectAbsence, (sa) => sa.subject)
-  absences?: SubjectAbsence[];
 }
