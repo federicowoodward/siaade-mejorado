@@ -14,7 +14,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import MyPreset from './mypreset';
 import { httpInterceptorProviders } from './core/interceptors';
 import { RolesService } from './core/services/role.service';
-
+// vamos a precargar los roles antes de iniciar la app
 // Precarga de roles antes de iniciar la app
 function initRolesFactory() {
   const roles = inject(RolesService);
