@@ -186,3 +186,5 @@ Aprobar administrativamente:
 ```
 Invoke-RestMethod -Uri "http://localhost:3000/api/finals/exam/approve" -Method Post -ContentType 'application/json' -Body (@{ final_exam_id=10; student_id='UUID' } | ConvertTo-Json)
 ```
+## Seeds y scripts
+Consulta el archivo docs/seeds-and-migrations.md para un detalle actualizado de los comandos de migracion y seeds.
