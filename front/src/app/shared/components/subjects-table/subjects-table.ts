@@ -46,6 +46,6 @@ export class SubjectTableComponent implements OnInit {
   }
 
   viewStatus(id: number): void {
-    alert(`Situación de la materia (id: ${id})`);
+    this.router.navigate(['/subjects', 'grades', id]);
   }
 }
