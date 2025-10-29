@@ -59,7 +59,6 @@ export class ExamTablesService {
       name: dto.name,
       start_date: this.normalizeDate(dto.start_date),
       end_date: this.normalizeDate(dto.end_date),
-      created_by: dto.created_by,
     };
     return this.api.request<any>('POST', `${this.base}/init`, payload).pipe(
       map((resp) => ('data' in resp ? resp.data : resp)),
