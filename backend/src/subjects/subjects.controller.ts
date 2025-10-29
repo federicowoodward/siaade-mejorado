@@ -157,6 +157,10 @@ export class SubjectGradesController {
                   letter: { type: "string", nullable: true },
                 },
               },
+              partials: {
+                type: "number",
+                enum: [2, 4],
+              },
               rows: {
                 type: "array",
                 items: {
@@ -169,6 +173,7 @@ export class SubjectGradesController {
                     note2: { type: "number", nullable: true },
                     note3: { type: "number", nullable: true },
                     note4: { type: "number", nullable: true },
+                    final: { type: "number", nullable: true },
                     attendancePercentage: { type: "number" },
                     condition: { type: "string", nullable: true },
                   },

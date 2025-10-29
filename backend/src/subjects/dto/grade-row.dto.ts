@@ -6,6 +6,7 @@ export class GradeRowDto {
   note2: number | null;
   note3: number | null;
   note4: number | null;
+  final: number | null;
   attendancePercentage: number;
   condition: string | null;
 }

@@ -6,6 +6,7 @@ import { Student } from "@/entities/users/student.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
+import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { SubjectsService } from "./subjects.service";
 import {
   SubjectStatusController,
@@ -23,6 +24,7 @@ import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
       SubjectStatusType,
       SubjectStudent,
       Subject,
+      SubjectGradesView,
     ]),
   ],
   controllers: [SubjectsController, SubjectGradesController, SubjectStatusController],

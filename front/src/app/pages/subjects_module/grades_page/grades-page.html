@@ -39,11 +39,17 @@
             <ng-template pTemplate="header">
               <tr>
                 <th class="col-alumno">Nombre/s</th>
-                <th class="col-alumno">Nota 1</th>
-                <th class="col-alumno">Nota 2</th>
-                <!-- esta seccion aparece solo en anuales -->
-                <!-- El backend ya decide; si un dia manda partial3/4, se agregan columnas -->
-                <th class="col-final">Nota Final</th>
+                <ng-container *ngIf="c.partials === 2; else headerFourCols">
+                  <th class="col-alumno">Nota 1</th>
+                  <th class="col-alumno">Nota 2</th>
+                  <th class="col-final">Nota Final</th>
+                </ng-container>
+                <ng-template #headerFourCols>
+                  <th class="col-alumno">Nota 1</th>
+                  <th class="col-alumno">Nota 2</th>
+                  <th class="col-alumno">Nota 3</th>
+                  <th class="col-final">Nota 4 (Final)</th>
+                </ng-template>
                 <th class="col-alumno">Porcentaje de asistencia</th>
                 <th class="col-alumno">Condicion</th>
                 <!-- seguimos sin saber que es esto: -->
@@ -64,17 +70,26 @@
                   </div>
                 </td>
 
-                <td class="nota">{{ row.partial1 ?? '-' }}</td>
-                <td class="nota">{{ row.partial2 ?? '-' }}</td>
-
-                <!-- Promedio final -->
-                <td class="col-final" [ngClass]="finalClass(row.final)">
-                  {{ row.final ?? '-' }}
-                </td>
+                <ng-container *ngIf="c.partials === 2; else bodyFourCols">
+                  <td class="nota">{{ row.note1 ?? '-' }}</td>
+                  <td class="nota">{{ row.note2 ?? '-' }}</td>
+                  <td class="col-final" [ngClass]="finalClass(row.final)">
+                    {{ row.final ?? '-' }}
+                  </td>
+                </ng-container>
+                <ng-template #bodyFourCols>
+                  <td class="nota">{{ row.note1 ?? '-' }}</td>
+                  <td class="nota">{{ row.note2 ?? '-' }}</td>
+                  <td class="nota">{{ row.note3 ?? '-' }}</td>
+                  <td class="col-final" [ngClass]="finalClass(row.final)">
+                    {{ row.final ?? '-' }}
+                  </td>
+                </ng-template>
 
                 <td class="col-alumno">
-                  {{ row.attendance !== null && row.attendance !== undefined ?
-                  row.attendance + '%' : '-' }}
+                  {{ row.attendancePercentage !== null &&
+                  row.attendancePercentage !== undefined ?
+                  row.attendancePercentage + '%' : '-' }}
                 </td>
                 <td class="col-alumno">{{ row.condition || '-' }}</td>
                 <!-- seguimos sin saber que es esto: -->

@@ -36,6 +36,8 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "subject_status_type" ("id" SERIAL NOT NULL, "status_name" text NOT NULL, CONSTRAINT "UQ_9d61379e0ce29796ab1f019f199" UNIQUE ("status_name"), CONSTRAINT "PK_b3784b0b05e5f78587a508bcfe1" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "student_subject_progress" ("id" SERIAL NOT NULL, "subject_commission_id" integer NOT NULL, "student_id" uuid NOT NULL, "status_id" integer, "partial_scores" jsonb, "attendance_percentage" numeric(5,2) NOT NULL DEFAULT '0', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_8dc2e04d76bc60397c20cbe6b34" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "student_subject_progress" ADD CONSTRAINT "CHK_attendance_percentage" CHECK ((attendance_percentage >= 0) AND (attendance_percentage <= 100))`);
+        await queryRunner.query(`ALTER TABLE "student_subject_progress" ADD CONSTRAINT "CHK_partial_scores_is_object" CHECK ("partial_scores" IS NULL OR jsonb_typeof("partial_scores") = 'object')`);
+        await queryRunner.query(`COMMENT ON COLUMN "student_subject_progress"."partial_scores" IS 'Validated and trimmed by trg_enforce_partial_scores trigger.'`);
         await queryRunner.query(`CREATE INDEX "IDX_5fef2a1967bce469e3d0cfa577" ON "student_subject_progress" ("student_id") `);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_553c118da9bf0c4142b4b1920c" ON "student_subject_progress" ("subject_commission_id", "student_id") `);
         await queryRunner.query(`CREATE TABLE "careers" ("id" SERIAL NOT NULL, "career_name" text NOT NULL, "academic_period_id" integer NOT NULL, "preceptor_id" uuid NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_febfc45dc83d58090d3122fde3d" PRIMARY KEY ("id"))`);
@@ -68,6 +70,115 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "final_exams_students" ADD CONSTRAINT "FK_466017be703ff67fe8ac8edf012" FOREIGN KEY ("final_exam_id") REFERENCES "final_exams"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "final_exams_students" ADD CONSTRAINT "FK_42368f30908e238aa7d9af5e949" FOREIGN KEY ("student_id") REFERENCES "students"("user_id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "final_exams_students" ADD CONSTRAINT "FK_61acdc5ce17ac680051378c0584" FOREIGN KEY ("status_id") REFERENCES "final_exam_status"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`DROP FUNCTION IF EXISTS enforce_partial_scores();`);
+        await queryRunner.query(`
+            CREATE OR REPLACE FUNCTION enforce_partial_scores()
+            RETURNS trigger
+            LANGUAGE plpgsql
+            AS $$
+            DECLARE
+              needed smallint;
+              k text;
+              v jsonb;
+              filtered jsonb := '{}'::jsonb;
+              is_num boolean;
+            BEGIN
+              SELECT ap.partials_score_needed
+                INTO needed
+              FROM subject_commissions sc
+              JOIN subjects s ON s.id = sc.subject_id
+              JOIN academic_period ap ON ap.academic_period_id = s.academic_period_id
+              WHERE sc.id = NEW.subject_commission_id;
+
+              IF needed IS NULL THEN
+                needed := 2;
+              END IF;
+
+              IF NEW.partial_scores IS NULL THEN
+                RETURN NEW;
+              END IF;
+
+              IF jsonb_typeof(NEW.partial_scores) <> 'object' THEN
+                RAISE EXCEPTION 'partial_scores debe ser un objeto JSONB';
+              END IF;
+
+              FOR k, v IN SELECT key, value FROM jsonb_each(NEW.partial_scores)
+              LOOP
+                IF k NOT IN ('1','2','3','4') THEN
+                  CONTINUE;
+                END IF;
+                is_num := (jsonb_typeof(v) = 'number');
+                IF NOT is_num THEN
+                  RAISE EXCEPTION 'El valor de partial_scores->% debe ser numérico', k;
+                END IF;
+
+                IF needed = 2 AND k IN ('1','2') THEN
+                  filtered := filtered || jsonb_build_object(k, v);
+                ELSIF needed = 4 AND k IN ('1','2','3','4') THEN
+                  filtered := filtered || jsonb_build_object(k, v);
+                END IF;
+              END LOOP;
+
+              IF filtered = '{}'::jsonb THEN
+                NEW.partial_scores := NULL;
+              ELSE
+                NEW.partial_scores := filtered;
+              END IF;
+
+              RETURN NEW;
+            END;
+            $$;
+        `);
+        await queryRunner.query(`DROP TRIGGER IF EXISTS "trg_enforce_partial_scores" ON "student_subject_progress";`);
+        await queryRunner.query(`
+            CREATE TRIGGER "trg_enforce_partial_scores"
+            BEFORE INSERT OR UPDATE OF partial_scores, subject_commission_id
+            ON "student_subject_progress"
+            FOR EACH ROW
+            EXECUTE FUNCTION enforce_partial_scores();
+        `);
+        await queryRunner.query(`
+            CREATE OR REPLACE VIEW "v_subject_grades" AS
+            SELECT
+              s.id AS subject_id,
+              s.subject_name AS subject_name,
+              sc.id AS commission_id,
+              c.commission_letter AS commission_letter,
+              COALESCE(ap.partials_score_needed, 2) AS partials,
+              st.user_id AS student_id,
+              st.legajo AS legajo,
+              (u.name || ' ' || u.last_name) AS full_name,
+              (ssp.partial_scores ->> '1')::numeric(4,2) AS note1,
+              (ssp.partial_scores ->> '2')::numeric(4,2) AS note2,
+              CASE WHEN COALESCE(ap.partials_score_needed, 2) = 4
+                   THEN (ssp.partial_scores ->> '3')::numeric(4,2)
+                   ELSE NULL::numeric(4,2)
+              END AS note3,
+              CASE WHEN COALESCE(ap.partials_score_needed, 2) = 4
+                   THEN (ssp.partial_scores ->> '4')::numeric(4,2)
+                   ELSE NULL::numeric(4,2)
+              END AS note4,
+              CASE WHEN COALESCE(ap.partials_score_needed, 2) = 4
+                   THEN (ssp.partial_scores ->> '4')::numeric(4,2)
+                   ELSE (ssp.partial_scores ->> '2')::numeric(4,2)
+              END AS final,
+              COALESCE(ssp.attendance_percentage, 0)::numeric(5,2) AS attendance_percentage,
+              sst.status_name AS condition
+            FROM subject_commissions sc
+            JOIN subjects s ON s.id = sc.subject_id
+            LEFT JOIN commission c ON c.id = sc.commission_id
+            LEFT JOIN academic_period ap ON ap.academic_period_id = s.academic_period_id
+            JOIN subject_students ss ON ss.subject_id = sc.subject_id
+            JOIN students st ON st.user_id = ss.student_id
+            JOIN users u ON u.id = st.user_id
+            LEFT JOIN student_subject_progress ssp
+              ON ssp.subject_commission_id = sc.id AND ssp.student_id = st.user_id
+            LEFT JOIN subject_status_type sst
+              ON sst.id = ssp.status_id;
+        `);
+        await queryRunner.query(`
+            COMMENT ON VIEW "v_subject_grades" IS 'Fuente unica de lectura para notas por comision (backend API).';
+        `);
         await queryRunner.query(`ALTER TABLE "final_exams_students" ADD CONSTRAINT "FK_60613f37be9011642ff6a31f88c" FOREIGN KEY ("recorded_by") REFERENCES "teachers"("user_id") ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "final_exams_students" ADD CONSTRAINT "FK_fd8365a5f6fa3355e79ec9d61d4" FOREIGN KEY ("approved_by") REFERENCES "secretaries"("user_id") ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "students" ADD CONSTRAINT "FK_fb3eff90b11bddf7285f9b4e281" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -89,7 +200,11 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`DROP VIEW IF EXISTS "v_subject_grades"`);
+        await queryRunner.query(`DROP TRIGGER IF EXISTS "trg_enforce_partial_scores" ON "student_subject_progress"`);
+        await queryRunner.query(`DROP FUNCTION IF EXISTS enforce_partial_scores()`);
         await queryRunner.query(`ALTER TABLE "student_subject_progress" DROP CONSTRAINT IF EXISTS "CHK_attendance_percentage"`);
+        await queryRunner.query(`ALTER TABLE "student_subject_progress" DROP CONSTRAINT IF EXISTS "CHK_partial_scores_is_object"`);
         await queryRunner.query(`ALTER TABLE "students" DROP CONSTRAINT IF EXISTS "CHK_students_start_year"`);
         await queryRunner.query(`ALTER TABLE "academic_period" DROP CONSTRAINT IF EXISTS "CHK_academic_period_partials"`);
         await queryRunner.query(`ALTER TABLE "students" ALTER COLUMN "can_login" DROP DEFAULT`);

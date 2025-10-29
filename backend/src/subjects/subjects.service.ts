@@ -11,6 +11,7 @@ import { SubjectCommission } from "@/entities/subjects/subject-commission.entity
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
+import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { GradeRowDto } from "./dto/grade-row.dto";
@@ -40,6 +41,8 @@ export class SubjectsService {
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
     @InjectRepository(Subject)
     private readonly subjectRepo: Repository<Subject>,
+    @InjectRepository(SubjectGradesView)
+    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
     private readonly dataSource: DataSource
   ) {}
 
@@ -180,6 +183,7 @@ export class SubjectsService {
     subject: { id: number; name: string };
     commissions: Array<{
       commission: { id: number; letter: string | null };
+      partials: 2 | 4;
       rows: GradeRowDto[];
     }>;
   }> {
@@ -193,57 +197,59 @@ export class SubjectsService {
     const commissions = await this.subjectCommissionRepo
       .createQueryBuilder("sc")
       .leftJoinAndSelect("sc.commission", "commission")
+      .leftJoinAndSelect("sc.subject", "subjectEntity")
+      .leftJoinAndSelect("subjectEntity.academicPeriod", "ap")
       .where("sc.subjectId = :subjectId", { subjectId })
       .orderBy("commission.commissionLetter", "ASC", "NULLS LAST")
       .addOrderBy("sc.id", "ASC")
       .getMany();
 
-    if (commissions.length === 0) {
-      return {
-        subject: { id: subject.id, name: subject.subjectName },
-        commissions: [],
-      };
-    }
+    const viewRows = await this.subjectGradesViewRepo
+      .createQueryBuilder("vg")
+      .where("vg.subject_id = :subjectId", { subjectId })
+      .orderBy("vg.commission_letter", "ASC", "NULLS LAST")
+      .addOrderBy("vg.commission_id", "ASC")
+      .addOrderBy("vg.full_name", "ASC")
+      .getMany();
 
-    const rows = await this.fetchGradeRowsBySubject(subjectId);
-
-    const grouped = new Map<
-      number,
-      {
-        commission: { id: number; letter: string | null };
-        rows: GradeRowDto[];
+    const grouped = new Map<number, { partials: 2 | 4; rows: GradeRowDto[] }>();
+    for (const row of viewRows) {
+      const dto = this.mapViewToGradeRow(row);
+      const partials = this.normalizePartials(row.partials);
+      const bucket = grouped.get(row.commissionId);
+      if (bucket) {
+        bucket.rows.push(dto);
+      } else {
+        grouped.set(row.commissionId, { partials, rows: [dto] });
       }
-    >();
-
-    for (const commission of commissions) {
-      grouped.set(commission.id, {
-        commission: {
-          id: commission.id,
-          letter: commission.commission?.commissionLetter ?? null,
-        },
-        rows: [],
-      });
-    }
-
-    for (const row of rows) {
-      const bucket = grouped.get(row._commissionId);
-      if (!bucket) continue;
-      bucket.rows.push({
-        studentId: row.studentId,
-        fullName: row.fullName,
-        legajo: row.legajo,
-        note1: row.note1,
-        note2: row.note2,
-        note3: row.note3,
-        note4: row.note4,
-        attendancePercentage: row.attendancePercentage,
-        condition: row.condition,
-      });
     }
 
     return {
       subject: { id: subject.id, name: subject.subjectName },
-      commissions: Array.from(grouped.values()),
+      commissions: commissions.map((commission) => {
+        const bucket = grouped.get(commission.id);
+        if (bucket) {
+          return {
+            commission: {
+              id: commission.id,
+              letter: commission.commission?.commissionLetter ?? null,
+            },
+            partials: bucket.partials,
+            rows: bucket.rows,
+          };
+        }
+        const fallbackPartials = this.normalizePartials(
+          commission.subject?.academicPeriod?.partialsScoreNeeded ?? null
+        );
+        return {
+          commission: {
+            id: commission.id,
+            letter: commission.commission?.commissionLetter ?? null,
+          },
+          partials: fallbackPartials,
+          rows: [],
+        };
+      }),
     };
   }
 
@@ -300,69 +306,18 @@ export class SubjectsService {
     subjectCommissionId: number,
     studentIds?: string[]
   ): Promise<GradeRowDto[]> {
-    const qb = this.subjectCommissionRepo
-      .createQueryBuilder("sc")
-      .innerJoin("commission", "c", "c.id = sc.commission_id")
-      .innerJoin("subject_students", "ss", "ss.subject_id = sc.subject_id")
-      .innerJoin("students", "st", "st.user_id = ss.student_id")
-      .innerJoin("users", "u", "u.id = st.user_id")
-      .leftJoin(
-        "student_subject_progress",
-        "ssp",
-        "ssp.subject_commission_id = sc.id AND ssp.student_id = st.user_id"
-      )
-      .leftJoin("subject_status_type", "status", "status.id = ssp.status_id")
-      .where("sc.id = :subjectCommissionId", { subjectCommissionId });
+    const qb = this.subjectGradesViewRepo
+      .createQueryBuilder("vg")
+      .where("vg.commission_id = :subjectCommissionId", { subjectCommissionId })
+      .orderBy("vg.full_name", "ASC", "NULLS LAST")
+      .addOrderBy("vg.student_id", "ASC");
 
     if (studentIds?.length) {
-      qb.andWhere("st.user_id IN (:...studentIds)", { studentIds });
+      qb.andWhere("vg.student_id IN (:...studentIds)", { studentIds });
     }
 
-    qb.select([
-      "st.user_id AS student_id",
-      "st.legajo AS legajo",
-      "u.name AS user_name",
-      "u.last_name AS user_last_name",
-      "(ssp.partial_scores ->> '1')::numeric AS note1",
-      "(ssp.partial_scores ->> '2')::numeric AS note2",
-      "(ssp.partial_scores ->> '3')::numeric AS note3",
-      "(ssp.partial_scores ->> '4')::numeric AS note4",
-      "COALESCE(ssp.attendance_percentage::numeric, 0) AS percentage",
-      "status.status_name AS condition",
-    ])
-      .orderBy("u.last_name", "ASC")
-      .addOrderBy("u.name", "ASC");
-
-    const rawRows = await qb.getRawMany();
-
-    const expected = await this.getExpectedPartialsForCommission(
-      subjectCommissionId
-    );
-
-    return rawRows.map((raw) => {
-      const row: GradeRowDto = {
-        studentId: raw["student_id"],
-        fullName: [raw["user_name"], raw["user_last_name"]]
-          .filter(Boolean)
-          .join(" ")
-          .trim(),
-        legajo: raw["legajo"],
-        note1: raw["note1"] != null ? Number(raw["note1"]) : null,
-        note2: raw["note2"] != null ? Number(raw["note2"]) : null,
-        note3: raw["note3"] != null ? Number(raw["note3"]) : null,
-        note4: raw["note4"] != null ? Number(raw["note4"]) : null,
-        attendancePercentage:
-          raw["percentage"] != null ? Number(raw["percentage"]) : 0,
-        condition: raw["condition"] ?? null,
-      };
-
-      if (expected === 2) {
-        row.note3 = null;
-        row.note4 = null;
-      }
-
-      return row;
-    });
+    const rows = await qb.getMany();
+    return rows.map((row) => this.mapViewToGradeRow(row));
   }
 
   private async ensureCommissionExists(
@@ -376,77 +331,6 @@ export class SubjectsService {
         `Subject commission ${subjectCommissionId} was not found`
       );
     }
-  }
-
-  private async fetchGradeRowsBySubject(subjectId: number): Promise<
-    Array<
-      GradeRowDto & {
-        _commissionId: number;
-      }
-    >
-  > {
-    const qb = this.subjectCommissionRepo
-      .createQueryBuilder("sc")
-      .innerJoin("sc.subject", "s")
-      .innerJoin("subject_students", "ss", "ss.subject_id = sc.subject_id")
-      .innerJoin("students", "st", "st.user_id = ss.student_id")
-      .innerJoin("users", "u", "u.id = st.user_id")
-      .leftJoin(
-        "student_subject_progress",
-        "ssp",
-        "ssp.subject_commission_id = sc.id AND ssp.student_id = st.user_id"
-      )
-      .leftJoin("subject_status_type", "status", "status.id = ssp.status_id")
-      .leftJoin("commission", "c", "c.id = sc.commission_id")
-      .where("sc.subject_id = :subjectId", { subjectId })
-      .select([
-        "sc.id AS commission_id",
-        "c.commission_letter AS commission_letter",
-        "st.user_id AS student_id",
-        "st.legajo AS legajo",
-        "u.name AS user_name",
-        "u.last_name AS user_last_name",
-        "(ssp.partial_scores ->> '1')::numeric AS note1",
-        "(ssp.partial_scores ->> '2')::numeric AS note2",
-        "(ssp.partial_scores ->> '3')::numeric AS note3",
-        "(ssp.partial_scores ->> '4')::numeric AS note4",
-        "COALESCE(ssp.attendance_percentage::numeric, 0) AS percentage",
-        "status.status_name AS condition",
-      ])
-      .orderBy("c.commission_letter", "ASC", "NULLS LAST")
-      .addOrderBy("sc.id", "ASC")
-      .addOrderBy("u.last_name", "ASC")
-      .addOrderBy("u.name", "ASC");
-
-    const rawRows = await qb.getRawMany();
-
-    const expected = await this.getExpectedPartialsForSubject(subjectId);
-
-    return rawRows.map((raw) => {
-      const row: GradeRowDto & { _commissionId: number } = {
-        _commissionId: Number(raw["commission_id"]),
-        studentId: raw["student_id"],
-        fullName: [raw["user_name"], raw["user_last_name"]]
-          .filter(Boolean)
-          .join(" ")
-          .trim(),
-        legajo: raw["legajo"],
-        note1: raw["note1"] != null ? Number(raw["note1"]) : null,
-        note2: raw["note2"] != null ? Number(raw["note2"]) : null,
-        note3: raw["note3"] != null ? Number(raw["note3"]) : null,
-        note4: raw["note4"] != null ? Number(raw["note4"]) : null,
-        attendancePercentage:
-          raw["percentage"] != null ? Number(raw["percentage"]) : 0,
-        condition: raw["condition"] ?? null,
-      };
-
-      if (expected === 2) {
-        row.note3 = null;
-        row.note4 = null;
-      }
-
-      return row;
-    });
   }
 
   private async getExpectedPartialsForSubject(
@@ -476,6 +360,41 @@ export class SubjectsService {
 
     const value = Number(row?.partials ?? 2);
     return value === 4 ? 4 : 2;
+  }
+
+  private mapViewToGradeRow(row: SubjectGradesView): GradeRowDto {
+    return {
+      studentId: row.studentId,
+      fullName: (row.fullName ?? "").trim(),
+      legajo: row.legajo,
+      note1: this.toNullableNumber(row.note1),
+      note2: this.toNullableNumber(row.note2),
+      note3: this.toNullableNumber(row.note3),
+      note4: this.toNullableNumber(row.note4),
+      final: this.toNullableNumber(row.final),
+      attendancePercentage: this.toNumber(row.attendancePercentage, 0),
+      condition: row.condition ?? null,
+    };
+  }
+
+  private normalizePartials(value: number | null | undefined): 2 | 4 {
+    return value === 4 ? 4 : 2;
+  }
+
+  private toNullableNumber(value: unknown): number | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const num = Number(value);
+    return Number.isNaN(num) ? null : num;
+  }
+
+  private toNumber(value: unknown, fallback = 0): number {
+    if (value === undefined || value === null) {
+      return fallback;
+    }
+    const num = Number(value);
+    return Number.isNaN(num) ? fallback : num;
   }
 
   private mapAliasToNotes(
