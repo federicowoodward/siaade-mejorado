@@ -5,6 +5,7 @@ import { Notice } from '@/entities/notices/notice.entity';
 import { Role } from '@/entities/roles/role.entity';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
+import { ROLE, ROLE_IDS } from '@/shared/rbac/roles.constants';
 
 @Injectable()
 export class NoticesService {
@@ -17,8 +18,8 @@ export class NoticesService {
 
   async create(dto: CreateNoticeDto, createdByUserId?: string) {
     let visibleRoleId: number | null = null;
-    if (dto.visibleFor === 'teacher') visibleRoleId = 2;
-    else if (dto.visibleFor === 'student') visibleRoleId = 4;
+    if (dto.visibleFor === 'teacher') visibleRoleId = ROLE_IDS[ROLE.TEACHER];
+    else if (dto.visibleFor === 'student') visibleRoleId = ROLE_IDS[ROLE.STUDENT];
 
     const notice = this.repo.create({
       content: dto.content,
@@ -29,7 +30,12 @@ export class NoticesService {
     return {
       id: saved.id,
       content: saved.content,
-      visibleFor: saved.visibleRoleId === 2 ? 'teacher' : saved.visibleRoleId === 4 ? 'student' : 'all',
+      visibleFor:
+        saved.visibleRoleId === ROLE_IDS[ROLE.TEACHER]
+          ? 'teacher'
+          : saved.visibleRoleId === ROLE_IDS[ROLE.STUDENT]
+          ? 'student'
+          : 'all',
       createdBy: 'Secretaria',
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,
@@ -69,7 +75,12 @@ export class NoticesService {
     const mapped = rows.map((r) => ({
       id: r.id,
       content: r.content,
-      visibleFor: r.visibleRoleId === 2 ? 'teacher' : r.visibleRoleId === 4 ? 'student' : 'all',
+      visibleFor:
+        r.visibleRoleId === ROLE_IDS[ROLE.TEACHER]
+          ? 'teacher'
+          : r.visibleRoleId === ROLE_IDS[ROLE.STUDENT]
+          ? 'student'
+          : 'all',
       createdBy: 'Secretaria',
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
@@ -78,14 +89,11 @@ export class NoticesService {
   }
 
   private async resolveRoleId(audience: 'student' | 'teacher'): Promise<number> {
-    const names = audience === 'student'
-      ? ['alumno', 'student']
-      : ['docente', 'teacher', 'profesor'];
+    const slug = audience === 'student' ? ROLE.STUDENT : ROLE.TEACHER;
 
-    const role = await this.rolesRepo
-      .createQueryBuilder('r')
-      .where('LOWER(r.name) IN (:...names)', { names })
-      .getOne();
+    const role = await this.rolesRepo.findOne({
+      where: { name: slug },
+    });
     if (!role) {
       throw new NotFoundException(`Role for '${audience}' not found`);
     }
