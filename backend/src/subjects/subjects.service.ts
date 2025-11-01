@@ -12,9 +12,11 @@ import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entit
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { User } from "@/entities/users/user.entity";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { GradeRowDto } from "./dto/grade-row.dto";
+import { UpdateSubjectGradeDto } from "./dto/update-subject-grade.dto";
 import { ROLE } from "@/shared/rbac/roles.constants";
 
 type AuthenticatedUser = {
@@ -252,6 +254,145 @@ export class SubjectsService {
     };
   }
 
+  async getSubjectAcademicSituation(
+    subjectId: number,
+    filters?: { q?: string; commissionId?: number }
+  ): Promise<{
+    subject: { id: number; name: string; partials: 2 | 4 };
+    commissions: Array<{ id: number; letter: string | null }>;
+    rows: Array<{
+      studentId: string;
+      fullName: string;
+      legajo: string;
+      dni: string;
+      commissionId: number;
+      commissionLetter: string | null;
+      note1: number | null;
+      note2: number | null;
+      note3: number | null;
+      note4: number | null;
+      final: number | null;
+      attendancePercentage: number;
+      condition: string | null;
+    }>;
+  }> {
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId },
+    });
+    if (!subject) {
+      throw new NotFoundException(`Subject ${subjectId} was not found`);
+    }
+
+    const qb = this.subjectGradesViewRepo
+      .createQueryBuilder("vg")
+      .leftJoin(User, "user", "user.id = vg.student_id")
+      .where("vg.subject_id = :subjectId", { subjectId })
+      .orderBy("vg.commission_letter", "ASC", "NULLS LAST")
+      .addOrderBy("vg.commission_id", "ASC")
+      .addOrderBy("vg.full_name", "ASC")
+      .addSelect("user.cuil", "academicSituation_cuil");
+
+    const commissionFilter =
+      filters?.commissionId && filters.commissionId > 0
+        ? filters.commissionId
+        : undefined;
+    if (commissionFilter !== undefined) {
+      qb.andWhere("vg.commission_id = :commissionId", {
+        commissionId: commissionFilter,
+      });
+    }
+
+    const search = filters?.q?.trim();
+    if (search) {
+      qb.andWhere(
+        "(vg.full_name ILIKE :search OR user.cuil ILIKE :search)",
+        { search: `%${search}%` }
+      );
+    }
+
+    const { entities, raw } = await qb.getRawAndEntities();
+
+    const rows = entities.map((entity, index) => {
+      const mapped = this.mapViewToGradeRow(entity);
+      const rawRow = raw[index] as Record<string, any>;
+      const cuil =
+        (rawRow?.academicSituation_cuil as string | null | undefined) ?? "";
+
+      return {
+        studentId: mapped.studentId,
+        fullName: mapped.fullName,
+        legajo: mapped.legajo,
+        dni: cuil,
+        commissionId: entity.commissionId,
+        commissionLetter: entity.commissionLetter ?? null,
+        note1: mapped.note1,
+        note2: mapped.note2,
+        note3: mapped.note3,
+        note4: mapped.note4,
+        final: mapped.final,
+        attendancePercentage: mapped.attendancePercentage,
+        condition: mapped.condition,
+      };
+    });
+
+    const commissions = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .where("sc.subjectId = :subjectId", { subjectId })
+      .orderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("sc.id", "ASC")
+      .getMany();
+
+    const subjectPartials = await this.getExpectedPartialsForSubject(subjectId);
+
+    return {
+      subject: {
+        id: subject.id,
+        name: subject.subjectName,
+        partials: subjectPartials,
+      },
+      commissions: commissions.map((commission) => ({
+        id: commission.id,
+        letter: commission.commission?.commissionLetter ?? null,
+      })),
+      rows,
+    };
+  }
+
+  async patchSubjectGrade(
+    subjectId: number,
+    studentId: string,
+    dto: UpdateSubjectGradeDto,
+    user?: AuthenticatedUser
+  ): Promise<GradeRowDto> {
+    const entries = this.collectGradePatchEntries(dto);
+    if (entries.length === 0) {
+      throw new BadRequestException("At least one grade field is required");
+    }
+    if (entries.length > 1) {
+      throw new BadRequestException(
+        "Only one grade field can be updated per request"
+      );
+    }
+
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId },
+    });
+    if (!subject) {
+      throw new NotFoundException(`Subject ${subjectId} was not found`);
+    }
+
+    await this.ensureStudentEnrollment(subjectId, studentId);
+
+    const [path, value] = entries[0];
+    const commissionId = await this.resolveSubjectCommissionId(
+      subjectId,
+      studentId
+    );
+
+    return this.patchCell(commissionId, studentId, { path, value }, user);
+  }
+
   private async ensureAccess(
     subjectCommissionId: number,
     user: AuthenticatedUser | undefined,
@@ -368,6 +509,59 @@ export class SubjectsService {
       attendancePercentage: this.toNumber(row.attendancePercentage, 0),
       condition: row.condition ?? null,
     };
+  }
+
+  private collectGradePatchEntries(
+    dto: UpdateSubjectGradeDto
+  ): Array<[PatchCellDto["path"], number | null]> {
+    const keys: Array<PatchCellDto["path"]> = [
+      "note1",
+      "note2",
+      "note3",
+      "note4",
+      "partial1",
+      "partial2",
+      "final",
+    ];
+
+    const entries: Array<[PatchCellDto["path"], number | null]> = [];
+    for (const key of keys) {
+      const value = dto[key as keyof UpdateSubjectGradeDto];
+      if (value !== undefined) {
+        entries.push([key, value ?? null]);
+      }
+    }
+    return entries;
+  }
+
+  private async resolveSubjectCommissionId(
+    subjectId: number,
+    studentId: string
+  ): Promise<number> {
+    const row = await this.subjectGradesViewRepo
+      .createQueryBuilder("vg")
+      .where("vg.subject_id = :subjectId", { subjectId })
+      .andWhere("vg.student_id = :studentId", { studentId })
+      .orderBy("vg.commission_id", "ASC")
+      .getOne();
+
+    if (row?.commissionId) {
+      return row.commissionId;
+    }
+
+    const commission = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .where("sc.subjectId = :subjectId", { subjectId })
+      .orderBy("sc.id", "ASC")
+      .getOne();
+
+    if (!commission) {
+      throw new NotFoundException(
+        `No subject commissions found for subject ${subjectId}`
+      );
+    }
+
+    return commission.id;
   }
 
   private normalizePartials(value: number | null | undefined): 2 | 4 {

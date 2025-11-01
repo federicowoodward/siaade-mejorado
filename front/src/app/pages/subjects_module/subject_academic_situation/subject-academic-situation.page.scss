@@ -1,4 +1,4 @@
-:host {
+﻿:host {
   display: block;
 }
 
@@ -13,11 +13,15 @@
   margin: 0.5rem 0;
 }
 
-.col-alumno {
-  text-align: left;
+.table-container {
+  margin-top: 1rem;
 }
 
-.col-final {
+.note-cell {
+  text-align: center;
+}
+
+.final-cell {
   text-align: center;
   font-weight: 600;
 }
@@ -43,7 +47,6 @@
   text-align: center;
 }
 
-.p-datatable .p-datatable-tbody > tr > td.col-alumno {
+.p-datatable .p-datatable-tbody > tr > td.alumno-cell {
   text-align: left;
 }
-

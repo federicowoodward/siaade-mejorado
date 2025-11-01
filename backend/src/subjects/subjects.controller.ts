@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Put,
+  Query,
   Req,
   UseGuards,
 } from "@nestjs/common";
@@ -30,6 +31,7 @@ import { SubjectsService } from "./subjects.service";
 import { GradeRowDto } from "./dto/grade-row.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
+import { UpdateSubjectGradeDto } from "./dto/update-subject-grade.dto";
 import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
 
 type AuthenticatedUser = {
@@ -40,50 +42,27 @@ type AuthenticatedUser = {
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER
+)
 @Controller("subject-commissions")
 export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
-  @Get(":subjectCommissionId/grades")
-  @Action("subjects.listCommissionGrades")
-  @ApiOperation({ summary: "Listar notas y asistencia de una comision" })
-  @ApiParam({ name: "subjectCommissionId", type: Number })
-  @ApiOkResponse({ type: GradeRowDto, isArray: true })
-  async getGrades(
-    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number
-  ): Promise<GradeRowDto[]> {
-    return this.subjectsService.getGrades(subjectCommissionId);
-  }
-
-  @Patch(":subjectCommissionId/grades/:studentId")
-  @Action("subjects.patchCommissionCell")
-  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
-  @ApiOperation({
-    summary: "Actualizar una celda de notas y asistencia para un alumno",
-  })
-  @ApiParam({ name: "subjectCommissionId", type: Number })
-  @ApiParam({ name: "studentId", type: String })
-  @ApiBody({ type: PatchCellDto })
-  @ApiOkResponse({ type: GradeRowDto })
-  async patchCell(
-    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
-    @Param("studentId", ParseObjectIdPipe) studentId: string,
-    @Body() dto: PatchCellDto,
-    @Req() req: Request
-  ): Promise<GradeRowDto> {
-    return this.subjectsService.patchCell(
-      subjectCommissionId,
-      studentId,
-      dto,
-      req.user as AuthenticatedUser
-    );
-  }
-
   @Put(":subjectCommissionId/grades")
   @Action("subjects.bulkUpsertGrades")
-  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
-  @ApiOperation({ summary: "Actualizar notas y asistencia de multiples alumnos" })
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER
+  )
+  @ApiOperation({
+    summary: "Actualizar notas y asistencia de multiples alumnos",
+  })
   @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiBody({ type: UpsertGradeDto })
   async upsertGrades(
@@ -106,10 +85,176 @@ export class SubjectsController {
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER
+)
 @Controller("subjects")
 export class SubjectGradesController {
   constructor(private readonly subjectsService: SubjectsService) {}
+
+  @Get(":subjectId/academic-situation")
+  @Action("subjects.getSubjectAcademicSituation")
+  @ApiOperation({
+    summary: "Obtener la situacion academica de una materia",
+  })
+  @ApiParam({ name: "subjectId", type: Number })
+  @ApiOkResponse({
+    schema: {
+      type: "object",
+      properties: {
+        subject: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            name: { type: "string" },
+            partials: { type: "number", enum: [2, 4] },
+          },
+        },
+        commissions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "number" },
+              letter: { type: "string", nullable: true },
+            },
+          },
+        },
+        rows: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              studentId: { type: "string" },
+              fullName: { type: "string" },
+              legajo: { type: "string" },
+              dni: { type: "string" },
+              commissionId: { type: "number" },
+              commissionLetter: { type: "string", nullable: true },
+              note1: { type: "number", nullable: true },
+              note2: { type: "number", nullable: true },
+              note3: { type: "number", nullable: true },
+              note4: { type: "number", nullable: true },
+              final: { type: "number", nullable: true },
+              attendancePercentage: { type: "number" },
+              condition: { type: "string", nullable: true },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getSubjectAcademicSituation(
+    @Param("subjectId", ParseIntPipe) subjectId: number,
+    @Query("q") q?: string,
+    @Query("commissionId", new ParseIntPipe({ optional: true }))
+    commissionId?: number
+  ) {
+    return this.subjectsService.getSubjectAcademicSituation(subjectId, {
+      q: q?.trim() || undefined,
+      commissionId: commissionId ?? undefined,
+    });
+  }
+
+  @Patch(":subjectId/grades/:studentId")
+  @Action("subjects.patchSubjectGrade")
+  @ApiOperation({
+    summary: "Actualizar una nota puntual de un alumno dentro de una materia",
+  })
+  @ApiParam({ name: "subjectId", type: Number })
+  @ApiParam({ name: "studentId", type: String })
+  @ApiBody({ type: UpdateSubjectGradeDto })
+  @ApiOkResponse({ type: GradeRowDto })
+  async patchSubjectGrade(
+    @Param("subjectId", ParseIntPipe) subjectId: number,
+    @Param("studentId", ParseObjectIdPipe) studentId: string,
+    @Body() dto: UpdateSubjectGradeDto,
+    @Req() req: Request
+  ): Promise<GradeRowDto> {
+    return this.subjectsService.patchSubjectGrade(
+      subjectId,
+      studentId,
+      dto,
+      req.user as AuthenticatedUser
+    );
+  }
+}
+
+@ApiTags("subjects")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER,
+  ROLE.STUDENT
+)
+@Controller("subject-status")
+export class SubjectStatusController {
+  constructor(private readonly subjectsService: SubjectsService) {}
+
+  @Patch(":subjectCommissionId/grades/:studentId")
+  @Action("subjects.patchCommissionCell")
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER
+  )
+  @ApiOperation({
+    summary: "Actualizar una celda de notas y asistencia para un alumno",
+  })
+  @ApiParam({ name: "subjectCommissionId", type: Number })
+  @ApiParam({ name: "studentId", type: String })
+  @ApiBody({ type: PatchCellDto })
+  @ApiOkResponse({ type: GradeRowDto })
+  async patchCell(
+    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
+    @Param("studentId", ParseObjectIdPipe) studentId: string,
+    @Body() dto: PatchCellDto,
+    @Req() req: Request
+  ): Promise<GradeRowDto> {
+    return this.subjectsService.patchCell(
+      subjectCommissionId,
+      studentId,
+      dto,
+      req.user as AuthenticatedUser
+    );
+  }
+
+  @Get()
+  @Action("subjects.listStatuses")
+  @ApiOperation({ summary: "Listar estados de materia" })
+  @ApiOkResponse({
+    schema: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          statusName: { type: "string" },
+        },
+      },
+    },
+  })
+  async listStatuses() {
+    return this.subjectsService.getSubjectStatuses();
+  }
+
+  @Get(":subjectCommissionId/grades")
+  @Action("subjects.listCommissionGrades")
+  @ApiOperation({ summary: "Listar notas y asistencia de una comision" })
+  @ApiParam({ name: "subjectCommissionId", type: Number })
+  @ApiOkResponse({ type: GradeRowDto, isArray: true })
+  async getGrades(
+    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number
+  ): Promise<GradeRowDto[]> {
+    return this.subjectsService.getGrades(subjectCommissionId);
+  }
 
   @Get(":subjectId/grades")
   @Action("subjects.listSubjectGrades")
@@ -175,38 +320,3 @@ export class SubjectGradesController {
     return this.subjectsService.getSubjectGradesBySubject(subjectId);
   }
 }
-
-@ApiTags("subjects")
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@AllowRoles(
-  ROLE.EXECUTIVE_SECRETARY,
-  ROLE.SECRETARY,
-  ROLE.PRECEPTOR,
-  ROLE.TEACHER,
-  ROLE.STUDENT
-)
-@Controller("subject-status")
-export class SubjectStatusController {
-  constructor(private readonly subjectsService: SubjectsService) {}
-
-  @Get()
-  @Action("subjects.listStatuses")
-  @ApiOperation({ summary: "Listar estados de materia" })
-  @ApiOkResponse({
-    schema: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          id: { type: "number" },
-          statusName: { type: "string" },
-        },
-      },
-    },
-  })
-  async listStatuses() {
-    return this.subjectsService.getSubjectStatuses();
-  }
-}
-

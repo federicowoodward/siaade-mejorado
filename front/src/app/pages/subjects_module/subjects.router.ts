@@ -1,6 +1,6 @@
 ﻿import { Routes } from "@angular/router";
 import { StudentsPage } from "./students_page/students-page";
-import { GradesPage } from "./grades_page/grades-page";
+import { SubjectAcademicSituationPage } from "./subject_academic_situation/subject-academic-situation.page";
 import { SubjectsPage } from "./subjects_page/subjects-page";
 import { NewSubjectPage } from "./new-subject-page/new-subject-page";
 import { CareerPage } from "./career_page/career-page/career-page";
@@ -17,8 +17,8 @@ export const SUBJECTS_ROUTES: Routes = [
     component: StudentsPage,
   },
   {
-    path: "grades/:subjectId",
-    component: GradesPage,
+    path: ":subjectId/academic-situation",
+    component: SubjectAcademicSituationPage,
   },
   {
     path: "new",

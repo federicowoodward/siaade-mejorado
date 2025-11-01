@@ -1,0 +1,196 @@
+﻿<div class="m-w-custom">
+  <p-toast></p-toast>
+
+  <p-button label="Volver" icon="pi pi-arrow-left" (onClick)="back()" />
+
+  <div class="flex justify-content-between align-items-center mb-3">
+    <h2 class="m-0">Situacion academica: {{ subjectName() }}</h2>
+  </div>
+
+  <ng-container *ngIf="loading(); else loadedTpl">
+    <div class="center">
+      <p-progressSpinner ariaLabel="Cargando"></p-progressSpinner>
+    </div>
+  </ng-container>
+
+  <ng-template #loadedTpl>
+    <div *ngIf="error(); else contentTpl" class="error">{{ error() }}</div>
+  </ng-template>
+
+  <ng-template #contentTpl>
+    <div class="table-container">
+      <p-table
+        #dt
+        [value]="rows()"
+        [paginator]="true"
+        [rows]="15"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-sm p-datatable-gridlines"
+        editMode="cell"
+        (onEditComplete)="onCellEditComplete($event)"
+        [rowTrackBy]="rowsTrackBy"
+      >
+        <ng-template pTemplate="caption">
+          <div class="flex justify-content-between align-items-center">
+            <div class="flex gap-2">
+              <p-button
+                label="Limpiar filtros"
+                [outlined]="true"
+                icon="pi pi-filter-slash"
+                (onClick)="clearFilters(dt)"
+              ></p-button>
+              <p-button
+                label="Guardar cambios"
+                icon="pi pi-save"
+              ></p-button>
+              <p-button
+                label="Recargar datos"
+                icon="pi pi-refresh"
+              ></p-button>
+            </div>
+
+            <div class="flex gap-3 align-items-center">
+              <input
+                pInputText
+                [ngModel]="searchTerm()"
+                (ngModelChange)="onSearchChange($event)"
+                placeholder="Buscar por nombre o CUIL"
+              />
+              <p-select
+                [options]="commissionSelectItems()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="selectedCommission()"
+                (onChange)="onCommissionChange($event.value)"
+              ></p-select>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Alumno</th>
+            <th>CUIL</th>
+            <th>Comision</th>
+            <th>Nota 1</th>
+            <th>Nota 2</th>
+            <th *ngIf="partials() === 4">Nota 3</th>
+            <th *ngIf="partials() === 4">Nota 4</th>
+            <th>Final</th>
+            <th>Asistencia (%)</th>
+            <th>Condicion</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td class="alumno-cell">
+              <div class="flex flex-column">
+                <span class="font-medium">{{ row.fullName }}</span>
+                <small class="text-color-secondary"
+                  >Legajo: {{ row.legajo }}</small
+                >
+              </div>
+            </td>
+            <td>{{ row.dni || '-' }}</td>
+            <td>{{ row.commissionLetter || row.commissionId }}</td>
+            <td class="note-cell" pEditableColumn>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    pInputText
+                    [(ngModel)]="row.note1"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note1 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td class="note-cell" pEditableColumn>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    pInputText
+                    [(ngModel)]="row.note2"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note2 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td *ngIf="partials() === 4" class="note-cell" pEditableColumn>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    pInputText
+                    [(ngModel)]="row.note3"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note3 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td *ngIf="partials() === 4" class="note-cell" pEditableColumn>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    pInputText
+                    [(ngModel)]="row.note4"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note4 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td
+              class="final-cell"
+              pEditableColumn
+              [ngClass]="finalClass(row.final)"
+            >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    pInputText
+                    [(ngModel)]="row.final"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.final ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              {{ row.attendancePercentage !== null && row.attendancePercentage
+              !== undefined ? row.attendancePercentage + '%' : '-' }}
+            </td>
+            <td>{{ row.condition || '-' }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-template>
+</div>
