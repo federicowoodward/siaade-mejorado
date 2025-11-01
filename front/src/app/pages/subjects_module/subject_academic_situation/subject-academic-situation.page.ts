@@ -255,6 +255,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       );
     }
 
+    const newFinal = this.computeFinalForRow(row);
+    const baselineFinal = base ? base.final ?? null : null;
+    row.final = newFinal;
+    this.updatePendingChanges(row.studentId, 'final', newFinal, baselineFinal);
+
     this.syncRow(row);
     this.clonedRows.delete(row.studentId);
   }
@@ -304,8 +309,16 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       .subscribe({
         next: (payload) => {
           this.currentFetch = null;
-          this.data.set(payload);
-          this.setBaselineRows(payload.rows);
+          const partialsCount = payload.subject.partials;
+          const rowsWithComputedFinal = payload.rows.map((row) => ({
+            ...row,
+            final: this.computeFinalForRow(row, partialsCount),
+          }));
+          this.data.set({
+            ...payload,
+            rows: rowsWithComputedFinal,
+          });
+          this.setBaselineRows(rowsWithComputedFinal);
           this.pendingSignal.set({});
           this.clonedRows.clear();
           this.saving.set(false);
@@ -472,12 +485,47 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         baselineValue
       );
     }
+
+    const currentFinal = this.computeFinalForRow(row);
+    const baselineFinal = base ? base.final ?? null : null;
+    row.final = currentFinal;
+    this.updatePendingChanges(row.studentId, 'final', currentFinal, baselineFinal);
   }
 
   private getEditableFields(): EditableField[] {
     return this.partials() === 4
-      ? ['note1', 'note2', 'note3', 'note4', 'final']
-      : ['note1', 'note2', 'final'];
+      ? ['note1', 'note2', 'note3', 'note4']
+      : ['note1', 'note2'];
+  }
+
+  private computeFinalForRow(
+    row: AcademicSituationRow,
+    partialsCount?: number
+  ): number | null {
+    const count = partialsCount ?? this.partials();
+    const rawValues =
+      count === 4
+        ? [row.note1, row.note2, row.note3, row.note4]
+        : [row.note1, row.note2];
+
+    const numericValues = rawValues.filter(
+      (value): value is number =>
+        typeof value === 'number' && !Number.isNaN(value) && value >= 0 && value <= 10
+    );
+
+    if (numericValues.length === 0) {
+      return null;
+    }
+
+    const divisor = count === 4 ? 4 : 2;
+    const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
+    const average = sum / divisor;
+
+    if (!Number.isFinite(average)) {
+      return null;
+    }
+
+    return Number(average.toFixed(2));
   }
 
   private parseGradeValue(value: unknown): number | null | undefined {

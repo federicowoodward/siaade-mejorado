@@ -178,21 +178,7 @@
               </p-cellEditor>
             </td>
             <td class="final-cell" [ngClass]="finalClass(row.final)">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    pInputText
-                    [(ngModel)]="row.final"
-                    [ngModelOptions]="{ standalone: true }"
-                  />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ row.final ?? '-' }}
-                </ng-template>
-              </p-cellEditor>
+              {{ row.final ?? '-' }}
             </td>
             <td style="width: 1.4rem">
               {{ row.attendancePercentage !== null && row.attendancePercentage
