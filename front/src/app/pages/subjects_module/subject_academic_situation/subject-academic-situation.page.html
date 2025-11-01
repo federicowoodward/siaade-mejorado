@@ -24,10 +24,10 @@
         [value]="rows()"
         [paginator]="true"
         [rows]="15"
+        dataKey="studentId"
+        editMode="row"
         responsiveLayout="scroll"
         styleClass="p-datatable-sm p-datatable-gridlines"
-        editMode="cell"
-        (onEditComplete)="onCellEditComplete($event)"
         [rowTrackBy]="rowsTrackBy"
       >
         <ng-template pTemplate="caption">
@@ -42,10 +42,15 @@
               <p-button
                 label="Guardar cambios"
                 icon="pi pi-save"
+                [disabled]="!hasPendingChanges() || saving()"
+                [loading]="saving()"
+                (onClick)="onSaveChanges()"
               ></p-button>
               <p-button
                 label="Recargar datos"
                 icon="pi pi-refresh"
+                [disabled]="saving()"
+                (onClick)="onReload()"
               ></p-button>
             </div>
 
@@ -68,39 +73,46 @@
         </ng-template>
 
         <ng-template pTemplate="header">
+          <!-- prettier-ignore -->
           <tr>
-            <th>Alumno</th>
-            <th>CUIL</th>
-            <th>Comision</th>
-            <th>Nota 1</th>
-            <th>Nota 2</th>
-            <th *ngIf="partials() === 4">Nota 3</th>
-            <th *ngIf="partials() === 4">Nota 4</th>
-            <th>Final</th>
-            <th>Asistencia (%)</th>
-            <th>Condicion</th>
+            <th pTooltip="Alumno" tooltipPosition="top" appendTo="body">Alumno</th>
+            <th pTooltip="Comisión" tooltipPosition="top" appendTo="body">Com.</th>
+            <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N° 1</th>
+            <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N° 2</th>
+            <th *ngIf="partials() === 4" pTooltip="Nota 3" tooltipPosition="top" appendTo="body">N° 3</th>
+            <th *ngIf="partials() === 4" pTooltip="Nota 4" tooltipPosition="top" appendTo="body">N° 4</th>
+            <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
+            <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
+            <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
+            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:6rem">Acc.</th>
           </tr>
+          <!-- prettier-ignore-end -->
         </ng-template>
 
-        <ng-template pTemplate="body" let-row>
-          <tr>
-            <td class="alumno-cell">
+        <ng-template
+          pTemplate="body"
+          let-row
+          let-editing="editing"
+          let-ri="rowIndex"
+        >
+          <tr [pEditableRow]="row">
+            <td class="alumno-cell max-w-8rem">
               <div class="flex flex-column">
                 <span class="font-medium">{{ row.fullName }}</span>
-                <small class="text-color-secondary"
-                  >Legajo: {{ row.legajo }}</small
-                >
+                <small class="text-color-secondary">CUIL: {{ row.dni }}</small>
               </div>
             </td>
-            <td>{{ row.dni || '-' }}</td>
-            <td>{{ row.commissionLetter || row.commissionId }}</td>
-            <td class="note-cell" pEditableColumn>
+            <td style="width: 1rem">
+              {{ row.commissionLetter || row.commissionId }}
+            </td>
+            <td class="note-cell">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input
                     type="number"
                     min="0"
                     max="10"
+                    style="width: 4rem"
                     pInputText
                     [(ngModel)]="row.note1"
                     [ngModelOptions]="{ standalone: true }"
@@ -111,13 +123,14 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td class="note-cell" pEditableColumn>
+            <td class="note-cell">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input
                     type="number"
                     min="0"
                     max="10"
+                    style="width: 4rem"
                     pInputText
                     [(ngModel)]="row.note2"
                     [ngModelOptions]="{ standalone: true }"
@@ -128,13 +141,14 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td *ngIf="partials() === 4" class="note-cell" pEditableColumn>
+            <td *ngIf="partials() === 4" class="note-cell">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input
                     type="number"
                     min="0"
                     max="10"
+                    style="width: 4rem"
                     pInputText
                     [(ngModel)]="row.note3"
                     [ngModelOptions]="{ standalone: true }"
@@ -145,13 +159,14 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td *ngIf="partials() === 4" class="note-cell" pEditableColumn>
+            <td *ngIf="partials() === 4" class="note-cell">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input
                     type="number"
                     min="0"
                     max="10"
+                    style="width: 4rem"
                     pInputText
                     [(ngModel)]="row.note4"
                     [ngModelOptions]="{ standalone: true }"
@@ -162,11 +177,7 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td
-              class="final-cell"
-              pEditableColumn
-              [ngClass]="finalClass(row.final)"
-            >
+            <td class="final-cell" [ngClass]="finalClass(row.final)">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input
@@ -183,11 +194,52 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td>
+            <td style="width: 1.4rem">
               {{ row.attendancePercentage !== null && row.attendancePercentage
               !== undefined ? row.attendancePercentage + '%' : '-' }}
             </td>
-            <td>{{ row.condition || '-' }}</td>
+            <td style="width: 1rem">{{ row.condition || '-' }}</td>
+            <td>
+              <div class="flex items-center justify-center gap-2">
+                <button
+                  *ngIf="!editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  pInitEditableRow
+                  icon="pi pi-pencil"
+                  (click)="onRowEditInit(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                ></button>
+                <button
+                  *ngIf="editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  pSaveEditableRow
+                  icon="pi pi-check"
+                  (click)="onRowEditSave(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                ></button>
+                <!-- // no damos la opcion de cancelar la edicion -->
+                <!-- <button
+                  *ngIf="editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  pCancelEditableRow
+                  icon="pi pi-times"
+                  (click)="onRowEditCancel(row, ri)"
+                  text
+                  rounded
+                  severity="secondary"
+                ></button> -->
+              </div>
+            </td>
           </tr>
         </ng-template>
       </p-table>
