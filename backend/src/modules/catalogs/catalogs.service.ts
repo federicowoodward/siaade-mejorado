@@ -9,6 +9,20 @@ import { CareerStudent } from "@/entities/registration/career-student.entity";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
+import { Subject } from "@/entities/subjects/subject.entity";
+
+export type SubjectCommissionTeachersDto = {
+  subject: { id: number; name: string };
+  commissions: Array<{
+    commission: { id: number; letter: string | null };
+    teachers: Array<{
+      teacherId: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    }>;
+  }>;
+};
 
 @Injectable()
 export class CatalogsService {
@@ -19,6 +33,8 @@ export class CatalogsService {
     private readonly careerRepo: Repository<Career>,
     @InjectRepository(Commission)
     private readonly commissionRepo: Repository<Commission>,
+    @InjectRepository(Subject)
+    private readonly subjectRepo: Repository<Subject>,
     @InjectRepository(CareerSubject)
     private readonly careerSubjectRepo: Repository<CareerSubject>,
     @InjectRepository(SubjectCommission)
@@ -328,6 +344,100 @@ export class CatalogsService {
       filters: {
         studentStartYear: opts?.studentStartYear ?? null,
       },
+      commissions,
+    };
+  }
+
+  async getSubjectCommissionTeachers(
+    subjectId: number
+  ): Promise<SubjectCommissionTeachersDto> {
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId },
+    });
+
+    if (!subject) {
+      throw new NotFoundException(
+        `Subject with id ${subjectId} was not found`
+      );
+    }
+
+    const assignments = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .leftJoinAndSelect("sc.teacher", "teacher")
+      .leftJoinAndSelect("teacher.user", "user")
+      .where("sc.subjectId = :subjectId", { subjectId })
+      .orderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("commission.id", "ASC")
+      .getMany();
+
+    const commissionMap = new Map<
+      number,
+      SubjectCommissionTeachersDto["commissions"][number]
+    >();
+
+    for (const assignment of assignments) {
+      const commission = assignment.commission;
+      if (!commission) {
+        continue;
+      }
+
+      if (!commissionMap.has(commission.id)) {
+        commissionMap.set(commission.id, {
+          commission: {
+            id: commission.id,
+            letter: commission.commissionLetter ?? null,
+          },
+          teachers: [],
+        });
+      }
+
+      const entry = commissionMap.get(commission.id)!;
+      // TODO: soportar múltiples docentes por comisión cuando se agregue una tabla pivote específica.
+      const teacher = assignment.teacher;
+      if (teacher) {
+        const user = teacher.user;
+        const teacherId = teacher.userId;
+        if (!entry.teachers.some((t) => t.teacherId === teacherId)) {
+          const nameParts = [user?.name, user?.lastName].filter(
+            (part): part is string => Boolean(part)
+          );
+          entry.teachers.push({
+            teacherId,
+            name: nameParts.length > 0 ? nameParts.join(" ") : teacherId,
+            email: user?.email ?? "",
+            cuil: user?.cuil ?? null,
+          });
+        }
+      }
+    }
+
+    const commissions = Array.from(commissionMap.values()).map((entry) => {
+      entry.teachers.sort((a, b) => a.name.localeCompare(b.name));
+      return entry;
+    });
+
+    commissions.sort((a, b) => {
+      const letterA = a.commission.letter ?? "";
+      const letterB = b.commission.letter ?? "";
+      if (letterA && letterB) {
+        const cmp = letterA.localeCompare(letterB, undefined, {
+          sensitivity: "base",
+        });
+        if (cmp !== 0) {
+          return cmp;
+        }
+      } else if (letterA) {
+        return -1;
+      } else if (letterB) {
+        return 1;
+      }
+
+      return a.commission.id - b.commission.id;
+    });
+
+    return {
+      subject: { id: subject.id, name: subject.subjectName },
       commissions,
     };
   }

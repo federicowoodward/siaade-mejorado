@@ -24,6 +24,19 @@ type ApiResponse = {
   }>;
 };
 
+export type SubjectCommissionTeachersDto = {
+  subject: { id: number; name: string };
+  commissions: Array<{
+    commission: { id: number; letter: string | null };
+    teachers: Array<{
+      teacherId: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    }>;
+  }>;
+};
+
 @Injectable({ providedIn: 'root' })
 export class CareerCatalogService {
   private api = inject(ApiService);
@@ -86,5 +99,12 @@ export class CareerCatalogService {
     // Si más adelante tenés un endpoint o lista de docentes, podés reemplazar esto
     const teacherId = this.getTeacherId(subjectId);
     return teacherId ? `Profesor ID: ${teacherId}` : 'Sin asignar';
+  }
+
+  getSubjectCommissionTeachers(subjectId: number) {
+    return this.api.request<SubjectCommissionTeachersDto>(
+      'GET',
+      `catalogs/subject/${subjectId}/commission-teachers`
+    );
   }
 }

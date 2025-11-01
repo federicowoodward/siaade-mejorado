@@ -17,17 +17,102 @@
         <button
           pButton
           type="button"
-          label="Ver profe"
-          (click)="viewTeacher(subject.id)"
+          label="Comisiones"
+          (click)="viewComissions(subject.id)"
         ></button>
         <button
           pButton
           type="button"
           class="p-ml-2"
-          label="Ver situacion academica"
+          label="Situacion academica"
           (click)="viewStatus(subject.id)"
         ></button>
       </td>
     </tr>
   </ng-template>
 </p-table>
+<p-dialog
+  [modal]="true"
+  [(visible)]="dialogTeachers().visible"
+  (onHide)="closeTeachersDialog()"
+  [style]="{ width: '48rem', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ 'max-height': '70vh', overflow: 'auto' }"
+  [header]="dialogData()?.subject?.name ? ('Comisiones y docentes — ' + dialogData()?.subject?.name) : 'Comisiones y docentes'"
+>
+  <!-- Loading -->
+  <div *ngIf="dialogLoading()" class="p-4 flex align-items-center gap-2">
+    <i class="pi pi-spin pi-spinner" style="font-size: 1.2rem"></i>
+    <span>Cargando comisiones y docentes…</span>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!dialogLoading() && dialogError()" class="p-3">
+    <p style="color: var(--red-500)">{{ dialogError() }}</p>
+    <button
+      pButton
+      label="Reintentar"
+      icon="pi pi-refresh"
+      (click)="viewComissions(dialogTeachers().subjectId!)"
+    ></button>
+  </div>
+
+  <!-- Data -->
+  <ng-container
+    *ngIf="!dialogLoading() && !dialogError() && dialogData() as data"
+  >
+    <ng-container *ngIf="data.commissions?.length; else emptyStateTpl">
+      <div class="flex flex-column gap-4">
+        <div *ngFor="let c of data.commissions" class="flex flex-column gap-2">
+          <h4 class="m-0">Comisión {{ c.commission.letter || '—' }}</h4>
+
+          <p-table
+            [value]="c.teachers"
+            [tableStyle]="{ 'min-width': '100%' }"
+            [paginator]="false"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Docente</th>
+                <th>Email</th>
+                <th>CUIL</th>
+                <th style="width: 1%"></th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-t>
+              <tr>
+                <td>{{ t.name }}</td>
+                <td>{{ t.email }}</td>
+                <td>{{ t.cuil || '—' }}</td>
+                <td class="text-right">
+                  <button
+                    pButton
+                    label="Ver perfil"
+                    icon="pi pi-user"
+                    (click)="goToTeacher(t.teacherId)"
+                  ></button>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #emptyStateTpl>
+      <div class="p-3">
+        No hay comisiones/docentes asignados a esta materia.
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      label="Cerrar"
+      icon="pi pi-times"
+      (click)="closeTeachersDialog()"
+    ></button>
+  </ng-template>
+</p-dialog>

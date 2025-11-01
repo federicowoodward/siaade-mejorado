@@ -3,20 +3,22 @@ import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { CareerCatalogService } from '../../../core/services/career-catalog.service';
+import {
+  CareerCatalogService,
+  SubjectCommissionTeachersDto,
+} from '../../../core/services/career-catalog.service';
 import { Router } from '@angular/router';
-
+import { DialogModule } from 'primeng/dialog';
 @Component({
   selector: 'app-subjects-table',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule],
+  imports: [CommonModule, TableModule, ButtonModule, DialogModule],
   templateUrl: './subjects-table.html',
   styleUrls: ['./subjects-table.scss'],
 })
 export class SubjectTableComponent implements OnInit {
   private catalog = inject(CareerCatalogService);
   private router = inject(Router);
-  loading = signal(true);
 
   basicSubjects = signal<
     { id: number; name: string; teacherId: string | null }[]
@@ -36,16 +38,53 @@ export class SubjectTableComponent implements OnInit {
     });
   }
 
-  viewTeacher(id: number): void {
-    const teacherId = this.catalog.getTeacherId(id);
-    if (!teacherId) {
-      alert('Sin docente asignado para esta materia.');
-      return;
-    }
+  loading = signal(true);
+
+  // Estado del diálogo
+  dialogTeachers = signal<{ visible: boolean; subjectId: number | null }>({
+    visible: false,
+    subjectId: null,
+  });
+  dialogLoading = signal(false);
+  dialogError = signal<string | null>(null);
+  dialogData = signal<SubjectCommissionTeachersDto | null>(null);
+
+  // Abre el diálogo y carga comisiones+docentes
+  viewComissions(subjectId: number): void {
+    this.dialogTeachers.set({ visible: true, subjectId });
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
+
+    this.catalog.getSubjectCommissionTeachers(subjectId).subscribe({
+      next: (data) => {
+        this.dialogData.set(data);
+        this.dialogLoading.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.dialogError.set(
+          'No se pudieron cargar las comisiones y docentes.'
+        );
+        this.dialogLoading.set(false);
+      },
+    });
+  }
+
+  // Cerrar y limpiar estado del diálogo
+  closeTeachersDialog(): void {
+    this.dialogTeachers.set({ visible: false, subjectId: null });
+    this.dialogLoading.set(false);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
+  }
+
+  // Navegar al perfil del docente
+  goToTeacher(teacherId: string): void {
     this.router.navigate(['/users', 'user_detail', teacherId]);
   }
 
   viewStatus(id: number): void {
-    this.router.navigate(["/subjects", id, "academic-situation"]);
+    this.router.navigate(['/subjects', id, 'academic-situation']);
   }
 }

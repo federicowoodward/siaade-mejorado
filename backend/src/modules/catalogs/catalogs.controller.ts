@@ -175,4 +175,18 @@ export class CatalogsController {
   ) {
     return this.service.findCommissionSubjects(commissionId);
   }
+
+  @Get("subject/:subjectId/commission-teachers")
+  @ApiOperation({
+    summary: "Listar comisiones de una materia junto a los docentes asignados",
+  })
+  @ApiParam({ name: "subjectId", type: Number, required: true })
+  @ApiOkResponse({
+    description: "Comisiones y docentes asignados para la materia requerida",
+  })
+  getSubjectCommissionTeachers(
+    @Param("subjectId", ParseIntPipe) subjectId: number
+  ) {
+    return this.service.getSubjectCommissionTeachers(subjectId);
+  }
 }

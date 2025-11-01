@@ -11,6 +11,7 @@ import { CareerStudent } from "@/entities/registration/career-student.entity";
 import { Student } from "@/entities/users/student.entity";
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
+import { Subject } from "@/entities/subjects/subject.entity";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entit
       AcademicPeriod,
       Career,
       Commission,
+      Subject,
       SubjectCommission,
       CareerSubject,
       CareerStudent,
@@ -30,5 +32,4 @@ import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entit
   providers: [CatalogsService],
 })
 export class CatalogsModule {}
-
 
