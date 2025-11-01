@@ -1,124 +1,198 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from "@nestjs/common";
+import {
+  ApiBody,
+  ApiCookieAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { Public } from "../../../shared/decorators/public.decorator";
+import { UserProfileResult } from "@/shared/services/user-profile-reader/user-profile-reader.types";
+
+type LoginSuccessResponse = {
+  accessToken: string;
+  user: UserProfileResult;
+};
+
+type RefreshSuccessResponse = {
+  accessToken: string;
+};
+
+const REFRESH_COOKIE_NAME = "rt";
+const REFRESH_COOKIE_PATH = "/api/auth/refresh";
 
 @ApiTags("Authentication")
 @Controller("auth")
-@Public() // Marcar todo el controlador como público
+@Public()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "User login" })
-  @ApiResponse({
-    status: 200,
-    description: "Login successful",
-    schema: {
-      example: {
-        data: {
-          access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        },
-        message: "Login successful",
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Invalid credentials",
-    schema: {
-      example: {
-        error: "Invalid credentials",
-        message: "Login failed",
-      },
-    },
+  @ApiOperation({
+    summary: "User login",
+    description:
+      "Validates credentials, issues an access token in the response body and stores the refresh token inside an HttpOnly cookie.",
   })
   @ApiBody({
     description: "Login credentials",
     type: LoginDto,
     examples: {
       default: {
-        summary: "Preceptor example",
-        value: {
+        summary: "Example payload",
+        value: { email: "executive_secretary@test.com", password: "changeme" },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Login successful",
+    schema: {
+      example: {
+        accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        user: {
+          id: "user-id",
           email: "executive_secretary@test.com",
-          password: "changeme",
+          role: { id: 1, name: "EXECUTIVE_SECRETARY" },
         },
       },
     },
   })
-  async login(@Body() loginDto: LoginDto) {
-    try {
-      const result = await this.authService.login(loginDto);
-      return {
-        data: result,
-        message: "Login successful",
-      };
-    } catch (error: any) {
-      return {
-        error: error?.message || "Unknown error",
-        message: "Login failed",
-      };
-    }
-  }
+  @ApiResponse({
+    status: 401,
+    description: "Invalid credentials",
+  })
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<LoginSuccessResponse> {
+    const { accessToken, refreshToken, user } = await this.authService.login(
+      loginDto
+    );
 
-  // @Post("sign-in")
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOperation({ summary: "Alternative login endpoint" })
-  // @ApiResponse({ status: 200, description: "Login successful" })
-  // @ApiResponse({ status: 401, description: "Invalid credentials" })
-  // async signIn(@Body() loginDto: LoginDto) {
-  //   return this.login(loginDto);
-  // }
+    this.setRefreshCookie(res, refreshToken);
 
-  @Post("logout")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "User logout" })
-  @ApiResponse({ status: 200, description: "Logout successful" })
-  async logout() {
     return {
-      data: { message: "Logout successful" },
-      message: "Session terminated",
+      accessToken,
+      user: user,
     };
   }
 
-  @Post("refresh-token")
+  @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Refresh JWT token" })
-  @ApiResponse({ status: 200, description: "Token refreshed" })
-  async refreshToken(@Body() body: { refreshToken: string }) {
-    try {
-      const result = await this.authService.refreshToken(body.refreshToken);
-      return {
-        data: result,
-        message: "Token refreshed successfully",
-      };
-    } catch (error: any) {
-      return {
-        error: error?.message || "Unknown error",
-        message: "Token refresh failed",
-      };
+  @ApiOperation({
+    summary: "Refresh access token",
+    description:
+      "Reads the refresh token from the HttpOnly cookie, rotates it and returns a new access token.",
+  })
+  @ApiCookieAuth()
+  @ApiResponse({
+    status: 200,
+    description: "Token refreshed",
+    schema: {
+      example: {
+        accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Refresh token missing, invalid or expired",
+  })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<RefreshSuccessResponse> {
+    const refreshToken = this.extractRefreshToken(req);
+
+    if (!refreshToken) {
+      throw new UnauthorizedException("Refresh token not found");
     }
+
+    const { accessToken, refreshToken: rotatedToken } =
+      await this.authService.refreshToken(refreshToken);
+
+    this.setRefreshCookie(res, rotatedToken);
+
+    return { accessToken };
+  }
+
+  @Post("logout")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "User logout",
+    description: "Clears the refresh cookie and ends the current session.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Logout successful",
+  })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    this.clearRefreshCookie(res);
+    return { success: true };
   }
 
   @Post("reset-password")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Reset user password" })
-  @ApiResponse({ status: 200, description: "Password reset email sent" })
+  @ApiResponse({
+    status: 200,
+    description: "Password reset email sent",
+  })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    try {
-      const result = await this.authService.resetPassword(resetPasswordDto);
-      return {
-        data: result,
-        message: "Password reset instructions sent",
-      };
-    } catch (error: any) {
-      return {
-        error: error?.message || "Unknown error",
-        message: "Password reset failed",
-      };
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  private extractRefreshToken(req: Request): string | null {
+    const rawCookieHeader = req.headers.cookie;
+    if (!rawCookieHeader) {
+      return null;
     }
+
+    const cookies = rawCookieHeader.split(";").map((chunk) => chunk.trim());
+    for (const cookie of cookies) {
+      const [name, ...rest] = cookie.split("=");
+      if (name === REFRESH_COOKIE_NAME) {
+        return rest.join("=");
+      }
+    }
+
+    return null;
+  }
+
+  private setRefreshCookie(res: Response, refreshToken: string) {
+    const maxAge =
+      this.authService.getRefreshCookieLifetimeMs() || 24 * 60 * 60 * 1000; // fallback to 24h if parsing fails
+
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge,
+      path: REFRESH_COOKIE_PATH,
+    });
+  }
+
+  private clearRefreshCookie(res: Response) {
+    res.cookie(REFRESH_COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 0,
+      path: REFRESH_COOKIE_PATH,
+    });
   }
 }

@@ -32,7 +32,7 @@ export class LoggingInterceptor implements NestInterceptor {
       '/api/auth/login',
       '/api/auth/sign-in', 
       '/api/auth/reset-password',
-      '/api/auth/refresh-token',
+      '/api/auth/refresh',
     ];
 
     const isPublicUrl = publicUrls.some(route => url.startsWith(route));
@@ -81,3 +81,4 @@ export class LoggingInterceptor implements NestInterceptor {
       );
   }
 }
+

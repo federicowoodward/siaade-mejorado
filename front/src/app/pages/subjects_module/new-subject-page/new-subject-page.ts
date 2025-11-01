@@ -87,31 +87,31 @@ export class NewSubjectPage implements OnInit {
   }
 
   private async ensureAuthenticated(): Promise<void> {
-    const existingToken = localStorage.getItem('access_token');
-    
-    if (!existingToken) {
-      try {
-        const success = await this.authService.loginFlexible({
-          username: 'admin@siaade.com',
-          password: '123456'
-        });
-        
-        if (success) {
-          this.messageService.add({
-            severity: 'info',
-            summary: 'Sesión iniciada',
-            detail: 'Se ha iniciado sesión automáticamente'
-          });
-        } else {
-          throw new Error('Auto-login failed');
-        }
-      } catch (error) {
+    if (this.authService.isLoggedIn()) {
+      return;
+    }
+
+    try {
+      const success = await this.authService.loginFlexible({
+        username: 'admin@siaade.com',
+        password: '123456'
+      });
+
+      if (success) {
         this.messageService.add({
-          severity: 'error',
-          summary: 'Error de autenticación',
-          detail: 'No se pudo iniciar sesión automáticamente. Por favor, vaya a /auth para loguearse.'
+          severity: 'info',
+          summary: 'Sesion iniciada',
+          detail: 'Se ha iniciado sesion automaticamente'
         });
+      } else {
+        throw new Error('Auto-login failed');
       }
+    } catch (error) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error de autenticacion',
+        detail: 'No se pudo iniciar sesion automaticamente. Por favor, vaya a /auth para loguearse.'
+      });
     }
   }
 
@@ -386,3 +386,4 @@ export class NewSubjectPage implements OnInit {
     this.router.navigate(['/subjects']);
   }
 }
+

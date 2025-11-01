@@ -55,4 +55,26 @@ export class SubjectsService {
       payload
     );
   }
+
+  bulkUpsertCommissionGrades(
+    subjectCommissionId: number,
+    payload: {
+      rows: Array<
+        {
+          studentId: string;
+        } & Partial<
+          Pick<
+            GradeRow,
+            "note1" | "note2" | "note3" | "note4" | "final"
+          >
+        >
+      >;
+    }
+  ): Observable<{ updated: number }> {
+    return this.api.request<{ updated: number }>(
+      "PUT",
+      `subject-commissions/${subjectCommissionId}/grades`,
+      payload
+    );
+  }
 }

@@ -239,7 +239,7 @@ Los siguientes endpoints no requieren autenticación:
 - `/auth/login`
 - `/auth/sign-in`
 - `/auth/reset-password`
-- `/auth/refresh-token`
+- `/auth/refresh`
 
 ### 3. Manejo de Errores de Autorización
 
@@ -287,3 +287,4 @@ Ver el archivo `api-example.component.ts` para ejemplos completos de uso en comp
 5. **Escalabilidad**: Fácil agregar nuevos endpoints o servicios
 6. **Mantenibilidad**: Código más limpio y fácil de mantener
 7. **Debugging**: Logs detallados y manejo de errores mejorado
+

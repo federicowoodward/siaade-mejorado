@@ -1,36 +1,21 @@
-﻿// src/app/core/services/auth.service.ts
-import { inject, Injectable } from "@angular/core";
-import { BehaviorSubject, firstValueFrom } from "rxjs";
+import { Injectable, inject } from "@angular/core";
 import { Router } from "@angular/router";
-import { ApiService } from "./api.service";
-import {
-  PermissionService,
-} from "../auth/permission.service";
+import { Observable, firstValueFrom, of } from "rxjs";
+import { catchError } from "rxjs/operators";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { PermissionService } from "../auth/permission.service";
 import {
   ROLE,
   ROLE_BY_ID,
   ROLE_IDS,
   normalizeRole,
 } from "../auth/roles";
+import { AuthApiService } from "./auth/auth-api.service";
+import { AuthStateService } from "./auth/auth-state.service";
 
-type AnyRecord = Record<string, any>;
+type AnyRecord = Record<string, unknown>;
 
-interface LoginResponseShape {
-  user?: AnyRecord;
-  profile?: AnyRecord;
-  accessToken?: string;
-  refreshToken?: string;
-  tokenType?: string;
-  data?: {
-    user?: AnyRecord;
-    profile?: AnyRecord;
-    accessToken?: string;
-    refreshToken?: string;
-    tokenType?: string;
-  };
-}
-
-interface LocalUser {
+export interface LocalUser {
   id: string;
   username: string | null;
   email: string | null;
@@ -39,118 +24,61 @@ interface LocalUser {
   role: ROLE | null;
   roleId?: number;
   isExecutive?: boolean;
+  [key: string]: unknown;
 }
 
 @Injectable({ providedIn: "root" })
 export class AuthService {
-  private readonly user$ = new BehaviorSubject<LocalUser | null>(null);
-
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
-  private readonly apiService = inject(ApiService);
+  private readonly authApi = inject(AuthApiService);
+  private readonly authState = inject(AuthStateService);
 
   constructor() {
-    this.loadUserFromStorage();
+    this.authState.currentUser$
+      .pipe(takeUntilDestroyed())
+      .subscribe((user) => {
+        if (!user) {
+          this.permissions.reset();
+          return;
+        }
+
+        const resolved = this.resolveRole(user);
+        if (resolved.role) {
+          this.permissions.setRole(resolved.role, resolved.roleId ?? null);
+        } else {
+          this.permissions.reset();
+        }
+      });
+
+    this.authState.refreshFailed$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (!this.router.url.startsWith("/auth")) {
+          void this.router.navigate(["/auth/login"]);
+        }
+      });
   }
 
-  private normalizeBackendPayload(resp: LoginResponseShape): {
-    userOrProfile: AnyRecord | null;
-    accessToken: string | null;
-    refreshToken: string | null;
-  } {
-    const base = (resp?.data ?? resp) as LoginResponseShape;
-
-    const userOrProfile =
-      base.profile ??
-      base.user ??
-      base.data?.profile ??
-      base.data?.user ??
-      null;
-
-    const accessToken = base.accessToken ?? base.data?.accessToken ?? null;
-    const refreshToken = base.refreshToken ?? base.data?.refreshToken ?? null;
-    return { userOrProfile, accessToken, refreshToken };
-  }
-
-  private extractRole(roleField: unknown): {
-    role: ROLE | null;
-    roleId: number | null;
-  } {
-    if (!roleField) {
-      return { role: null, roleId: null };
-    }
-
-    if (isRolePayload(roleField)) {
-      const normalized = normalizeRole(roleField.name);
-      const explicitId = Number(roleField.id ?? NaN);
-      const roleId = Number.isFinite(explicitId)
-        ? explicitId
-        : normalized
-        ? ROLE_IDS[normalized]
-        : null;
-      return { role: normalized, roleId };
-    }
-
-    if (typeof roleField === "string") {
-      const normalized = normalizeRole(roleField);
-      return {
-        role: normalized,
-        roleId: normalized ? ROLE_IDS[normalized] : null,
-      };
-    }
-
-    return { role: null, roleId: null };
-  }
-
-  private buildLocalUser(user: AnyRecord): LocalUser {
-    const extracted = this.extractRole(user?.["role"]);
-    const roleId = extracted.roleId ?? (user?.["role"]?.id ?? null);
-
-    return {
-      id: user?.["id"],
-      username: user?.["email"] ?? null,
-      email: user?.["email"] ?? null,
-      name: user?.["name"] ?? null,
-      lastName: user?.["lastName"] ?? null,
-      role: extracted.role,
-      roleId: roleId ?? undefined,
-      isExecutive: extracted.role === ROLE.EXECUTIVE_SECRETARY,
-    };
-  }
-
-  async loginFlexible(credentials: {
-    email?: string;
-    username?: string;
-    password: string;
-  }): Promise<boolean> {
+  async login(credentials: { email: string; password: string }): Promise<boolean> {
     try {
-      const resp = await firstValueFrom(
-        this.apiService.request<LoginResponseShape>("POST", "auth/login", {
-          email: credentials.email ?? credentials.username,
-          password: credentials.password,
-        })
+      const response = await firstValueFrom(
+        this.authApi.login(credentials)
       );
 
-      const { userOrProfile, accessToken, refreshToken } =
-        this.normalizeBackendPayload(resp ?? {});
-
-      if (!userOrProfile || !accessToken) {
-        console.warn("[Auth] Respuesta incompleta del backend:", resp);
+      if (!response?.accessToken || !response?.user) {
         return false;
       }
 
-      const userLocal = this.buildLocalUser(userOrProfile);
-
-      localStorage.setItem("access_token", accessToken);
-      if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
-      localStorage.setItem("mock_user", JSON.stringify(userLocal));
-
-      try {
-        localStorage.setItem("user_profile", JSON.stringify(userOrProfile));
-      } catch {}
-
-      this.user$.next(userLocal);
-      this.permissions.setRole(userLocal.role, userLocal.roleId ?? null);
+      const userLocal = this.buildLocalUser(response.user);
+      this.authState.setCurrentUser(userLocal, { persist: true });
+      this.authState.setAccessToken(response.accessToken, { persist: true });
+      const resolved = this.resolveRole(userLocal);
+      if (resolved.role) {
+        this.permissions.setRole(resolved.role, resolved.roleId ?? null);
+      } else {
+        this.permissions.reset();
+      }
 
       return true;
     } catch (error) {
@@ -159,52 +87,120 @@ export class AuthService {
     }
   }
 
-  logout(): void {
-    this.router.navigate(["/auth"]);
-    this.user$.next(null);
-    this.permissions.reset();
-    localStorage.removeItem("mock_user");
-    localStorage.removeItem("user_profile");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  async loginFlexible(credentials: {
+    email?: string;
+    username?: string;
+    password: string;
+  }): Promise<boolean> {
+    const email = credentials.email ?? credentials.username;
+    if (!email) {
+      return false;
+    }
+
+    return this.login({ email, password: credentials.password });
   }
 
-  isLoggedIn(): boolean {
-    return (
-      !!localStorage.getItem("mock_user") &&
-      !!localStorage.getItem("access_token")
+  async logout(options?: { redirect?: boolean }): Promise<void> {
+    await firstValueFrom(
+      this.authApi.logout().pipe(
+        catchError(() => of(void 0))
+      )
     );
-  }
 
-  getUser() {
-    return this.user$.asObservable();
-  }
+    this.authState.clearSession();
+    this.permissions.reset();
+    if (options?.redirect === false) {
+      return;
+    }
 
-  loadUserFromStorage(): void {
-    const raw = localStorage.getItem("mock_user");
-    if (!raw) return;
-
-    try {
-      const parsed: LocalUser = JSON.parse(raw);
-      this.user$.next(parsed);
-
-      const roleFromId = parsed.roleId ? ROLE_BY_ID[parsed.roleId] ?? null : null;
-      const role = parsed.role ?? roleFromId ?? null;
-      this.permissions.setRole(role, parsed.roleId ?? null);
-    } catch {
-      localStorage.removeItem("mock_user");
+    if (!this.router.url.startsWith("/auth")) {
+      await this.router.navigate(["/auth/login"]);
     }
   }
 
-  getUserId(): string | null {
-    return this.user$.getValue()?.id ?? null;
+  isLoggedIn(): boolean {
+    return !!this.authState.getAccessTokenSnapshot();
   }
-}
 
-function isRolePayload(value: unknown): value is { id?: number; name?: string } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    ("name" in value || "id" in value)
-  );
+  getUser(): Observable<LocalUser | null> {
+    return this.authState.currentUser$ as Observable<LocalUser | null>;
+  }
+
+  loadUserFromStorage(): void {
+    this.authState.initializeFromStorage();
+  }
+
+  getUserId(): string | null {
+    const snapshot = this.authState.getCurrentUserSnapshot() as
+      | LocalUser
+      | null;
+    return snapshot?.id ?? null;
+  }
+
+  private buildLocalUser(user: AnyRecord): LocalUser {
+    const extracted = this.resolveRole(user);
+
+    return {
+      id: String(user?.["id"] ?? ""),
+      username: (user?.["email"] as string) ?? null,
+      email: (user?.["email"] as string) ?? null,
+      name: (user?.["name"] as string) ?? null,
+      lastName: (user?.["lastName"] as string) ?? null,
+      role: extracted.role,
+      roleId: extracted.roleId ?? undefined,
+      isExecutive: extracted.role === ROLE.EXECUTIVE_SECRETARY,
+    };
+  }
+
+  private resolveRole(
+    userOrRole: AnyRecord | ROLE | null
+  ): { role: ROLE | null; roleId: number | null } {
+    if (!userOrRole) {
+      return { role: null, roleId: null };
+    }
+
+    if (typeof userOrRole === "string") {
+      const normalized = normalizeRole(userOrRole);
+      return {
+        role: normalized,
+        roleId: normalized ? ROLE_IDS[normalized] ?? null : null,
+      };
+    }
+
+    if (typeof userOrRole === "object") {
+      const candidateUser = userOrRole as AnyRecord;
+      const rawRole = candidateUser["role"] as unknown;
+
+      if (
+        rawRole &&
+        typeof rawRole === "object" &&
+        rawRole !== null
+      ) {
+        const candidate = rawRole as { name?: unknown; id?: unknown };
+        const normalized = normalizeRole(candidate.name);
+        const explicitId = Number(candidate.id ?? NaN);
+        return {
+          role: normalized,
+          roleId: Number.isFinite(explicitId)
+            ? explicitId
+            : normalized
+            ? ROLE_IDS[normalized]
+            : null,
+        };
+      }
+
+      const normalized = normalizeRole(rawRole);
+      const fallbackRole =
+        normalized ??
+        ROLE_BY_ID[Number(candidateUser["roleId"] ?? NaN)] ??
+        null;
+
+      return {
+        role: fallbackRole,
+        roleId: fallbackRole ? ROLE_IDS[fallbackRole] : null,
+      };
+    }
+
+    return { role: null, roleId: null };
+  }
 }

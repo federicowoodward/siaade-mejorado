@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   HttpClient,
   HttpHeaders,
@@ -9,18 +9,19 @@ import { Observable, throwError, of, defer, from } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment as enviroment } from '../../../environments/environment';
 import { ApiCacheService } from '../cache/api-cache.service';
-import {
-  buildCacheKey,
-  logCacheHit,
-  shortPathFrom,
-} from '../cache/cache-utils';
+import { buildCacheKey, logCacheHit } from '../cache/cache-utils';
+import { AuthStateService } from './auth/auth-state.service';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type MaybeWrapped<T> = T | { data: T; error?: any };
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  constructor(private http: HttpClient, private cache: ApiCacheService) {}
+  constructor(
+    private http: HttpClient,
+    private cache: ApiCacheService,
+    private authState: AuthStateService
+  ) {}
 
   request<T>(
     method: HttpMethod,
@@ -32,21 +33,9 @@ export class ApiService {
     const base = enviroment.apiBaseUrl;
     const fullUrl = `${base}/${url}`;
 
-    let finalHeaders =
+    const token = this.authState.getAccessTokenSnapshot();
+    const finalHeaders =
       headers ?? new HttpHeaders({ 'Content-Type': 'application/json' });
-    const token = localStorage.getItem('access_token');
-
-    console.log(
-      'API Service - Token check:',
-      token ? 'TOKEN EXISTS' : 'NO TOKEN'
-    );
-
-    if (token) {
-      finalHeaders = finalHeaders.set('Authorization', `Bearer ${token}`);
-      console.log('API Service - Added Authorization header');
-    } else {
-      console.log('API Service - No token, skipping Authorization header');
-    }
 
     const options: { headers: HttpHeaders; params: HttpParams; body?: any } = {
       headers: finalHeaders,
