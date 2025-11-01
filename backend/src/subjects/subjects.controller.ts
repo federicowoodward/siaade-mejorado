@@ -1,4 +1,5 @@
-﻿import {
+import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -8,7 +9,6 @@
   Put,
   Req,
   UseGuards,
-  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -21,9 +21,10 @@ import {
 import { Request } from "express";
 
 import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
-import { RolesGuard } from "@/guards/roles.guard";
-import { Roles } from "@/modules/users/auth/roles.decorator";
-import { ROLE_NAMES } from "@/shared/constants/roles";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { Action } from "@/shared/rbac/decorators/action.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
 
 import { SubjectsService } from "./subjects.service";
 import { GradeRowDto } from "./dto/grade-row.dto";
@@ -33,25 +34,20 @@ import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
 
 type AuthenticatedUser = {
   id: string;
-  role?: { name?: string };
-  isDirective?: boolean;
+  role?: ROLE | null;
 };
 
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(
-  ROLE_NAMES.SECRETARIO_DIRECTIVO,
-  ROLE_NAMES.SECRETARIO,
-  ROLE_NAMES.PRECEPTOR,
-  ROLE_NAMES.PROFESOR
-)
+@AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
 @Controller("subject-commissions")
 export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Get(":subjectCommissionId/grades")
-  @ApiOperation({ summary: "Listar notas y asistencia de una comisión" })
+  @Action("subjects.listCommissionGrades")
+  @ApiOperation({ summary: "Listar notas y asistencia de una comision" })
   @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiOkResponse({ type: GradeRowDto, isArray: true })
   async getGrades(
@@ -61,14 +57,10 @@ export class SubjectsController {
   }
 
   @Patch(":subjectCommissionId/grades/:studentId")
-  @Roles(
-    ROLE_NAMES.SECRETARIO_DIRECTIVO,
-    ROLE_NAMES.SECRETARIO,
-    ROLE_NAMES.PRECEPTOR,
-    ROLE_NAMES.PROFESOR
-  )
+  @Action("subjects.patchCommissionCell")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
   @ApiOperation({
-    summary: "Actualizar una celda de notas/asistencia para un alumno",
+    summary: "Actualizar una celda de notas y asistencia para un alumno",
   })
   @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiParam({ name: "studentId", type: String })
@@ -89,13 +81,9 @@ export class SubjectsController {
   }
 
   @Put(":subjectCommissionId/grades")
-  @Roles(
-    ROLE_NAMES.SECRETARIO_DIRECTIVO,
-    ROLE_NAMES.SECRETARIO,
-    ROLE_NAMES.PRECEPTOR,
-    ROLE_NAMES.PROFESOR
-  )
-  @ApiOperation({ summary: "Actualizar notas/asistencia de múltiples alumnos" })
+  @Action("subjects.bulkUpsertGrades")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
+  @ApiOperation({ summary: "Actualizar notas y asistencia de multiples alumnos" })
   @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiBody({ type: UpsertGradeDto })
   async upsertGrades(
@@ -118,20 +106,16 @@ export class SubjectsController {
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(
-  ROLE_NAMES.SECRETARIO_DIRECTIVO,
-  ROLE_NAMES.SECRETARIO,
-  ROLE_NAMES.PRECEPTOR,
-  ROLE_NAMES.PROFESOR
-)
+@AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.TEACHER)
 @Controller("subjects")
 export class SubjectGradesController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Get(":subjectId/grades")
+  @Action("subjects.listSubjectGrades")
   @ApiOperation({
     summary:
-      "Listar notas y asistencia agrupadas por comisión para una materia",
+      "Listar notas y asistencia agrupadas por comision para una materia",
   })
   @ApiParam({ name: "subjectId", type: Number })
   @ApiOkResponse({
@@ -195,18 +179,19 @@ export class SubjectGradesController {
 @ApiTags("subjects")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(
-  ROLE_NAMES.SECRETARIO_DIRECTIVO,
-  ROLE_NAMES.SECRETARIO,
-  ROLE_NAMES.PRECEPTOR,
-  ROLE_NAMES.PROFESOR,
-  ROLE_NAMES.ALUMNO
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER,
+  ROLE.STUDENT
 )
 @Controller("subject-status")
 export class SubjectStatusController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Get()
+  @Action("subjects.listStatuses")
   @ApiOperation({ summary: "Listar estados de materia" })
   @ApiOkResponse({
     schema: {
@@ -224,3 +209,4 @@ export class SubjectStatusController {
     return this.subjectsService.getSubjectStatuses();
   }
 }
+

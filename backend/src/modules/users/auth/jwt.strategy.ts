@@ -2,12 +2,20 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { AuthService } from "./auth.service";
-import { toCanonicalRole } from "../../../shared/utils/roles.util";
 import {
-  ALL_ROLE_NAMES,
-  CANONICAL_TO_ROLE,
-  RoleName,
-} from "@/shared/constants/roles";
+  ROLE,
+  ROLE_IDS,
+  getRoleById,
+  normalizeRole,
+  isRole,
+} from "@/shared/rbac/roles.constants";
+
+type JwtPayload = {
+  sub: string;
+  email: string;
+  role?: ROLE;
+  roleId?: number;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -19,41 +27,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     const user = await this.authService.validateUserById(payload.sub);
     if (!user) {
       throw new UnauthorizedException();
     }
 
-    const isDirective = user.secretary?.isDirective ?? false;
-    const roleId = user.role?.id ?? user.roleId ?? null;
-    const roleNameRaw = user.role?.name ?? payload.roleName ?? payload.role;
-    const normalized = roleNameRaw ? roleNameRaw.trim().toLowerCase() : undefined;
+    const roleFromUser = normalizeRole(user.role?.name);
+    const roleFromPayload = isRole(payload.role) ? payload.role : null;
+    const roleFromId = getRoleById(user.role?.id ?? payload.roleId ?? null);
 
-    let roleName: RoleName | undefined;
-    if (normalized && (ALL_ROLE_NAMES as string[]).includes(normalized)) {
-      roleName = normalized as RoleName;
-    } else {
-      const canonicalFromRaw = toCanonicalRole(roleNameRaw, { isDirective });
-      if (canonicalFromRaw && CANONICAL_TO_ROLE[canonicalFromRaw]) {
-        roleName = CANONICAL_TO_ROLE[canonicalFromRaw]!;
-      }
+    const role: ROLE | null = roleFromUser ?? roleFromPayload ?? roleFromId;
+    if (!role) {
+      throw new UnauthorizedException("User without role assigned");
     }
 
-    if (!roleId || !roleName) {
-      throw new UnauthorizedException("Usuario sin rol asignado");
-    }
-
-    const canonical = toCanonicalRole(roleName, { isDirective });
+    const roleId = ROLE_IDS[role];
+    const isDirective =
+      user.secretary?.isDirective ?? role === ROLE.EXECUTIVE_SECRETARY;
 
     return {
       id: user.id,
       email: user.email,
+      role,
       roleId,
-      roleName,
-      role: { id: roleId, name: roleName },
-      canonicalRole: canonical,
       isDirective,
     };
   }
 }
+

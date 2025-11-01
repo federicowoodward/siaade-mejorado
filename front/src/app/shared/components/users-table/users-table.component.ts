@@ -36,7 +36,7 @@ export class UsersTableComponent implements OnChanges {
   @Output() rowClick  = new EventEmitter<UserRow>();
 
   // Filtros UI locales
-  selectedRole = signal<Role | null>(null);
+  selectedRole: Role | null = null;
 
   @ViewChild('dt') dt!: Table;
 
@@ -61,7 +61,7 @@ export class UsersTableComponent implements OnChanges {
   clear(table: Table, filterInput: HTMLInputElement) {
     filterInput.value = '';
     this.dt?.filterGlobal('', 'contains');
-    this.selectedRole.set(null);
+    this.selectedRole = null;
     table.clear();
   }
 }

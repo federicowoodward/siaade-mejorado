@@ -1,4 +1,6 @@
 // src/shared/services/dtos/create-user-base.dto.ts
+import { ROLE } from "@/shared/rbac/roles.constants";
+
 export class CreateUserBaseDto {
   name?: string;
   lastName?: string;
@@ -6,7 +8,7 @@ export class CreateUserBaseDto {
   password?: string;
   cuil?: string;
   roleId?: number;
-  roleName?: "student" | "teacher" | "preceptor" | "secretary";
+  roleName?: ROLE;
 }
 
 export class CreateAddressDataDto {

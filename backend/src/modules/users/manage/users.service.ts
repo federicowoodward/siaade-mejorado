@@ -9,6 +9,7 @@ import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { User } from "@/entities/users/user.entity";
 import { Role } from "@/entities/roles/role.entity";
+import { ROLE, normalizeRole } from "@/shared/rbac/roles.constants";
 import { UserProvisioningService } from "../../../shared/services/user-provisioning/user-provisioning.service";
 import {
   CreateSecretaryDto,
@@ -58,7 +59,7 @@ export class UsersService {
     return this.provisioning.createSecretary({
       userData: {
         ...userData,
-        roleName: "secretary",
+        roleName: ROLE.SECRETARY,
         email: userData.email,
       },
       isDirective: dto.isDirective ?? false,
@@ -76,7 +77,11 @@ export class UsersService {
     }
     dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
     return this.provisioning.createPreceptor({
-      userData: { ...userData, roleName: "preceptor", email: userData.email },
+      userData: {
+        ...userData,
+        roleName: ROLE.PRECEPTOR,
+        email: userData.email,
+      },
       userInfo: dto.userInfo,
       // commonData NO requerido para preceptor
     });
@@ -103,7 +108,11 @@ export class UsersService {
       );
     }
     return this.provisioning.createTeacher({
-      userData: { ...userData, roleName: "teacher", email: userData.email },
+      userData: {
+        ...userData,
+        roleName: ROLE.TEACHER,
+        email: userData.email,
+      },
       userInfo: dto.userInfo,
       commonData: dto.commonData,
     });
@@ -148,7 +157,11 @@ export class UsersService {
     }
 
     return this.provisioning.createStudent({
-      userData: { ...userData, roleName: "student", email: userData.email },
+      userData: {
+        ...userData,
+        roleName: ROLE.STUDENT,
+        email: userData.email,
+      },
       userInfo: dto.userInfo,
       commonData: dto.commonData,
       studentData: {
@@ -243,14 +256,13 @@ export class UsersService {
       });
       if (!user) throw new NotFoundException("User not found");
 
-      const roleName = user.role.name as
-        | "student"
-        | "teacher"
-        | "preceptor"
-        | "secretary";
+      const roleName = normalizeRole(user.role?.name);
+      if (!roleName) {
+        throw new ConflictException("User role is not recognized");
+      }
 
       // Guard: si es teacher o preceptor y esta vinculado a recursos dependientes, abortar con 409
-      if (roleName === "teacher") {
+      if (roleName === ROLE.TEACHER) {
         const commission = await qr.manager.findOne(SubjectCommission, {
           where: { teacherId: id },
           relations: { subject: true },
@@ -264,7 +276,7 @@ export class UsersService {
               : undefined,
           });
         }
-      } else if (roleName === "preceptor") {
+      } else if (roleName === ROLE.PRECEPTOR) {
         const career = await qr.manager.findOne(Career, {
           where: { preceptorId: id },
           select: ["id", "careerName"],
@@ -280,7 +292,7 @@ export class UsersService {
       }
       // Borrar específico por rol
       switch (roleName) {
-        case "student":
+        case ROLE.STUDENT:
           if (user.student) {
             await qr.manager
               .createQueryBuilder()
@@ -290,7 +302,7 @@ export class UsersService {
               .execute();
           }
           break;
-        case "teacher":
+        case ROLE.TEACHER:
           if (user.teacher) {
             await qr.manager
               .createQueryBuilder()
@@ -300,7 +312,7 @@ export class UsersService {
               .execute();
           }
           break;
-        case "preceptor":
+        case ROLE.PRECEPTOR:
           if (user.preceptor) {
             await qr.manager
               .createQueryBuilder()
@@ -310,7 +322,8 @@ export class UsersService {
               .execute();
           }
           break;
-        case "secretary":
+        case ROLE.SECRETARY:
+        case ROLE.EXECUTIVE_SECRETARY:
           if (user.secretary) {
             await qr.manager
               .createQueryBuilder()

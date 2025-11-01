@@ -8,17 +8,19 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
   Req,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags, ApiOkResponse } from '@nestjs/swagger';
-import { normalizePagination, buildPageMeta } from '@/shared/utils/pagination';
-import { NoticesService } from './notices.service';
-import { CreateNoticeDto } from './dto/create-notice.dto';
-import { UpdateNoticeDto } from './dto/update-notice.dto';
-import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
-import { RolesGuard } from '../../guards/roles.guard';
-import { Roles } from '../users/auth/roles.decorator';
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiOkResponse,
+} from "@nestjs/swagger";
+import { normalizePagination, buildPageMeta } from "@/shared/utils/pagination";
+import { NoticesService } from "./notices.service";
+import { CreateNoticeDto } from "./dto/create-notice.dto";
+import { UpdateNoticeDto } from "./dto/update-notice.dto";
 
 @ApiTags('Notices')
 @ApiBearerAuth()
@@ -29,7 +31,7 @@ export class NoticesController {
   // Crear post (preceptor/secretaría/admin)
   @Post()
   // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('PRECEPTOR', 'SECRETARIO', 'SECRETARIO_DIRECTIVO', 'ADMIN_GENERAL')
+  // @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @ApiOperation({ summary: 'Crear aviso/post' })
   create(@Body() dto: CreateNoticeDto, @Req() req: any) {
     const userId = req.user?.id as string | undefined;

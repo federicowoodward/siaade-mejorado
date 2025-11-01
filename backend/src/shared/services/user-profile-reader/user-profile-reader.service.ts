@@ -3,19 +3,17 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { User } from "@/entities/users/user.entity";
-import { Role } from "@/entities/roles/role.entity";
 import { UserInfo } from "@/entities/users/user-info.entity";
 import { CommonData } from "@/entities/users/common-data.entity";
 import { AddressData } from "@/entities/users/address-data.entity";
 import { UserProfileResult } from "./user-profile-reader.types";
 
-type RoleName = "student" | "teacher" | "preceptor" | "secretary";
+import { ROLE, normalizeRole } from "@/shared/rbac/roles.constants";
 
 @Injectable()
 export class UserProfileReaderService {
   constructor(
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
-    @InjectRepository(Role) private readonly rolesRepo: Repository<Role>,
     @InjectRepository(UserInfo)
     private readonly userInfoRepo: Repository<UserInfo>,
     @InjectRepository(CommonData)
@@ -37,7 +35,7 @@ export class UserProfileReaderService {
 
     if (!user) throw new NotFoundException("User not found");
 
-    const roleName = user.role?.name as RoleName | undefined;
+    const normalizedRole = normalizeRole(user.role?.name);
 
     const result: UserProfileResult = {
       id: user.id,
@@ -45,7 +43,12 @@ export class UserProfileReaderService {
       lastName: user.lastName ?? null,
       email: user.email ?? null,
       cuil: user.cuil ?? null,
-      role: user.role ? { id: user.role.id, name: user.role.name } : null,
+      role: user.role
+        ? {
+            id: user.role.id,
+            name: normalizedRole ?? user.role.name,
+          }
+        : null,
     };
 
     const ui = user.userInfo
@@ -81,14 +84,15 @@ export class UserProfileReaderService {
         }
       : null;
 
-    switch (roleName) {
-      case "student":
-      case "teacher":
+    switch (normalizedRole) {
+      case ROLE.STUDENT:
+      case ROLE.TEACHER:
         result.commonData = cd;
         break;
-      case "preceptor":
+      case ROLE.PRECEPTOR:
         break;
-      case "secretary":
+      case ROLE.SECRETARY:
+      case ROLE.EXECUTIVE_SECRETARY:
       default:
         break;
     }

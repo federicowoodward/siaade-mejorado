@@ -1,33 +1,40 @@
-import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
+import { inject, isDevMode } from "@angular/core";
+import { CanActivateFn, CanMatchFn, Router, UrlTree } from "@angular/router";
+import { PermissionService } from "../auth/permission.service";
+import { ROLE } from "../auth/roles";
 
-@Injectable({
-  providedIn: 'root'
-})
-export class RoleGuard implements CanActivate {
-
-  constructor(
-    private router: Router,
-    // private userSession: UserSessionService // <- Descomenta cuando uses session real
-  ) {}
-
-  canActivate(
-    next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ): boolean | UrlTree | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> {
-    // 👇 Acá deberías comparar el rol del usuario logueado contra el requerido.
-    // Ejemplo:
-    // const requiredRoles = next.data['role'] as string[] | string;
-    // const userRole = this.userSession.getRole();
-    // if (Array.isArray(requiredRoles) ? requiredRoles.includes(userRole) : requiredRoles === userRole) {
-    //   return true;
-    // }
-    // else {
-    //   return this.router.createUrlTree(['/auth']);
-    // }
-
-    // Por ahora permite navegar siempre
+function createGuardResult(
+  allowed: ROLE[],
+  current: ROLE | null,
+  router: Router
+): boolean | UrlTree {
+  if (!allowed.length) return true;
+  if (current && allowed.includes(current)) {
     return true;
   }
+
+  if (isDevMode()) {
+    // eslint-disable-next-line no-console
+    console.warn("[RBAC][Front][DENY]", {
+      allowed,
+      current,
+    });
+  }
+
+  return router.parseUrl("/welcome");
 }
+
+export const roleCanMatch = (allowed: ROLE[]): CanMatchFn => () => {
+  const permissions = inject(PermissionService);
+  const router = inject(Router);
+  const current = permissions.currentRole();
+  return createGuardResult(allowed, current, router);
+};
+
+export const roleCanActivate = (allowed: ROLE[]): CanActivateFn => () => {
+  const permissions = inject(PermissionService);
+  const router = inject(Router);
+  const current = permissions.currentRole();
+  return createGuardResult(allowed, current, router);
+};
+

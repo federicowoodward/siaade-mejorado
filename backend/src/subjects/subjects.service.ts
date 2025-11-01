@@ -15,17 +15,16 @@ import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { GradeRowDto } from "./dto/grade-row.dto";
-import { toCanonicalRole, CanonicalRole } from "@/shared/utils/roles.util";
+import { ROLE } from "@/shared/rbac/roles.constants";
 
 type AuthenticatedUser = {
   id: string;
-  role?: { name?: string };
-  isDirective?: boolean;
+  role?: ROLE | null;
 };
 
 type CommissionWithRole = {
   commission: Pick<SubjectCommission, "id" | "subjectId" | "teacherId">;
-  role: CanonicalRole;
+  role: ROLE;
 };
 
 @Injectable()
@@ -271,25 +270,19 @@ export class SubjectsService {
       );
     }
 
-    if (!user) {
-      return { commission, role: "SECRETARIO" };
-    }
-
-    const role = toCanonicalRole(user.role?.name, {
-      isDirective: user.isDirective,
-    });
-
-    if (!role) {
+    if (!user || !user.role) {
       throw new ForbiddenException("Invalid role");
     }
 
-    if (role === "DOCENTE" && commission.teacherId !== user.id) {
+    const role = user.role;
+
+    if (role === ROLE.TEACHER && commission.teacherId !== user.id) {
       throw new ForbiddenException(
         "You are not assigned to this subject commission"
       );
     }
 
-    if (role === "ALUMNO") {
+    if (role === ROLE.STUDENT) {
       if (!options.allowStudent) {
         throw new ForbiddenException("Students cannot modify grades");
       }

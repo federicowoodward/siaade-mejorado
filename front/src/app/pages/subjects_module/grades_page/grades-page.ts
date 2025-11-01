@@ -49,6 +49,7 @@ export class GradesPage implements OnInit {
       .request<GradesApiResponse>('GET', `subjects/${this.subjectId}/grades`)
       .subscribe({
         next: (payload) => {
+          console.log(payload)
           this.data.set(payload);
           this.loading.set(false);
         },

@@ -48,9 +48,10 @@
                   <th class="col-alumno">Nota 1</th>
                   <th class="col-alumno">Nota 2</th>
                   <th class="col-alumno">Nota 3</th>
-                  <th class="col-final">Nota 4 (Final)</th>
+                  <th class="col-final">Nota 4</th>
+                  <th class="col-alumno">Final</th>
                 </ng-template>
-                <th class="col-alumno">Porcentaje de asistencia</th>
+                <th class="col-alumno">Asistencia</th>
                 <th class="col-alumno">Condicion</th>
                 <!-- seguimos sin saber que es esto: -->
                 <th class="col-alumno">Acreditacion</th>
@@ -81,6 +82,7 @@
                   <td class="nota">{{ row.note1 ?? '-' }}</td>
                   <td class="nota">{{ row.note2 ?? '-' }}</td>
                   <td class="nota">{{ row.note3 ?? '-' }}</td>
+                  <td class="nota">{{ row.note4 ?? '-' }}</td>
                   <td class="col-final" [ngClass]="finalClass(row.final)">
                     {{ row.final ?? '-' }}
                   </td>

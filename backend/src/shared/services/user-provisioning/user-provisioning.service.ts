@@ -12,6 +12,7 @@ import { Student } from "@/entities/users/student.entity";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { Preceptor } from "@/entities/users/preceptor.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
+import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 import {
   CreateStudentUserDto,
@@ -51,7 +52,7 @@ export class UserProvisioningService {
 
   async createStudent(dto: CreateStudentUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "student");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.STUDENT);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       if (!dto.studentData?.legajo) {
@@ -92,7 +93,7 @@ export class UserProvisioningService {
 
   async createTeacher(dto: CreateTeacherUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "teacher");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.TEACHER);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
@@ -109,7 +110,7 @@ export class UserProvisioningService {
 
   async createPreceptor(dto: CreatePreceptorUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "preceptor");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.PRECEPTOR);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
@@ -126,7 +127,7 @@ export class UserProvisioningService {
 
   async createSecretary(dto: CreateSecretaryUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "secretary");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.SECRETARY);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       const secretary = this.secretariesRepo.create({
@@ -177,9 +178,19 @@ export class UserProvisioningService {
     }
 
     // En este punto, roleName existe y es literal
-    const name: string = userDto.roleName as RoleLiteral;
+    const name = userDto.roleName as RoleLiteral;
+    const expectedId = ROLE_IDS[name];
+    if (expectedId) {
+      const r = await qr.manager.findOne(Role, { where: { id: expectedId } });
+      if (r) {
+        userDto.roleId = expectedId;
+        return r;
+      }
+    }
+
     const r = await qr.manager.findOne(Role, { where: { name } });
     if (!r) throw new BadRequestException(`Role "${name}" no existe`);
+    userDto.roleId = r.id;
     return r;
   }
 

@@ -11,7 +11,7 @@
   </div>
 
   <app-users-table
-    [viewerRole]="viewerRole"
+    [viewerRole]="viewerRole ?? ROLE.STUDENT"
     [context]="'default'"
     [rows]="rows()"
     (rowAction)="onRowAction($event)"

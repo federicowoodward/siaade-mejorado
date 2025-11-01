@@ -5,17 +5,20 @@ import { Repository } from "typeorm";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { User } from "@/entities/users/user.entity";
-import { Role } from "@/entities/roles/role.entity";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
+import {
+  ROLE,
+  ROLE_IDS,
+  getRoleById,
+  normalizeRole,
+} from "@/shared/rbac/roles.constants";
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService
@@ -32,14 +35,20 @@ export class AuthService {
     }
 
     const profile = await this.userReader.findById(idOrResult);
-    const roleName = profile.role?.name;
-    const roleId = profile.role?.id;
+    const roleFromProfile = normalizeRole(profile.role?.name);
+    const roleId = profile.role?.id ?? null;
+    const role = roleFromProfile ?? getRoleById(roleId);
+
+    if (!role) {
+      throw new UnauthorizedException("User without role assigned");
+    }
 
     const payload = {
       sub: profile.id,
       email: profile.email,
-      role: roleName,
-      roleId: roleId,
+      role,
+      roleId: ROLE_IDS[role],
+      isDirective: role === ROLE.EXECUTIVE_SECRETARY,
     };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: "1h" });
@@ -65,11 +74,17 @@ export class AuthService {
         throw new UnauthorizedException("Invalid token");
       }
 
+      const role = normalizeRole(user.role?.name) ?? getRoleById(user.roleId);
+      if (!role) {
+        throw new UnauthorizedException("User without role assigned");
+      }
+
       const newPayload = {
         sub: user.id,
         email: user.email,
-        role: user.role.name,
-        roleId: user.roleId,
+        role,
+        roleId: ROLE_IDS[role],
+        isDirective: role === ROLE.EXECUTIVE_SECRETARY,
       };
 
       const newAccessToken = this.jwtService.sign(newPayload, {

@@ -3,7 +3,7 @@
   <h2 class="my-3">Estudiantes de la carrera</h2>
   <!-- solamente accesible desde inforamcion de la carrera -->
   <app-users-table
-    [viewerRole]="viewerRole"
+    [viewerRole]="viewerRole ?? ROLE.TEACHER"
     [context]="'subject-students'"
     [roleFilterEnabled]="false"
     [rows]="rows()"

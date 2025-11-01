@@ -4,7 +4,7 @@
     Avisos (Administración)
     </h2>
 
-    <div class="new-notice-form" *ngIf="canManage()">
+    <div class="new-notice-form" *canAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]">
     <input
     type="text"
     placeholder="Título"
@@ -39,7 +39,7 @@
         {{ n.createdBy }} · {{ n.createdAt | date:'short' }}
         </small>
 
-        <button *ngIf="canManage()" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)"></button>
+        <button *canAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)"></button>
     </div>
     </li>
 </ul>

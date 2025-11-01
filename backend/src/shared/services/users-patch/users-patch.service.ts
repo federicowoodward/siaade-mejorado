@@ -13,6 +13,8 @@ import { UserInfo } from "@/entities/users/user-info.entity";
 import { CommonData } from "@/entities/users/common-data.entity";
 import { AddressData } from "@/entities/users/address-data.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
+import { normalizeRole } from "@/shared/rbac/roles.constants";
+import { ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 type FlatChanges = Record<string, any>;
 
@@ -142,9 +144,20 @@ export class UsersPatchService {
       role = await qr.manager.findOne(Role, { where: { id: changes.roleId } });
       if (!role) throw new NotFoundException("Role not found");
     } else if (changes.roleName) {
-      role = await qr.manager.findOne(Role, {
-        where: { name: String(changes.roleName) },
-      });
+      const normalized = normalizeRole(changes.roleName);
+      if (!normalized) {
+        throw new NotFoundException("Role not found");
+      }
+
+      const targetId = ROLE_IDS[normalized];
+      if (targetId) {
+        role = await qr.manager.findOne(Role, { where: { id: targetId } });
+      }
+
+      if (!role) {
+        role = await qr.manager.findOne(Role, { where: { name: normalized } });
+      }
+
       if (!role) throw new NotFoundException("Role not found");
     }
 
@@ -290,5 +303,3 @@ export class UsersPatchService {
     await qr.manager.update(Secretary, { id: sec.userId }, { isDirective });
   }
 }
-
-

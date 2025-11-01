@@ -22,14 +22,17 @@ type SubjectSeed = {
   subjectOrder: number; // orden relativo dentro del período del año
 };
 
-const ROLE_NAMES = [
-  "admin",
-  "secretario_directivo",
-  "secretario",
-  "preceptor",
-  "profesor",
-  "alumno",
-];
+const ROLE_SEEDS = [
+  { id: 1, name: "student" },
+  { id: 2, name: "teacher" },
+  { id: 3, name: "preceptor" },
+  { id: 4, name: "secretary" },
+  { id: 5, name: "executive_secretary" },
+] as const;
+
+const ROLE_NAMES = ROLE_SEEDS.map((role) => role.name);
+const ROLE_IDS = new Map(ROLE_SEEDS.map((role) => [role.name, role.id]));
+const ROLE_ID_VALUES = ROLE_SEEDS.map((role) => role.id);
 
 const CAREER_NAME = "Tecnicatura de desarrollo en software";
 const DEFAULT_PRECEPTOR_EMAIL = "preceptor@siaade.local";
@@ -362,16 +365,33 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       throw new Error(
         `Missing tables for initial data load (${missingTables.join(
           ", "
-        )}). Run 0001_AutoMigration1761015167691 first to create the schema.`
+        )}). Run 0100000000000_InitSchema first to create the schema.`
       );
     }
 
-    await roleRepository
-      .createQueryBuilder()
-      .insert()
-      .values(ROLE_NAMES.map((name) => ({ name })))
-      .orIgnore()
-      .execute();
+    await queryRunner.query(`UPDATE roles SET name = lower(trim(name))`);
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS ux_roles_name ON roles(name)`
+    );
+
+    for (const role of ROLE_SEEDS) {
+      await queryRunner.query(
+        `
+          INSERT INTO roles (id, name)
+          VALUES ($1, $2)
+          ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
+        `,
+        [role.id, role.name]
+      );
+    }
+
+    await queryRunner.query(
+      `DELETE FROM roles WHERE id NOT IN (${ROLE_ID_VALUES.join(", ")})`
+    );
+
+    await queryRunner.query(
+      `SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles))`
+    );
 
     const roles = await roleRepository.find({
       where: { name: In(ROLE_NAMES) },
@@ -618,3 +638,5 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
     await roleRepository.delete({ name: In(ROLE_NAMES) });
   }
 }
+
+

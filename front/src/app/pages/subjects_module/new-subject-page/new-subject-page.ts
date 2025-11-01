@@ -13,6 +13,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { ApiService } from '../../../core/services/api.service';
+import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
 import { Subject } from '../../../core/models/subject.model';
@@ -126,12 +127,12 @@ export class NewSubjectPage implements OnInit {
       }
 
   // Filtrar roles (IDs según seed: 1=secretary, 2=teacher, 3=preceptor, 4=student)
-  this.teachers = users.filter(u => u.roleId === 2);
-  this.preceptors = users.filter(u => u.roleId === 3);
+  this.teachers = users.filter((u) => u.roleId === ROLE_IDS[ROLE.TEACHER]);
+  this.preceptors = users.filter((u) => u.roleId === ROLE_IDS[ROLE.PRECEPTOR]);
       
       // Si no hay preceptores, usar admins/secretarios
       if (this.preceptors.length === 0) {
-        this.preceptors = users.filter(u => u.roleId === 1 || u.roleId === 2);
+        this.preceptors = users.filter((u) => u.roleId === ROLE_IDS[ROLE.SECRETARY] || u.roleId === ROLE_IDS[ROLE.TEACHER]);
       }
 
       // Inicializar las sugerencias para que aparezcan al hacer clic en el dropdown
@@ -141,7 +142,7 @@ export class NewSubjectPage implements OnInit {
         lastName: teacher.lastName,
         displayName: `${teacher.name} ${teacher.lastName}`,
         email: teacher.email,
-        roleId: teacher.roleId
+        roleId: teacher.roleId ?? ROLE_IDS[ROLE.TEACHER]
       }));
 
       this.preceptorSuggestions = this.preceptors.map(preceptor => ({
@@ -150,7 +151,7 @@ export class NewSubjectPage implements OnInit {
         lastName: preceptor.lastName,
         displayName: `${preceptor.name} ${preceptor.lastName}`,
         email: preceptor.email,
-        roleId: preceptor.roleId
+        roleId: preceptor.roleId ?? ROLE_IDS[ROLE.PRECEPTOR]
       }));
 
       // Cargar materias existentes (opcional)
@@ -198,7 +199,7 @@ export class NewSubjectPage implements OnInit {
         lastName: teacher.lastName,
         displayName: `${teacher.name} ${teacher.lastName}`,
         email: teacher.email,
-        roleId: teacher.roleId
+        roleId: teacher.roleId ?? ROLE_IDS[ROLE.TEACHER]
       }));
   }
 
@@ -222,7 +223,7 @@ export class NewSubjectPage implements OnInit {
         lastName: preceptor.lastName,
         displayName: `${preceptor.name} ${preceptor.lastName}`,
         email: preceptor.email,
-        roleId: preceptor.roleId
+        roleId: preceptor.roleId ?? ROLE_IDS[ROLE.PRECEPTOR]
       }));
   }
 

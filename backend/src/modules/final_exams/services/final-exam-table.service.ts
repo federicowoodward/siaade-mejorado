@@ -15,6 +15,7 @@ import {
 } from "../dto/final-exam-table.dto";
 import { isoToDate, dateInRange } from "../utils/date-utils";
 import { hasRankAtLeast } from "../utils/rbac-utils";
+import { ROLE } from "@/shared/rbac/roles.constants";
 import { FinalExam } from "@/entities/finals/final-exam.entity";
 
 @Injectable()
@@ -77,15 +78,15 @@ export class FinalExamTableService {
   }
 
   /**
-   * Regla: si la mesa es "vieja" (+2 meses), PRECEPTOR no puede borrar (SECRETARIO/ADMIN sí).
+   * Regla: si la mesa es "vieja" (+2 meses), PRECEPTOR no puede borrar (SECRETARIO/ADMIN sï¿½).
    */
-  async remove(id: number, requesterRole: string) {
+  async remove(id: number, requesterRole: ROLE) {
     const row = await this.tableRepo.findOne({ where: { id } });
     if (!row) throw new NotFoundException("Exam table not found");
 
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-    if (row.endDate < twoMonthsAgo && !hasRankAtLeast(requesterRole, "SECRETARIO")) {
+    if (row.endDate < twoMonthsAgo && !hasRankAtLeast(requesterRole, ROLE.SECRETARY)) {
       throw new ForbiddenException(
         "Insufficient hierarchy to delete old exam tables",
       );

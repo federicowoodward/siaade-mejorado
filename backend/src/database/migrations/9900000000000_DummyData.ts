@@ -16,7 +16,7 @@ import { FinalExamsStudent } from "../../entities/finals/final-exams-student.ent
 /**
  * DUMMY DEV SEED - SIAADE
  * Objetivo: simular procesos reales de inicializacion sin construirlos hoy.
- * Orden: commissions -> teachers/alumnos -> career_students -> subject_commissions -> subject_students -> student_subject_progress -> final_exams_students (opcional).
+ * Orden: commissions -> teachers/students -> career_students -> subject_commissions -> subject_students -> student_subject_progress -> final_exams_students (opcional).
  * Idempotente, transaccional, con logs.
  * WARNING: Este seed borra SOLO los datos dummy en down(), nunca datos reales.
  */
@@ -117,6 +117,14 @@ const BASE_STUDENTS: StudentSeed[] = [
   },
 ];
 
+const ROLE_SLUGS = {
+  STUDENT: "student",
+  TEACHER: "teacher",
+  PRECEPTOR: "preceptor",
+  SECRETARY: "secretary",
+  EXECUTIVE_SECRETARY: "executive_secretary",
+} as const;
+
 const chunkArray = <T>(values: T[], size: number): T[][] => {
   const result: T[][] = [];
   for (let index = 0; index < values.length; index += size) {
@@ -141,7 +149,7 @@ const buildStudentSeeds = (): Array<StudentSeed & { studentStartYear: number }> 
       const cuilNumber = 20300000100 + index;
       seeds.push({
         name: `Dummy ${padded}`,
-        lastName: "Alumno",
+        lastName: "Student",
         email,
         cuil: cuilNumber.toString(),
         legajo,
@@ -156,6 +164,11 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
   name = "DummyDataMigration1761015167693";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    if (process.env.NODE_ENV === "production") {
+      console.log("[DummyData] skipped in production environment");
+      return;
+    }
+
     await queryRunner.startTransaction();
     try {
       const manager = queryRunner.manager;
@@ -237,14 +250,22 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         }, total available: ${commissionByLetter.size}`
       );
 
-      const teacherRole = await roleRepo.findOne({ where: { name: "profesor" } });
+      const teacherRole = await roleRepo.findOne({
+        where: { name: ROLE_SLUGS.TEACHER },
+      });
       if (!teacherRole) {
-        throw new Error("Dummy seed: role 'profesor' is required but was not found");
+        throw new Error(
+          "Dummy seed: role 'teacher' is required but was not found"
+        );
       }
 
-      const studentRole = await roleRepo.findOne({ where: { name: "alumno" } });
+      const studentRole = await roleRepo.findOne({
+        where: { name: ROLE_SLUGS.STUDENT },
+      });
       if (!studentRole) {
-        throw new Error("Dummy seed: role 'alumno' is required but was not found");
+        throw new Error(
+          "Dummy seed: role 'student' is required but was not found"
+        );
       }
 
       let teachers = await teacherRepo.find();

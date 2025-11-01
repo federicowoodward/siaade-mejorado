@@ -10,6 +10,7 @@ export class RoleLabelPipe implements PipeTransform {
     teacher:   'Docente',
     preceptor: 'Preceptor',
     secretary: 'Secretario',
+    executive_secretary: 'Secretario directivo',
   };
 
   transform(roleKey: string): string {

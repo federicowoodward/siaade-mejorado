@@ -2,6 +2,11 @@
   "dependencies": {
     "@nestjs/config": "^4.0.2"
   },
+  "scripts": {
+    "db:migrate": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d backend/src/database/datasource.ts",
+    "db:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d backend/src/database/datasource.ts",
+    "db:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:log -d backend/src/database/datasource.ts"
+  },
   "engines": {
     "node": "20.19.0"
   }
