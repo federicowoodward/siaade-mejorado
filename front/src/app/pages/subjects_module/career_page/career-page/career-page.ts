@@ -4,7 +4,7 @@ import { TableModule } from 'primeng/table';
 import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CareerCatalogService } from '../../../../core/services/career-catalog.service';
 
 @Component({
@@ -16,6 +16,7 @@ import { CareerCatalogService } from '../../../../core/services/career-catalog.s
     CardModule,
     ProgressSpinnerModule,
     ButtonModule,
+    RouterLink,
   ],
   templateUrl: './career-page.html',
   styleUrls: ['./career-page.scss'],

@@ -1,0 +1,86 @@
+<div class="m-w-custom">
+  <p-toast></p-toast>
+
+  <div class="flex justify-content-between align-items-center mb-3">
+    <h2 class="m-0">Alumnos de la carrera</h2>
+  </div>
+
+  <ng-container *ngIf="loading(); else loadedTpl">
+    <div class="center">
+      <p-progressSpinner ariaLabel="Cargando"></p-progressSpinner>
+    </div>
+  </ng-container>
+
+  <ng-template #loadedTpl>
+    <div *ngIf="error(); else contentTpl" class="error">{{ error() }}</div>
+  </ng-template>
+
+  <ng-template #contentTpl>
+    <div class="table-container">
+      <p-table
+        [value]="filteredRows()"
+        [paginator]="true"
+        [rows]="15"
+        dataKey="studentId"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-sm p-datatable-gridlines"
+        [rowTrackBy]="rowsTrackBy"
+      >
+        <ng-template pTemplate="caption">
+          <div class="flex justify-content-between align-items-center">
+            <div class="flex gap-2">
+              <input
+                pInputText
+                [ngModel]="search()"
+                (ngModelChange)="onSearchChange($event)"
+                placeholder="Buscar por nombre, CUIL o email"
+                style="min-width: 18rem"
+              />
+              <input
+                pInputText
+                type="number"
+                [ngModel]="year()"
+                (ngModelChange)="year.set($event ? +$event : null)"
+                placeholder="Año ingreso (ej: 2026)"
+                style="width: 12rem"
+              />
+              <p-button
+                label="Aplicar año"
+                icon="pi pi-filter"
+                (onClick)="onApplyYearFilter()"
+                [disabled]="loading()"
+              ></p-button>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Comisión</th>
+            <th>Alumno</th>
+            <th>Email</th>
+            <th style="width: 6rem">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td>{{ row.commissionLetter || row.commissionId }}</td>
+            <td>{{ row.user.name }}</td>
+            <td>{{ row.user.email }}</td>
+            <td class="text-center">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-user"
+                label="Ver ficha"
+                (click)="viewStudent(row.studentId)"
+                [text]="true"
+              ></button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-template>
+</div>

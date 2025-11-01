@@ -4,6 +4,7 @@ import { SubjectAcademicSituationPage } from "./subject_academic_situation/subje
 import { SubjectsPage } from "./subjects_page/subjects-page";
 import { NewSubjectPage } from "./new-subject-page/new-subject-page";
 import { CareerPage } from "./career_page/career-page/career-page";
+import { CareerStudentsPage } from "./career_students_page/career-students.page";
 import { roleCanActivate } from "../../core/guards/role.guard";
 import { ROLE } from "../../core/auth/roles";
 
@@ -28,6 +29,11 @@ export const SUBJECTS_ROUTES: Routes = [
   {
     path: "career-data",
     component: CareerPage,
+    canActivate: [roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
+  },
+  {
+    path: "career-students",
+    component: CareerStudentsPage,
     canActivate: [roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
   },
 ];
