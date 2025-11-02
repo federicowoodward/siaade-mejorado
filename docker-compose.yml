@@ -41,10 +41,15 @@ x-api-common: &api-common
     retries: 5
     start_period: 30s
 
+x-front-build: &front-build
+  context: ./front
+  dockerfile: Dockerfile
+
 x-front-common: &front-common
   build:
-    context: ./front
-    dockerfile: Dockerfile
+    <<: *front-build
+    args:
+      ANGULAR_CONFIGURATION: production
   env_file:
     - .env
   networks:
@@ -91,6 +96,10 @@ services:
     <<: *front-common
     profiles:
       - local
+    build:
+      <<: *front-build
+      args:
+        ANGULAR_CONFIGURATION: development
     depends_on:
       api:
         condition: service_started
