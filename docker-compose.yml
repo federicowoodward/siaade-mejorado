@@ -25,13 +25,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: siaade-api
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: production
 
@@ -39,13 +36,21 @@ services:
     build:
       context: ./front
       dockerfile: Dockerfile
-    container_name: siaade-front
     restart: unless-stopped
-    ports:
-      - "4200:80"
     depends_on:
-      api:
-        condition: service_started
+      - api
+
+  proxy:
+    image: nginx:alpine
+    depends_on:
+      - front
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
 
 volumes:
   postgres_data:

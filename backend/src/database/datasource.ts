@@ -1,54 +1,47 @@
+// src/database/datasource.ts
 import 'dotenv/config';
 import * as path from 'path';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-/**
- * Usa el mismo set de envs que tu app:
- * - DATABASE_URL o DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_DATABASE
- * - DB_SSL=true para activar SSL (rejectUnauthorized:false)
- * 
- * Soporta TS (src) y JS (dist) con los mismos globs.
- */
-function buildDataSourceOptionsFromEnv(): DataSourceOptions {
-  const isTs = __filename.endsWith('.ts');
+function buildOptions(): DataSourceOptions {
+  // Si corre ts-node => .ts; si corre compilado => .js
+  const runningTs = !!process.env.TS_NODE || !!process.env.TS_NODE_DEV || process.argv.join(' ').includes('ts-node');
 
-  const entities = [
-    path.resolve(__dirname, isTs ? '../entities/**/*.entity.ts' : '../entities/**/*.entity.js'),
-  ];
+  const root = process.cwd();
+  const entitiesGlob = runningTs
+    ? path.join(root, 'src/**/*.entity.ts')
+    : path.join(root, 'dist/**/*.entity.js');
 
-  const migrations = [
-    path.resolve(__dirname, isTs ? './migrations/*.ts' : './migrations/*.js'),
-  ];
+  const migrationsGlob = runningTs
+    ? path.join(root, 'src/migrations/*.ts')
+    : path.join(root, 'dist/migrations/*.js'); // ← único patrón en prod
 
   const useSsl = process.env.DB_SSL === 'true';
 
-  if (process.env.DATABASE_URL) {
-    return {
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-      entities,
-      migrations,
-      synchronize: false,
-      logging: false,
-    };
-  }
-
-  return {
+  const base: DataSourceOptions = {
     type: 'postgres',
+    entities: [entitiesGlob],
+    migrations: [migrationsGlob],
+    migrationsRun: false,
+    synchronize: false,
+    logging: false,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+    // opcional: por prolijidad
+    migrationsTableName: 'migrations',
+  };
+
+  if (process.env.DATABASE_URL) {
+    return { ...base, url: process.env.DATABASE_URL };
+  }
+  return {
+    ...base,
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-    entities,
-    migrations,
-    synchronize: false,
-    logging: false,
   };
 }
 
-const AppDataSource = new DataSource(buildDataSourceOptionsFromEnv());
+const AppDataSource = new DataSource(buildOptions());
 export default AppDataSource;
-
