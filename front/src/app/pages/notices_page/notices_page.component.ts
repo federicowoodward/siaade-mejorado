@@ -1,4 +1,4 @@
-import { Component, inject, computed } from "@angular/core";
+import { Component, inject, computed, AfterViewInit, NgZone } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { EditorModule } from "primeng/editor";
@@ -15,9 +15,10 @@ import { CanAnyRoleDirective } from "../../shared/directives/can-any-role.direct
   templateUrl: "./notices_page.component.html",
   styleUrls: ["./notices_page.component.scss"],
 })
-export class NoticesPageComponent {
+export class NoticesPageComponent implements AfterViewInit {
   private noticesSrv = inject(NoticesService);
   private permissions = inject(PermissionService);
+  private zone = inject(NgZone);
   protected readonly ROLE = ROLE;
 
   notices = this.noticesSrv.notices;
@@ -31,6 +32,18 @@ export class NoticesPageComponent {
     content: "",
     visibleFor: ROLE.STUDENT as VisibleRole,
   };
+
+  ngAfterViewInit(): void {
+    // Fuerza un re-layout inicial para que Quill (p-editor) calcule correctamente
+    // alturas/anchos cuando el contenedor se monta dentro de layouts flex/overflow.
+    this.zone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event("resize"));
+        // Segundo tick por si el toolbar carga asíncronamente
+        setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
+      });
+    });
+  }
 
   addNotice() {
     if (!this.newNotice.title?.trim() || !this.newNotice.content?.trim()) return;
