@@ -55,7 +55,7 @@ export class AuthService {
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
         if (!this.router.url.startsWith("/auth")) {
-          void this.router.navigate(["/auth/login"]);
+          void this.router.navigate(["/auth"], { replaceUrl: true });
         }
       });
   }
@@ -114,7 +114,7 @@ export class AuthService {
     }
 
     if (!this.router.url.startsWith("/auth")) {
-      await this.router.navigate(["/auth/login"]);
+      await this.router.navigate(["/auth"], { replaceUrl: true });
     }
   }
 
