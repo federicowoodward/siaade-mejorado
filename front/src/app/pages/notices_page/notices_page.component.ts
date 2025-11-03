@@ -34,12 +34,9 @@ export class NoticesPageComponent implements AfterViewInit {
   };
 
   ngAfterViewInit(): void {
-    // Fuerza un re-layout inicial para que Quill (p-editor) calcule correctamente
-    // alturas/anchos cuando el contenedor se monta dentro de layouts flex/overflow.
     this.zone.runOutsideAngular(() => {
       requestAnimationFrame(() => {
         window.dispatchEvent(new Event("resize"));
-        // Segundo tick por si el toolbar carga asíncronamente
         setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
       });
     });
