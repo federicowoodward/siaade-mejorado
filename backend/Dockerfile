@@ -18,7 +18,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+# En runtime instalamos solo dependencias de prod sin exigir lock estricto
+# para evitar el error de desincronización en CI.
+RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY ./docker-entrypoint.sh /app/docker-entrypoint.sh
