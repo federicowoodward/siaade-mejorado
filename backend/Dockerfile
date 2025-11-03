@@ -5,7 +5,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
-RUN npm ci
+# Usamos npm install (no-ci) en la etapa de build para evitar fallos por
+# desincronización menor del lockfile con dependencias de desarrollo.
+RUN npm install
 
 COPY . .
 RUN rm -rf dist && npm run build
