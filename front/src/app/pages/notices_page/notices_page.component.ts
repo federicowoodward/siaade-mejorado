@@ -1,4 +1,4 @@
-import { Component, inject, computed, AfterViewInit, NgZone } from "@angular/core";
+import { Component, inject, computed, NgZone, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { EditorModule } from "primeng/editor";
@@ -15,7 +15,7 @@ import { CanAnyRoleDirective } from "../../shared/directives/can-any-role.direct
   templateUrl: "./notices_page.component.html",
   styleUrls: ["./notices_page.component.scss"],
 })
-export class NoticesPageComponent implements AfterViewInit {
+export class NoticesPageComponent implements OnInit {
   private noticesSrv = inject(NoticesService);
   private permissions = inject(PermissionService);
   private zone = inject(NgZone);
@@ -33,7 +33,7 @@ export class NoticesPageComponent implements AfterViewInit {
     visibleFor: ROLE.STUDENT as VisibleRole,
   };
 
-  ngAfterViewInit(): void {
+  ngOnInit(): void {
     this.zone.runOutsideAngular(() => {
       requestAnimationFrame(() => {
         window.dispatchEvent(new Event("resize"));
