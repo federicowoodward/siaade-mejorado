@@ -45,10 +45,8 @@ export class AcademicStatus implements OnInit, OnChanges {
     // Effect que reacciona cuando studentSignal cambia
     effect(() => {
       const s = this.studentSignal();
-      console.log('[AcademicStatus] effect disparado con student:', s);
       
       if (s && s.id) {
-        console.log('[AcademicStatus] Cargando datos para:', s);
         this.loading.set(true);
         this.subjectsByYear.set({});
         this.loadData(s);
@@ -56,12 +54,9 @@ export class AcademicStatus implements OnInit, OnChanges {
     });
   }
 
-  ngOnInit() {
-    console.log('[AcademicStatus] ngOnInit - @Input student:', this.student);
-    
+  ngOnInit() {    
     // Si no hay student Input, cargar usuario logueado
     if (!this.student) {
-      console.log('[AcademicStatus] Sin Input, cargando usuario logueado');
       this.auth.getUser().subscribe((u) => {
         if (u && u.id) {
           this.studentSignal.set(u as any);
@@ -70,13 +65,9 @@ export class AcademicStatus implements OnInit, OnChanges {
     }
   }
 
-  ngOnChanges(changes: SimpleChanges) {
-    console.log('[AcademicStatus] ngOnChanges:', changes);
-    
+  ngOnChanges(changes: SimpleChanges) {    
     if (changes["student"]) {
       const current = changes["student"].currentValue;
-      console.log('[AcademicStatus] Student cambió a:', current);
-      
       if (current && current.id) {
         // Actualizar el signal para disparar el effect
         this.studentSignal.set(current);
@@ -84,9 +75,7 @@ export class AcademicStatus implements OnInit, OnChanges {
     }
   }
 
-  private loadData(s: any) {
-    console.log('[AcademicStatus] loadData llamado con:', s);
-    
+  private loadData(s: any) {    
     if (!s || !s.id) {
       console.error('[AcademicStatus] Student sin ID válido:', s);
       this.loading.set(false);
@@ -102,7 +91,6 @@ export class AcademicStatus implements OnInit, OnChanges {
   }
 
   getAcademicStatus(studentId: string): void {
-    console.log('[AcademicStatus] Cargando situación académica para:', studentId);
     this.loading.set(true);
     
     this.api
@@ -112,7 +100,6 @@ export class AcademicStatus implements OnInit, OnChanges {
       )
       .subscribe({
         next: (payload) => {
-          console.log('[AcademicStatus] Respuesta recibida:', payload);
           this.subjectsByYear.set(payload?.byYear ?? {});
           this.loading.set(false);
         },
