@@ -22,6 +22,7 @@ export class ApiService {
     private cache: ApiCacheService,
     private authState: AuthStateService
   ) {}
+  private readonly LOG = (enviroment as any).debugApi === true;
 
   request<T>(
     method: HttpMethod,
@@ -118,34 +119,38 @@ export class ApiService {
 
     return req$.pipe(
       tap((resp) => {
-        console.groupCollapsed(`[API ✅] ${method} ${fullUrl}`);
-        if (data !== undefined) console.log('Body:', data);
-        if (params) console.log('Params:', params);
-        console.log('Response:', resp);
-        console.groupEnd();
+        if (this.LOG) {
+          console.groupCollapsed(`[API ✅] ${method} ${fullUrl}`);
+          if (data !== undefined) console.log('Body:', data);
+          if (params) console.log('Params:', params);
+          console.log('Response:', resp);
+          console.groupEnd();
+        }
       }),
       catchError((err: unknown) => {
-        console.groupCollapsed(`[API ❌] ${method} ${fullUrl}`);
-        if (data !== undefined) console.log('Body:', data);
-        if (params) console.log('Params:', params);
+        if (this.LOG) {
+          console.groupCollapsed(`[API ❌] ${method} ${fullUrl}`);
+          if (data !== undefined) console.log('Body:', data);
+          if (params) console.log('Params:', params);
 
-        if (err instanceof HttpErrorResponse) {
-          const server = err.error;
-          const messages = Array.isArray(server?.message)
-            ? server.message
-            : server?.message
-            ? [server.message]
-            : [err.message];
+          if (err instanceof HttpErrorResponse) {
+            const server = err.error;
+            const messages = Array.isArray(server?.message)
+              ? server.message
+              : server?.message
+              ? [server.message]
+              : [err.message];
 
-          console.log('Status:', err.status, err.statusText);
-          console.log('URL:', err.url);
-          console.log('Server payload:', server);
-          console.log('Messages:');
-          messages.forEach((m: any, i: number) => console.log(`  - [${i}]`, m));
-        } else {
-          console.log('Unknown error object:', err);
+            console.log('Status:', err.status, err.statusText);
+            console.log('URL:', err.url);
+            console.log('Server payload:', server);
+            console.log('Messages:');
+            messages.forEach((m: any, i: number) => console.log(`  - [${i}]`, m));
+          } else {
+            console.log('Unknown error object:', err);
+          }
+          console.groupEnd();
         }
-        console.groupEnd();
 
         return throwError(() => err);
       }),
@@ -167,8 +172,10 @@ export class ApiService {
           const baseUrl = `${base}/${topSegment}`;
           const prefix = `GET:${baseUrl}`;
           await this.cache.invalidateByPrefix(prefix);
-          console.groupCollapsed(`[CACHE ♻️] Invalidado prefijo "${prefix}"`);
-          console.groupEnd();
+          if (this.LOG) {
+            console.groupCollapsed(`[CACHE ♻️] Invalidado prefijo "${prefix}"`);
+            console.groupEnd();
+          }
         }
       })
     );
