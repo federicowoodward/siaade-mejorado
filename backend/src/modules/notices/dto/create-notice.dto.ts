@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateNoticeDto {
+  @ApiProperty({ description: 'Título del aviso' })
+  @IsString()
+  @IsNotEmpty()
+  title!: string;
+
   @ApiProperty({ description: 'HTML (contenido del editor)' })
   @IsString()
   @IsNotEmpty()

@@ -15,6 +15,9 @@ export class Notice {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ type: 'text', default: '' })
+  title: string;
+
   @Column({ type: 'text' })
   content: string;
 

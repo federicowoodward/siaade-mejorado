@@ -22,6 +22,7 @@ export class NoticesService {
     else if (dto.visibleFor === 'student') visibleRoleId = ROLE_IDS[ROLE.STUDENT];
 
     const notice = this.repo.create({
+      title: dto.title,
       content: dto.content,
       visibleRoleId,
       createdByUserId: createdByUserId ?? null,
@@ -29,7 +30,8 @@ export class NoticesService {
     const saved = await this.repo.save(notice);
     return {
       id: saved.id,
-      content: saved.content,
+  title: saved.title,
+  content: saved.content,
       visibleFor:
         saved.visibleRoleId === ROLE_IDS[ROLE.TEACHER]
           ? 'teacher'
@@ -74,6 +76,7 @@ export class NoticesService {
     }
     const mapped = rows.map((r) => ({
       id: r.id,
+      title: r.title,
       content: r.content,
       visibleFor:
         r.visibleRoleId === ROLE_IDS[ROLE.TEACHER]

@@ -65,9 +65,10 @@ export class NoticesService {
       throw new Error("El contenido no puede estar vacío.");
     }
 
-    const body: any = {
-      content: input.content,
-    };
+      const body: any = {
+        title: input.title?.trim() || '',
+        content: input.content,
+      };
     if (input.visibleFor) body.visibleFor = input.visibleFor;
 
     try {
