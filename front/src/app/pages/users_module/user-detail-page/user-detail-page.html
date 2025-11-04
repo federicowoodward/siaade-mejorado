@@ -5,6 +5,45 @@
     iconPos="left"
     (onClick)="back()"
   ></p-button>
+
+  <!-- Controles de acceso/estado del alumno -->
+  <div class="flex flex-row gap-3 align-items-center flex-wrap">
+    <div class="flex flex-column gap-1">
+      <span class="text-sm font-medium">Acceso</span>
+      <p-togglebutton
+        [ngModel]="canLogin() === true"
+        (onChange)="onToggleCanLogin(!!$event.checked)"
+        [disabled]="saving() || !canToggleCanLogin() || isActive() === false"
+        onLabel="Habilitado"
+        offLabel="Bloqueado"
+        [onIcon]="'pi pi-lock-open'"
+        [offIcon]="'pi pi-lock'"
+        class="w-12rem text-sm"
+        [ngClass]="(canLogin() ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
+        ariaLabel="Cambiar acceso"
+      ></p-togglebutton>
+      <div class="mt-1 text-xs text-color-secondary" *ngIf="isActive() === false">
+        Inactivo: acceso bloqueado
+      </div>
+    </div>
+
+    <div class="flex flex-column gap-1">
+      <span class="text-sm font-medium">Estado</span>
+      <p-togglebutton
+        [ngModel]="isActive() !== false"
+        (onChange)="onToggleIsActive(!!$event.checked)"
+        [disabled]="saving() || !canToggleIsActive()"
+        onLabel="Activo"
+        offLabel="Inactivo"
+        [onIcon]="'pi pi-check'"
+        [offIcon]="'pi pi-times'"
+        class="w-10rem text-sm"
+        [ngClass]="((isActive() !== false) ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
+        ariaLabel="Cambiar estado"
+      ></p-togglebutton>
+    </div>
+  </div>
+
   <h2>Datos personales del usuario</h2>
   <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
 </div>
