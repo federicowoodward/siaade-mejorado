@@ -25,9 +25,19 @@ import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
       ></p-button>
 
       <h2>Situación Académica del Estudiante</h2>
-      <app-academic-status
-        [student]="student()"
-      ></app-academic-status>
+      
+      @if (loading()) {
+        <p>Cargando información del usuario...</p>
+      } @else if (errorMessage()) {
+        <div class="p-4 bg-red-100 text-red-900 border-round">
+          <p class="font-bold">Error</p>
+          <p>{{ errorMessage() }}</p>
+        </div>
+      } @else if (student()) {
+        <app-academic-status
+          [student]="student()"
+        ></app-academic-status>
+      }
     </div>
   `,
 })
@@ -38,24 +48,41 @@ export class StudentAcademicStatusPage implements OnInit {
 
   // this is a signal we *own* and can .set()
   student = signal<StudentMinimal | undefined>(undefined);
+  loading = signal<boolean>(true);
+  errorMessage = signal<string>('');
 
   constructor(private router: Router) {}
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) return;
+    if (!id) {
+      this.errorMessage.set('ID de usuario no proporcionado.');
+      this.loading.set(false);
+      return;
+    }
 
+    this.loading.set(true);
+    
     this.api.getById('users', id).subscribe({
       next: (u: any) => {
-        if (!u?.id) return;
+        if (!u?.id) {
+          this.errorMessage.set('Usuario no encontrado.');
+          this.loading.set(false);
+          return;
+        }
         
         // Validar que el usuario sea estudiante
         const isStudent = u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
         
         if (!isStudent) {
           console.error('[StudentAcademicStatus] El usuario no es un estudiante:', u);
-          alert(`Error: El usuario "${u.name} ${u.lastName}" no es un estudiante.\n\nSolo se puede consultar la situación académica de estudiantes.`);
-          this.back();
+          this.errorMessage.set(
+            `El usuario "${u.name} ${u.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`
+          );
+          this.loading.set(false);
+          
+          // Redirigir después de 3 segundos
+          setTimeout(() => this.back(), 3000);
           return;
         }
         
@@ -65,16 +92,20 @@ export class StudentAcademicStatusPage implements OnInit {
           lastName: u.lastName,
           cuil: u.cuil,
         });
+        this.loading.set(false);
       },
       error: (err) => {
         console.error('[StudentAcademicStatus] Error al cargar usuario:', err);
         
         if (err.status === 404) {
-          alert('Error: El usuario no existe o no es un estudiante.');
+          this.errorMessage.set('El usuario no existe o no es un estudiante.');
         } else {
-          alert('Error al cargar la información del usuario.');
+          this.errorMessage.set('Error al cargar la información del usuario.');
         }
-        this.back();
+        this.loading.set(false);
+        
+        // Redirigir después de 3 segundos
+        setTimeout(() => this.back(), 3000);
       }
     });
   }
