@@ -32,8 +32,8 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
       }),
     }),
     AuthModule,
-  UsersModule,
-  UsersReadModule,
+    UsersModule,
+    UsersReadModule,
     RolesModule,
     // SubjectsManageModule,
     // SubjectsReadModule,
@@ -57,4 +57,4 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

@@ -52,7 +52,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   errorMessage = signal<string>('');
   private redirectTimer: number | null = null;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -63,29 +63,29 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
     }
 
     this.loading.set(true);
-    
-  this.api.getById('users/read', id).subscribe({
+
+    this.api.getById('users/read', id).subscribe({
       next: (u: any) => {
         if (!u?.id) {
           this.errorMessage.set('Usuario no encontrado.');
           this.loading.set(false);
           return;
         }
-        
+
         // Validar que el usuario sea estudiante
         const isStudent = u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
-        
-  if (!isStudent) {
+
+        if (!isStudent) {
           console.error('[StudentAcademicStatus] El usuario no es un estudiante:', u);
           this.errorMessage.set(
             `El usuario "${u.name} ${u.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`
           );
           this.loading.set(false);
-          
+
           this.redirectTimer = window.setTimeout(() => this.back(), 3000);
           return;
         }
-        
+
         this.student.set({
           id: u.id,
           name: u.name,
@@ -96,14 +96,14 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('[StudentAcademicStatus] Error al cargar usuario:', err);
-        
+
         if (err.status === 404) {
           this.errorMessage.set('El usuario no existe o no es un estudiante.');
         } else {
           this.errorMessage.set('Error al cargar la información del usuario.');
         }
         this.loading.set(false);
-        
+
         this.redirectTimer = window.setTimeout(() => this.back(), 3000);
       }
     });
