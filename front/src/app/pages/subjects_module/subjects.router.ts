@@ -24,16 +24,16 @@ export const SUBJECTS_ROUTES: Routes = [
   {
     path: "new",
     component: NewSubjectPage,
-    canActivate: [roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
+    canActivate: [roleCanActivate([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
   },
   {
     path: "career-data",
     component: CareerPage,
-    canActivate: [roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
+    canActivate: [roleCanActivate([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
   },
   {
     path: "career-students",
     component: CareerStudentsPage,
-    canActivate: [roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
+    canActivate: [roleCanActivate([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])],
   },
 ];

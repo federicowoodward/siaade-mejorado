@@ -44,6 +44,8 @@ export class ApiService {
     if (data !== undefined) options.body = data;
 
     // --- CACHE para GET ---
+    // NOTE: Cache temporarily disabled for troubleshooting.
+    /*
     if (method === 'GET') {
       const cacheKey = buildCacheKey(method, fullUrl, params ?? {}, token);
 
@@ -109,6 +111,7 @@ export class ApiService {
         )
       );
     }
+    */
 
     // --- Mutaciones: request normal + invalidación por prefijo ---
     const req$ = this.http.request<MaybeWrapped<T>>(method, fullUrl, options);
