@@ -1,19 +1,11 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
 
 import {
   CatalogsService,
@@ -30,16 +22,14 @@ import {
     TableModule,
     ButtonModule,
     InputTextModule,
-    ToastModule,
     ProgressSpinnerModule,
   ],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
-  providers: [MessageService],
 })
 export class CareerStudentsPage implements OnInit, OnDestroy {
   private readonly catalogs = inject(CatalogsService);
-  private readonly messages = inject(MessageService);
+  private readonly router = inject(Router);
 
   loading = signal(true);
   saving = signal(false);
@@ -139,10 +129,6 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   }
 
   viewStudent(studentId: string): void {
-    this.messages.add({
-      severity: 'info',
-      summary: 'Ver alumno',
-      detail: `Abrir ficha de alumno ${studentId} (conectar con flujo real)`,
-    });
+    this.router.navigate(['/users/user_detail', studentId]);
   }
 }
