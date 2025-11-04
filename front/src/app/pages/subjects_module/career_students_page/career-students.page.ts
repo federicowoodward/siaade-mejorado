@@ -6,6 +6,8 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Router } from '@angular/router';
+import { PermissionService } from '@/core/auth/permission.service';
+import { ROLE } from '@/core/auth/roles';
 
 import {
   CatalogsService,
@@ -30,6 +32,7 @@ import {
 export class CareerStudentsPage implements OnInit, OnDestroy {
   private readonly catalogs = inject(CatalogsService);
   private readonly router = inject(Router);
+  private readonly permissions = inject(PermissionService);
 
   loading = signal(true);
   saving = signal(false);
@@ -60,6 +63,8 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
           commissionLetter: group.commissionLetter ?? null,
           legajo: student.legajo,
           studentStartYear: student.studentStartYear,
+          isActive: student.isActive ?? null,
+          canLogin: student.canLogin ?? null,
           user: {
             name: fullName || firstName || lastName || 'Sin nombre',
             email: student.user?.email ?? '',
@@ -130,5 +135,53 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
 
   viewStudent(studentId: string): void {
     this.router.navigate(['/users/user_detail', studentId]);
+  }
+
+  // ---- Permisos para toggles ----
+  canToggleCanLogin(): boolean {
+    return this.permissions.hasAnyRole([
+      ROLE.PRECEPTOR,
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+  }
+
+  canToggleIsActive(): boolean {
+    return this.permissions.hasRole(ROLE.EXECUTIVE_SECRETARY);
+  }
+
+  // ---- Acciones ----
+  async onToggleCanLogin(row: CareerStudentItem, next: boolean): Promise<void> {
+    if (!this.canToggleCanLogin()) return;
+    if (row.isActive === false) return; // inactivo: canLogin queda false
+    try {
+      this.saving.set(true);
+      await this.catalogs['api'].update('users', row.studentId, {
+        'student.canLogin': !!next,
+      }).toPromise();
+      row.canLogin = !!next;
+    } catch (e) {
+      // revertir UI si falla
+      row.canLogin = !next;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async onToggleIsActive(row: CareerStudentItem, next: boolean): Promise<void> {
+    if (!this.canToggleIsActive()) return;
+    try {
+      this.saving.set(true);
+      const payload: any = { 'student.isActive': !!next };
+      if (next === false) payload['student.canLogin'] = false; // regla de negocio
+      await this.catalogs['api'].update('users', row.studentId, payload).toPromise();
+      row.isActive = !!next;
+      if (row.isActive === false) row.canLogin = false;
+    } catch (e) {
+      // revertir UI si falla
+      row.isActive = !next;
+    } finally {
+      this.saving.set(false);
+    }
   }
 }

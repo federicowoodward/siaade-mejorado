@@ -37,6 +37,8 @@ export type CareerStudentItem = {
   commissionLetter: string | null;
   legajo: string;
   studentStartYear: number;
+  isActive: boolean | null;
+  canLogin: boolean | null;
   user: {
     name: string;
     email: string;
@@ -51,12 +53,15 @@ export class CatalogsService {
     careerId: number,
     opts?: { studentStartYear?: number }
   ): Observable<CareerStudentsByCommissionResponse> {
-    let params = new HttpParams();
+    const params: Record<string, any> = {};
     if (opts?.studentStartYear) {
-      params = params.set('studentStartYear', String(opts.studentStartYear));
+      params['studentStartYear'] = String(opts.studentStartYear);
     }
-    return this.api.request<CareerStudentsByCommissionResponse>('GET', `catalogs/career-students-by-commission/${careerId}`, {
-      params,
-    });
+    return this.api.request<CareerStudentsByCommissionResponse>(
+      'GET',
+      `catalogs/career-students-by-commission/${careerId}`,
+      undefined,
+      params
+    );
   }
 }

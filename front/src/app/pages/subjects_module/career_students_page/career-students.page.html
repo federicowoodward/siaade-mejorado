@@ -57,6 +57,8 @@
             <th>Comisión</th>
             <th>Alumno</th>
             <th>Email</th>
+            <th>Acceso</th>
+            <th>Estado</th>
             <th style="width: 6rem">Acciones</th>
           </tr>
         </ng-template>
@@ -66,6 +68,26 @@
             <td>{{ row.commissionLetter || row.commissionId }}</td>
             <td>{{ row.user.name }}</td>
             <td>{{ row.user.email }}</td>
+            <td>
+              <label class="flex align-items-center gap-2">
+                <input type="checkbox"
+                       [checked]="row.canLogin === true"
+                       (change)="onToggleCanLogin(row, $event.target.checked)"
+                       [disabled]="saving() || !canToggleCanLogin() || row.isActive === false" />
+                <span class="text-sm" [ngClass]="{'text-color-secondary': row.isActive === false}">
+                  {{ row.isActive === false ? 'Inactivo' : (row.canLogin ? 'Habilitado' : 'Bloqueado') }}
+                </span>
+              </label>
+            </td>
+            <td>
+              <label class="flex align-items-center gap-2">
+                <input type="checkbox"
+                       [checked]="row.isActive !== false"
+                       (change)="onToggleIsActive(row, $event.target.checked)"
+                       [disabled]="saving() || !canToggleIsActive()" />
+                <span class="text-sm">{{ row.isActive === false ? 'Inactivo' : 'Activo' }}</span>
+              </label>
+            </td>
             <td class="text-center">
               <button
                 pButton
