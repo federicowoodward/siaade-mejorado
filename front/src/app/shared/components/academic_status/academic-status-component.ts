@@ -27,7 +27,7 @@ export interface StudentMinimal {
   imports: [CommonModule, TableModule, Tag],
   templateUrl: './academic-status-component.html',
 })
-export class AcademicStatus implements OnInit {
+export class AcademicStatus implements OnInit, OnChanges {
   /** If provided, we load this student; otherwise we fall back to the logged-in user */
   @Input() student?: StudentMinimal;
 
@@ -47,6 +47,12 @@ export class AcademicStatus implements OnInit {
         if (!u) return;
         this.loadData(u);
       });
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes["student"] && changes["student"].currentValue) {
+      this.loadData(changes["student"].currentValue);
     }
   }
 
