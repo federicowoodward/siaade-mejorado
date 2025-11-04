@@ -27,15 +27,45 @@ export class FinalExamTableService {
   ) {}
 
   async list(id?: number) {
-    if (id) {
-      const row = await this.tableRepo.findOne({ where: { id } });
-      if (!row) throw new NotFoundException("Exam table not found");
-      return row;
-    }
+    const qb = this.tableRepo
+      .createQueryBuilder('t')
+      .leftJoin('users', 'u', 'u.id = t.created_by')
+      .select([
+        't.id AS id',
+        't.name AS name',
+        "to_char(t.start_date, 'YYYY-MM-DD') AS start_date",
+        "to_char(t.end_date, 'YYYY-MM-DD') AS end_date",
+        't.created_by AS created_by',
+        'u.id AS created_by_user_id',
+        'u.name AS created_by_user_name',
+        'u.last_name AS created_by_user_last_name',
+        'u.email AS created_by_user_email',
+      ])
+      .orderBy('t.start_date', 'DESC')
+      .addOrderBy('t.id', 'DESC');
 
-    return this.tableRepo.find({
-      order: { startDate: "DESC", id: "DESC" },
+    if (id) qb.where('t.id = :id', { id });
+
+    const rows = await qb.getRawMany();
+    if (id && !rows.length) throw new NotFoundException('Exam table not found');
+
+    const mapRow = (r: any) => ({
+      id: r.id,
+      name: r.name,
+      start_date: r.start_date,
+      end_date: r.end_date,
+      created_by: r.created_by,
+      createdByUser: r.created_by_user_id
+        ? {
+            id: r.created_by_user_id,
+            name: r.created_by_user_name,
+            last_name: r.created_by_user_last_name,
+            email: r.created_by_user_email,
+          }
+        : undefined,
     });
+
+    return id ? mapRow(rows[0]) : rows.map(mapRow);
   }
 
   async init(dto: InitFinalExamTableDto) {
@@ -49,6 +79,7 @@ export class FinalExamTableService {
       name: dto.name,
       startDate: start,
       endDate: end,
+      createdBy: dto.created_by ?? null,
     });
     return this.tableRepo.save(row);
   }

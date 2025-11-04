@@ -1,5 +1,5 @@
 // src/modules/final_exams/dto/final-exam-table.dto.ts
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class InitFinalExamTableDto {
   @IsString()
@@ -11,6 +11,11 @@ export class InitFinalExamTableDto {
 
   @IsDateString()
   end_date!: string;
+
+  // opcional para compatibilidad: si viene, se usa como creador
+  @IsOptional()
+  @IsUUID()
+  created_by?: string;
 }
 
 export class EditFinalExamTableDto {
