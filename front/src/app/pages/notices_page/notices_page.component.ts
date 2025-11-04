@@ -42,20 +42,26 @@ export class NoticesPageComponent implements OnInit {
     });
   }
 
-  addNotice() {
-    if (!this.newNotice.title?.trim() || !this.newNotice.content?.trim()) return;
+  async addNotice() {
+    try {
+      if (!this.newNotice.title?.trim()) {
+        alert("Ingresá un título para el aviso.");
+        return;
+      }
+      await this.noticesSrv.create({
+        title: this.newNotice.title!.trim(),
+        content: this.newNotice.content!,
+        visibleFor: (this.newNotice.visibleFor as VisibleRole | "all") ?? "all",
+      });
 
-    this.noticesSrv.create({
-      title: this.newNotice.title!.trim(),
-      content: this.newNotice.content!,
-      visibleFor: (this.newNotice.visibleFor as VisibleRole | "all") ?? "all",
-    });
-
-    this.newNotice = {
-      title: "",
-      content: "",
-      visibleFor: ROLE.STUDENT as VisibleRole,
-    };
+      this.newNotice = {
+        title: "",
+        content: "",
+        visibleFor: ROLE.STUDENT as VisibleRole,
+      };
+    } catch (e: any) {
+      alert(String(e?.message ?? "No se pudo publicar el aviso."));
+    }
   }
 
   deleteNotice(id: number) {

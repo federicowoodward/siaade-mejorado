@@ -51,19 +51,38 @@ export class NoticesService {
   }
 
   async create(input: { title: string; content: string; visibleFor?: VisibleRole | "all" }) {
+    // Validación: el editor puede enviar <p><br></p> u HTML vacío; normalizamos
+    const isEmptyHtml = (html: string | undefined | null) => {
+      if (!html) return true;
+      const text = String(html)
+        .replace(/<[^>]*>/g, "") // tags
+        .replace(/&nbsp;|\s|\n|\r/g, "") // espacios/nbsp
+        .trim();
+      return text.length === 0;
+    };
+
+    if (isEmptyHtml(input.content)) {
+      throw new Error("El contenido no puede estar vacío.");
+    }
+
     const body: any = {
       title: input.title,
       content: input.content,
     };
     if (input.visibleFor) body.visibleFor = input.visibleFor;
 
-    const created = await this.api
-      .request<any>("POST", "notices", body)
-      .toPromise();
-    const role = this.permissions.currentRole();
-    await this.loadForRole(role);
-    const fallback: VisibleRole = role === ROLE.TEACHER ? ROLE.TEACHER : ROLE.STUDENT;
-    return this.mapFromApi(created, fallback);
+    try {
+      const created = await this.api
+        .request<any>("POST", "notices", body)
+        .toPromise();
+      const role = this.permissions.currentRole();
+      await this.loadForRole(role);
+      const fallback: VisibleRole = role === ROLE.TEACHER ? ROLE.TEACHER : ROLE.STUDENT;
+      return this.mapFromApi(created, fallback);
+    } catch (err: any) {
+      const msg = err?.error?.message || err?.message || "No se pudo crear el aviso.";
+      throw new Error(Array.isArray(msg) ? msg.join("\n") : String(msg));
+    }
   }
 
   async remove(id: number) {
