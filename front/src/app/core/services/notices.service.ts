@@ -55,8 +55,8 @@ export class NoticesService {
     const isEmptyHtml = (html: string | undefined | null) => {
       if (!html) return true;
       const text = String(html)
-        .replace(/<[^>]*>/g, "") // tags
-        .replace(/&nbsp;|\s|\n|\r/g, "") // espacios/nbsp
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;|\s|\n|\r/g, "")
         .trim();
       return text.length === 0;
     };
