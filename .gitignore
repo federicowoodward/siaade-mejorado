@@ -2,3 +2,19 @@ login.json
 /node_modules
 .vercel
 .env
+
+# Build outputs
+/front/dist/
+/backend/dist/
+
+# Angular cache
+/front/.angular/
+
+# Logs and temp
+*.log
+*.tmp
+*.cache
+
+# OS files
+Thumbs.db
+.DS_Store
