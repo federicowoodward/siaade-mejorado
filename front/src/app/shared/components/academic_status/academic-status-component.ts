@@ -56,6 +56,7 @@ export class AcademicStatus implements OnInit, OnChanges {
     // Cuando el Input student cambia, recargar datos
     if (changes["student"]) {
       const current = changes["student"].currentValue;
+      console.log('[AcademicStatus] ngOnChanges detectó cambio en student:', current);
       if (current && current.id) {
         this.loading.set(true);
         this.loadData(current);
@@ -64,6 +65,14 @@ export class AcademicStatus implements OnInit, OnChanges {
   }
 
   private loadData(s: any) {
+    console.log('[AcademicStatus] loadData llamado con:', s);
+    
+    if (!s || !s.id) {
+      console.error('[AcademicStatus] Student sin ID válido:', s);
+      this.loading.set(false);
+      return;
+    }
+    
     this.user.set({
       name: `${s.name} ${s.lastName}`,
       cuil: s.cuil,

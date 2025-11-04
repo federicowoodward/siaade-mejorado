@@ -25,7 +25,6 @@ import { GoBackService } from '../../../core/services/go_back.service';
 
       <h2>Situación Académica del Estudiante</h2>
       <app-academic-status
-        *ngIf="student()"
         [student]="student()"
       ></app-academic-status>
     </div>
