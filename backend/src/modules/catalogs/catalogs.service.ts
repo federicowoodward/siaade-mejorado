@@ -11,6 +11,7 @@ import { SubjectCommission } from "@/entities/subjects/subject-commission.entity
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
+import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 
 export type SubjectCommissionTeachersDto = {
   subject: { id: number; name: string };
@@ -47,7 +48,9 @@ export class CatalogsService {
     @InjectRepository(FinalExamStatus)
     private readonly finalExamStatusRepo: Repository<FinalExamStatus>,
     @InjectRepository(SubjectStatusType)
-    private readonly subjectStatusTypeRepo: Repository<SubjectStatusType>
+    private readonly subjectStatusTypeRepo: Repository<SubjectStatusType>,
+    @InjectRepository(SubjectGradesView)
+    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -609,5 +612,106 @@ export class CatalogsService {
     Object.values(byYear).forEach((arr) => arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)));
 
     return { byYear };
+  }
+
+  /**
+   * Situación académica REAL por estudiante: usa la vista v_subject_grades para traer notas,
+   * final, asistencia y condición por materia. Complementa con el año (yearNo) desde el plan
+   * de carrera (career_subjects) del estudiante.
+   */
+  async getStudentAcademicStatus(studentId: string): Promise<{
+    studentId: string;
+    byYear: Record<string, Array<{
+      subjectId: number;
+      subjectName: string;
+      year: number | null;
+      commissionId: number;
+      commissionLetter: string | null;
+      partials: 2 | 4;
+      note1: number | null;
+      note2: number | null;
+      note3: number | null;
+      note4: number | null;
+      final: number | null;
+      attendancePercentage: number;
+      condition: string | null;
+    }>>;
+  }> {
+    // Mapa subjectId -> yearNo según la carrera a la que está inscripto
+    const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
+    const yearBySubject = new Map<number, number | null>();
+    if (cs) {
+      const rows = await this.careerSubjectRepo
+        .createQueryBuilder('cs')
+        .leftJoinAndSelect('cs.subject', 'subject')
+        .where('cs.careerId = :careerId', { careerId: cs.careerId })
+        .getMany();
+      for (const row of rows) {
+        if (row.subject) {
+          yearBySubject.set(row.subject.id, row.yearNo ?? null);
+        }
+      }
+    }
+
+    // Traer todas las filas de la vista por el estudiante
+    const viewRows = await this.subjectGradesViewRepo
+      .createQueryBuilder('vg')
+      .where('vg.student_id = :studentId', { studentId })
+      .orderBy('vg.subject_id', 'ASC')
+      .addOrderBy('vg.commission_id', 'ASC')
+      .getMany();
+
+    // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
+    const bySubject = new Map<number, typeof viewRows[number]>();
+    for (const row of viewRows) {
+      if (!bySubject.has(row.subjectId)) bySubject.set(row.subjectId, row);
+    }
+
+    const byYear: Record<string, Array<{
+      subjectId: number;
+      subjectName: string;
+      year: number | null;
+      commissionId: number;
+      commissionLetter: string | null;
+      partials: 2 | 4;
+      note1: number | null;
+      note2: number | null;
+      note3: number | null;
+      note4: number | null;
+      final: number | null;
+      attendancePercentage: number;
+      condition: string | null;
+    }>> = {};
+
+    const normalizePartials = (n: number | null | undefined): 2 | 4 =>
+      n === 4 ? 4 : 2;
+
+    for (const row of bySubject.values()) {
+      const yearNo = yearBySubject.get(row.subjectId) ?? null;
+      const key = yearNo ? `${yearNo}° Año` : 'Sin año';
+      if (!byYear[key]) byYear[key] = [];
+      byYear[key].push({
+        subjectId: row.subjectId,
+        subjectName: row.subjectName,
+        year: yearNo,
+        commissionId: row.commissionId,
+        commissionLetter: row.commissionLetter ?? null,
+        partials: normalizePartials(row.partials),
+        note1: row.note1 ?? null,
+        note2: row.note2 ?? null,
+        note3: row.note3 ?? null,
+        note4: row.note4 ?? null,
+        final: row.final ?? null,
+        attendancePercentage: Number(row.attendancePercentage ?? 0) || 0,
+        condition: row.condition ?? null,
+      });
+    }
+
+    // Ordenar materias dentro de cada año por nombre
+    Object.values(byYear).forEach((arr) =>
+      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
+    );
+
+    return { studentId, byYear };
   }
 }

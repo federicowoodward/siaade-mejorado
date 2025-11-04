@@ -60,11 +60,10 @@ export class AcademicStatus implements OnInit {
   }
 
   getAcademicStatus(studentId: string): void {
-    // Usa endpoint real del backend (mínimo) para no romper la vista
     this.api
       .request<{ byYear: Record<string, any[]> }>(
         'GET',
-        `catalogs/student/${studentId}/academic-subjects-minimal`
+        `catalogs/student/${studentId}/academic-status`
       )
       .subscribe({
         next: (payload) => {
@@ -72,7 +71,6 @@ export class AcademicStatus implements OnInit {
           this.loading.set(false);
         },
         error: (_err) => {
-          // Si falla, mostramos vacío en vez de romper
           this.subjectsByYear.set({});
           this.loading.set(false);
         },
@@ -82,6 +80,8 @@ export class AcademicStatus implements OnInit {
   getSeverity(condition: string): string {
     switch (condition) {
       case 'Aprobado':
+        return 'success';
+      case 'Promocionado':
         return 'success';
       case 'Desaprobado':
         return 'warn';

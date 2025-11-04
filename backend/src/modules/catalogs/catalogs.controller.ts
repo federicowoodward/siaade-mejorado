@@ -260,4 +260,14 @@ export class CatalogsController {
   getStudentAcademicSubjectsMinimal(@Param('studentId') studentId: string) {
     return this.service.getStudentAcademicSubjectsMinimal(studentId);
   }
+
+  @Get('student/:studentId/academic-status')
+  @ApiOperation({ summary: 'Situación académica real por estudiante' })
+  @ApiParam({ name: 'studentId', type: String, required: true })
+  @ApiOkResponse({
+    description: 'Materias del estudiante agrupadas por año con notas, final y asistencia',
+  })
+  getStudentAcademicStatus(@Param('studentId') studentId: string) {
+    return this.service.getStudentAcademicStatus(studentId);
+  }
 }
