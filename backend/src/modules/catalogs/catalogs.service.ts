@@ -476,4 +476,85 @@ export class CatalogsService {
       })),
     };
   }
+
+  /**
+   * Devuelve las materias y comisiones a cargo de un docente.
+   * Agrupa por materia y lista las comisiones en las que el docente está asignado.
+   */
+  async getTeacherSubjectAssignments(teacherId: string): Promise<{
+    teacher: { id: string; name: string; email: string; cuil: string | null } | null;
+    subjects: Array<{
+      subject: { id: number; name: string };
+      commissions: Array<{ id: number; letter: string | null }>;
+    }>;
+  }> {
+    // Traemos todas las asignaciones de comisiones del docente
+    const assignments = await this.subjectCommissionRepo
+      .createQueryBuilder('sc')
+      .leftJoinAndSelect('sc.subject', 'subject')
+      .leftJoinAndSelect('sc.commission', 'commission')
+      .leftJoinAndSelect('sc.teacher', 'teacher')
+      .leftJoinAndSelect('teacher.user', 'user')
+      .where('sc.teacherId = :teacherId', { teacherId })
+      .orderBy('subject.subjectName', 'ASC')
+      .addOrderBy('commission.commissionLetter', 'ASC', 'NULLS LAST')
+      .addOrderBy('commission.id', 'ASC')
+      .getMany();
+
+    // Info básica del docente (si existe)
+    let teacher: { id: string; name: string; email: string; cuil: string | null } | null = null;
+    if (assignments[0]?.teacher) {
+      const t = assignments[0].teacher;
+      teacher = {
+        id: t.userId,
+        name: [t.user?.name, t.user?.lastName].filter(Boolean).join(' ') || t.userId,
+        email: t.user?.email ?? '',
+        cuil: t.user?.cuil ?? null,
+      };
+    }
+
+    // Agrupar por materia
+    const subjectsMap = new Map<
+      number,
+      { subject: { id: number, name: string }, commissions: Array<{ id: number, letter: string | null }> }
+    >();
+
+    for (const a of assignments) {
+      if (!a.subject || !a.commission) continue;
+      const sId = a.subject.id;
+      if (!subjectsMap.has(sId)) {
+        subjectsMap.set(sId, {
+          subject: { id: sId, name: a.subject.subjectName },
+          commissions: [],
+        });
+      }
+      const entry = subjectsMap.get(sId)!;
+      entry.commissions.push({
+        id: a.commission.id,
+        letter: a.commission.commissionLetter ?? null,
+      });
+    }
+
+    // Ordenar comisiones por letra/id y materias por nombre
+    const subjects = Array.from(subjectsMap.values()).map((s) => {
+      s.commissions.sort((a, b) => {
+        const la = a.letter ?? '';
+        const lb = b.letter ?? '';
+        if (la && lb) {
+          const cmp = la.localeCompare(lb, undefined, { sensitivity: 'base' });
+          if (cmp !== 0) return cmp;
+        } else if (la) {
+          return -1;
+        } else if (lb) {
+          return 1;
+        }
+        return a.id - b.id;
+      });
+      return s;
+    });
+
+    subjects.sort((a, b) => a.subject.name.localeCompare(b.subject.name));
+
+    return { teacher, subjects };
+  }
 }

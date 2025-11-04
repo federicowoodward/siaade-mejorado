@@ -189,4 +189,44 @@ export class CatalogsController {
   ) {
     return this.service.getSubjectCommissionTeachers(subjectId);
   }
+
+  @Get("teacher/:teacherId/subject-commissions")
+  @ApiOperation({
+    summary: "Listar materias y comisiones a cargo de un docente",
+  })
+  @ApiParam({ name: "teacherId", type: String, required: true })
+  @ApiOkResponse({
+    description: "Materias y comisiones en las que el docente está asignado",
+    schema: {
+      type: 'object',
+      properties: {
+        teacher: { type: 'object', nullable: true },
+        subjects: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              subject: {
+                type: 'object',
+                properties: { id: { type: 'number' }, name: { type: 'string' } },
+              },
+              commissions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    letter: { type: 'string', nullable: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  getTeacherSubjectAssignments(@Param('teacherId') teacherId: string) {
+    return this.service.getTeacherSubjectAssignments(teacherId);
+  }
 }

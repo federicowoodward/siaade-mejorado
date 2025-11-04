@@ -1,6 +1,8 @@
 import { Component, effect, inject, signal } from "@angular/core";
+import { CommonModule } from "@angular/common";
 import { UsersTableComponent } from "../../../shared/components/users-table/users-table.component";
 import { Button } from "primeng/button";
+import { DialogModule } from "primeng/dialog";
 import { Router } from "@angular/router";
 import { ApiService } from "../../../core/services/api.service";
 import { PermissionService } from "../../../core/auth/permission.service";
@@ -13,7 +15,7 @@ import { environment as env } from "environments/environment";
 @Component({
   selector: "app-users-page",
   standalone: true,
-  imports: [UsersTableComponent, Button],
+  imports: [CommonModule, UsersTableComponent, Button, DialogModule],
   templateUrl: "./users-page.html",
   styleUrl: "./users-page.scss",
 })
@@ -27,6 +29,24 @@ export class UsersPage {
   viewerRole: ROLE | null = this.permissions.currentRole();
 
   rows = signal<UserRow[]>([]);
+
+  // Modal "Materias a cargo" (docente)
+  dialogTeacher = signal<{ visible: boolean; teacherId: string | null }>({
+    visible: false,
+    teacherId: null,
+  });
+  dialogLoading = signal(false);
+  dialogError = signal<string | null>(null);
+  dialogData = signal<
+    | {
+        teacher: { id: string; name: string; email: string; cuil: string | null } | null;
+        subjects: Array<{
+          subject: { id: number; name: string };
+          commissions: Array<{ id: number; letter: string | null }>;
+        }>;
+      }
+    | null
+  >(null);
 
   constructor() {
     this.init();
@@ -72,10 +92,45 @@ export class UsersPage {
       this.router.navigate(["/users/student_academic_status", row.id]);
     }
     if (actionId === "teacher-subjects") {
-      this.router.navigate(["/users/teacher_subjects", row.id]);
+      this.openTeacherAssignments(row.id);
     }
   }
 
   onRowClick(_row: UserRow) {}
+
+  // Abre y carga el modal de materias a cargo del docente
+  private openTeacherAssignments(teacherId: string) {
+    this.dialogTeacher.set({ visible: true, teacherId });
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
+
+    this.api
+      .request<{
+        teacher: { id: string; name: string; email: string; cuil: string | null } | null;
+        subjects: Array<{
+          subject: { id: number; name: string };
+          commissions: Array<{ id: number; letter: string | null }>;
+        }>;
+      }>("GET", `catalogs/teacher/${teacherId}/subject-commissions`)
+      .subscribe({
+        next: (data) => {
+          this.dialogData.set(data);
+          this.dialogLoading.set(false);
+        },
+        error: (err) => {
+          console.error(err);
+          this.dialogError.set("No se pudieron cargar las materias a cargo.");
+          this.dialogLoading.set(false);
+        },
+      });
+  }
+
+  closeTeacherDialog() {
+    this.dialogTeacher.set({ visible: false, teacherId: null });
+    this.dialogLoading.set(false);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
+  }
 }
 
