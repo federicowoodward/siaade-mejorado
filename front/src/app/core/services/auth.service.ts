@@ -60,7 +60,7 @@ export class AuthService {
       });
   }
 
-  async login(credentials: { email: string; password: string }): Promise<boolean> {
+  async login(credentials: { identity: string; password: string }): Promise<boolean> {
     try {
       const response = await firstValueFrom(
         this.authApi.login(credentials)
@@ -88,16 +88,21 @@ export class AuthService {
   }
 
   async loginFlexible(credentials: {
-    email?: string;
-    username?: string;
+    identity?: string; // email / username / CUIL / nombre completo
+    username?: string; // retrocompat
     password: string;
   }): Promise<boolean> {
-    const email = credentials.email ?? credentials.username;
-    if (!email) {
-      return false;
-    }
+    const identity = credentials.identity ?? credentials.username;
+    if (!identity) return false;
+    return this.login({ identity, password: credentials.password });
+  }
 
-    return this.login({ email, password: credentials.password });
+  requestPasswordRecovery(identity: string) {
+    return this.authApi.requestPasswordReset(identity);
+  }
+
+  confirmPasswordReset(token: string, password: string) {
+    return this.authApi.confirmPasswordReset({ token, password });
   }
 
   async logout(options?: { redirect?: boolean }): Promise<void> {

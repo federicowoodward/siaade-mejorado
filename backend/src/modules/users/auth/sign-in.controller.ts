@@ -1,7 +1,7 @@
 // src/modules/users/auth/sign-in.controller.ts
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';  // Importa el servicio de autenticación
-import { LoginDto } from './login.dto';  // El DTO para recibir las credenciales
+import { LoginDto } from './dto/login.dto';  // El DTO para recibir las credenciales
 
 @Controller('sign-in')  // Ruta para iniciar sesión
 export class SignInController {

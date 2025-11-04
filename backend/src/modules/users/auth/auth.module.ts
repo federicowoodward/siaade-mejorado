@@ -11,11 +11,12 @@ import { Student } from "@/entities/users/student.entity";
 import { Role } from "@/entities/roles/role.entity";
 import { UserAuthValidatorModule } from "@/shared/services/user-auth-validator/user-auth-validator.module";
 import { UserProfileReaderModule } from "@/shared/services/user-profile-reader/user-profile-reader.module";
+import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
 
 @Module({
   imports: [
     ConfigModule,
-  TypeOrmModule.forFeature([User, Role, Student]),
+    TypeOrmModule.forFeature([User, Role, Student, PasswordResetToken]),
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],

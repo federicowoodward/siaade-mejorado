@@ -1,12 +1,14 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { IsNull, MoreThan, Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
+import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
 import { User } from "@/entities/users/user.entity";
 import { Student } from "@/entities/users/student.entity";
+import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 import {
@@ -38,6 +40,8 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(PasswordResetToken)
+    private readonly prtRepository: Repository<PasswordResetToken>,
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
@@ -52,7 +56,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const userId = await this.userAuthValidator.validateUser(
-      loginDto.email,
+      loginDto.identity,
       loginDto.password
     );
 
@@ -117,20 +121,72 @@ export class AuthService {
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const user = await this.userRepository.findOne({
-      where: { email: resetPasswordDto.email },
-    });
+    const id = (resetPasswordDto.identity || "").trim();
 
+    const user = await this.resolveUserByIdentity(id);
     if (!user) {
-      throw new UnauthorizedException("User not found");
+      // No revelar si existe o no; mantenemos mensaje genérico
+      return { message: "Si la cuenta existe, enviamos instrucciones" };
     }
 
-    // Aquí implementarías la lógica para enviar email de reset
-    // Por ahora solo retornamos un mensaje
-    return {
-      message: "Password reset instructions sent to your email",
-      email: resetPasswordDto.email,
-    };
+    const { token, expiresInSeconds } = await this.issueResetToken(user.id);
+
+    // Exponer token si está habilitado por config o si no es producción
+    const isDev = this.configService.get<string>("NODE_ENV") !== "production";
+    const exposeFlag = this.configService.get<string>("RESET_TOKEN_EXPOSE_IN_RESPONSE") === "true";
+
+    return (isDev || exposeFlag)
+      ? {
+          message: "Password reset token creado",
+          token,
+          expiresInSeconds,
+        }
+      : { message: "Si la cuenta existe, enviamos instrucciones" };
+  }
+
+  async confirmResetPassword(dto: ConfirmResetPasswordDto) {
+    const rawToken = (dto.token || "").trim();
+    const newPassword = (dto.password || "").trim();
+
+    if (!rawToken || !newPassword) {
+      throw new BadRequestException("Token y contraseña son requeridos");
+    }
+
+    const tokenHash = this.sha256(rawToken);
+    const now = new Date();
+
+    const record = await this.prtRepository.findOne({
+      where: {
+        tokenHash,
+        usedAt: IsNull(),
+        expiresAt: MoreThan(now),
+      },
+    });
+
+    if (!record) {
+      throw new UnauthorizedException("Token inválido o expirado");
+    }
+
+    // Actualizar contraseña del usuario (hash bcrypt)
+    const bcrypt = await import("bcryptjs");
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await this.userRepository.update({ id: record.userId }, { password: hashed });
+
+    // Marcar token como usado y anular otros tokens activos del usuario
+    const usedAt = new Date();
+    await this.prtRepository.update({ id: record.id }, { usedAt });
+    await this.prtRepository
+      .createQueryBuilder()
+      .update(PasswordResetToken)
+      .set({ usedAt })
+      .where("user_id = :uid", { uid: record.userId })
+      .andWhere("used_at IS NULL")
+      .andWhere("expires_at > :now", { now })
+      .andWhere("id <> :id", { id: record.id })
+      .execute();
+
+    return { success: true };
   }
 
   private issueTokens(payload: AuthPayload) {
@@ -234,5 +290,58 @@ export class AuthService {
 
     const multiplier = unitToMs[unit] ?? unitToMs.s;
     return amount * multiplier;
+  }
+
+  private async issueResetToken(userId: string): Promise<{
+    token: string;
+    expiresInSeconds: number;
+  }> {
+    const token = this.generateToken();
+    const tokenHash = this.sha256(token);
+    const ttl = this.configService.get<number>("RESET_TOKEN_TTL_SECONDS") ?? 30 * 60; // 30 min por defecto
+    const expiresAt = new Date(Date.now() + ttl * 1000);
+
+    const entity = this.prtRepository.create({
+      userId,
+      tokenHash,
+      expiresAt,
+      usedAt: null,
+    });
+    await this.prtRepository.save(entity);
+
+    return { token, expiresInSeconds: ttl };
+  }
+
+  private generateToken(size = 32): string {
+    const nodeCrypto = require("crypto");
+    return nodeCrypto.randomBytes(size).toString("hex"); // 64 chars hex
+  }
+
+  private sha256(input: string): string {
+    const nodeCrypto = require("crypto");
+    return nodeCrypto.createHash("sha256").update(input).digest("hex");
+  }
+
+  private async resolveUserByIdentity(id: string): Promise<User | null> {
+    let user: User | null = null;
+    if (id.includes("@")) {
+      user = await this.userRepository.findOne({ where: { email: id } });
+    }
+    if (!user && /^\d{8,}$/.test(id)) {
+      user = await this.userRepository.findOne({ where: { cuil: id } });
+    }
+    if (!user) {
+      const full = id.toLowerCase().replace(/\s+/g, " ").trim();
+      if (full) {
+        user = await this.userRepository
+          .createQueryBuilder("u")
+          .where(
+            "LOWER(CONCAT(TRIM(u.name), ' ', TRIM(u.last_name))) = :full",
+            { full }
+          )
+          .getOne();
+      }
+    }
+    return user;
   }
 }

@@ -4,7 +4,7 @@ import { Observable } from "rxjs";
 import { environment } from "../../../../environments/environment";
 
 interface LoginPayload {
-  email: string;
+  identity: string; // email, CUIL o Nombre Apellido
   password: string;
 }
 
@@ -15,6 +15,12 @@ export interface LoginResponseDto {
 
 export interface RefreshResponseDto {
   accessToken: string;
+}
+
+export interface RequestPasswordResetResponseDto {
+  message: string;
+  token?: string; // dev only
+  expiresInSeconds?: number;
 }
 
 @Injectable({ providedIn: "root" })
@@ -29,6 +35,22 @@ export class AuthApiService {
       {
         withCredentials: true,
       }
+    );
+  }
+
+  requestPasswordReset(identity: string): Observable<RequestPasswordResetResponseDto> {
+    return this.http.post<RequestPasswordResetResponseDto>(
+      `${this.baseUrl}/auth/reset-password`,
+      { identity },
+      { withCredentials: true }
+    );
+  }
+
+  confirmPasswordReset(payload: { token: string; password: string }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(
+      `${this.baseUrl}/auth/reset-password/confirm`,
+      payload,
+      { withCredentials: true }
     );
   }
 

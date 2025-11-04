@@ -93,7 +93,7 @@ export class AuthPage {
 
     try {
       const success = await this.auth.loginFlexible({
-        username: identity!,
+        identity: identity!,
         password: password!,
       });
       if (success) {
@@ -120,21 +120,26 @@ export class AuthPage {
     if (this.recoverForm.invalid || this.submittingRecover()) return;
     const { identity } = this.recoverForm.value;
     this.submittingRecover.set(true);
-    // TODO: Integrar endpoint real requestPasswordRecovery
-    setTimeout(() => {
-      this.submittingRecover.set(false);
-      this.message.add({
-        severity: 'success',
-        summary: 'Listo',
-        detail: 'Si el correo existe, recibirás un email.',
-      });
-      this.changeMode();
-    }, 1000);
-    // Ejemplo real:
-    // this.auth.requestPasswordRecovery(identity!).subscribe({
-    //   next: () => { this.message.add({ severity: 'success', summary: 'Listo', detail: 'Revisa tu correo.' }); this.changeMode(); },
-    //   error: () => this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No se pudo procesar la solicitud.' }),
-    //   complete: () => this.submittingRecover.set(false)
-    // });
+    this.auth.requestPasswordRecovery(identity!).subscribe({
+      next: (resp: any) => {
+        const token = resp?.token as string | undefined;
+        const msg = resp?.message || 'Si la cuenta existe, enviamos instrucciones.';
+        this.message.add({ severity: 'success', summary: 'Listo', detail: msg });
+        if (token) {
+          // Ir directo al formulario con el token en query
+          this.router.navigate(["/auth/reset-password"], { queryParams: { token } });
+        } else {
+          this.changeMode();
+        }
+      },
+      error: () => {
+        this.message.add({
+          severity: 'warn',
+          summary: 'Atención',
+          detail: 'No se pudo procesar la solicitud.',
+        });
+      },
+      complete: () => this.submittingRecover.set(false),
+    });
   }
 }

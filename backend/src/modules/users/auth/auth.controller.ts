@@ -19,6 +19,7 @@ import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
+import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
 import { Public } from "../../../shared/decorators/public.decorator";
 import { UserProfileResult } from "@/shared/services/user-profile-reader/user-profile-reader.types";
 
@@ -154,6 +155,14 @@ export class AuthController {
   })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Post("reset-password/confirm")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Confirm password reset with token" })
+  @ApiResponse({ status: 200, description: "Password reset successful" })
+  async confirmReset(@Body() dto: ConfirmResetPasswordDto) {
+    return this.authService.confirmResetPassword(dto);
   }
 
   private extractRefreshToken(req: Request): string | null {

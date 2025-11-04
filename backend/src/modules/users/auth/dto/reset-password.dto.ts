@@ -1,6 +1,7 @@
-import { IsEmail } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class ResetPasswordDto {
-  @IsEmail()
-  email: string;
+  // acepta email, cuil o nombre completo
+  @IsString()
+  identity: string;
 }
