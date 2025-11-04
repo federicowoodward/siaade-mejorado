@@ -43,8 +43,16 @@ export class FinalExamsService {
     exam_time?: string;
     aula?: string;
   }): Observable<FinalExam> {
+    // Backend espera exam_table_id y no acepta campos extra (validation whitelist)
+    const payload: any = {
+      exam_table_id: dto.final_exam_table_id,
+      subject_id: dto.subject_id,
+      exam_date: this.normalizeDate(dto.exam_date),
+    };
+    if (dto.aula !== undefined) payload.aula = dto.aula;
+
     return this.api
-      .request<any>('POST', `${this.base}/create`, dto)
+      .request<any>('POST', `${this.base}/create`, payload)
       .pipe(map(this.toFinal));
   }
 
