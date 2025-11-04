@@ -56,6 +56,11 @@ export class UsersPage {
     });
   }
 
+  // Solo SECRETARIO o DIRECTIVO pueden crear usuarios
+  canCreateUser(): boolean {
+    return this.permissions.hasAnyRole([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]);
+  }
+
   private async init() {
     // Invalidar cache del endpoint de usuarios para evitar resultados viejos (TTL 30m)
     const base = (env.apiBaseUrl || "").replace(/\/$/, "");
