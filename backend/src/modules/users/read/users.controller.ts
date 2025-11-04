@@ -14,7 +14,7 @@ export class UsersController {
   @Get(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("users.readOne")
-  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.PRECEPTOR)
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   async getUserInfo(@Param("id") id: string): Promise<UserResponseDto | null> {
     return this.usersService.getUserInfo(id);
   }
@@ -27,4 +27,3 @@ export class UsersController {
     return this.usersService.getAllUsers();
   }
 }
-
