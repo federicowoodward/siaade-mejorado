@@ -5,18 +5,32 @@ import * as path from "path";
 export function createTypeOrmConfig(
   config: ConfigService
 ): TypeOrmModuleOptions {
-  return {
+  const dbUrl = config.get<string>("DATABASE_URL");
+  const useSsl = config.get<string>("DB_SSL") === "true";
+
+  const base: TypeOrmModuleOptions = {
     type: "postgres",
-    host: config.get("DB_HOST"),
-    port: parseInt(config.get("DB_PORT", "5432"), 10),
-    username: config.get("DB_USERNAME"),
-    password: config.get("DB_PASSWORD"),
-    database: config.get("DB_DATABASE"),
-    ssl: false,
     entities: [
       path.join(__dirname, "..", "entities", "**", "*.entity{.ts,.js}"),
     ],
     synchronize: false,
     logging: true,
+    ssl: useSsl ? { rejectUnauthorized: false } as any : undefined,
   };
+
+  if (dbUrl) {
+    return {
+      ...base,
+      url: dbUrl,
+    } as TypeOrmModuleOptions;
+  }
+
+  return {
+    ...base,
+    host: config.get("DB_HOST"),
+    port: parseInt(config.get("DB_PORT", "5432"), 10),
+    username: config.get("DB_USERNAME"),
+    password: config.get("DB_PASSWORD"),
+    database: config.get("DB_DATABASE"),
+  } as TypeOrmModuleOptions;
 }
