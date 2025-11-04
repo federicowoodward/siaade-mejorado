@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://apisiaade2.marbrus.com.ar/api'
+  apiBaseUrl: 'http://localhost:3000/api'
 };

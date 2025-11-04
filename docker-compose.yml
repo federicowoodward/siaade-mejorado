@@ -43,10 +43,12 @@ services:
     build:
       context: ./front
       dockerfile: Dockerfile
+      args:
+        ANGULAR_CONFIGURATION: qa
     container_name: siaade-front
     restart: unless-stopped
     ports:
-      - "4200:80"
+      - "4000:4000"
     depends_on:
       api:
         condition: service_started
