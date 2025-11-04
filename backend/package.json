@@ -19,8 +19,6 @@
     "smoke:siad": "ts-node -r tsconfig-paths/register src/scripts/smoke-siad.ts",
     "smoke:endpoints": "ts-node -r tsconfig-paths/register src/scripts/smoke-endpoints.ts",
     "test:finals-admin": "ts-node -r tsconfig-paths/register src/scripts/test-finals-admin.ts",
-    "migration:run": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
-    "migration:revert": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "seed:prod": "npm run migration:run",
     "seed:dummy": "npm run migration:run",
     "unseed:dummy": "npm run migration:revert"
