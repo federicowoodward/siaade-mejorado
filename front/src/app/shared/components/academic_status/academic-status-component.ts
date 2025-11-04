@@ -39,26 +39,36 @@ export class AcademicStatus implements OnInit, OnChanges {
   private auth = inject(AuthService);
 
   ngOnInit() {
-    // Si student ya está presente, cargar inmediatamente
-    if (this.student) {
+    // Solo cargar si student ya está presente en el init
+    // Si no está, esperamos a que llegue vía ngOnChanges
+    if (this.student && this.student.id) {
+      console.log('[AcademicStatus] ngOnInit con student presente:', this.student);
       this.loadData(this.student);
       return;
     }
     
-    // Si no hay student input, usar el usuario logueado
-    this.auth.getUser().subscribe((u) => {
-      if (!u) return;
-      this.loadData(u);
-    });
+    // Si tampoco viene student como Input, usar el usuario logueado como fallback
+    // Esto solo aplica cuando el componente se usa sin el Input (ej: vista propia del alumno)
+    if (!this.student) {
+      console.log('[AcademicStatus] ngOnInit sin student, usando usuario logueado');
+      this.auth.getUser().subscribe((u) => {
+        if (!u) return;
+        this.loadData(u);
+      });
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
     // Cuando el Input student cambia, recargar datos
     if (changes["student"]) {
       const current = changes["student"].currentValue;
-      console.log('[AcademicStatus] ngOnChanges detectó cambio en student:', current);
-      if (current && current.id) {
+      const previous = changes["student"].previousValue;
+      console.log('[AcademicStatus] ngOnChanges detectó cambio en student:', { previous, current });
+      
+      // Solo cargar si tenemos un student válido y cambió de verdad
+      if (current && current.id && current.id !== previous?.id) {
         this.loading.set(true);
+        this.subjectsByYear.set({});
         this.loadData(current);
       }
     }
