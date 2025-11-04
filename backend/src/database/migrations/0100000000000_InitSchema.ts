@@ -33,6 +33,18 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "students" ADD CONSTRAINT "CHK_students_start_year" CHECK (student_start_year IS NULL OR (student_start_year >= 1990 AND student_start_year <= 2100))`);
     await queryRunner.query(`CREATE TABLE "preceptors" ("user_id" uuid NOT NULL, CONSTRAINT "PK_43d31311c09cbaeac198842590f" PRIMARY KEY ("user_id"))`);
     await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" text NOT NULL, "last_name" text NOT NULL, "email" text NOT NULL, "password" text NOT NULL, "cuil" text NOT NULL, "role_id" integer NOT NULL, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+    // Password reset tokens
+    await queryRunner.query(`CREATE TABLE "password_reset_tokens" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "user_id" uuid NOT NULL,
+        "token_hash" text NOT NULL,
+        "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+        "used_at" TIMESTAMP WITH TIME ZONE,
+        CONSTRAINT "PK_password_reset_tokens" PRIMARY KEY ("id"),
+        CONSTRAINT "UQ_password_reset_tokens_token_hash" UNIQUE ("token_hash")
+      )`);
+    await queryRunner.query(`CREATE INDEX "IDX_password_reset_tokens_user_id" ON "password_reset_tokens" ("user_id")`);
     await queryRunner.query(`CREATE TABLE "subject_status_type" ("id" SERIAL NOT NULL, "status_name" text NOT NULL, CONSTRAINT "UQ_9d61379e0ce29796ab1f019f199" UNIQUE ("status_name"), CONSTRAINT "PK_b3784b0b05e5f78587a508bcfe1" PRIMARY KEY ("id"))`);
     await queryRunner.query(`CREATE TABLE "student_subject_progress" ("id" SERIAL NOT NULL, "subject_commission_id" integer NOT NULL, "student_id" uuid NOT NULL, "status_id" integer, "partial_scores" jsonb, "attendance_percentage" numeric(5,2) NOT NULL DEFAULT '0', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_8dc2e04d76bc60397c20cbe6b34" PRIMARY KEY ("id"))`);
     await queryRunner.query(`ALTER TABLE "student_subject_progress" ADD CONSTRAINT "CHK_attendance_percentage" CHECK ((attendance_percentage >= 0) AND (attendance_percentage <= 100))`);
@@ -198,6 +210,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "career_students" ADD CONSTRAINT "FK_f625a148a289aaca8d89da6bb80" FOREIGN KEY ("student_id") REFERENCES "students"("user_id") ON DELETE CASCADE ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "notices" ADD CONSTRAINT "FK_8edf397e84eebabdf5e5caae600" FOREIGN KEY ("visible_role_id") REFERENCES "roles"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "notices" ADD CONSTRAINT "FK_5091560ec8975434a5add94c411" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+    await queryRunner.query(`ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "FK_password_reset_tokens_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -263,7 +276,11 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "public"."IDX_5fef2a1967bce469e3d0cfa577"`);
     await queryRunner.query(`DROP TABLE "student_subject_progress"`);
     await queryRunner.query(`DROP TABLE "subject_status_type"`);
-    await queryRunner.query(`DROP TABLE "users"`);
+  // Drop password reset tokens before users
+  await queryRunner.query(`ALTER TABLE "password_reset_tokens" DROP CONSTRAINT IF EXISTS "FK_password_reset_tokens_user"`);
+  await queryRunner.query(`DROP INDEX IF EXISTS "IDX_password_reset_tokens_user_id"`);
+  await queryRunner.query(`DROP TABLE IF EXISTS "password_reset_tokens"`);
+  await queryRunner.query(`DROP TABLE "users"`);
     await queryRunner.query(`DROP TABLE "preceptors"`);
     await queryRunner.query(`DROP TABLE "students"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_65608a94ff5905eb9bbcc3ce75"`);
