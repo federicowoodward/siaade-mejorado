@@ -30,6 +30,7 @@ export class UserProfileReaderService {
         role: true,
         userInfo: true,
         commonData: { address: true },
+        student: true,
       },
     });
 
@@ -86,6 +87,18 @@ export class UserProfileReaderService {
 
     switch (normalizedRole) {
       case ROLE.STUDENT:
+        result.commonData = cd;
+        if (user.student) {
+          result.student = {
+            userId: user.student.userId,
+            legajo: user.student.legajo ?? null,
+            commissionId: user.student.commissionId ?? null,
+            isActive: user.student.isActive ?? null,
+            canLogin: user.student.canLogin ?? null,
+            studentStartYear: user.student.studentStartYear ?? null,
+          } as any;
+        }
+        break;
       case ROLE.TEACHER:
         result.commonData = cd;
         break;

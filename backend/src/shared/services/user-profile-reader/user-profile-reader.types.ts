@@ -35,4 +35,14 @@ export interface UserProfileResult {
       country: string | null;
     } | null;
   } | null;
+
+  // Datos específicos de alumno (si el rol es STUDENT)
+  student?: {
+    userId: string;
+    legajo: string | null;
+    commissionId: number | null;
+    isActive: boolean | null;
+    canLogin: boolean | null;
+    studentStartYear: number | null;
+  } | null;
 }
