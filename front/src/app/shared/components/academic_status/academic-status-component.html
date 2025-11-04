@@ -1,6 +1,6 @@
-<div>
-  <p>Estudiante: {{user()?.name}}</p>
-  <p>Documento Nº: {{user()?.cuil}}</p>
+<div class="mb-3">
+  <h3>Estudiante: {{user()?.name}}</h3>
+  <p><strong>Documento Nº:</strong> {{user()?.cuil}}</p>
 </div>
 
 <div *ngIf="loading(); else showTable">

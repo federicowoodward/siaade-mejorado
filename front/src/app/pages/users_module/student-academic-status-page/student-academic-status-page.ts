@@ -9,6 +9,7 @@ import {
 import { ApiService } from '../../../core/services/api.service';
 import { Button } from 'primeng/button';
 import { GoBackService } from '../../../core/services/go_back.service';
+import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 
 @Component({
   selector: 'app-student-academic-status-page',
@@ -44,14 +45,37 @@ export class StudentAcademicStatusPage implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
 
-    this.api.getById('users', id).subscribe((u: any) => {
-      if (!u?.id) return;
-      this.student.set({
-        id: u.id,
-        name: u.name,
-        lastName: u.lastName,
-        cuil: u.cuil,
-      });
+    this.api.getById('users', id).subscribe({
+      next: (u: any) => {
+        if (!u?.id) return;
+        
+        // Validar que el usuario sea estudiante
+        const isStudent = u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
+        
+        if (!isStudent) {
+          console.error('[StudentAcademicStatus] El usuario no es un estudiante:', u);
+          alert(`Error: El usuario "${u.name} ${u.lastName}" no es un estudiante.\n\nSolo se puede consultar la situación académica de estudiantes.`);
+          this.back();
+          return;
+        }
+        
+        this.student.set({
+          id: u.id,
+          name: u.name,
+          lastName: u.lastName,
+          cuil: u.cuil,
+        });
+      },
+      error: (err) => {
+        console.error('[StudentAcademicStatus] Error al cargar usuario:', err);
+        
+        if (err.status === 404) {
+          alert('Error: El usuario no existe o no es un estudiante.');
+        } else {
+          alert('Error al cargar la información del usuario.');
+        }
+        this.back();
+      }
     });
   }
 

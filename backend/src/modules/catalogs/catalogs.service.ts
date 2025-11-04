@@ -637,6 +637,16 @@ export class CatalogsService {
       condition: string | null;
     }>>;
   }> {
+    // Validar que el usuario sea estudiante
+    const student = await this.studentRepo.findOne({ 
+      where: { userId: studentId },
+      relations: ['user', 'user.role']
+    });
+    
+    if (!student) {
+      throw new NotFoundException(`El usuario ${studentId} no es un estudiante o no existe.`);
+    }
+    
     // Mapa subjectId -> yearNo según la carrera a la que está inscripto
     const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
     const yearBySubject = new Map<number, number | null>();
