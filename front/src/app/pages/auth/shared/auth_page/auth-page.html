@@ -63,8 +63,9 @@
             <input id="login_identity" type="text" pInputText formControlName="identity" class="w-full mb-3"
               placeholder="Ej: juan@mail.com" autocomplete="username" />
             <label for="login_password" class="block mb-2 label-inline">Contraseña</label>
-            <input id="login_password" type="password" pPassword formControlName="password" class="w-full mb-3"
-              autocomplete="current-password" />
+            <p-password [toggleMask]="true" [feedback]="false" formControlName="password" inputId="login_password"
+              [inputStyleClass]="'w-full'" styleClass="w-full mb-3" [placeholder]="'••••••••'" [autocomplete]="'current-password'">
+            </p-password>
             <button type="submit" pButton label="Ingresar" class="w-full mb-3"
               [disabled]="loginForm.invalid || submittingLogin()"></button>
           </form>

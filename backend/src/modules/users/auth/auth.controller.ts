@@ -22,6 +22,7 @@ import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
 import { Public } from "../../../shared/decorators/public.decorator";
 import { UserProfileResult } from "@/shared/services/user-profile-reader/user-profile-reader.types";
+import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
 
 type LoginSuccessResponse = {
   accessToken: string;
@@ -39,7 +40,10 @@ const REFRESH_COOKIE_PATH = "/api/auth/refresh";
 @Controller("auth")
 @Public()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly rateLimit: RateLimitService
+  ) {}
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
@@ -153,7 +157,14 @@ export class AuthController {
     status: 200,
     description: "Password reset email sent",
   })
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto, @Req() req: Request) {
+    const max = Number(process.env.RESET_RATE_MAX ?? 10);
+    const windowMs = Number(process.env.RESET_RATE_WINDOW_MS ?? 15 * 60 * 1000);
+    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    // Fallback: usar identity como clave secundaria para mitigar flood por IP compartida
+    const id = (resetPasswordDto.identity || '').trim();
+    this.rateLimit.check(`reset:${ip}`, max, windowMs);
+    this.rateLimit.check(`reset-id:${id}`, max, windowMs);
     return this.authService.resetPassword(resetPasswordDto);
   }
 
@@ -161,7 +172,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Confirm password reset with token" })
   @ApiResponse({ status: 200, description: "Password reset successful" })
-  async confirmReset(@Body() dto: ConfirmResetPasswordDto) {
+  async confirmReset(@Body() dto: ConfirmResetPasswordDto, @Req() req: Request) {
+    const max = Number(process.env.RESET_CONFIRM_RATE_MAX ?? 10);
+    const windowMs = Number(process.env.RESET_CONFIRM_RATE_WINDOW_MS ?? 15 * 60 * 1000);
+    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    this.rateLimit.check(`reset-confirm:${ip}`, max, windowMs);
     return this.authService.confirmResetPassword(dto);
   }
 

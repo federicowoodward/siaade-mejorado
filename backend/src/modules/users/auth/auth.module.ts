@@ -12,6 +12,8 @@ import { Role } from "@/entities/roles/role.entity";
 import { UserAuthValidatorModule } from "@/shared/services/user-auth-validator/user-auth-validator.module";
 import { UserProfileReaderModule } from "@/shared/services/user-profile-reader/user-profile-reader.module";
 import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
+import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
+import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
 
 @Module({
   imports: [
@@ -30,7 +32,7 @@ import { PasswordResetToken } from "@/entities/users/password-reset-token.entity
     UserAuthValidatorModule,
     UserProfileReaderModule,
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RateLimitService, PasswordResetCleanupService],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })

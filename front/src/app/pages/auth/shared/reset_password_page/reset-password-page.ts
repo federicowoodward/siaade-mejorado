@@ -34,7 +34,7 @@ export class ResetPasswordPage {
   token: string | null = null;
 
   form = this.fb.group({
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
     confirm: ['', [Validators.required]],
   });
 
@@ -50,7 +50,8 @@ export class ResetPasswordPage {
       return;
     }
     const { password, confirm } = this.form.value;
-    if (!password || !confirm || password !== confirm) {
+    const policy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!password || !confirm || password !== confirm || !policy.test(password)) {
       this.message.add({ severity: 'warn', summary: 'Atención', detail: 'Las contraseñas no coinciden.' });
       return;
     }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, UnauthorizedException, Logger } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, MoreThan, Repository } from "typeorm";
@@ -30,6 +30,7 @@ type AuthProfile = Awaited<ReturnType<UserProfileReaderService["findById"]>>;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly refreshSecret: string;
   private readonly refreshTtl: string;
   private readonly refreshTtlMs: number;
@@ -171,7 +172,7 @@ export class AuthService {
     const bcrypt = await import("bcryptjs");
     const hashed = await bcrypt.hash(newPassword, 10);
 
-    await this.userRepository.update({ id: record.userId }, { password: hashed });
+  await this.userRepository.update({ id: record.userId }, { password: hashed });
 
     // Marcar token como usado y anular otros tokens activos del usuario
     const usedAt = new Date();
@@ -185,6 +186,8 @@ export class AuthService {
       .andWhere("expires_at > :now", { now })
       .andWhere("id <> :id", { id: record.id })
       .execute();
+
+    this.logger.log(`Password reset confirm: userId=${record.userId} tokenHash=${tokenHash.substring(0,8)}...`);
 
     return { success: true };
   }
@@ -308,6 +311,8 @@ export class AuthService {
       usedAt: null,
     });
     await this.prtRepository.save(entity);
+
+    this.logger.log(`Password reset token issued: userId=${userId} tokenHash=${tokenHash.substring(0,8)}... ttl=${ttl}s`);
 
     return { token, expiresInSeconds: ttl };
   }
