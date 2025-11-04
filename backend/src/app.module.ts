@@ -9,7 +9,7 @@ import { FiltersModule } from "./shared/filters/filters.module";
 import { InterceptorsModule } from "./shared/interceptors/interceptors.module";
 import { LoggingInterceptor } from "./shared/interceptors/logging.interceptor";
 import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
-// import { SubjectsReadModule } from "./modules/subjects/read/subjects.module";
+import { SubjectsReadModule } from "./modules/subjects/read/subjects.module";
 // import { SubjectsManageModule } from "./modules/subjects/manage/subjects.module";
 // import { SubjectApiModule } from "./modules/subjects/api/subject.api.module";
 import { FinalExamsModule } from "./modules/final_exams/final_exams.module";
@@ -36,7 +36,7 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     UsersReadModule,
     RolesModule,
     // SubjectsManageModule,
-    // SubjectsReadModule,
+    SubjectsReadModule,
     // SubjectApiModule,
     FiltersModule,
     InterceptorsModule,
