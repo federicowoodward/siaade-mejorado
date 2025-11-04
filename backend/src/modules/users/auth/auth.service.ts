@@ -23,9 +23,7 @@ type AuthPayload = {
   isDirective: boolean;
 };
 
-type AuthProfile = Awaited<
-  ReturnType<UserProfileReaderService["findById"]>
->;
+type AuthProfile = Awaited<ReturnType<UserProfileReaderService["findById"]>>;
 
 @Injectable()
 export class AuthService {
@@ -42,14 +40,11 @@ export class AuthService {
     private readonly userReader: UserProfileReaderService,
     private readonly configService: ConfigService
   ) {
-    this.refreshSecret = this.configService.getOrThrow<string>(
-      "JWT_REFRESH_SECRET"
-    );
-    this.refreshTtl =
-      this.configService.get<string>("JWT_REFRESH_TTL") || "1d";
+    this.refreshSecret =
+      this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
+    this.refreshTtl = this.configService.get<string>("JWT_REFRESH_TTL") || "1d";
     this.refreshTtlMs = this.parseDurationToMs(this.refreshTtl);
-    this.accessTtl =
-      this.configService.get<string>("JWT_ACCESS_TTL") || "15m";
+    this.accessTtl = this.configService.get<string>("JWT_ACCESS_TTL") || "15m";
   }
 
   async login(loginDto: LoginDto) {
@@ -170,7 +165,8 @@ export class AuthService {
     const roleIdFromProfile = profile.role?.id ?? null;
     const roleFromEntity =
       normalizeRole(userEntity.role?.name) ?? getRoleById(userEntity.roleId);
-    const role = roleFromProfile ?? roleFromEntity ?? getRoleById(roleIdFromProfile);
+    const role =
+      roleFromProfile ?? roleFromEntity ?? getRoleById(roleIdFromProfile);
 
     if (!role) {
       throw new UnauthorizedException("User without role assigned");
