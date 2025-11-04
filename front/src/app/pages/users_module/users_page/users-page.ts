@@ -7,6 +7,8 @@ import { PermissionService } from "../../../core/auth/permission.service";
 import { ROLE, ROLE_BY_ID } from "../../../core/auth/roles";
 import { UserRow } from "../../../core/models/users-table.models";
 import { mapApiUserToRow } from "../../../shared/adapters/users.adapter";
+import { ApiCacheService } from "../../../core/cache/api-cache.service";
+import { environment as env } from "environments/environment";
 
 @Component({
   selector: "app-users-page",
@@ -19,6 +21,7 @@ export class UsersPage {
   private router = inject(Router);
   private api = inject(ApiService);
   private permissions = inject(PermissionService);
+  private cache = inject(ApiCacheService);
 
   public ROLE = ROLE;
   viewerRole: ROLE | null = this.permissions.currentRole();
@@ -26,15 +29,29 @@ export class UsersPage {
   rows = signal<UserRow[]>([]);
 
   constructor() {
+    this.init();
+    
+    effect(() => {
+      this.viewerRole = this.permissions.currentRole();
+    });
+  }
+
+  private async init() {
+    // Invalidar cache del endpoint de usuarios para evitar resultados viejos (TTL 30m)
+    const base = (env.apiBaseUrl || "").replace(/\/$/, "");
+    try {
+      if (base) {
+        await this.cache.invalidateByPrefix(`GET:${base}/users`);
+      } else {
+        await this.cache.invalidateByPrefix(`GET:`);
+      }
+    } catch {}
+
     this.api.getAll("users").subscribe((users) => {
       const mapped = users.map((u) =>
         mapApiUserToRow(u, (id: number) => ROLE_BY_ID[id] ?? null)
       );
       this.rows.set(mapped);
-    });
-
-    effect(() => {
-      this.viewerRole = this.permissions.currentRole();
     });
   }
 
