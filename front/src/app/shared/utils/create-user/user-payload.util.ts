@@ -39,6 +39,11 @@ export interface BuildPayloadArgs {
   commonData?: CommonDataForm;
   address?: AddressForm;  // opcional y sólo si allowsAddress
   isDirective?: boolean;  // sólo secretary
+  studentLegajo?: string;
+  studentStartYear?: number;
+  commissionId?: number;
+  canLogin?: boolean;
+  isActive?: boolean;
 }
 
 export function hasAnyAddress(a?: AddressForm): boolean {
@@ -109,6 +114,20 @@ export function buildPayload(args: BuildPayloadArgs) {
       ...basePayload,
       ...userInfoPayload,
       ...cd,
+      ...(base.role === 'student'
+        ? {
+            // Requeridos para student
+            legajo:
+              args.studentLegajo || base.cuil || (userInfo?.documentValue ?? ''),
+            commissionId: args.commissionId ?? undefined,
+            canLogin: args.canLogin ?? true,
+            isActive: args.isActive ?? true,
+            studentStartYear:
+              args.studentStartYear && Number.isFinite(args.studentStartYear)
+                ? Number(args.studentStartYear)
+                : undefined,
+          }
+        : {}),
     }
   };
 }

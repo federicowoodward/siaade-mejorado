@@ -92,6 +92,12 @@ export class CreateUserPage {
   addressCountry = '';
   addressPostalCode = '';
 
+  // extras de alumno
+  studentLegajo = '';
+  studentStartYear: number | null = null; // opcional
+  canLogin = true;
+  isActive = true;
+
   private addressObj() {
     return {
       street: this.addressStreet || undefined,
@@ -124,6 +130,7 @@ export class CreateUserPage {
       birthDate: this.birthDate,
       birthPlace: this.birthPlace,
       nationality: this.nationality,
+      legajo: this.role === 'student' ? (this.studentLegajo || this.cuil || this.documentValue) : undefined,
     });
   }
 
@@ -161,6 +168,11 @@ export class CreateUserPage {
           this.req?.allowsAddress && this.hasAddress()
             ? this.addressObj()
             : undefined,
+        // extras para student
+        studentLegajo: this.role === 'student' ? (this.studentLegajo || this.cuil || this.documentValue) : undefined,
+        studentStartYear: this.role === 'student' && this.studentStartYear ? this.studentStartYear : undefined,
+        canLogin: this.role === 'student' ? this.canLogin : undefined,
+        isActive: this.role === 'student' ? this.isActive : undefined,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
@@ -185,6 +197,17 @@ export class CreateUserPage {
         cuil: this.cuil,
         password: this.passwordPreview,
       },
+      roleExtras:
+        this.role === 'student'
+          ? {
+              legajo: this.studentLegajo || this.cuil || this.documentValue,
+              studentStartYear: this.studentStartYear || undefined,
+              canLogin: this.canLogin,
+              isActive: this.isActive,
+            }
+          : this.role === 'secretary'
+          ? { isDirective: true }
+          : undefined,
       user_info: this.req?.needsUserInfo
         ? {
             documentType: this.documentType || undefined,

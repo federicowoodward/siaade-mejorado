@@ -259,6 +259,30 @@
                       </div>
                     </div>
                   </div>
+
+                  <!-- EXTRAS ALUMNO -->
+                  <div class="col-12" *ngIf="role === 'student'">
+                    <h4 class="mt-3 mb-2">Datos de alumno</h4>
+                    <div class="grid">
+                      <div class="col-12 md:col-4">
+                        <label class="block mb-2">Legajo *</label>
+                        <input pInputText class="w-full" [(ngModel)]="studentLegajo" placeholder="Identificador de legajo" />
+                        <small class="text-color-secondary block mt-1">Si lo dejás vacío, se usará el CUIL o el documento.</small>
+                      </div>
+                      <div class="col-12 md:col-3">
+                        <label class="block mb-2">Año de inicio</label>
+                        <input type="number" class="w-full p-inputtext p-component" [(ngModel)]="studentStartYear" placeholder="YYYY" />
+                      </div>
+                      <div class="col-12 md:col-2">
+                        <label class="block mb-2">Puede ingresar</label>
+                        <input type="checkbox" [(ngModel)]="canLogin" />
+                      </div>
+                      <div class="col-12 md:col-2">
+                        <label class="block mb-2">Activo</label>
+                        <input type="checkbox" [(ngModel)]="isActive" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </ng-container>
