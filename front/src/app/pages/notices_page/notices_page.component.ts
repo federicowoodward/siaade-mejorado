@@ -44,12 +44,8 @@ export class NoticesPageComponent implements OnInit {
 
   async addNotice() {
     try {
-      if (!this.newNotice.title?.trim()) {
-        alert("Ingresá un título para el aviso.");
-        return;
-      }
       await this.noticesSrv.create({
-        title: this.newNotice.title!.trim(),
+        title: this.newNotice.title?.trim(),
         content: this.newNotice.content!,
         visibleFor: (this.newNotice.visibleFor as VisibleRole | "all") ?? "all",
       });

@@ -50,7 +50,7 @@ export class NoticesService {
     }
   }
 
-  async create(input: { title: string; content: string; visibleFor?: VisibleRole | "all" }) {
+  async create(input: { title?: string; content: string; visibleFor?: VisibleRole | "all" }) {
     // Validación: el editor puede enviar <p><br></p> u HTML vacío; normalizamos
     const isEmptyHtml = (html: string | undefined | null) => {
       if (!html) return true;
@@ -66,7 +66,6 @@ export class NoticesService {
     }
 
     const body: any = {
-      title: input.title,
       content: input.content,
     };
     if (input.visibleFor) body.visibleFor = input.visibleFor;
@@ -78,7 +77,7 @@ export class NoticesService {
       const role = this.permissions.currentRole();
       await this.loadForRole(role);
       const fallback: VisibleRole = role === ROLE.TEACHER ? ROLE.TEACHER : ROLE.STUDENT;
-      return this.mapFromApi(created, fallback);
+      return this.mapFromApi(created, fallback, input.title);
     } catch (err: any) {
       const msg = err?.error?.message || err?.message || "No se pudo crear el aviso.";
       throw new Error(Array.isArray(msg) ? msg.join("\n") : String(msg));
@@ -102,7 +101,7 @@ export class NoticesService {
     return rows.map((r) => this.mapFromApi(r, fallbackRole));
   }
 
-  private mapFromApi(r: any, fallbackRole: VisibleRole): Notice {
+  private mapFromApi(r: any, fallbackRole: VisibleRole, clientTitle?: string): Notice {
     let visibleFor: VisibleRole = fallbackRole;
     if (typeof r.visibleFor === "string") {
       const val = String(r.visibleFor).toLowerCase();
@@ -111,9 +110,13 @@ export class NoticesService {
     } else if (typeof r.visibleRoleId === "number") {
       visibleFor = r.visibleRoleId === ROLE_IDS[ROLE.TEACHER] ? ROLE.TEACHER : ROLE.STUDENT;
     }
+    const fallbackTitleFromContent = (() => {
+      const text = String(r.content ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      return text.substring(0, 60) || "Aviso";
+    })();
     return {
       id: Number(r.id),
-      title: String(r.title ?? ""),
+  title: (clientTitle ?? String(r.title ?? "")) || fallbackTitleFromContent,
       content: String(r.content ?? ""),
       visibleFor,
       createdBy: String(r.createdBy ?? "Secretaria"),
