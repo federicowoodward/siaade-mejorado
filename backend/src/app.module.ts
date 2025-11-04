@@ -3,6 +3,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
 import { ConfigModule } from "./config/config.module";
 import { AuthModule } from "./modules/users/auth/auth.module";
 import { UsersModule } from "./modules/users/manage/users.module";
+import { UsersReadModule } from "./modules/users/read/users.module";
 import { RolesModule } from "./modules/roles/roles.module";
 import { FiltersModule } from "./shared/filters/filters.module";
 import { InterceptorsModule } from "./shared/interceptors/interceptors.module";
@@ -31,7 +32,8 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
       }),
     }),
     AuthModule,
-    UsersModule,
+  UsersModule,
+  UsersReadModule,
     RolesModule,
     // SubjectsManageModule,
     // SubjectsReadModule,

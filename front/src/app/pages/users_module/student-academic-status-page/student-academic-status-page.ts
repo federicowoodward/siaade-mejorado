@@ -1,5 +1,5 @@
 // #ASUMIENDO CODIGO: src/app/pages/students/student-academic-status-page/student-academic-status-page.ts
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -41,7 +41,7 @@ import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
     </div>
   `,
 })
-export class StudentAcademicStatusPage implements OnInit {
+export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private goBack = inject(GoBackService);
@@ -50,6 +50,7 @@ export class StudentAcademicStatusPage implements OnInit {
   student = signal<StudentMinimal | undefined>(undefined);
   loading = signal<boolean>(true);
   errorMessage = signal<string>('');
+  private redirectTimer: number | null = null;
 
   constructor(private router: Router) {}
 
@@ -74,15 +75,14 @@ export class StudentAcademicStatusPage implements OnInit {
         // Validar que el usuario sea estudiante
         const isStudent = u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
         
-        if (!isStudent) {
+  if (!isStudent) {
           console.error('[StudentAcademicStatus] El usuario no es un estudiante:', u);
           this.errorMessage.set(
             `El usuario "${u.name} ${u.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`
           );
           this.loading.set(false);
           
-          // Redirigir después de 3 segundos
-          setTimeout(() => this.back(), 3000);
+          this.redirectTimer = window.setTimeout(() => this.back(), 3000);
           return;
         }
         
@@ -104,13 +104,23 @@ export class StudentAcademicStatusPage implements OnInit {
         }
         this.loading.set(false);
         
-        // Redirigir después de 3 segundos
-        setTimeout(() => this.back(), 3000);
+        this.redirectTimer = window.setTimeout(() => this.back(), 3000);
       }
     });
   }
 
   back(): void {
-    this.goBack.back();
+    if (this.redirectTimer) {
+      clearTimeout(this.redirectTimer);
+      this.redirectTimer = null;
+    }
+    this.router.navigate(["/users"]);
+  }
+
+  ngOnDestroy(): void {
+    if (this.redirectTimer) {
+      clearTimeout(this.redirectTimer);
+      this.redirectTimer = null;
+    }
   }
 }
