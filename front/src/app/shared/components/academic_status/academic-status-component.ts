@@ -39,20 +39,27 @@ export class AcademicStatus implements OnInit, OnChanges {
   private auth = inject(AuthService);
 
   ngOnInit() {
+    // Si student ya está presente, cargar inmediatamente
     if (this.student) {
       this.loadData(this.student);
-    } else {
-      // no student input → use the logged-in user
-      this.auth.getUser().subscribe((u) => {
-        if (!u) return;
-        this.loadData(u);
-      });
+      return;
     }
+    
+    // Si no hay student input, usar el usuario logueado
+    this.auth.getUser().subscribe((u) => {
+      if (!u) return;
+      this.loadData(u);
+    });
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes["student"] && changes["student"].currentValue) {
-      this.loadData(changes["student"].currentValue);
+    // Cuando el Input student cambia, recargar datos
+    if (changes["student"]) {
+      const current = changes["student"].currentValue;
+      if (current && current.id) {
+        this.loading.set(true);
+        this.loadData(current);
+      }
     }
   }
 
@@ -66,6 +73,9 @@ export class AcademicStatus implements OnInit, OnChanges {
   }
 
   getAcademicStatus(studentId: string): void {
+    console.log('[AcademicStatus] Cargando situación académica para:', studentId);
+    this.loading.set(true);
+    
     this.api
       .request<{ byYear: Record<string, any[]> }>(
         'GET',
@@ -73,10 +83,12 @@ export class AcademicStatus implements OnInit, OnChanges {
       )
       .subscribe({
         next: (payload) => {
+          console.log('[AcademicStatus] Respuesta recibida:', payload);
           this.subjectsByYear.set(payload?.byYear ?? {});
           this.loading.set(false);
         },
-        error: (_err) => {
+        error: (err) => {
+          console.error('[AcademicStatus] Error al cargar:', err);
           this.subjectsByYear.set({});
           this.loading.set(false);
         },

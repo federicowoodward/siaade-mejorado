@@ -3,9 +3,16 @@
   <p>Documento Nº: {{user()?.cuil}}</p>
 </div>
 
-<div *ngIf="loading(); else showTable">Cargando datos...</div>
+<div *ngIf="loading(); else showTable">
+  <p class="text-center p-4">Cargando situación académica...</p>
+</div>
+
 <ng-template #showTable>
   <div class="flex flex-column gap-4">
+    <div *ngIf="(subjectsByYear() | keyvalue).length === 0" class="text-center p-4">
+      <p>No hay materias registradas para este estudiante.</p>
+    </div>
+    
     <ng-container *ngFor="let year of subjectsByYear() | keyvalue">
       <h4 class="mt-4">{{ year.key }}</h4>
 
