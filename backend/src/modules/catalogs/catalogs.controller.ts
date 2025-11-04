@@ -229,4 +229,35 @@ export class CatalogsController {
   getTeacherSubjectAssignments(@Param('teacherId') teacherId: string) {
     return this.service.getTeacherSubjectAssignments(teacherId);
   }
+
+  @Get('student/:studentId/academic-subjects-minimal')
+  @ApiOperation({ summary: 'Materias por año para un estudiante (mínimo)' })
+  @ApiParam({ name: 'studentId', type: String, required: true })
+  @ApiOkResponse({
+    description: 'Mapa de materias agrupadas por año',
+    schema: {
+      type: 'object',
+      properties: {
+        byYear: {
+          type: 'object',
+          additionalProperties: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                subjectName: { type: 'string' },
+                year: { type: 'number', nullable: true },
+                division: { type: 'string', nullable: true },
+                condition: { type: 'string' },
+                examInfo: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  getStudentAcademicSubjectsMinimal(@Param('studentId') studentId: string) {
+    return this.service.getStudentAcademicSubjectsMinimal(studentId);
+  }
 }

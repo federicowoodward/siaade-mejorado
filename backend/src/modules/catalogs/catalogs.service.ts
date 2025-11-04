@@ -6,6 +6,7 @@ import { Career } from "@/entities/registration/career.entity";
 import { Commission } from "@/entities/catalogs/commission.entity";
 import { CareerSubject } from "@/entities/registration/career-subject.entity";
 import { CareerStudent } from "@/entities/registration/career-student.entity";
+import { Student } from "@/entities/users/student.entity";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
@@ -41,6 +42,8 @@ export class CatalogsService {
     private readonly subjectCommissionRepo: Repository<SubjectCommission>,
     @InjectRepository(CareerStudent)
     private readonly careerStudentRepo: Repository<CareerStudent>,
+  @InjectRepository(Student)
+  private readonly studentRepo: Repository<Student>,
     @InjectRepository(FinalExamStatus)
     private readonly finalExamStatusRepo: Repository<FinalExamStatus>,
     @InjectRepository(SubjectStatusType)
@@ -556,5 +559,55 @@ export class CatalogsService {
     subjects.sort((a, b) => a.subject.name.localeCompare(b.subject.name));
 
     return { teacher, subjects };
+  }
+
+  /**
+   * Devuelve un resumen mínimo de materias por año para un estudiante,
+   * basado en el plan de la carrera a la que está inscripto.
+   * Nota: no calcula notas reales; se marca todo como "Inscripto" y examInfo "-".
+   */
+  async getStudentAcademicSubjectsMinimal(studentId: string): Promise<{
+    byYear: Record<string, Array<{ subjectName: string; year: number | null; division: string | null; condition: string; examInfo: string }>>;
+  }> {
+    // Buscar la última inscripción del estudiante a una carrera
+    const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
+    if (!cs) {
+      return { byYear: {} };
+    }
+
+    // Traer datos de la carrera (ya arma materias por período y orden)
+    const careerData = await this.findCareerFullData(cs.careerId);
+
+    // Traer comisión del estudiante (para mostrar letra si existe)
+    let commissionLetter: string | null = null;
+    const student = await this.studentRepo.findOne({
+      where: { userId: studentId },
+      relations: { commission: true },
+    });
+    if (student?.commission) {
+      commissionLetter = student.commission.commissionLetter ?? null;
+    }
+
+    const byYear: Record<string, Array<{ subjectName: string; year: number | null; division: string | null; condition: string; examInfo: string }>> = {};
+
+    for (const period of careerData.academicPeriods) {
+      for (const subject of period.subjects) {
+        const yearNo = subject.careerOrdering.yearNo ?? null;
+        const yearKey = yearNo ? `${yearNo}° Año` : `Sin año`;
+        if (!byYear[yearKey]) byYear[yearKey] = [];
+        byYear[yearKey].push({
+          subjectName: subject.subjectName,
+          year: yearNo,
+          division: commissionLetter ? `${commissionLetter}` : null,
+          condition: 'Inscripto',
+          examInfo: '-',
+        });
+      }
+    }
+
+    // Ordenar materias dentro de cada año por nombre
+    Object.values(byYear).forEach((arr) => arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)));
+
+    return { byYear };
   }
 }

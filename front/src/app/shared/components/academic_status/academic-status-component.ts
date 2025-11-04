@@ -60,32 +60,23 @@ export class AcademicStatus implements OnInit {
   }
 
   getAcademicStatus(studentId: string): void {
-    this.api.getAll('subjects').subscribe((subjects) => {
-      this.api.getAll('exam_results').subscribe((results) => {
-        const byYear: Record<string, any[]> = {};
-
-        subjects.forEach((subject) => {
-          const res = results.find(
-            (r) => r.studentId === studentId && subject.id === r.examId
-          );
-
-          const yearKey = `${subject.courseYear}° Año`;
-
-          if (!byYear[yearKey]) byYear[yearKey] = [];
-
-          byYear[yearKey].push({
-            subjectName: subject.subjectName,
-            year: subject.courseYear,
-            division: `${subject.courseNum}-${subject.courseLetter}`,
-            condition: res ? 'Aprobado' : 'Inscripto',
-            examInfo: res ? `Nota: ${res.score}` : '-',
-          });
-        });
-
-        this.subjectsByYear.set(byYear);
-        this.loading.set(false);
+    // Usa endpoint real del backend (mínimo) para no romper la vista
+    this.api
+      .request<{ byYear: Record<string, any[]> }>(
+        'GET',
+        `catalogs/student/${studentId}/academic-subjects-minimal`
+      )
+      .subscribe({
+        next: (payload) => {
+          this.subjectsByYear.set(payload?.byYear ?? {});
+          this.loading.set(false);
+        },
+        error: (_err) => {
+          // Si falla, mostramos vacío en vez de romper
+          this.subjectsByYear.set({});
+          this.loading.set(false);
+        },
       });
-    });
   }
 
   getSeverity(condition: string): string {
