@@ -7,7 +7,7 @@ import { FinalExam } from '../models/final_exam.model';
 export class FinalExamsService {
   private base = 'finals/exam';
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   private normalizeDate(d: string | Date | null | undefined): string {
     if (!d) return '';
@@ -43,11 +43,12 @@ export class FinalExamsService {
     exam_time?: string;
     aula?: string;
   }): Observable<FinalExam> {
-    // Backend espera exam_table_id y no acepta campos extra (validation whitelist)
+    const dateOnly = this.normalizeDate(dto.exam_date);
+    const withTime = dto?.exam_time ? `${dateOnly}T${dto.exam_time}:00` : dateOnly;
     const payload: any = {
       exam_table_id: dto.final_exam_table_id,
       subject_id: dto.subject_id,
-      exam_date: this.normalizeDate(dto.exam_date),
+      exam_date: withTime,
     };
     if (dto.aula !== undefined) payload.aula = dto.aula;
 

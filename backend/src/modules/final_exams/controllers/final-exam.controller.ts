@@ -22,6 +22,7 @@ class FinalExamDto {
   exam_table_id!: number;
   subject_id!: number;
   exam_date!: string;
+  exam_time?: string;
   aula?: string | null;
 }
 
@@ -49,6 +50,9 @@ export class FinalExamController {
       exam_table_id: entity.examTableId ?? entity.exam_table_id,
       subject_id: entity.subjectId ?? entity.subject_id,
       exam_date: (entity.examDate ?? entity.exam_date)?.toISOString?.().slice(0, 10) ?? entity.exam_date,
+      exam_time: (entity.examDate ?? entity.exam_date) instanceof Date
+        ? String((entity.examDate as Date).toTimeString?.()?.slice(0,5) ?? '')
+        : (entity.exam_time ?? undefined),
       aula: entity.aula ?? null,
     };
   }

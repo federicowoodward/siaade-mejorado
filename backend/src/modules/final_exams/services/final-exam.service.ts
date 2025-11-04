@@ -43,6 +43,7 @@ export class FinalExamService {
       .select([
         "f.id AS id",
         "to_char(f.exam_date, 'YYYY-MM-DD') AS exam_date",
+        "to_char(f.exam_date, 'HH24:MI') AS exam_time",
         "f.aula AS aula",
         "s.id AS subject_id",
         "s.subject_name AS subject_name",
@@ -73,6 +74,7 @@ export class FinalExamService {
       .select([
         "fe.id AS id",
         "to_char(fe.examDate, 'YYYY-MM-DD') AS exam_date",
+        "to_char(fe.examDate, 'HH24:MI') AS exam_time",
         "fe.aula AS aula",
         "s.id AS subject_id",
         "s.subjectName AS subject_name",
