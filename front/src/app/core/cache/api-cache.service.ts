@@ -9,7 +9,7 @@ type CacheRecord<T = any> = {
 const DB_NAME = 'siaade-cache';
 const STORE_NAME = 'responses';
 const DB_VERSION = 1;
-const TTL_MS = 10 * 60 * 1000; // 30 minutos
+const TTL_MS = 10 * 60 * 1000; // 10 minutos
 
 @Injectable({ providedIn: 'root' })
 export class ApiCacheService {

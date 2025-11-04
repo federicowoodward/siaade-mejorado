@@ -21,7 +21,7 @@ export function shortPathFrom(fullUrl: string): string {
 
 export function logCacheHit(method: string, fullUrl: string) {
   const short = shortPathFrom(fullUrl);
-  console.groupCollapsed(`[CACHE ✅] ${method} ${short} (TTL 30m)`);
+  console.groupCollapsed(`[CACHE ✅] ${method} ${short} (TTL 10m)`);
   console.log('Fuente:', 'IndexedDB');
   console.groupEnd();
 }
