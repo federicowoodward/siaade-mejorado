@@ -11,6 +11,7 @@ export function mapApiUserToRow(
     name: u.name,
     lastName: u.lastName,
     cuil: u.cuil,
+    email: u.email || '',
     role: resolvedRole,
   };
 }

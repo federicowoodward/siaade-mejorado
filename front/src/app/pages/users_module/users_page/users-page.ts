@@ -76,7 +76,8 @@ export class UsersPage {
   }
 
   goToNewUser() {
-    this.router.navigate(["users/create"]);
+    // Navegación absoluta para evitar /users/users/create
+    this.router.navigate(["/users/create"]);
   }
 
   onRowAction(e: { actionId: string; row: UserRow }) {

@@ -7,6 +7,7 @@ export interface UserRow {
   name: string;
   lastName: string;
   cuil: string;
+  email: string;
   role: Role;
 }
 
