@@ -164,9 +164,13 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
   name = "DummyDataMigration1761015167693";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // En producción sólo se ejecuta si ALLOW_DUMMY_SEED=true (opt-in seguro e idempotente)
     if (process.env.NODE_ENV === "production") {
-      console.log("[DummyData] skipped in production environment");
-      return;
+      if (process.env.ALLOW_DUMMY_SEED !== "true") {
+        console.log("[DummyData] skipped in production (ALLOW_DUMMY_SEED != true)");
+        return;
+      }
+      console.log("[DummyData] running in production (ALLOW_DUMMY_SEED=true)");
     }
 
     await queryRunner.startTransaction();
