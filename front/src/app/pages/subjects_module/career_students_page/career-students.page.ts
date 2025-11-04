@@ -5,6 +5,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 import { Router } from '@angular/router';
 import { PermissionService } from '@/core/auth/permission.service';
 import { ROLE } from '@/core/auth/roles';
@@ -25,6 +26,7 @@ import {
     ButtonModule,
     InputTextModule,
     ProgressSpinnerModule,
+    ToggleButtonModule,
   ],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
