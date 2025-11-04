@@ -39,37 +39,35 @@ export class AcademicStatus implements OnInit, OnChanges {
   private auth = inject(AuthService);
 
   ngOnInit() {
-    // Solo cargar si student ya está presente en el init
-    // Si no está, esperamos a que llegue vía ngOnChanges
-    if (this.student && this.student.id) {
-      console.log('[AcademicStatus] ngOnInit con student presente:', this.student);
-      this.loadData(this.student);
-      return;
-    }
-    
-    // Si tampoco viene student como Input, usar el usuario logueado como fallback
-    // Esto solo aplica cuando el componente se usa sin el Input (ej: vista propia del alumno)
-    if (!this.student) {
-      console.log('[AcademicStatus] ngOnInit sin student, usando usuario logueado');
-      this.auth.getUser().subscribe((u) => {
-        if (!u) return;
-        this.loadData(u);
-      });
-    }
+    console.log('[AcademicStatus] ngOnInit - student:', this.student);
+    // NO hacer nada aquí - todo se maneja en ngOnChanges o AfterViewInit
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    console.log('[AcademicStatus] ngOnChanges ejecutado:', changes);
+    
     // Cuando el Input student cambia, recargar datos
     if (changes["student"]) {
       const current = changes["student"].currentValue;
       const previous = changes["student"].previousValue;
-      console.log('[AcademicStatus] ngOnChanges detectó cambio en student:', { previous, current });
+      console.log('[AcademicStatus] Cambio detectado:', { previous, current });
       
-      // Solo cargar si tenemos un student válido y cambió de verdad
-      if (current && current.id && current.id !== previous?.id) {
+      // Si ahora hay un student válido, cargar sus datos
+      if (current && current.id) {
+        console.log('[AcademicStatus] Cargando datos para student:', current);
         this.loading.set(true);
         this.subjectsByYear.set({});
         this.loadData(current);
+        return;
+      }
+      
+      // Si current es null/undefined y no había previous, cargar usuario logueado
+      if (!current && !previous) {
+        console.log('[AcademicStatus] Sin student, cargando usuario logueado');
+        this.auth.getUser().subscribe((u) => {
+          if (!u) return;
+          this.loadData(u);
+        });
       }
     }
   }
