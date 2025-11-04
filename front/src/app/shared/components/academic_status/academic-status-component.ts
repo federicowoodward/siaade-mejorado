@@ -6,6 +6,7 @@ import {
   SimpleChanges,
   inject,
   signal,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
@@ -34,40 +35,51 @@ export class AcademicStatus implements OnInit, OnChanges {
   subjectsByYear = signal<Record<string, any[]>>({});
   loading = signal(true);
   user = signal<{ name: string; cuil: string } | undefined>(undefined);
+  
+  private studentSignal = signal<StudentMinimal | undefined>(undefined);
 
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  
+  constructor() {
+    // Effect que reacciona cuando studentSignal cambia
+    effect(() => {
+      const s = this.studentSignal();
+      console.log('[AcademicStatus] effect disparado con student:', s);
+      
+      if (s && s.id) {
+        console.log('[AcademicStatus] Cargando datos para:', s);
+        this.loading.set(true);
+        this.subjectsByYear.set({});
+        this.loadData(s);
+      }
+    });
+  }
 
   ngOnInit() {
-    console.log('[AcademicStatus] ngOnInit - student:', this.student);
-    // NO hacer nada aquí - todo se maneja en ngOnChanges o AfterViewInit
+    console.log('[AcademicStatus] ngOnInit - @Input student:', this.student);
+    
+    // Si no hay student Input, cargar usuario logueado
+    if (!this.student) {
+      console.log('[AcademicStatus] Sin Input, cargando usuario logueado');
+      this.auth.getUser().subscribe((u) => {
+        if (u && u.id) {
+          this.studentSignal.set(u as any);
+        }
+      });
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log('[AcademicStatus] ngOnChanges ejecutado:', changes);
+    console.log('[AcademicStatus] ngOnChanges:', changes);
     
-    // Cuando el Input student cambia, recargar datos
     if (changes["student"]) {
       const current = changes["student"].currentValue;
-      const previous = changes["student"].previousValue;
-      console.log('[AcademicStatus] Cambio detectado:', { previous, current });
+      console.log('[AcademicStatus] Student cambió a:', current);
       
-      // Si ahora hay un student válido, cargar sus datos
       if (current && current.id) {
-        console.log('[AcademicStatus] Cargando datos para student:', current);
-        this.loading.set(true);
-        this.subjectsByYear.set({});
-        this.loadData(current);
-        return;
-      }
-      
-      // Si current es null/undefined y no había previous, cargar usuario logueado
-      if (!current && !previous) {
-        console.log('[AcademicStatus] Sin student, cargando usuario logueado');
-        this.auth.getUser().subscribe((u) => {
-          if (!u) return;
-          this.loadData(u);
-        });
+        // Actualizar el signal para disparar el effect
+        this.studentSignal.set(current);
       }
     }
   }
