@@ -14,6 +14,7 @@ import { CommonData } from "@/entities/users/common-data.entity";
 import { AddressData } from "@/entities/users/address-data.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
 import { normalizeRole } from "@/shared/rbac/roles.constants";
+import { Student } from "@/entities/users/student.entity";
 import { ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 type FlatChanges = Record<string, any>;
@@ -73,6 +74,11 @@ export class UsersPatchService {
       // 5) SECRETARY (isDirective)
       if (Object.prototype.hasOwnProperty.call(changes, "isDirective")) {
         await this.applySecretaryFlag(qr, userId, !!changes.isDirective);
+      }
+
+      // 6) STUDENT FLAGS (canLogin, isActive) via prefix "student."
+      if (this.hasAnyPrefix(changes, "student.")) {
+        await this.applyStudentFlags(qr, userId, changes);
       }
 
       await qr.commitTransaction();
@@ -301,5 +307,34 @@ export class UsersPatchService {
     let sec = await qr.manager.findOne(Secretary, { where: { userId } });
     if (!sec) return; // ignore si no es secretary
     await qr.manager.update(Secretary, { id: sec.userId }, { isDirective });
+  }
+
+  private async applyStudentFlags(
+    qr: QueryRunner,
+    userId: string,
+    changes: FlatChanges
+  ) {
+    const fields = this.pickByPrefix(changes, "student.");
+    if (!Object.keys(fields).length) return;
+
+    // Confirmar que exista fila en students
+    const student = await qr.manager.findOne(Student, { where: { userId } });
+    if (!student) return; // ignorar si no es alumno
+
+    const patch: Partial<Student> = {};
+    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
+      patch.canLogin = Boolean(fields.canLogin);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
+      patch.isActive = Boolean(fields.isActive);
+      // Regla: si isActive=false, forzar canLogin=false
+      if (patch.isActive === false) {
+        patch.canLogin = false;
+      }
+    }
+
+    if (Object.keys(patch).length) {
+      await qr.manager.update(Student, { userId }, patch);
+    }
   }
 }

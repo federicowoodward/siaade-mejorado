@@ -28,6 +28,8 @@ import {
   canCreateBase,
   canCreateStep2,
 } from '../../../shared/utils/create-user/user-validators.util';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE } from '../../../core/auth/roles';
 
 type PreviewRow = { field: string; value: string };
 @Component({
@@ -52,6 +54,7 @@ export class CreateUserPage {
   private goBackSvc = inject(GoBackService);
   private api = inject(ApiService);
   private router = inject(Router);
+  private permissions = inject(PermissionService);
 
   isCreating = false;
 
@@ -97,6 +100,36 @@ export class CreateUserPage {
   studentStartYear: number | null = null; // opcional
   canLogin = true;
   isActive = true;
+
+  // Permisos por rol para editar flags
+  get canEditCanLogin(): boolean {
+    // Preceptor y superiores (incluye secretario común y ejecutivo)
+    return this.permissions.hasAnyRole([
+      ROLE.PRECEPTOR,
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+  }
+
+  get canEditIsActive(): boolean {
+    // Solo Secretario Admin (Executive Secretary)
+    return this.permissions.hasRole(ROLE.EXECUTIVE_SECRETARY);
+  }
+
+  // Si el alumno no está activo o el rol no lo permite, no puede loguearse: reflejar en UI
+  get canLoginDisabled(): boolean {
+    const inactive = this.role === 'student' && this.isActive === false;
+    const noPerms = !this.canEditCanLogin;
+    return inactive || noPerms;
+  }
+
+  onIsActiveChange(next: boolean): void {
+    if (!this.canEditIsActive) return; // sin permisos, ignorar
+    this.isActive = !!next;
+    if (this.isActive === false) {
+      this.canLogin = false; // override visual y de payload
+    }
+  }
 
   private addressObj() {
     return {

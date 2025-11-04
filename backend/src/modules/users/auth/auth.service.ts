@@ -6,6 +6,7 @@ import { ConfigService } from "@nestjs/config";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { User } from "@/entities/users/user.entity";
+import { Student } from "@/entities/users/student.entity";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 import {
@@ -35,6 +36,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
@@ -161,7 +164,7 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
 
-    const roleFromProfile = normalizeRole(profile.role?.name);
+  const roleFromProfile = normalizeRole(profile.role?.name);
     const roleIdFromProfile = profile.role?.id ?? null;
     const roleFromEntity =
       normalizeRole(userEntity.role?.name) ?? getRoleById(userEntity.roleId);
@@ -175,6 +178,21 @@ export class AuthService {
     const roleId = ROLE_IDS[role];
     const isDirective =
       userEntity.secretary?.isDirective ?? role === ROLE.EXECUTIVE_SECRETARY;
+
+    // Gating de acceso para alumnos: isActive=false bloquea siempre; si isActive=true pero canLogin=false, también bloquea login.
+    if (role === ROLE.STUDENT) {
+      // Traer flags del alumno; como las columnas pueden ser null, sólo bloqueamos si son estrictamente false
+      const student = await this.studentRepository.findOne({ where: { userId } });
+      if (!student) {
+        throw new UnauthorizedException("Student record not found");
+      }
+      if (student.isActive === false) {
+        throw new UnauthorizedException("Student is inactive");
+      }
+      if (student.canLogin === false) {
+        throw new UnauthorizedException("Login disabled for this student");
+      }
+    }
 
     const email = profile.email ?? userEntity.email ?? null;
     if (!email) {
