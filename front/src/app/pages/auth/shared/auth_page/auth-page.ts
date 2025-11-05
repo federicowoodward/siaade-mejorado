@@ -126,15 +126,10 @@ export class AuthPage {
     this.submittingRecover.set(true);
     this.auth.requestPasswordRecovery(identity!).subscribe({
       next: (resp: any) => {
-        const token = resp?.token as string | undefined;
-        const msg = resp?.message || 'Si la cuenta existe, enviamos instrucciones.';
-        this.message.add({ severity: 'success', summary: 'Listo', detail: msg });
-        if (token) {
-          // Ir directo al formulario con el token en query
-          this.router.navigate(["/auth/reset-password"], { queryParams: { token } });
-        } else {
-          this.changeMode();
-        }
+        const msg = 'Te enviamos un código a tu correo. Ingresalo para continuar';
+        this.message.add({ severity: 'success', summary: 'Código enviado', detail: msg });
+        // Navegar siempre a la pantalla de código
+        this.router.navigate(['/auth/reset-code']);
       },
       error: () => {
         this.message.add({

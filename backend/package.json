@@ -28,6 +28,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+  "nodemailer": "^6.9.14",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/common": "^11.1.5",
     "@nestjs/config": "^4.0.2",
@@ -54,6 +55,7 @@
     "typescript": "^5.5.4"
   },
   "devDependencies": {
+  "@types/nodemailer": "^7.0.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/node": "^24.0.15",

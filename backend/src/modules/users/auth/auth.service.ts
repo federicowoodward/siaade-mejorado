@@ -3,6 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, MoreThan, Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
+import { EmailService } from "@/shared/services/email/email.service";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
@@ -47,7 +48,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService
   ) {
     this.refreshSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -133,14 +135,17 @@ export class AuthService {
 
     const { token, expiresInSeconds, code, codeExpiresInSeconds } = await this.issueResetToken(user.id);
 
-    // Sin SMTP: devolvemos token y código directamente para que el cliente continúe el flujo en la UI
-    return {
-      message: "Código y token generados",
-      token,
-      expiresInSeconds,
-      code,
-      codeExpiresInSeconds,
-    };
+    // Intentar enviar el código por correo si hay configuración SMTP
+    if (this.emailService.isEnabled() && user.email) {
+      try {
+        await this.emailService.sendResetCodeEmail(user.email, code);
+      } catch (e) {
+        this.logger.warn(`No se pudo enviar el código por email: ${(e as any)?.message ?? e}`);
+      }
+    }
+
+    // Devolvemos también token y código para completar el flujo en UI
+    return { message: "Código enviado (si hay email)", token, expiresInSeconds, code, codeExpiresInSeconds };
   }
 
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
