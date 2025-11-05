@@ -121,35 +121,22 @@ export class ResetCodePage implements OnDestroy {
   }
 
   private maskIdentity(identity: string): string {
-    // Si parece un email, ocultar parte local
-    if (identity.includes('@')) {
-      const [local, domain] = identity.split('@');
-      if (!domain) return identity;
-      const keep = Math.min(2, local.length);
-      const maskedLen = Math.max(1, local.length - keep);
-      return `${local.slice(0, keep)}${'*'.repeat(maskedLen)}@${domain}`;
+    const str = identity ?? '';
+    // Regla general: mostrar primeros 2 y último 1, enmascarar el medio
+    const maskKeep2First1Last = (s: string): string => {
+      if (s.length <= 2) return s; // nada por enmascarar
+      if (s.length === 3) return s.slice(0, 2) + s.slice(-1); // sin asteriscos intermedios
+      return s.slice(0, 2) + '*'.repeat(s.length - 3) + s.slice(-1);
+    };
+
+    // Emails: aplicar a la parte local antes del @
+    if (str.includes('@')) {
+      const [local, domain] = str.split('@');
+      if (!domain) return maskKeep2First1Last(local);
+      return `${maskKeep2First1Last(local)}@${domain}`;
     }
-    // Si es CUIL/DNI (mayoría dígitos), enmascarar dejando primeros 2 y últimos 2
-    const digits = identity.replace(/\D+/g, '');
-    const digitRatio = digits.length / Math.max(1, identity.length);
-    if (digits.length >= 7 && digitRatio > 0.6) {
-      const first = digits.slice(0, 2);
-      const last = digits.slice(-2);
-      const middleLen = Math.max(1, digits.length - 4);
-      const maskedDigits = `${first}${'*'.repeat(middleLen)}${last}`;
-      // Reintroducimos separadores mínimos si el original tenía guiones (opcional)
-      return maskedDigits;
-    }
-    // Si parece nombre/apellido: enmascarar cada palabra dejando la primera letra
-    const words = identity.split(/\s+/).filter(Boolean);
-    if (words.length > 0) {
-      const maskedWords = words.map((w) => {
-        if (w.length <= 2) return w; // palabras cortas sin cambio
-        // mantener primera letra, ocultar resto (mantiene diacríticos tal cual)
-        return `${w[0]}${'*'.repeat(w.length - 1)}`;
-      });
-      return maskedWords.join(' ');
-    }
-    return identity;
+
+    // No-email (CUIL, nombre, etc.)
+    return maskKeep2First1Last(str);
   }
 }
