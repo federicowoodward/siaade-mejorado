@@ -14,6 +14,7 @@ import { UserProfileReaderModule } from "@/shared/services/user-profile-reader/u
 import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
 import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
 import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
+import { EmailService } from "@/shared/services/email/email.service";
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
     UserAuthValidatorModule,
     UserProfileReaderModule,
   ],
-  providers: [AuthService, JwtStrategy, RateLimitService, PasswordResetCleanupService],
+  providers: [AuthService, JwtStrategy, RateLimitService, PasswordResetCleanupService, EmailService],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })

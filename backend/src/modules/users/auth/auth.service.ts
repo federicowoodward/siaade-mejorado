@@ -9,6 +9,7 @@ import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
 import { User } from "@/entities/users/user.entity";
 import { Student } from "@/entities/users/student.entity";
 import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
+import { EmailService } from "@/shared/services/email/email.service";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 import {
@@ -46,7 +47,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService
   ) {
     this.refreshSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -136,13 +138,24 @@ export class AuthService {
     const isDev = this.configService.get<string>("NODE_ENV") !== "production";
     const exposeFlag = this.configService.get<string>("RESET_TOKEN_EXPOSE_IN_RESPONSE") === "true";
 
+    // Si hay SMTP configurado, enviar email con el link
+    try {
+      const base = this.configService.get<string>("FRONT_BASE_URL") || "http://localhost:4000";
+      const link = `${base.replace(/\/$/, "")}/auth/reset-password?token=${token}`;
+      if (this.emailService.isEnabled() && user.email) {
+        await this.emailService.sendResetPasswordEmail(user.email, link);
+      }
+    } catch (e) {
+      this.logger.warn(`Fallo al enviar email de reset: ${(e as any)?.message ?? e}`);
+    }
+
     return (isDev || exposeFlag)
       ? {
           message: "Password reset token creado",
           token,
           expiresInSeconds,
         }
-      : { message: "Si la cuenta existe, enviamos instrucciones" };
+  : { message: "Si la cuenta existe, enviamos instrucciones" };
   }
 
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
