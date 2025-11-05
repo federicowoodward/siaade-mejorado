@@ -80,6 +80,10 @@ export class AuthPage {
     }, expandMs + shrinkMs);
   }
 
+  goToResetCode() {
+    this.router.navigate(['/auth/reset-code']);
+  }
+
   setMode(mode: 'login' | 'recover') {
     if ((mode === 'login') === this.loginMode()) return;
     // reutiliza changeMode (auto-decide animación) pero evita doble lógica

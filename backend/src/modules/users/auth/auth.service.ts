@@ -6,10 +6,10 @@ import { ConfigService } from "@nestjs/config";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
+import { VerifyResetCodeDto } from "./dto/verify-reset-code.dto";
 import { User } from "@/entities/users/user.entity";
 import { Student } from "@/entities/users/student.entity";
 import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
-import { EmailService } from "@/shared/services/email/email.service";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 import {
@@ -47,8 +47,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
-    private readonly configService: ConfigService,
-    private readonly emailService: EmailService
+    private readonly configService: ConfigService
   ) {
     this.refreshSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -132,30 +131,16 @@ export class AuthService {
       return { message: "Si la cuenta existe, enviamos instrucciones" };
     }
 
-    const { token, expiresInSeconds } = await this.issueResetToken(user.id);
+    const { token, expiresInSeconds, code, codeExpiresInSeconds } = await this.issueResetToken(user.id);
 
-    // Exponer token si está habilitado por config o si no es producción
-    const isDev = this.configService.get<string>("NODE_ENV") !== "production";
-    const exposeFlag = this.configService.get<string>("RESET_TOKEN_EXPOSE_IN_RESPONSE") === "true";
-
-    // Si hay SMTP configurado, enviar email con el link
-    try {
-      const base = this.configService.get<string>("FRONT_BASE_URL") || "http://localhost:4000";
-      const link = `${base.replace(/\/$/, "")}/auth/reset-password?token=${token}`;
-      if (this.emailService.isEnabled() && user.email) {
-        await this.emailService.sendResetPasswordEmail(user.email, link);
-      }
-    } catch (e) {
-      this.logger.warn(`Fallo al enviar email de reset: ${(e as any)?.message ?? e}`);
-    }
-
-    return (isDev || exposeFlag)
-      ? {
-          message: "Password reset token creado",
-          token,
-          expiresInSeconds,
-        }
-  : { message: "Si la cuenta existe, enviamos instrucciones" };
+    // Sin SMTP: devolvemos token y código directamente para que el cliente continúe el flujo en la UI
+    return {
+      message: "Código y token generados",
+      token,
+      expiresInSeconds,
+      code,
+      codeExpiresInSeconds,
+    };
   }
 
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
@@ -311,23 +296,32 @@ export class AuthService {
   private async issueResetToken(userId: string): Promise<{
     token: string;
     expiresInSeconds: number;
+    code: string;
+    codeExpiresInSeconds: number;
   }> {
     const token = this.generateToken();
     const tokenHash = this.sha256(token);
     const ttl = this.configService.get<number>("RESET_TOKEN_TTL_SECONDS") ?? 30 * 60; // 30 min por defecto
     const expiresAt = new Date(Date.now() + ttl * 1000);
+    // Generar código de 6 dígitos para flujo alternativo
+    const code = (Math.floor(100000 + Math.random() * 900000)).toString();
+    const codeHash = this.sha256(code);
+    const codeTtl = this.configService.get<number>("RESET_CODE_TTL_SECONDS") ?? 10 * 60; // 10 min por defecto
+    const codeExpiresAt = new Date(Date.now() + codeTtl * 1000);
 
     const entity = this.prtRepository.create({
       userId,
       tokenHash,
       expiresAt,
       usedAt: null,
+      codeHash,
+      codeExpiresAt,
     });
     await this.prtRepository.save(entity);
 
     this.logger.log(`Password reset token issued: userId=${userId} tokenHash=${tokenHash.substring(0,8)}... ttl=${ttl}s`);
 
-    return { token, expiresInSeconds: ttl };
+    return { token, expiresInSeconds: ttl, code, codeExpiresInSeconds: codeTtl };
   }
 
   private generateToken(size = 32): string {
@@ -361,5 +355,42 @@ export class AuthService {
       }
     }
     return user;
+  }
+
+  async verifyResetCode(dto: VerifyResetCodeDto): Promise<{ token: string; expiresInSeconds: number }> {
+    const identity = (dto.identity || "").trim();
+    const code = (dto.code || "").trim();
+    if (!identity || !/^\d{6}$/.test(code)) {
+      throw new BadRequestException("Identidad o código inválidos");
+    }
+
+    const user = await this.resolveUserByIdentity(identity);
+    if (!user) {
+      // No revelar existencia
+      throw new UnauthorizedException("Código inválido o expirado");
+    }
+
+    const now = new Date();
+    const codeHash = this.sha256(code);
+    // Buscar un token con ese codeHash, vigente y sin usar
+    const record = await this.prtRepository.findOne({
+      where: {
+        userId: user.id,
+        usedAt: IsNull(),
+      },
+      order: { createdAt: "DESC" },
+    });
+
+    if (!record || !record.codeHash || record.codeHash !== codeHash || !record.codeExpiresAt || record.codeExpiresAt <= now) {
+      throw new UnauthorizedException("Código inválido o expirado");
+    }
+
+    // Invalida el código actual para evitar reutilización
+    await this.prtRepository.update({ id: record.id }, { usedAt: now });
+
+    // Emitir un nuevo token one-time para el reseteo
+    const { token, expiresInSeconds } = await this.issueResetToken(user.id);
+    this.logger.log(`Reset code verificado: userId=${user.id} codeHash=${codeHash.substring(0,8)}...`);
+    return { token, expiresInSeconds };
   }
 }

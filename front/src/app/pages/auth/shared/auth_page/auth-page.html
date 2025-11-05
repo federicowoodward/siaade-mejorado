@@ -53,6 +53,8 @@
               placeholder="Ej: juan@mail.com" autocomplete="username" />
             <button type="submit" pButton label="Enviar instrucciones" class="w-full mb-3"
               [disabled]="recoverForm.invalid || submittingRecover()"></button>
+            <button type="button" pButton label="Ya tengo un código" class="w-full p-button-text"
+              (click)="goToResetCode()"></button>
           </form>
         </div>
         <!-- Pane Login (segundo panel - derecha) -->

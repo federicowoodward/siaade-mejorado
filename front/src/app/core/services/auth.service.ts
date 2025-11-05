@@ -105,6 +105,10 @@ export class AuthService {
     return this.authApi.confirmPasswordReset({ token, password });
   }
 
+  verifyResetCode(identity: string, code: string) {
+    return this.authApi.verifyResetCode(identity, code);
+  }
+
   async logout(options?: { redirect?: boolean }): Promise<void> {
     await firstValueFrom(
       this.authApi.logout().pipe(

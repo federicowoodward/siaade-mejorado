@@ -23,6 +23,11 @@ export interface RequestPasswordResetResponseDto {
   expiresInSeconds?: number;
 }
 
+export interface VerifyResetCodeResponseDto {
+  token: string;
+  expiresInSeconds: number;
+}
+
 @Injectable({ providedIn: "root" })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
@@ -50,6 +55,14 @@ export class AuthApiService {
     return this.http.post<{ success: boolean }>(
       `${this.baseUrl}/auth/reset-password/confirm`,
       payload,
+      { withCredentials: true }
+    );
+  }
+
+  verifyResetCode(identity: string, code: string): Observable<VerifyResetCodeResponseDto> {
+    return this.http.post<VerifyResetCodeResponseDto>(
+      `${this.baseUrl}/auth/reset-password/verify-code`,
+      { identity, code },
       { withCredentials: true }
     );
   }

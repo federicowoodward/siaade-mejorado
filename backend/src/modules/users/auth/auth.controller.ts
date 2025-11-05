@@ -20,6 +20,7 @@ import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
+import { VerifyResetCodeDto } from "./dto/verify-reset-code.dto";
 import { Public } from "../../../shared/decorators/public.decorator";
 import { UserProfileResult } from "@/shared/services/user-profile-reader/user-profile-reader.types";
 import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
@@ -178,6 +179,20 @@ export class AuthController {
     const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
     this.rateLimit.check(`reset-confirm:${ip}`, max, windowMs);
     return this.authService.confirmResetPassword(dto);
+  }
+
+  @Post("reset-password/verify-code")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Verifica el código de 6 dígitos y emite un token" })
+  @ApiResponse({ status: 200, description: "Código verificado" })
+  async verifyResetCode(@Body() dto: VerifyResetCodeDto, @Req() req: Request) {
+    const max = Number(process.env.RESET_CODE_RATE_MAX ?? 10);
+    const windowMs = Number(process.env.RESET_CODE_RATE_WINDOW_MS ?? 15 * 60 * 1000);
+    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    const id = (dto.identity || '').trim();
+    this.rateLimit.check(`reset-verify:${ip}`, max, windowMs);
+    this.rateLimit.check(`reset-verify-id:${id}`, max, windowMs);
+    return this.authService.verifyResetCode(dto);
   }
 
   private extractRefreshToken(req: Request): string | null {

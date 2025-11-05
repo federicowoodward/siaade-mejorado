@@ -34,4 +34,11 @@ export class PasswordResetToken {
 
   @Column({ name: "used_at", type: "timestamptz", nullable: true })
   usedAt: Date | null;
+
+  // Código corto (6 dígitos) para flujos sin link
+  @Column({ name: "code_hash", type: "text", nullable: true })
+  codeHash?: string | null;
+
+  @Column({ name: "code_expires_at", type: "timestamptz", nullable: true })
+  codeExpiresAt?: Date | null;
 }
