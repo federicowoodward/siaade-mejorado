@@ -149,7 +149,10 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   }
 
   canToggleIsActive(): boolean {
-    return this.permissions.hasRole(ROLE.EXECUTIVE_SECRETARY);
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
   }
 
   // ---- Acciones ----
