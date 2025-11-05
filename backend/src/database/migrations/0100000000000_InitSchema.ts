@@ -38,8 +38,10 @@ export class AutoMigration1761015167691 implements MigrationInterface {
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "user_id" uuid NOT NULL,
         "token_hash" text NOT NULL,
+        "code_hash" text,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+        "code_expires_at" TIMESTAMP WITH TIME ZONE,
         "used_at" TIMESTAMP WITH TIME ZONE,
         CONSTRAINT "PK_password_reset_tokens" PRIMARY KEY ("id"),
         CONSTRAINT "UQ_password_reset_tokens_token_hash" UNIQUE ("token_hash")
