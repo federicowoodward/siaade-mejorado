@@ -44,15 +44,44 @@ export class ResetPasswordPage {
 
   submitting = false;
 
+  // Getters de ayuda para validaciones visibles en UI
+  get passwordValue(): string {
+    return (this.form.get('password')?.value as string) || '';
+  }
+  get confirmValue(): string {
+    return (this.form.get('confirm')?.value as string) || '';
+  }
+  get passwordIssues(): string[] {
+    const pwd = this.passwordValue;
+    const issues: string[] = [];
+    if (pwd.length < 8) issues.push('Mínimo 8 caracteres');
+    if (!/[A-Z]/.test(pwd)) issues.push('Al menos una mayúscula');
+    if (!/[a-z]/.test(pwd)) issues.push('Al menos una minúscula');
+    if (!/\d/.test(pwd)) issues.push('Al menos un número');
+    return issues;
+  }
+  get hasUpper(): boolean { return /[A-Z]/.test(this.passwordValue); }
+  get hasLower(): boolean { return /[a-z]/.test(this.passwordValue); }
+  get hasDigit(): boolean { return /\d/.test(this.passwordValue); }
+  get mismatch(): boolean {
+    return this.confirmValue.length > 0 && this.passwordValue !== this.confirmValue;
+  }
+  get canSubmit(): boolean {
+    return !!this.token && !!this.passwordValue && !!this.confirmValue && !this.mismatch && this.passwordIssues.length === 0;
+  }
+
   async submit() {
     if (!this.token) {
       this.message.add({ severity: 'warn', summary: 'Atención', detail: 'Falta el token.' });
       return;
     }
     const { password, confirm } = this.form.value;
-    const policy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!password || !confirm || password !== confirm || !policy.test(password)) {
-      this.message.add({ severity: 'warn', summary: 'Atención', detail: 'Las contraseñas no coinciden.' });
+    const issues = this.passwordIssues.slice();
+    if (!password || !confirm || password !== confirm || issues.length > 0) {
+      if (password !== confirm) {
+        issues.unshift('Las contraseñas no coinciden');
+      }
+      this.message.add({ severity: 'warn', summary: 'Revisá la contraseña', detail: issues.join(' · ') });
       return;
     }
     this.submitting = true;
