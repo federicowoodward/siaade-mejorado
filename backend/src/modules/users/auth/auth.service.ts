@@ -135,7 +135,11 @@ export class AuthService {
 
     // En modo seguro: no exponemos detalles en producción salvo que se habilite por bandera
     const isProd = (this.configService.get<string>("NODE_ENV") || "").toLowerCase() === "production";
-    const expose = this.configService.get<string>("RESET_DETAILS_EXPOSE_IN_RESPONSE") === "true";
+    // Permitir alias de variable por compatibilidad: RESET_DETAILS_EXPOSE_IN_RESPONSE o RESET_TOKEN_EXPOSE_IN_RESPONSE
+    const exposeEnv =
+      this.configService.get<string>("RESET_DETAILS_EXPOSE_IN_RESPONSE") ??
+      this.configService.get<string>("RESET_TOKEN_EXPOSE_IN_RESPONSE");
+    const expose = String(exposeEnv).toLowerCase() === "true";
     if (isProd && !expose) {
       return { message: "Si la cuenta existe, enviamos instrucciones." };
     }
