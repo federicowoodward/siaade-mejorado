@@ -109,6 +109,10 @@ export class AuthService {
     return this.authApi.verifyResetCode(identity, code);
   }
 
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.authApi.changePassword({ currentPassword, newPassword });
+  }
+
   async logout(options?: { redirect?: boolean }): Promise<void> {
     await firstValueFrom(
       this.authApi.logout().pipe(

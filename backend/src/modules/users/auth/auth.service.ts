@@ -172,11 +172,20 @@ export class AuthService {
       throw new UnauthorizedException("Token inválido o expirado");
     }
 
-    // Actualizar contraseña del usuario (hash bcrypt)
+    // Validar que la nueva contraseña sea distinta a la actual
     const bcrypt = await import("bcryptjs");
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const currentUser = await this.userRepository.findOne({ where: { id: record.userId } });
+    if (!currentUser) {
+      throw new UnauthorizedException("User not found");
+    }
+    const isSameAsCurrent = await bcrypt.compare(newPassword, currentUser.password);
+    if (isSameAsCurrent) {
+      throw new BadRequestException("La nueva contraseña debe ser distinta a la actual");
+    }
 
-  await this.userRepository.update({ id: record.userId }, { password: hashed });
+    // Actualizar contraseña del usuario (hash bcrypt)
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update({ id: record.userId }, { password: hashed });
 
     // Marcar token como usado y anular otros tokens activos del usuario
     const usedAt = new Date();
@@ -312,7 +321,7 @@ export class AuthService {
     // Generar código de 6 dígitos para flujo alternativo
     const code = (Math.floor(100000 + Math.random() * 900000)).toString();
     const codeHash = this.sha256(code);
-    const codeTtl = this.configService.get<number>("RESET_CODE_TTL_SECONDS") ?? 10 * 60; // 10 min por defecto
+  const codeTtl = this.configService.get<number>("RESET_CODE_TTL_SECONDS") ?? 15; // 15 segundos por defecto
     const codeExpiresAt = new Date(Date.now() + codeTtl * 1000);
 
     const entity = this.prtRepository.create({
@@ -398,5 +407,33 @@ export class AuthService {
     const { token, expiresInSeconds } = await this.issueResetToken(user.id);
     this.logger.log(`Reset code verificado: userId=${user.id} codeHash=${codeHash.substring(0,8)}...`);
     return { token, expiresInSeconds };
+  }
+
+  async changePassword(userId: string, dto: { currentPassword: string; newPassword: string }) {
+    const { currentPassword, newPassword } = dto;
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException("Credenciales inválidas");
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const bcrypt = await import("bcryptjs");
+    const ok = await bcrypt.compare(currentPassword, user.password);
+    if (!ok) {
+      throw new UnauthorizedException("La contraseña actual es incorrecta");
+    }
+
+    const same = await bcrypt.compare(newPassword, user.password);
+    if (same) {
+      throw new BadRequestException("La nueva contraseña debe ser distinta a la actual");
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update({ id: userId }, { password: hashed });
+    this.logger.log(`Password changed for userId=${userId}`);
+    return { success: true };
   }
 }

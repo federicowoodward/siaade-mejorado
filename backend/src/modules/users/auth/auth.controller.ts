@@ -7,6 +7,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -24,6 +25,8 @@ import { VerifyResetCodeDto } from "./dto/verify-reset-code.dto";
 import { Public } from "../../../shared/decorators/public.decorator";
 import { UserProfileResult } from "@/shared/services/user-profile-reader/user-profile-reader.types";
 import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { ChangePasswordDto } from "@/modules/users/auth/dto/change-password.dto";
 
 type LoginSuccessResponse = {
   accessToken: string;
@@ -193,6 +196,24 @@ export class AuthController {
     this.rateLimit.check(`reset-verify:${ip}`, max, windowMs);
     this.rateLimit.check(`reset-verify-id:${id}`, max, windowMs);
     return this.authService.verifyResetCode(dto);
+  }
+
+  @Post("change-password")
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Change password for logged-in user" })
+  @ApiResponse({ status: 200, description: "Password changed" })
+  async changePassword(@Body() dto: ChangePasswordDto, @Req() req: Request) {
+    const max = Number(process.env.CHANGE_PWD_RATE_MAX ?? 10);
+    const windowMs = Number(process.env.CHANGE_PWD_RATE_WINDOW_MS ?? 15 * 60 * 1000);
+    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    this.rateLimit.check(`change-pwd:${ip}`, max, windowMs);
+    // req.user agregado por JwtStrategy
+    const user: any = (req as any).user;
+    if (!user?.id) {
+      throw new UnauthorizedException();
+    }
+    return this.authService.changePassword(user.id, dto);
   }
 
   private extractRefreshToken(req: Request): string | null {

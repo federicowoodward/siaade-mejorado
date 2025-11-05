@@ -1,5 +1,7 @@
 <div class="m-w-custom flex flex-column gap-3">
     <h2>Datos personales</h2>
     <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
+  <h2 class="mt-4">Seguridad</h2>
+  <app-change-password-card></app-change-password-card>
   </div>
   

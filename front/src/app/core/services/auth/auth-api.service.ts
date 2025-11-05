@@ -67,6 +67,14 @@ export class AuthApiService {
     );
   }
 
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(
+      `${this.baseUrl}/auth/change-password`,
+      payload,
+      { withCredentials: true }
+    );
+  }
+
   refresh(): Observable<RefreshResponseDto> {
     return this.http.post<RefreshResponseDto>(
       `${this.baseUrl}/auth/refresh`,
