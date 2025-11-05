@@ -6,7 +6,6 @@ import {
   ViewContainerRef,
   effect,
   inject,
-  OnInit,
   OnDestroy,
 } from "@angular/core";
 import { PermissionService } from "../../core/auth/permission.service";
@@ -16,27 +15,21 @@ import { ROLE } from "../../core/auth/roles";
   selector: "[canAnyRole]",
   standalone: true,
 })
-export class CanAnyRoleDirective implements OnInit, OnDestroy {
+export class CanAnyRoleDirective implements OnDestroy {
   private readonly vcr = inject(ViewContainerRef);
   private readonly tpl = inject(TemplateRef<any>);
   private readonly perms = inject(PermissionService);
 
   private roles: ROLE[] = [];
-  private eff?: EffectRef;
+  private readonly eff: EffectRef = effect(() => this.render());
 
   @Input() set canAnyRole(value: ROLE[] | ROLE) {
     this.roles = Array.isArray(value) ? value : [value];
     this.render();
   }
 
-  ngOnInit(): void {
-    this.eff = effect(() => {
-      this.render();
-    });
-  }
-
   ngOnDestroy(): void {
-    this.eff?.destroy();
+    this.eff.destroy();
   }
 
   private render(): void {
