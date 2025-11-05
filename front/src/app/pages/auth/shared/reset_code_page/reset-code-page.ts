@@ -129,7 +129,27 @@ export class ResetCodePage implements OnDestroy {
       const maskedLen = Math.max(1, local.length - keep);
       return `${local.slice(0, keep)}${'*'.repeat(maskedLen)}@${domain}`;
     }
-    // Para otras identidades (CUIL/nombre) lo dejamos igual
+    // Si es CUIL/DNI (mayoría dígitos), enmascarar dejando primeros 2 y últimos 2
+    const digits = identity.replace(/\D+/g, '');
+    const digitRatio = digits.length / Math.max(1, identity.length);
+    if (digits.length >= 7 && digitRatio > 0.6) {
+      const first = digits.slice(0, 2);
+      const last = digits.slice(-2);
+      const middleLen = Math.max(1, digits.length - 4);
+      const maskedDigits = `${first}${'*'.repeat(middleLen)}${last}`;
+      // Reintroducimos separadores mínimos si el original tenía guiones (opcional)
+      return maskedDigits;
+    }
+    // Si parece nombre/apellido: enmascarar cada palabra dejando la primera letra
+    const words = identity.split(/\s+/).filter(Boolean);
+    if (words.length > 0) {
+      const maskedWords = words.map((w) => {
+        if (w.length <= 2) return w; // palabras cortas sin cambio
+        // mantener primera letra, ocultar resto (mantiene diacríticos tal cual)
+        return `${w[0]}${'*'.repeat(w.length - 1)}`;
+      });
+      return maskedWords.join(' ');
+    }
     return identity;
   }
 }
