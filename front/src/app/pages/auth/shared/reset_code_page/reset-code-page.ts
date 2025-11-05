@@ -45,6 +45,9 @@ export class ResetCodePage implements OnDestroy {
     if (identity) {
       this.form.patchValue({ identity });
     }
+    this.updateMaskedIdentity();
+    // actualizar cuando cambie la identidad (fallback/manual)
+    this.form.get('identity')?.valueChanges.subscribe(() => this.updateMaskedIdentity());
     // Iniciar cooldown automático
     this.startCooldown();
   }
@@ -108,5 +111,25 @@ export class ResetCodePage implements OnDestroy {
         this.intervalId = null;
       }
     }, 1000);
+  }
+
+  // --- UI helpers ---
+  maskedIdentity: string | null = null;
+  private updateMaskedIdentity() {
+    const id = this.form.value.identity ?? '';
+    this.maskedIdentity = this.maskIdentity(String(id));
+  }
+
+  private maskIdentity(identity: string): string {
+    // Si parece un email, ocultar parte local
+    if (identity.includes('@')) {
+      const [local, domain] = identity.split('@');
+      if (!domain) return identity;
+      const keep = Math.min(2, local.length);
+      const maskedLen = Math.max(1, local.length - keep);
+      return `${local.slice(0, keep)}${'*'.repeat(maskedLen)}@${domain}`;
+    }
+    // Para otras identidades (CUIL/nombre) lo dejamos igual
+    return identity;
   }
 }

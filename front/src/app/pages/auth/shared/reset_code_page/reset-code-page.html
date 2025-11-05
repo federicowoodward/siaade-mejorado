@@ -4,7 +4,7 @@
   <form [formGroup]="form" (ngSubmit)="submit()" class="form">
     <!-- Si ya tenemos la identidad, no pedimos el campo y mostramos un recordatorio -->
     <div class="field" *ngIf="form.value.identity; else askIdentity">
-      <small>Enviamos un código a: <b>{{ form.value.identity }}</b></small>
+      <small>Enviamos un código a: <b>{{ maskedIdentity || form.value.identity }}</b></small>
     </div>
     <ng-template #askIdentity>
       <div class="field">
