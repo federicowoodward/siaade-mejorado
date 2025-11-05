@@ -128,8 +128,14 @@ export class AuthPage {
       next: (resp: any) => {
         const msg = 'Te enviamos un código a tu correo. Ingresalo para continuar';
         this.message.add({ severity: 'success', summary: 'Código enviado', detail: msg });
-        // Navegar siempre a la pantalla de código
-        this.router.navigate(['/auth/reset-code']);
+        // Persistimos la identidad para no volver a pedirla en la pantalla de código
+        try {
+          sessionStorage.setItem('resetIdentity', identity!);
+        } catch {
+          // ignore storage errors
+        }
+        // Navegar a la pantalla de código llevando la identidad en el state
+        this.router.navigate(['/auth/reset-code'], { state: { identity } });
       },
       error: () => {
         this.message.add({
