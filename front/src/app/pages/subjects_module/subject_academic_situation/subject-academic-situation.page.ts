@@ -223,7 +223,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     const fields = this.getEditableFields();
 
     for (const field of fields) {
-      const parsed = this.parseGradeValue(row[field]);
+      const parsed = field === 'attendancePercentage'
+        ? this.parseAttendanceValue(row[field])
+        : this.parseGradeValue(row[field]);
       if (parsed === undefined) {
         const original = this.clonedRows.get(row.studentId);
         if (original) {
@@ -232,7 +234,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         }
         this.showError(
           'Valores invalidos',
-          'Las notas deben estar entre 0 y 10 o vacías.'
+          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacías.'
         );
         return;
       }
@@ -243,10 +245,22 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.clearPendingForStudent(row.studentId);
 
     for (const field of fields) {
-      const parsed = this.parseGradeValue(row[field]);
-      const normalized = parsed ?? null;
-      row[field] = normalized;
-      const baselineValue = base ? base[field] ?? null : null;
+      const parsed = field === 'attendancePercentage'
+        ? this.parseAttendanceValue(row[field])
+        : this.parseGradeValue(row[field]);
+      const normalized = field === 'attendancePercentage'
+        ? (parsed ?? 0)
+        : (parsed ?? null);
+      if (field === 'attendancePercentage') {
+        row.attendancePercentage = normalized as number;
+      } else {
+        (row as any)[field] = normalized;
+      }
+      const baselineValue = base
+        ? (field === 'attendancePercentage'
+            ? (base.attendancePercentage as number)
+            : (base[field] ?? null))
+        : (field === 'attendancePercentage' ? 0 : null);
       this.updatePendingChanges(
         row.studentId,
         field,
@@ -378,7 +392,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         if (value === undefined) {
           continue;
         }
-        payloadRow[field] = value ?? null;
+        if (field === 'attendancePercentage') {
+          payloadRow.percentage = (value ?? 0) as number;
+        } else {
+          (payloadRow as any)[field] = value ?? null;
+        }
       }
       if (Object.keys(payloadRow).length === 1) {
         continue;
@@ -493,9 +511,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   private getEditableFields(): EditableField[] {
-    return this.partials() === 4
+    const gradeFields: EditableField[] = this.partials() === 4
       ? ['note1', 'note2', 'note3', 'note4']
       : ['note1', 'note2'];
+    // también hacemos editable la asistencia
+    return [...gradeFields, 'attendancePercentage'];
   }
 
   private computeFinalForRow(
@@ -539,6 +559,18 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     return numeric;
   }
 
+  private parseAttendanceValue(value: unknown): number | undefined {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+    const numeric = Number(value);
+    if (Number.isNaN(numeric) || numeric < 0 || numeric > 100) {
+      return undefined;
+    }
+    // redondeo a entero si hace falta
+    return Math.round(numeric);
+  }
+
   private isGradeApproved(score: number | null): boolean {
     return score !== null && score >= 4 && score < 7;
   }
@@ -560,9 +592,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 }
 
-type EditableField = 'note1' | 'note2' | 'note3' | 'note4' | 'final';
+type EditableField = 'note1' | 'note2' | 'note3' | 'note4' | 'final' | 'attendancePercentage';
 type PendingRowChanges = Partial<Record<EditableField, number | null>>;
-type CommissionPayloadRow = { studentId: string } & PendingRowChanges;
+type CommissionPayloadRow = { studentId: string } & (PendingRowChanges & { percentage?: number });
 type CommissionPayload = {
   commissionId: number;
   body: { rows: CommissionPayloadRow[] };

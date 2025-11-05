@@ -60,14 +60,19 @@ export class SubjectsService {
     subjectCommissionId: number,
     payload: {
       rows: Array<
-        {
-          studentId: string;
-        } & Partial<
-          Pick<
-            GradeRow,
-            "note1" | "note2" | "note3" | "note4" | "final"
-          >
-        >
+        (
+          {
+            studentId: string;
+          } & Partial<
+            Pick<
+              GradeRow,
+              "note1" | "note2" | "note3" | "note4" | "final"
+            >
+          > & {
+            percentage?: number; // asistencia 0-100
+            attendance?: number; // alias opcional
+          }
+        )
       >;
     }
   ): Observable<{ updated: number }> {

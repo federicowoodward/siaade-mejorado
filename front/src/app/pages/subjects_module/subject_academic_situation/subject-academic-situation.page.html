@@ -180,9 +180,26 @@
             <td class="final-cell" [ngClass]="finalClass(row.final)">
               {{ row.final ?? '-' }}
             </td>
-            <td style="width: 1.4rem">
-              {{ row.attendancePercentage !== null && row.attendancePercentage
-              !== undefined ? row.attendancePercentage + '%' : '-' }}
+            <td class="note-cell" style="width: 6rem">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <span class="flex align-items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      style="width: 4rem"
+                      pInputText
+                      [(ngModel)]="row.attendancePercentage"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                    <span>%</span>
+                  </span>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.attendancePercentage !== null && row.attendancePercentage !== undefined ? (row.attendancePercentage + '%') : '-' }}
+                </ng-template>
+              </p-cellEditor>
             </td>
             <td style="width: 1rem">{{ row.condition || '-' }}</td>
             <td>
