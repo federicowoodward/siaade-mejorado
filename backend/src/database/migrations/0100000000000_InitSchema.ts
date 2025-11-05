@@ -13,7 +13,12 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`CREATE TABLE "academic_period" ("academic_period_id" SERIAL NOT NULL, "period_name" text NOT NULL, "partials_score_needed" smallint NOT NULL, CONSTRAINT "PK_c84fec2739f0343e5930990a8c3" PRIMARY KEY ("academic_period_id"))`);
     await queryRunner.query(`ALTER TABLE "academic_period" ADD CONSTRAINT "CHK_academic_period_partials" CHECK (partials_score_needed = ANY (ARRAY[2,4]))`);
     await queryRunner.query(`CREATE TABLE "commission" ("id" SERIAL NOT NULL, "commission_letter" text, CONSTRAINT "PK_d108d70411783e2a3a84e386601" PRIMARY KEY ("id"))`);
-    await queryRunner.query(`CREATE TABLE "teachers" ("user_id" uuid NOT NULL, CONSTRAINT "PK_4668d4752e6766682d1be0b346f" PRIMARY KEY ("user_id"))`);
+    await queryRunner.query(`CREATE TABLE "teachers" (
+      "user_id" uuid NOT NULL,
+      "can_login" boolean DEFAULT true,
+      "is_active" boolean DEFAULT true,
+      CONSTRAINT "PK_4668d4752e6766682d1be0b346f" PRIMARY KEY ("user_id")
+    )`);
     await queryRunner.query(`CREATE TABLE "subject_commissions" ("id" SERIAL NOT NULL, "subject_id" integer NOT NULL, "commission_id" integer NOT NULL, "teacher_id" uuid NOT NULL, "active" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_e571e9793479304b14d607f6c23" PRIMARY KEY ("id"))`);
     await queryRunner.query(`CREATE INDEX "IDX_e7e4849f084c18911c0dbbbc75" ON "subject_commissions" ("teacher_id") `);
     await queryRunner.query(`CREATE INDEX "IDX_ad9281a6a38148ce7d9674a2a5" ON "subject_commissions" ("subject_id") `);
@@ -31,7 +36,12 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "students" ALTER COLUMN "can_login" SET DEFAULT true`);
     await queryRunner.query(`ALTER TABLE "students" ALTER COLUMN "is_active" SET DEFAULT true`);
     await queryRunner.query(`ALTER TABLE "students" ADD CONSTRAINT "CHK_students_start_year" CHECK (student_start_year IS NULL OR (student_start_year >= 1990 AND student_start_year <= 2100))`);
-    await queryRunner.query(`CREATE TABLE "preceptors" ("user_id" uuid NOT NULL, CONSTRAINT "PK_43d31311c09cbaeac198842590f" PRIMARY KEY ("user_id"))`);
+    await queryRunner.query(`CREATE TABLE "preceptors" (
+      "user_id" uuid NOT NULL,
+      "can_login" boolean DEFAULT true,
+      "is_active" boolean DEFAULT true,
+      CONSTRAINT "PK_43d31311c09cbaeac198842590f" PRIMARY KEY ("user_id")
+    )`);
     await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" text NOT NULL, "last_name" text NOT NULL, "email" text NOT NULL, "password" text NOT NULL, "cuil" text NOT NULL, "role_id" integer NOT NULL, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
     // Password reset tokens
     await queryRunner.query(`CREATE TABLE "password_reset_tokens" (
