@@ -101,8 +101,22 @@ export class UserProfileReaderService {
         break;
       case ROLE.TEACHER:
         result.commonData = cd;
+        if (user.teacher) {
+          (result as any).teacher = {
+            userId: user.teacher.userId,
+            isActive: (user.teacher as any).isActive ?? null,
+            canLogin: (user.teacher as any).canLogin ?? null,
+          };
+        }
         break;
       case ROLE.PRECEPTOR:
+        if (user.preceptor) {
+          (result as any).preceptor = {
+            userId: user.preceptor.userId,
+            isActive: (user.preceptor as any).isActive ?? null,
+            canLogin: (user.preceptor as any).canLogin ?? null,
+          };
+        }
         break;
       case ROLE.SECRETARY:
       case ROLE.EXECUTIVE_SECRETARY:

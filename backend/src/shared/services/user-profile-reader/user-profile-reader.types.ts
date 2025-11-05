@@ -45,4 +45,18 @@ export interface UserProfileResult {
     canLogin: boolean | null;
     studentStartYear: number | null;
   } | null;
+
+  // Datos específicos de docente (si el rol es TEACHER)
+  teacher?: {
+    userId: string;
+    isActive: boolean | null;
+    canLogin: boolean | null;
+  } | null;
+
+  // Datos específicos de preceptor (si el rol es PRECEPTOR)
+  preceptor?: {
+    userId: string;
+    isActive: boolean | null;
+    canLogin: boolean | null;
+  } | null;
 }

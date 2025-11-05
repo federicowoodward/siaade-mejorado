@@ -15,6 +15,8 @@ import { AddressData } from "@/entities/users/address-data.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
 import { normalizeRole } from "@/shared/rbac/roles.constants";
 import { Student } from "@/entities/users/student.entity";
+import { Teacher } from "@/entities/users/teacher.entity";
+import { Preceptor } from "@/entities/users/preceptor.entity";
 import { ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 type FlatChanges = Record<string, any>;
@@ -79,6 +81,16 @@ export class UsersPatchService {
       // 6) STUDENT FLAGS (canLogin, isActive) via prefix "student."
       if (this.hasAnyPrefix(changes, "student.")) {
         await this.applyStudentFlags(qr, userId, changes);
+      }
+
+      // 7) TEACHER FLAGS via prefix "teacher."
+      if (this.hasAnyPrefix(changes, "teacher.")) {
+        await this.applyTeacherFlags(qr, userId, changes);
+      }
+
+      // 8) PRECEPTOR FLAGS via prefix "preceptor."
+      if (this.hasAnyPrefix(changes, "preceptor.")) {
+        await this.applyPreceptorFlags(qr, userId, changes);
       }
 
       await qr.commitTransaction();
@@ -335,6 +347,54 @@ export class UsersPatchService {
 
     if (Object.keys(patch).length) {
       await qr.manager.update(Student, { userId }, patch);
+    }
+  }
+
+  private async applyTeacherFlags(
+    qr: QueryRunner,
+    userId: string,
+    changes: FlatChanges
+  ) {
+    const fields = this.pickByPrefix(changes, "teacher.");
+    if (!Object.keys(fields).length) return;
+
+    const teacher = await qr.manager.findOne(Teacher, { where: { userId } });
+    if (!teacher) return;
+
+    const patch: Partial<Teacher> = {};
+    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
+      patch.canLogin = Boolean(fields.canLogin);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
+      patch.isActive = Boolean(fields.isActive);
+      if (patch.isActive === false) patch.canLogin = false;
+    }
+    if (Object.keys(patch).length) {
+      await qr.manager.update(Teacher, { userId }, patch);
+    }
+  }
+
+  private async applyPreceptorFlags(
+    qr: QueryRunner,
+    userId: string,
+    changes: FlatChanges
+  ) {
+    const fields = this.pickByPrefix(changes, "preceptor.");
+    if (!Object.keys(fields).length) return;
+
+    const preceptor = await qr.manager.findOne(Preceptor, { where: { userId } });
+    if (!preceptor) return;
+
+    const patch: Partial<Preceptor> = {};
+    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
+      patch.canLogin = Boolean(fields.canLogin);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
+      patch.isActive = Boolean(fields.isActive);
+      if (patch.isActive === false) patch.canLogin = false;
+    }
+    if (Object.keys(patch).length) {
+      await qr.manager.update(Preceptor, { userId }, patch);
     }
   }
 }

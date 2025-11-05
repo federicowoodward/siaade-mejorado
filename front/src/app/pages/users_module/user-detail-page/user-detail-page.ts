@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PersonalDataComponent } from '../../../shared/components/personal_data/personal-data-component';
 import { CommonModule } from '@angular/common';
@@ -9,7 +9,8 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { ApiService } from '../../../core/services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '../../../core/auth/permission.service';
-import { ROLE } from '../../../core/auth/roles';
+import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
+import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.service';
 
 @Component({
   selector: 'app-user-detail-page',
@@ -22,10 +23,14 @@ export class UserDetailPage implements OnInit {
   private goBack = inject(GoBackService)
   private api = inject(ApiService);
   private permissions = inject(PermissionService);
+  private cache = inject(UserFlagsCacheService);
   userId!: string;
   // flags alumno
   isActive = signal<boolean | null>(null);
   canLogin = signal<boolean | null>(null);
+  isStudent = signal<boolean>(false);
+  targetRole = signal<ROLE | null>(null);
+  targetRoleId = signal<number | null>(null);
   saving = signal(false);
 
   constructor(private route: ActivatedRoute, private router: Router) {}
@@ -33,7 +38,7 @@ export class UserDetailPage implements OnInit {
   ngOnInit() {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.userId) {
-      this.loadFlags(this.userId);
+      this.primeFromCacheThenRefresh(this.userId);
     }
   }
 
@@ -43,44 +48,130 @@ export class UserDetailPage implements OnInit {
 
   // ---- permisos ----
   canToggleCanLogin(): boolean {
-    return this.permissions.hasAnyRole([
+    const actorOk = this.permissions.hasAnyRole([
       ROLE.PRECEPTOR,
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
     ]);
+    const targetOk = (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
+    return actorOk && targetOk;
   }
 
   canToggleIsActive(): boolean {
-    return this.permissions.hasRole(ROLE.EXECUTIVE_SECRETARY);
+    const actorOk = this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+    const targetOk = (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
+    return actorOk && targetOk;
   }
 
-  // ---- carga de flags ----
-  private async loadFlags(id: string): Promise<void> {
+  // ---- carga de flags con caché ----
+  private async primeFromCacheThenRefresh(id: string): Promise<void> {
+    const cached = this.cache.get(id);
+    if (cached) {
+      this.isStudent.set(!!cached.isStudent);
+      if ((cached as any).role) {
+        this.targetRole.set((cached as any).role);
+        this.targetRoleId.set(ROLE_IDS[(cached as any).role as ROLE]);
+      }
+      this.isActive.set(cached.isActive);
+      this.canLogin.set(cached.canLogin);
+    }
+
     try {
       const resp: any = await firstValueFrom(
         this.api.request('GET', `users/${id}`)
       );
       const data = resp?.data ?? resp;
+      const roleName: ROLE | null = (data?.role?.name as ROLE) ?? null;
+      const roleId: number | null = Number(data?.role?.id) || (roleName ? ROLE_IDS[roleName] : null);
+      this.targetRole.set(roleName);
+      this.targetRoleId.set(roleId);
       const student = data?.student ?? data?.students ?? null;
-      const isActive = student?.isActive ?? student?.is_active ?? null;
-      const canLogin = student?.canLogin ?? student?.can_login ?? null;
-      this.isActive.set(isActive === null ? null : !!isActive);
-      this.canLogin.set(canLogin === null ? null : !!canLogin);
+      if (student) {
+        this.isStudent.set(true);
+        const isActive = student?.isActive ?? student?.is_active ?? null;
+        const canLogin = student?.canLogin ?? student?.can_login ?? null;
+        const nextIsActive = isActive === null ? null : !!isActive;
+        const nextCanLogin = canLogin === null ? null : !!canLogin;
+        this.isActive.set(nextIsActive);
+        this.canLogin.set(nextCanLogin);
+        this.cache.set(id, {
+          role: roleName,
+          isStudent: true,
+          isActive: nextIsActive,
+          canLogin: nextCanLogin,
+          updatedAt: Date.now(),
+        });
+      } else if (roleName === ROLE.TEACHER && data?.teacher) {
+        this.isStudent.set(false);
+        const isActive = data.teacher?.isActive ?? data.teacher?.is_active ?? true;
+        const canLogin = data.teacher?.canLogin ?? data.teacher?.can_login ?? true;
+        this.isActive.set(isActive === null ? null : !!isActive);
+        this.canLogin.set(canLogin === null ? null : !!canLogin);
+        this.cache.set(id, {
+          role: roleName,
+          isStudent: false,
+          isActive: this.isActive(),
+          canLogin: this.canLogin(),
+          updatedAt: Date.now(),
+        });
+      } else if (roleName === ROLE.PRECEPTOR && data?.preceptor) {
+        this.isStudent.set(false);
+        const isActive = data.preceptor?.isActive ?? data.preceptor?.is_active ?? true;
+        const canLogin = data.preceptor?.canLogin ?? data.preceptor?.can_login ?? true;
+        this.isActive.set(isActive === null ? null : !!isActive);
+        this.canLogin.set(canLogin === null ? null : !!canLogin);
+        this.cache.set(id, {
+          role: roleName,
+          isStudent: false,
+          isActive: this.isActive(),
+          canLogin: this.canLogin(),
+          updatedAt: Date.now(),
+        });
+      } else {
+        this.isStudent.set(false);
+        this.isActive.set(true);
+        this.canLogin.set(true);
+        this.cache.set(id, {
+          role: roleName,
+          isStudent: false,
+          isActive: true,
+          canLogin: true,
+          updatedAt: Date.now(),
+        });
+      }
     } catch (e) {
-      // si falla, dejamos nulls y la UI mostrará disabled
+      if (!cached) {
+        this.isStudent.set(false);
+        this.isActive.set(true);
+        this.canLogin.set(true);
+      }
     }
+  }
+
+  private getUpdatePrefix(): string | null {
+    const role = this.targetRole();
+    if (role === ROLE.STUDENT) return 'student.';
+    if (role === ROLE.TEACHER) return 'teacher.';
+    if (role === ROLE.PRECEPTOR) return 'preceptor.';
+    return null;
   }
 
   // ---- acciones ----
   async onToggleCanLogin(next: boolean): Promise<void> {
     if (!this.canToggleCanLogin()) return;
-    if (this.isActive() === false) return; // regla
+    const prefix = this.getUpdatePrefix();
+    if (!prefix) return;
+    if (this.isActive() === false && next) return;
     try {
       this.saving.set(true);
       await firstValueFrom(
-        this.api.update('users', this.userId, { 'student.canLogin': !!next })
+        this.api.update('users', this.userId, { [`${prefix}canLogin`]: !!next })
       );
       this.canLogin.set(!!next);
+      this.cache.update(this.userId, { canLogin: !!next });
     } catch (e) {
       // noop
     } finally {
@@ -90,13 +181,16 @@ export class UserDetailPage implements OnInit {
 
   async onToggleIsActive(next: boolean): Promise<void> {
     if (!this.canToggleIsActive()) return;
+    const prefix = this.getUpdatePrefix();
+    if (!prefix) return;
     try {
       this.saving.set(true);
-      const payload: any = { 'student.isActive': !!next };
-      if (next === false) payload['student.canLogin'] = false; // regla
+      const payload: any = { [`${prefix}isActive`]: !!next };
+      if (next === false) payload[`${prefix}canLogin`] = false;
       await firstValueFrom(this.api.update('users', this.userId, payload));
       this.isActive.set(!!next);
       if (next === false) this.canLogin.set(false);
+      this.cache.update(this.userId, { isActive: !!next, canLogin: next ? this.canLogin() : false });
     } catch (e) {
       // noop
     } finally {
