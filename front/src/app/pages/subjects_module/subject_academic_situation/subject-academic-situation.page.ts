@@ -24,6 +24,7 @@ import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { DialogModule } from 'primeng/dialog';
+import { TagModule } from 'primeng/tag';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -43,6 +44,7 @@ import {
     ProgressSpinnerModule,
   TooltipModule,
   DialogModule,
+  TagModule,
   BlockedActionDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',
@@ -82,6 +84,25 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   subjectName = computed(() => this.data()?.subject.name ?? 'Materia');
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
+
+  conditionSeverity(condition: string | null | undefined): string {
+    switch ((condition || '').toLowerCase()) {
+      case 'promocionado':
+      case 'aprobado':
+        return 'success';
+      case 'regular':
+        return 'info';
+      case 'libre':
+      case 'desaprobado':
+        return 'danger';
+      case 'no inscripto':
+        return 'warn';
+      case 'inscripto':
+        return 'secondary';
+      default:
+        return 'secondary';
+    }
+  }
 
   // Mover alumno de comisión
   moveDialog = signal<{ visible: boolean; loading: boolean; studentId: string | null; currentCommissionId: number | null }>(

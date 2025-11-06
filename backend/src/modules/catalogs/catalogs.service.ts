@@ -12,6 +12,7 @@ import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { Teacher } from "@/entities/users/teacher.entity";
 
 export type SubjectCommissionTeachersDto = {
   subject: { id: number; name: string };
@@ -50,7 +51,9 @@ export class CatalogsService {
     @InjectRepository(SubjectStatusType)
     private readonly subjectStatusTypeRepo: Repository<SubjectStatusType>,
     @InjectRepository(SubjectGradesView)
-    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>
+    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
+    @InjectRepository(Teacher)
+    private readonly teacherRepo: Repository<Teacher>
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -446,6 +449,29 @@ export class CatalogsService {
       subject: { id: subject.id, name: subject.subjectName },
       commissions,
     };
+  }
+
+  /**
+   * Listar todos los docentes del sistema (Teacher + User) ordenados por nombre.
+   */
+  async getAllTeachers(): Promise<Array<{ teacherId: string; name: string; email: string; cuil: string | null }>> {
+    const teachers = await this.teacherRepo
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.user', 'u')
+      .orderBy('u.name', 'ASC')
+      .addOrderBy('u.lastName', 'ASC')
+      .getMany();
+
+    return teachers.map(t => {
+      const user = t.user;
+      const nameParts = [user?.name, user?.lastName].filter((p): p is string => !!p);
+      return {
+        teacherId: t.userId,
+        name: nameParts.length ? nameParts.join(' ') : t.userId,
+        email: user?.email ?? '',
+        cuil: user?.cuil ?? null,
+      };
+    });
   }
 
   async findCommissionSubjects(commissionId: number) {

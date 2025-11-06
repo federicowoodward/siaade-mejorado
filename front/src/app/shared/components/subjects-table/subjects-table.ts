@@ -99,13 +99,23 @@ export class SubjectTableComponent implements OnInit {
   startChangeTeacher(subjectId: number, commissionId: number, currentTeacherId: string) {
     this.selectedNewTeacher = null;
     this.changeTeacherDialog.set({ visible: true, loading: true, subjectId, commissionId });
-    // Reutilizamos datos ya cargados (dialogData) si existen
-    const data = this.dialogData();
-    const teachersRaw = data?.commissions
-      .flatMap(c => c.teachers)
-      .filter(t => !!t.teacherId);
-    this.teacherOptions.set(teachersRaw?.map(t => ({ label: t.name, value: t.teacherId })) ?? []);
-    this.changeTeacherDialog.update(v => ({ ...v, loading: false }));
+    // Cargar lista completa de docentes desde el backend
+    this.api.request<Array<{ teacherId: string; name: string }>>('GET', 'catalogs/teachers').subscribe({
+      next: (rows) => {
+        const opts = rows.map(r => ({ label: r.name || r.teacherId, value: r.teacherId }));
+        this.teacherOptions.set(opts);
+        this.changeTeacherDialog.update(v => ({ ...v, loading: false }));
+      },
+      error: (err) => {
+        console.error('No se pudieron cargar los docentes', err);
+        // Fallback a docentes visibles en la materia si falla el endpoint nuevo
+        const data = this.dialogData();
+        const teachersRaw = data?.commissions?.flatMap(c => c.teachers) ?? [];
+        const opts = teachersRaw.map(t => ({ label: t.name, value: t.teacherId }));
+        this.teacherOptions.set(opts);
+        this.changeTeacherDialog.update(v => ({ ...v, loading: false }));
+      }
+    });
   }
 
   closeChangeTeacherDialog() {

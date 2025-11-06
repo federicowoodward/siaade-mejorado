@@ -233,7 +233,14 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td style="width: 1rem">{{ row.condition || '-' }}</td>
+            <td style="width: 1rem">
+              <p-tag
+                *ngIf="row.condition; else noCondTpl"
+                [value]="row.condition!"
+                [severity]="conditionSeverity(row.condition)"
+              ></p-tag>
+              <ng-template #noCondTpl>-</ng-template>
+            </td>
             <td>
               <div class="flex items-center justify-center gap-2">
                 <button
