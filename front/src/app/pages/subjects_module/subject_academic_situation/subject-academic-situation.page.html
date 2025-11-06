@@ -122,26 +122,6 @@
                 <ng-template pTemplate="output">
                   {{ row.note1 ?? '-' }}
                 </ng-template>
-
-<p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()" [draggable]="false" [resizable]="false">
-  <div *ngIf="moveDialog().loading" class="p-3 flex gap-2 align-items-center">
-    <i class="pi pi-spin pi-spinner"></i>
-    <span>Procesando...</span>
-  </div>
-  <div *ngIf="!moveDialog().loading">
-    <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
-    <select class="p-inputtext p-component w-full" [(ngModel)]="selectedNewCommission">
-      <option [ngValue]="null" disabled selected>Comisión destino</option>
-      <option *ngFor="let c of commissionOptions()" [value]="c.id" [disabled]="c.id === 0 || c.id === moveDialog().currentCommissionId">
-        {{ c.letter || ('Comisión ' + c.id) }}
-      </option>
-    </select>
-  </div>
-  <ng-template pTemplate="footer">
-    <button pButton label="Cancelar" class="p-button-text" (click)="closeMoveDialog()"></button>
-    <button pButton label="Mover" icon="pi pi-check" [disabled]="!selectedNewCommission || moveDialog().loading" (click)="confirmMoveCommission()"></button>
-  </ng-template>
-</p-dialog>
               </p-cellEditor>
             </td>
             <td class="note-cell">
@@ -291,5 +271,25 @@
         </ng-template>
       </p-table>
     </div>
+    <!-- Diálogo de mover alumno de comisión (fuera de la tabla para evitar interferencias con p-cellEditor) -->
+    <p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()" [draggable]="false" [resizable]="false">
+      <div *ngIf="moveDialog().loading" class="p-3 flex gap-2 align-items-center">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Procesando...</span>
+      </div>
+      <div *ngIf="!moveDialog().loading">
+        <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
+        <select class="p-inputtext p-component w-full" [(ngModel)]="selectedNewCommission">
+          <option [ngValue]="null" disabled selected>Comisión destino</option>
+          <option *ngFor="let c of commissionOptions()" [value]="c.id" [disabled]="c.id === 0 || c.id === moveDialog().currentCommissionId">
+            {{ c.letter || ('Comisión ' + c.id) }}
+          </option>
+        </select>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton label="Cancelar" class="p-button-text" (click)="closeMoveDialog()"></button>
+        <button pButton label="Mover" icon="pi pi-check" [disabled]="!selectedNewCommission || moveDialog().loading" (click)="confirmMoveCommission()"></button>
+      </ng-template>
+    </p-dialog>
   </ng-template>
 </div>
