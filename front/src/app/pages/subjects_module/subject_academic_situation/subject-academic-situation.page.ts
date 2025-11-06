@@ -23,6 +23,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
+import { DialogModule } from 'primeng/dialog';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -40,8 +41,9 @@ import {
     SelectModule,
     ToastModule,
     ProgressSpinnerModule,
-    TooltipModule,
-    BlockedActionDirective,
+  TooltipModule,
+  DialogModule,
+  BlockedActionDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
