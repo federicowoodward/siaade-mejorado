@@ -282,6 +282,7 @@
                       <div class="col-12 md:col-2">
                         <label class="block mb-2">Activo</label>
                         <input type="checkbox" [(ngModel)]="isActive" (ngModelChange)="onIsActiveChange($event)" [disabled]="!canEditIsActive" />
+                        <small *ngIf="!canEditIsActive" class="text-color-secondary block mt-1">Solo Secretaría puede editarlo</small>
                         <small *ngIf="!canEditIsActive" class="text-color-secondary block mt-1">Solo Secretario Admin puede editarlo</small>
                         <small *ngIf="canEditIsActive" class="text-color-secondary block mt-1">Al desactivar, no podrá ingresar aunque "Puede ingresar" esté activo</small>
                       </div>
