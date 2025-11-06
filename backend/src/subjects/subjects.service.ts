@@ -49,6 +49,18 @@ export class SubjectsService {
     private readonly dataSource: DataSource
   ) {}
 
+  private deriveConditionFromValues(notes: Array<number | null | undefined>, attendancePercentage: number | null | undefined): string {
+    const attendance = Number(attendancePercentage ?? 0);
+    const validNotes = (notes || []).filter((n): n is number => typeof n === 'number' && !Number.isNaN(n));
+    if (validNotes.length === 0) {
+      return 'Inscripto';
+    }
+    const avg = validNotes.reduce((a, b) => a + b, 0) / validNotes.length;
+    if (attendance >= 90 && avg >= 7) return 'Promocionado';
+    if (attendance >= 75 && attendance < 90 && avg >= 4) return 'Regular';
+    return 'Libre';
+  }
+
   async getGrades(subjectCommissionId: number): Promise<GradeRowDto[]> {
     await this.ensureCommissionExists(subjectCommissionId);
     const rows = await this.fetchGradeRows(subjectCommissionId, undefined);
@@ -356,6 +368,13 @@ export class SubjectsService {
         conditionOverride = 'No inscripto';
       }
 
+      const computedCondition = conditionOverride ?? mapped.condition ?? this.deriveConditionFromValues([
+        mapped.note1,
+        mapped.note2,
+        mapped.note3,
+        mapped.note4,
+      ], mapped.attendancePercentage);
+
       return {
         studentId: mapped.studentId,
         fullName: mapped.fullName,
@@ -369,7 +388,7 @@ export class SubjectsService {
         note4: mapped.note4,
         final: mapped.final,
         attendancePercentage: mapped.attendancePercentage,
-        condition: conditionOverride ?? mapped.condition,
+        condition: computedCondition,
       };
     });
 

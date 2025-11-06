@@ -24,7 +24,7 @@ import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { DialogModule } from 'primeng/dialog';
-import { TagModule } from 'primeng/tag';
+import { Tag } from 'primeng/tag';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -44,7 +44,7 @@ import {
     ProgressSpinnerModule,
   TooltipModule,
   DialogModule,
-  TagModule,
+  Tag,
   BlockedActionDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',

@@ -722,6 +722,17 @@ export class CatalogsService {
     const normalizePartials = (n: number | null | undefined): 2 | 4 =>
       n === 4 ? 4 : 2;
 
+    const deriveCondition = (notes: Array<number | null | undefined>, attendance: number | null | undefined, existing: string | null | undefined): string => {
+      if (existing && existing.trim()) return existing;
+      const att = Number(attendance ?? 0);
+      const valid = notes.filter((n): n is number => typeof n === 'number' && !Number.isNaN(n));
+      if (valid.length === 0) return 'Inscripto';
+      const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+      if (att >= 90 && avg >= 7) return 'Promocionado';
+      if (att >= 75 && att < 90 && avg >= 4) return 'Regular';
+      return 'Libre';
+    };
+
     for (const row of bySubject.values()) {
       const yearNo = yearBySubject.get(row.subjectId) ?? null;
       const key = yearNo ? `${yearNo}° Año` : 'Sin año';
@@ -739,7 +750,12 @@ export class CatalogsService {
         note4: row.note4 ?? null,
         final: row.final ?? null,
         attendancePercentage: Number(row.attendancePercentage ?? 0) || 0,
-        condition: row.condition ?? null,
+        condition: deriveCondition([
+          row.note1,
+          row.note2,
+          row.note3,
+          row.note4,
+        ], Number(row.attendancePercentage ?? 0) || 0, row.condition ?? null),
       });
     }
 
