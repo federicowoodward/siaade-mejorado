@@ -44,6 +44,7 @@
                 icon="pi pi-save"
                 [disabled]="!hasPendingChanges() || saving()"
                 [loading]="saving()"
+             blockedAction
                 (onClick)="onSaveChanges()"
               ></p-button>
               <p-button
@@ -84,7 +85,7 @@
             <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
             <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
             <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
-            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:6rem">Acc.</th>
+            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:10rem">Acc.</th>
           </tr>
           <!-- prettier-ignore-end -->
         </ng-template>
@@ -113,6 +114,18 @@
                     min="0"
                     max="10"
                     style="width: 4rem"
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-exchange"
+                  pTooltip="Mover a otra comisión"
+                  tooltipPosition="top"
+                  (click)="openMoveCommission(row)"
+                  text
+                  rounded
+                  severity="warning"
+                  blockedAction
+                ></button>
                     pInputText
                     [(ngModel)]="row.note1"
                     [ngModelOptions]="{ standalone: true }"
@@ -121,6 +134,26 @@
                 <ng-template pTemplate="output">
                   {{ row.note1 ?? '-' }}
                 </ng-template>
+
+<p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()">
+  <div *ngIf="moveDialog().loading" class="p-3 flex gap-2 align-items-center">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Procesando...</span>
+  </div>
+  <div *ngIf="!moveDialog().loading">
+    <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
+    <select class="p-inputtext p-component w-full" [(ngModel)]="selectedNewCommission">
+      <option [ngValue]="null" disabled selected>Comisión destino</option>
+      <option *ngFor="let c of commissionOptions()" [value]="c.id" [disabled]="c.id === 0 || c.id === moveDialog().currentCommissionId">
+        {{ c.letter || ('Comisión ' + c.id) }}
+      </option>
+    </select>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" class="p-button-text" (click)="closeMoveDialog()"></button>
+    <button pButton label="Mover" icon="pi pi-check" [disabled]="!selectedNewCommission || moveDialog().loading" (click)="confirmMoveCommission()"></button>
+  </ng-template>
+</p-dialog>
               </p-cellEditor>
             </td>
             <td class="note-cell">
@@ -215,6 +248,7 @@
                   text
                   rounded
                   severity="secondary"
+                  blockedAction
                 ></button>
                 <button
                   *ngIf="editing"
@@ -227,6 +261,7 @@
                   text
                   rounded
                   severity="secondary"
+                  blockedAction
                 ></button>
                 <!-- // no damos la opcion de cancelar la edicion -->
                 <!-- <button

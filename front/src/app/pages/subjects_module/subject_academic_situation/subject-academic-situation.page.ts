@@ -22,6 +22,7 @@ import { map } from 'rxjs/operators';
 import { TooltipModule } from 'primeng/tooltip';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
+import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -40,6 +41,7 @@ import {
     ToastModule,
     ProgressSpinnerModule,
     TooltipModule,
+    BlockedActionDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
@@ -78,6 +80,12 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   subjectName = computed(() => this.data()?.subject.name ?? 'Materia');
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
+
+  // Mover alumno de comisión
+  moveDialog = signal<{ visible: boolean; loading: boolean; studentId: string | null; currentCommissionId: number | null }>(
+    { visible: false, loading: false, studentId: null, currentCommissionId: null }
+  );
+  selectedNewCommission: number | null = null;
 
   commissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
@@ -588,6 +596,36 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       severity: 'error',
       summary,
       detail,
+    });
+  }
+
+  openMoveCommission(row: AcademicSituationRow) {
+    this.selectedNewCommission = null;
+    this.moveDialog.set({ visible: true, loading: false, studentId: row.studentId, currentCommissionId: row.commissionId });
+  }
+
+  closeMoveDialog() {
+    this.moveDialog.set({ visible: false, loading: false, studentId: null, currentCommissionId: null });
+    this.selectedNewCommission = null;
+  }
+
+  confirmMoveCommission() {
+    const d = this.moveDialog();
+    if (!d.studentId || !this.selectedNewCommission || this.selectedNewCommission === d.currentCommissionId) return;
+    this.moveDialog.update(v => ({ ...v, loading: true }));
+    this.subjectsSvc.moveStudentCommission(this.subjectId, d.studentId, this.selectedNewCommission).subscribe({
+      next: () => {
+        this.moveDialog.update(v => ({ ...v, loading: false }));
+        this.closeMoveDialog();
+        // refrescar situación académica
+        this.onReload();
+        this.messages.add({ severity: 'success', summary: 'Alumno movido', detail: 'La comisión del alumno fue actualizada.' });
+      },
+      error: (err: unknown) => {
+        console.error('Error moviendo alumno', err);
+        this.moveDialog.update(v => ({ ...v, loading: false }));
+        this.showError('Error', 'No se pudo mover el alumno de comisión.');
+      }
     });
   }
 }

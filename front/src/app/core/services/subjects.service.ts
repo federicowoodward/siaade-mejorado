@@ -82,4 +82,12 @@ export class SubjectsService {
       payload
     );
   }
+
+  moveStudentCommission(subjectId: number, studentId: string, toCommissionId: number): Observable<GradeRow> {
+    return this.api.request<GradeRow>(
+      'PATCH',
+      `subjects/${subjectId}/students/${studentId}/commission`,
+      { toCommissionId }
+    );
+  }
 }

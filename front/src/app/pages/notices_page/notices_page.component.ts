@@ -7,6 +7,7 @@ import { NoticesService, Notice } from '../../core/services/notices.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { ROLE, VisibleRole } from '../../core/auth/roles';
 import { CanAnyRoleDirective } from '../../shared/directives/can-any-role.directive';
+import { BlockedActionDirective } from '../../shared/directives/blocked-action.directive';
 
 @Component({
   selector: 'app-notices-page',
@@ -17,6 +18,7 @@ import { CanAnyRoleDirective } from '../../shared/directives/can-any-role.direct
     EditorModule,
     ButtonModule,
     CanAnyRoleDirective,
+    BlockedActionDirective,
   ],
   templateUrl: './notices_page.component.html',
   styleUrls: ['./notices_page.component.scss'],

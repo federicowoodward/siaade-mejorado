@@ -33,6 +33,8 @@ import { PatchCellDto } from "./dto/patch-cell.dto";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { UpdateSubjectGradeDto } from "./dto/update-subject-grade.dto";
 import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
+import { MoveStudentCommissionDto } from "./dto/move-student-commission.dto";
+import { UpdateSubjectCommissionTeacherDto } from "./dto/update-subject-commission-teacher.dto";
 
 type AuthenticatedUser = {
   id: string;
@@ -79,6 +81,24 @@ export class SubjectsController {
       dto,
       req.user as AuthenticatedUser
     );
+  }
+
+  @Patch(':subjectCommissionId/teacher')
+  @Action('subjects.updateSubjectCommissionTeacher')
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR
+  )
+  @ApiOperation({ summary: 'Cambiar el docente asignado a una subject_commission' })
+  @ApiParam({ name: 'subjectCommissionId', type: Number })
+  @ApiBody({ type: UpdateSubjectCommissionTeacherDto })
+  async updateTeacher(
+    @Param('subjectCommissionId', ParseIntPipe) subjectCommissionId: number,
+    @Body() dto: UpdateSubjectCommissionTeacherDto,
+    @Req() req: Request
+  ) {
+    return this.subjectsService.updateSubjectCommissionTeacher(subjectCommissionId, dto.teacherId, req.user as AuthenticatedUser);
   }
 }
 
@@ -180,6 +200,46 @@ export class SubjectGradesController {
       dto,
       req.user as AuthenticatedUser
     );
+  }
+
+  @Patch(':subjectId/teacher')
+  @Action('subjects.updateSubjectTeachers')
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR
+  )
+  @ApiOperation({ summary: 'Asignar/cambiar docente para todas las comisiones de una materia' })
+  @ApiParam({ name: 'subjectId', type: Number })
+  @ApiBody({ type: UpdateSubjectCommissionTeacherDto })
+  async updateSubjectTeachers(
+    @Param('subjectId', ParseIntPipe) subjectId: number,
+    @Body() dto: UpdateSubjectCommissionTeacherDto,
+    @Req() req: Request
+  ) {
+    return this.subjectsService.updateAllSubjectCommissionsTeacher(subjectId, dto.teacherId, req.user as AuthenticatedUser);
+  }
+
+  @Patch(':subjectId/students/:studentId/commission')
+  @Action('subjects.moveStudentCommission')
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER
+  )
+  @ApiOperation({ summary: 'Mover alumno de comisión dentro de la misma materia transfiriendo notas y estado' })
+  @ApiParam({ name: 'subjectId', type: Number })
+  @ApiParam({ name: 'studentId', type: String })
+  @ApiBody({ type: MoveStudentCommissionDto })
+  @ApiOkResponse({ type: GradeRowDto })
+  async moveStudentCommission(
+    @Param('subjectId', ParseIntPipe) subjectId: number,
+    @Param('studentId', ParseObjectIdPipe) studentId: string,
+    @Body() dto: MoveStudentCommissionDto,
+    @Req() req: Request
+  ): Promise<GradeRowDto> {
+    return this.subjectsService.moveStudentToCommission(subjectId, studentId, dto.toCommissionId, req.user as AuthenticatedUser);
   }
 }
 

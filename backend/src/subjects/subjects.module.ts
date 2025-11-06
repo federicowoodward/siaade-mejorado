@@ -8,6 +8,7 @@ import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { SubjectsService } from "./subjects.service";
+import { Teacher } from "@/entities/users/teacher.entity";
 import {
   SubjectStatusController,
   SubjectsController,
@@ -25,6 +26,7 @@ import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
       SubjectStudent,
       Subject,
       SubjectGradesView,
+      Teacher,
     ]),
   ],
   controllers: [SubjectsController, SubjectGradesController, SubjectStatusController],

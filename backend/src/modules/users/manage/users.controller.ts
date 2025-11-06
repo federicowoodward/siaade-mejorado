@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Get,
+  Patch,
   HttpCode,
   HttpStatus,
   BadRequestException,
@@ -70,6 +71,27 @@ export class UsersController {
   @ApiResponse({ status: 201, description: "Student created" })
   createStudent(@Body() dto: CreateStudentDto) {
     return this.usersService.createStudent(dto);
+  }
+
+  // ---------------- BLOQUEO / DESBLOQUEO -----------------
+
+  @Patch(':id/block')
+  @ApiOperation({ summary: 'Bloquea un usuario y asigna motivo (impide acciones como inscripciones)' })
+  @ApiBody({ schema: { example: { reason: 'Incumplimiento de normativa' } } })
+  async blockUser(@Param('id') id: string, @Body() body: { reason?: string }) {
+    const reason = (body?.reason || '').trim();
+    if (!reason) {
+      throw new BadRequestException('reason requerido para bloqueo');
+    }
+    const data = await this.usersService.blockUser(id, reason);
+    return { data, message: 'Usuario bloqueado' };
+  }
+
+  @Patch(':id/unblock')
+  @ApiOperation({ summary: 'Desbloquea un usuario y limpia el motivo' })
+  async unblockUser(@Param('id') id: string) {
+    const data = await this.usersService.unblockUser(id);
+    return { data, message: 'Usuario desbloqueado' };
   }
 
   // -----------------------------

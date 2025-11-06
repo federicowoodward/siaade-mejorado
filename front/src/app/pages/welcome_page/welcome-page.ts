@@ -1,4 +1,5 @@
 ﻿import { Component, inject, OnInit, signal, computed } from "@angular/core";
+import { Observable, map } from 'rxjs';
 import { AuthService } from "../../core/services/auth.service";
 import { PermissionService } from "../../core/auth/permission.service";
 import { ROLE } from "../../core/auth/roles";
@@ -32,4 +33,9 @@ export class WelcomePage implements OnInit {
       }
     });
   }
+
+  // Observable del usuario para el banner de bloqueo
+  blockedUser$: Observable<{ isBlocked: boolean; blockedReason: string | null } | null> = this.authService.getUser().pipe(
+    map(u => u ? { isBlocked: !!u.isBlocked, blockedReason: u.blockedReason ?? null } : null)
+  );
 }

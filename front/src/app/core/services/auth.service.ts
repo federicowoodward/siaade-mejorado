@@ -21,6 +21,8 @@ export interface LocalUser {
   email: string | null;
   name?: string | null;
   lastName?: string | null;
+  isBlocked?: boolean;
+  blockedReason?: string | null;
   role: ROLE | null;
   roleId?: number;
   isExecutive?: boolean;
@@ -155,6 +157,8 @@ export class AuthService {
       email: (user?.["email"] as string) ?? null,
       name: (user?.["name"] as string) ?? null,
       lastName: (user?.["lastName"] as string) ?? null,
+      isBlocked: Boolean(user?.["isBlocked"] ?? false),
+      blockedReason: (user?.["blockedReason"] as string) ?? null,
       role: extracted.role,
       roleId: extracted.roleId ?? undefined,
       isExecutive: extracted.role === ROLE.EXECUTIVE_SECRETARY,

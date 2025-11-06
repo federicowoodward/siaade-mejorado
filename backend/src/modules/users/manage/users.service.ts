@@ -21,6 +21,7 @@ import {
 import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { Career } from "@/entities/registration/career.entity";
+import { DataSource } from "typeorm";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -398,7 +399,32 @@ export class UsersService {
             name: role.name,
           }
         : undefined,
+      isBlocked: (user as any).isBlocked ?? false,
+      blockedReason: (user as any).blockedReason ?? null,
     };
+  }
+
+  // ---------------- BLOQUEO / DESBLOQUEO -----------------
+  async blockUser(userId: string, reason: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if ((user as any).isBlocked && (user as any).blockedReason === reason) {
+      return this.mapToResponseDto(user, undefined as any);
+    }
+    await this.usersRepository.update({ id: userId }, { isBlocked: true, blockedReason: reason } as any);
+    const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    return this.mapToResponseDto(updated!, updated?.role);
+  }
+
+  async unblockUser(userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (!(user as any).isBlocked && !(user as any).blockedReason) {
+      return this.mapToResponseDto(user, undefined as any);
+    }
+    await this.usersRepository.update({ id: userId }, { isBlocked: false, blockedReason: null } as any);
+    const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    return this.mapToResponseDto(updated!, updated?.role);
   }
 
   // Método para validar usuario por email y contraseña (usado por Auth)

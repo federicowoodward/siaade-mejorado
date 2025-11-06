@@ -296,6 +296,9 @@ export class AuthService {
       }
     }
 
+    // NOTA: Permitimos login aunque esté bloqueado (isBlocked=true) para mostrar el aviso dentro del sistema y restringir acciones puntuales.
+    // Las acciones sensibles (inscripción, mover comisión, etc.) validan isBlocked y fallan con Forbidden.
+
     const email = profile.email ?? userEntity.email ?? null;
     if (!email) {
       throw new UnauthorizedException("User without email");
