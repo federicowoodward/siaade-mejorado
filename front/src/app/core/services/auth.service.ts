@@ -101,8 +101,8 @@ export class AuthService {
     return this.authApi.requestPasswordReset(identity);
   }
 
-  confirmPasswordReset(token: string, password: string) {
-    return this.authApi.confirmPasswordReset({ token, password });
+  confirmPasswordReset(token: string, password: string, currentPassword?: string) {
+    return this.authApi.confirmPasswordReset({ token, password, currentPassword });
   }
 
   verifyResetCode(identity: string, code: string) {

@@ -11,6 +11,7 @@ import { User } from "@/entities/users/user.entity";
 import { Student } from "@/entities/users/student.entity";
 import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
+import { PasswordHistory } from "@/entities/users/password-history.entity";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
 import {
   ROLE,
@@ -44,6 +45,8 @@ export class AuthService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(PasswordResetToken)
     private readonly prtRepository: Repository<PasswordResetToken>,
+    @InjectRepository(PasswordHistory)
+    private readonly passwordHistoryRepo: Repository<PasswordHistory>,
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
@@ -172,11 +175,46 @@ export class AuthService {
       throw new UnauthorizedException("Token inválido o expirado");
     }
 
-    // Actualizar contraseña del usuario (hash bcrypt)
-    const bcrypt = await import("bcryptjs");
-    const hashed = await bcrypt.hash(newPassword, 10);
+    // Cargar usuario actual
+    const user = await this.userRepository.findOne({ where: { id: record.userId } });
+    if (!user) {
+      throw new UnauthorizedException("User not found");
+    }
 
-  await this.userRepository.update({ id: record.userId }, { password: hashed });
+    const bcrypt = await import("bcryptjs");
+
+    // Si envió contraseña actual, validarla explícitamente
+    if (dto.currentPassword) {
+      const ok = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!ok) {
+        throw new UnauthorizedException("Contraseña actual incorrecta");
+      }
+    }
+
+    // No permitir reutilizar la contraseña vigente
+    const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsCurrent) {
+      throw new BadRequestException("La nueva contraseña no puede ser igual a la actual");
+    }
+
+    // No permitir reutilizar una contraseña histórica (últimas 10 por performance)
+    const last10 = await this.passwordHistoryRepo.find({
+      where: { userId: user.id },
+      order: { createdAt: "DESC" },
+      take: 10,
+    });
+    for (const entry of last10) {
+      if (await bcrypt.compare(newPassword, entry.passwordHash)) {
+        throw new BadRequestException("Ya usaste esa contraseña anteriormente. Elegí una diferente.");
+      }
+    }
+
+    // Guardar la contraseña actual en historial antes de actualizar
+    await this.passwordHistoryRepo.insert({ userId: user.id, passwordHash: user.password } as any);
+
+    // Actualizar contraseña del usuario (hash bcrypt)
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update({ id: user.id }, { password: hashed });
 
     // Marcar token como usado y anular otros tokens activos del usuario
     const usedAt = new Date();

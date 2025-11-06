@@ -51,7 +51,7 @@ export class AuthApiService {
     );
   }
 
-  confirmPasswordReset(payload: { token: string; password: string }): Observable<{ success: boolean }> {
+  confirmPasswordReset(payload: { token: string; password: string; currentPassword?: string }): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(
       `${this.baseUrl}/auth/reset-password/confirm`,
       payload,

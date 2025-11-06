@@ -12,13 +12,14 @@ import { Role } from "@/entities/roles/role.entity";
 import { UserAuthValidatorModule } from "@/shared/services/user-auth-validator/user-auth-validator.module";
 import { UserProfileReaderModule } from "@/shared/services/user-profile-reader/user-profile-reader.module";
 import { PasswordResetToken } from "@/entities/users/password-reset-token.entity";
+import { PasswordHistory } from "@/entities/users/password-history.entity";
 import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
 import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Role, Student, PasswordResetToken]),
+  TypeOrmModule.forFeature([User, Role, Student, PasswordResetToken, PasswordHistory]),
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],

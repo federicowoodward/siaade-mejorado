@@ -34,6 +34,7 @@ export class ResetPasswordPage {
   token: string | null = null;
 
   form = this.fb.group({
+    current: [''],
     password: ['', [Validators.required, Validators.minLength(8)]],
     confirm: ['', [Validators.required]],
   });
@@ -58,6 +59,8 @@ export class ResetPasswordPage {
     if (!/[A-Z]/.test(pwd)) issues.push('Al menos una mayúscula');
     if (!/[a-z]/.test(pwd)) issues.push('Al menos una minúscula');
     if (!/\d/.test(pwd)) issues.push('Al menos un número');
+    const cur = (this.form.get('current')?.value as string) || '';
+    if (cur && pwd === cur) issues.push('La nueva no puede ser igual a la actual');
     return issues;
   }
   get hasUpper(): boolean { return /[A-Z]/.test(this.passwordValue); }
@@ -75,7 +78,7 @@ export class ResetPasswordPage {
       this.message.add({ severity: 'warn', summary: 'Atención', detail: 'Falta el token.' });
       return;
     }
-    const { password, confirm } = this.form.value;
+    const { current, password, confirm } = this.form.value as { current?: string; password?: string; confirm?: string };
     const issues = this.passwordIssues.slice();
     if (!password || !confirm || password !== confirm || issues.length > 0) {
       if (password !== confirm) {
@@ -85,13 +88,17 @@ export class ResetPasswordPage {
       return;
     }
     this.submitting = true;
-    this.auth.confirmPasswordReset(this.token, password).subscribe({
+    this.auth.confirmPasswordReset(this.token, password, current || undefined).subscribe({
       next: () => {
         this.message.add({ severity: 'success', summary: 'Listo', detail: 'Tu contraseña fue actualizada.' });
         this.router.navigate(['/auth']);
       },
-      error: () => {
-        this.message.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar la contraseña.' });
+      error: (err) => {
+        const backendMsg = err?.error?.message || err?.message;
+        const detail = typeof backendMsg === 'string' && backendMsg.trim().length > 0
+          ? backendMsg
+          : 'No se pudo actualizar la contraseña.';
+        this.message.add({ severity: 'error', summary: 'Error', detail });
       },
       complete: () => (this.submitting = false),
     });
