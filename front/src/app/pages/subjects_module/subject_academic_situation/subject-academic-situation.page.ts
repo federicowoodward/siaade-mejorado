@@ -25,6 +25,8 @@ import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { DialogModule } from 'primeng/dialog';
 import { Tag } from 'primeng/tag';
+import { AuthService } from '../../../core/services/auth.service';
+import { ROLE } from '../../../core/auth/roles';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -56,6 +58,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly goBackSvc = inject(GoBackService);
   private readonly subjectsSvc = inject(SubjectsService);
   private readonly messages = inject(MessageService);
+  private readonly auth = inject(AuthService);
 
   loading = signal(true);
   error = signal<string | null>(null);
@@ -84,6 +87,21 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   subjectName = computed(() => this.data()?.subject.name ?? 'Materia');
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
+
+  canMoveStudents = computed(() => {
+    const user = this.currentUser();
+    if (!user) return false;
+    // Roles con permiso: preceptor, secretary, executive_secretary
+    const allowed: ROLE[] = [ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY];
+    return !!user.role && allowed.includes(user.role as ROLE);
+  });
+  private currentUser = signal<{ role: ROLE | null } | null>(null);
+
+  constructor() {
+    this.auth.getUser().subscribe(u => {
+      this.currentUser.set(u ? { role: u.role } : null);
+    });
+  }
 
   conditionSeverity(condition: string | null | undefined): string {
     switch ((condition || '').toLowerCase()) {
@@ -623,6 +641,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   openMoveCommission(row: AcademicSituationRow) {
+    if (!this.canMoveStudents()) return;
     this.selectedNewCommission = null;
     this.moveDialog.set({ visible: true, loading: false, studentId: row.studentId, currentCommissionId: row.commissionId });
   }

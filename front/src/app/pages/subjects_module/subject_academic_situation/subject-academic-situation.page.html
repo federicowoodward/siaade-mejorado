@@ -123,7 +123,7 @@
                   {{ row.note1 ?? '-' }}
                 </ng-template>
 
-<p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()">
+<p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()" [draggable]="false" [resizable]="false">
   <div *ngIf="moveDialog().loading" class="p-3 flex gap-2 align-items-center">
     <i class="pi pi-spin pi-spinner"></i>
     <span>Procesando...</span>
@@ -266,11 +266,11 @@
                   icon="pi pi-arrow-right-arrow-left"
                   pTooltip="Mover a otra comisión"
                   tooltipPosition="top"
-                  (click)="openMoveCommission(row)"
+                  (click)="$event.stopPropagation(); openMoveCommission(row)"
                   text
                   rounded
                   severity="secondary"
-                  blockedAction
+                  [blockedAction]="!canMoveStudents() ? true : false"
                 ></button>
                 <!-- // no damos la opcion de cancelar la edicion -->
                 <!-- <button
