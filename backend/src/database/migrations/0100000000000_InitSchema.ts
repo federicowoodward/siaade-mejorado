@@ -250,7 +250,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "notices" ADD CONSTRAINT "FK_5091560ec8975434a5add94c411" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "FK_password_reset_tokens_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "password_history" ADD CONSTRAINT "FK_password_history_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    await queryRunner.query(`ALTER TABLE "password_history" ADD CONSTRAINT "FK_password_history_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
