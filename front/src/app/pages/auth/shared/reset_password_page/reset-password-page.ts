@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
@@ -32,6 +33,8 @@ export class ResetPasswordPage {
   private message = inject(MessageService);
 
   token: string | null = null;
+  serverError: string | null = null;
+  currentError: string | null = null;
 
   form = this.fb.group({
     current: ['', [Validators.required]],
@@ -41,6 +44,12 @@ export class ResetPasswordPage {
 
   ngOnInit() {
     this.token = this.route.snapshot.queryParamMap.get('token');
+    // Limpiar errores al tipear en "Contraseña actual"
+    const ctrl = this.form.get('current');
+    ctrl?.valueChanges.subscribe(() => {
+      this.currentError = null;
+      this.serverError = null;
+    });
   }
 
   submitting = false;
@@ -79,6 +88,8 @@ export class ResetPasswordPage {
       this.message.add({ severity: 'warn', summary: 'Atención', detail: 'Falta el token.' });
       return;
     }
+    this.serverError = null;
+    this.currentError = null;
     const { current, password, confirm } = this.form.value as { current?: string; password?: string; confirm?: string };
     const issues = this.passwordIssues.slice();
     if (!current || !password || !confirm || password !== confirm || issues.length > 0) {
@@ -94,17 +105,96 @@ export class ResetPasswordPage {
     this.submitting = true;
     this.auth.confirmPasswordReset(this.token, password, current || undefined).subscribe({
       next: () => {
+        this.serverError = null;
+        this.currentError = null;
         this.message.add({ severity: 'success', summary: 'Listo', detail: 'Tu contraseña fue actualizada.' });
         this.router.navigate(['/auth']);
       },
       error: (err) => {
-        const backendMsg = err?.error?.message || err?.message;
-        const detail = typeof backendMsg === 'string' && backendMsg.trim().length > 0
-          ? backendMsg
-          : 'No se pudo actualizar la contraseña.';
-        this.message.add({ severity: 'error', summary: 'Error', detail });
+        const detail = this.resolveErrorMessage(err);
+        const curDetail = this.resolveCurrentFieldError(err) ?? (/(contraseña\s+actual|current\s*password)/i.test(detail) ? detail : null);
+        if (curDetail) {
+          this.currentError = curDetail;
+        } else {
+          this.serverError = detail;
+          this.message.add({ severity: 'error', summary: 'Error', detail });
+        }
+        this.submitting = false;
       },
       complete: () => (this.submitting = false),
     });
   }
+
+  private resolveErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      const payload = error.error as any;
+      const message =
+        this.normalizeErrorPayload(payload?.message) ??
+        this.normalizeErrorPayload(payload?.error) ??
+        this.normalizeErrorPayload(payload);
+
+      if (message) {
+        return message;
+      }
+
+      if (error.status === 0) {
+        return 'No pudimos contactar al servidor. Intentá nuevamente.';
+      }
+      if (error.status === 401) {
+        return 'No pudimos validar tu contraseña actual.';
+      }
+      if (error.status === 400) {
+        return 'Hay detalles pendientes en el formulario.';
+      }
+    }
+
+    const fallback = this.normalizeErrorPayload((error as any)?.message);
+    if (fallback) {
+      return fallback;
+    }
+
+    return 'No se pudo actualizar la contraseña.';
+  }
+
+  private normalizeErrorPayload(source: unknown): string | null {
+    if (typeof source === 'string') {
+      const trimmed = source.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    if (Array.isArray(source)) {
+      const joined = source
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item.length > 0)
+        .join(' · ');
+      return joined.length > 0 ? joined : null;
+    }
+    return null;
+  }
+
+  private resolveCurrentFieldError(error: unknown): string | null {
+    // Dedicado a errores del campo "Contraseña actual"
+    if (error instanceof HttpErrorResponse) {
+      const payload = error.error as any;
+      const raw =
+        this.normalizeErrorPayload(payload?.message) ||
+        this.normalizeErrorPayload(payload?.error) ||
+        this.normalizeErrorPayload(payload);
+
+      // 401 suele indicar contraseña actual inválida
+      if (error.status === 401) {
+        // Mensaje específico del backend o uno por defecto claro
+        if (raw) {
+          return raw;
+        }
+        return 'Contraseña actual incorrecta';
+      }
+
+      // Mensajes que mencionan explícitamente la contraseña actual
+      if (raw && /(contraseña\s+actual|current\s*password)/i.test(raw)) {
+        return raw;
+      }
+    }
+    return null;
+  }
 }
+
