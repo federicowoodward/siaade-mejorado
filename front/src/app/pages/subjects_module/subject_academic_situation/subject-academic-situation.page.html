@@ -118,17 +118,6 @@
                     [(ngModel)]="row.note1"
                     [ngModelOptions]="{ standalone: true }"
                   />
-                  <button
-                    pButton
-                    type="button"
-                    icon="pi pi-exchange"
-                    pTooltip="Mover a otra comisión"
-                    tooltipPosition="top"
-                    (click)="openMoveCommission(row)"
-                    text
-                    rounded
-                    blockedAction
-                  ></button>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ row.note1 ?? '-' }}
@@ -264,6 +253,19 @@
                   pSaveEditableRow
                   icon="pi pi-check"
                   (click)="onRowEditSave(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                  blockedAction
+                ></button>
+                <button
+                  pButton
+                  pRipple
+                  type="button"
+                  icon="pi pi-exchange"
+                  pTooltip="Mover a otra comisión"
+                  tooltipPosition="top"
+                  (click)="openMoveCommission(row)"
                   text
                   rounded
                   severity="secondary"
