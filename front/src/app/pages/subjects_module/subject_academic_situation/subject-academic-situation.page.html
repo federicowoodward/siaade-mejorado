@@ -281,7 +281,8 @@
         <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
         <select class="p-inputtext p-component w-full" [(ngModel)]="selectedNewCommission">
           <option [ngValue]="null" disabled selected>Comisión destino</option>
-          <option *ngFor="let c of commissionOptions()" [value]="c.id" [disabled]="c.id === 0 || c.id === moveDialog().currentCommissionId">
+          <!-- No mostrar la opción 'Todas' y asegurar que el valor sea numérico -->
+          <option *ngFor="let c of moveCommissionOptions()" [ngValue]="c.id" [disabled]="c.id === moveDialog().currentCommissionId">
             {{ c.letter || ('Comisión ' + c.id) }}
           </option>
         </select>

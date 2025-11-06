@@ -139,6 +139,12 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     ];
   });
 
+  // Opciones para el diálogo de mover alumno (sin la opción "Todas")
+  moveCommissionOptions = computed(() => {
+    const base = this.data()?.commissions ?? [];
+    return base.map((entry) => ({ id: entry.id, letter: entry.letter ?? null }));
+  });
+
   commissionSelectItems = computed(() =>
     this.commissionOptions().map((option) => ({
       label: option.letter ?? `Comision ${option.id}`,
