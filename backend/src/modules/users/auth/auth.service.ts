@@ -183,12 +183,13 @@ export class AuthService {
 
     const bcrypt = await import("bcryptjs");
 
-    // Si envió contraseña actual, validarla explícitamente
-    if (dto.currentPassword) {
-      const ok = await bcrypt.compare(dto.currentPassword, user.password);
-      if (!ok) {
-        throw new UnauthorizedException("Contraseña actual incorrecta");
-      }
+    // Validar contraseña actual (ahora requerida)
+    if (!dto.currentPassword) {
+      throw new BadRequestException("Contraseña actual requerida");
+    }
+    const ok = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!ok) {
+      throw new UnauthorizedException("Contraseña actual incorrecta");
     }
 
     // No permitir reutilizar la contraseña vigente

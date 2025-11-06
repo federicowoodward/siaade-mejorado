@@ -1,13 +1,11 @@
-import { IsOptional, IsString, MinLength, Matches } from "class-validator";
+import { IsString, MinLength, Matches } from "class-validator";
 
 export class ConfirmResetPasswordDto {
   @IsString()
   token: string;
 
-  // Campo opcional: si el usuario está logueado y quiere agregar verificación extra
-  @IsOptional()
   @IsString()
-  currentPassword?: string;
+  currentPassword: string;
 
   @IsString()
   @MinLength(8)

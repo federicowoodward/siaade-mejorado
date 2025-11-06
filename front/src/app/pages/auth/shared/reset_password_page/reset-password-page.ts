@@ -34,7 +34,7 @@ export class ResetPasswordPage {
   token: string | null = null;
 
   form = this.fb.group({
-    current: [''],
+    current: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     confirm: ['', [Validators.required]],
   });
@@ -70,7 +70,8 @@ export class ResetPasswordPage {
     return this.confirmValue.length > 0 && this.passwordValue !== this.confirmValue;
   }
   get canSubmit(): boolean {
-    return !!this.token && !!this.passwordValue && !!this.confirmValue && !this.mismatch && this.passwordIssues.length === 0;
+    const current = (this.form.get('current')?.value as string) || '';
+    return !!this.token && !!current && !!this.passwordValue && !!this.confirmValue && !this.mismatch && this.passwordIssues.length === 0;
   }
 
   async submit() {
@@ -80,7 +81,10 @@ export class ResetPasswordPage {
     }
     const { current, password, confirm } = this.form.value as { current?: string; password?: string; confirm?: string };
     const issues = this.passwordIssues.slice();
-    if (!password || !confirm || password !== confirm || issues.length > 0) {
+    if (!current || !password || !confirm || password !== confirm || issues.length > 0) {
+      if (!current) {
+        issues.unshift('Ingresá tu contraseña actual');
+      }
       if (password !== confirm) {
         issues.unshift('Las contraseñas no coinciden');
       }
