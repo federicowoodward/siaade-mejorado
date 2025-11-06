@@ -114,22 +114,22 @@
                     min="0"
                     max="10"
                     style="width: 4rem"
-                <button
-                  pButton
-                  type="button"
-                  icon="pi pi-exchange"
-                  pTooltip="Mover a otra comisión"
-                  tooltipPosition="top"
-                  (click)="openMoveCommission(row)"
-                  text
-                  rounded
-                  severity="warning"
-                  blockedAction
-                ></button>
                     pInputText
                     [(ngModel)]="row.note1"
                     [ngModelOptions]="{ standalone: true }"
                   />
+                  <button
+                    pButton
+                    type="button"
+                    icon="pi pi-exchange"
+                    pTooltip="Mover a otra comisión"
+                    tooltipPosition="top"
+                    (click)="openMoveCommission(row)"
+                    text
+                    rounded
+                    severity="warning"
+                    blockedAction
+                  ></button>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ row.note1 ?? '-' }}

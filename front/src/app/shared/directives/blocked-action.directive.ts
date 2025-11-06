@@ -13,7 +13,11 @@ import { Subscription, map } from 'rxjs';
   standalone: true,
 })
 export class BlockedActionDirective implements OnInit, OnDestroy, OnChanges {
-  @Input('blockedAction') enabled: boolean = true;
+  private enabled: boolean = true;
+  @Input('blockedAction') set blockedAction(value: boolean | string | null | undefined) {
+    this.enabled = this.coerceToBoolean(value);
+    this.updateVisuals();
+  }
   private auth = inject(AuthService);
   private el = inject(ElementRef<HTMLElement>);
   private renderer = inject(Renderer2);
@@ -77,5 +81,18 @@ export class BlockedActionDirective implements OnInit, OnDestroy, OnChanges {
 
   private canDisable(el: HTMLElement) {
     return ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName);
+  }
+
+  private coerceToBoolean(value: any): boolean {
+    // Sin valor (""), undefined o null -> true (presencia del atributo habilita la directiva)
+    if (value === '' || value === undefined || value === null) return true;
+    if (typeof value === 'string') {
+      const v = value.toLowerCase().trim();
+      if (v === 'false' || v === '0' || v === 'no' || v === 'off') return false;
+      if (v === 'true' || v === '1' || v === 'yes' || v === 'on') return true;
+      // cualquier otro string -> true por presencia
+      return true;
+    }
+    return !!value;
   }
 }

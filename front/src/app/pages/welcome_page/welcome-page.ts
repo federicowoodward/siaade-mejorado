@@ -14,7 +14,7 @@ import { CommonModule } from "@angular/common";
   styleUrls: ["./welcome-page.scss"],
 })
 export class WelcomePage implements OnInit {
-  private authService = inject(AuthService);
+  authService = inject(AuthService); // public para template
   private permissions = inject(PermissionService);
 
   public role: ROLE | null;

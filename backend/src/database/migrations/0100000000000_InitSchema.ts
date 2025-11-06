@@ -42,7 +42,20 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       "is_active" boolean DEFAULT true,
       CONSTRAINT "PK_43d31311c09cbaeac198842590f" PRIMARY KEY ("user_id")
     )`);
-    await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" text NOT NULL, "last_name" text NOT NULL, "email" text NOT NULL, "password" text NOT NULL, "cuil" text NOT NULL, "role_id" integer NOT NULL, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+    await queryRunner.query(`CREATE TABLE "users" (
+      "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+      "name" text NOT NULL,
+      "last_name" text NOT NULL,
+      "email" text NOT NULL,
+      "password" text NOT NULL,
+      "cuil" text NOT NULL,
+      "role_id" integer NOT NULL,
+      "is_blocked" boolean NOT NULL DEFAULT false,
+      "blocked_reason" text,
+      CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"),
+      CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"),
+      CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id")
+    )`);
     // Password reset tokens
     await queryRunner.query(`CREATE TABLE "password_reset_tokens" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
