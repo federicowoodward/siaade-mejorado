@@ -321,6 +321,9 @@ export class SubjectsService {
       qb.andWhere("vg.commission_id = :commissionId", {
         commissionId: commissionFilter,
       });
+      // Cuando se filtra por comisión, mostrar SOLO los alumnos que tienen progreso en esa comisión
+      // (si no, la vista v_subject_grades conserva la cartesian de alumnos x comisiones).
+      qb.andWhere('prog.id IS NOT NULL');
     }
 
     const search = filters?.q?.trim();
@@ -333,24 +336,26 @@ export class SubjectsService {
 
     const { entities, raw } = await qb.getRawAndEntities();
 
-    // Elegimos una única comisión por alumno: si tiene progreso en alguna, esa;
-    // si no, la de menor id (comportamiento por defecto).
-    const desiredCommissionByStudent = new Map<string, number>();
+    // Agrupar por alumno y elegir la comisión a mostrar por alumno:
+    // - Si tiene progreso en alguna comisión: esa.
+    // - Si no, la comisión de menor id.
+    const grouped = new Map<string, Array<{ ent: SubjectGradesView; r: Record<string, any> }>>();
     for (let i = 0; i < entities.length; i++) {
       const ent = entities[i];
       const r = raw[i] as Record<string, any>;
-      const key = ent.studentId;
-      const hasProgress = r?.academicSituation_hasProgress != null;
-      const currentChosen = desiredCommissionByStudent.get(key);
-      if (currentChosen == null) {
-        // primer candidato
-        desiredCommissionByStudent.set(key, ent.commissionId);
+      if (!grouped.has(ent.studentId)) grouped.set(ent.studentId, []);
+      grouped.get(ent.studentId)!.push({ ent, r });
+    }
+
+    const desiredCommissionByStudent = new Map<string, number>();
+    for (const [studentId, list] of grouped.entries()) {
+      const withProgress = list.find((e) => e.r?.academicSituation_hasProgress != null);
+      if (withProgress) {
+        desiredCommissionByStudent.set(studentId, withProgress.ent.commissionId);
+      } else {
+        const min = list.reduce((a, b) => (b.ent.commissionId < a.ent.commissionId ? b : a));
+        desiredCommissionByStudent.set(studentId, min.ent.commissionId);
       }
-      // si encontramos progreso, priorizamos esa comisión
-      if (hasProgress) {
-        desiredCommissionByStudent.set(key, ent.commissionId);
-      }
-      // si no hay progreso en ninguna, quedará la menor id por el orderBy
     }
 
     // Pre-cache de flags de estudiantes para minimizar awaits dentro del map
