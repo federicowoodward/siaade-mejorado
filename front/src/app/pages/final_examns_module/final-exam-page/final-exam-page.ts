@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TagModule } from 'primeng/tag';
+import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -37,6 +38,7 @@ type Row = {
     InputNumberModule,
     CheckboxModule,
     TagModule,
+    BlockedActionDirective,
   ],
   templateUrl: './final-exam-page.html',
   styleUrls: ['./final-exam-page.scss'],

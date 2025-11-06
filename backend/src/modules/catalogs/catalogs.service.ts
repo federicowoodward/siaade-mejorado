@@ -12,6 +12,7 @@ import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { Teacher } from "@/entities/users/teacher.entity";
 
 export type SubjectCommissionTeachersDto = {
   subject: { id: number; name: string };
@@ -50,7 +51,9 @@ export class CatalogsService {
     @InjectRepository(SubjectStatusType)
     private readonly subjectStatusTypeRepo: Repository<SubjectStatusType>,
     @InjectRepository(SubjectGradesView)
-    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>
+    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
+    @InjectRepository(Teacher)
+    private readonly teacherRepo: Repository<Teacher>
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -448,6 +451,29 @@ export class CatalogsService {
     };
   }
 
+  /**
+   * Listar todos los docentes del sistema (Teacher + User) ordenados por nombre.
+   */
+  async getAllTeachers(): Promise<Array<{ teacherId: string; name: string; email: string; cuil: string | null }>> {
+    const teachers = await this.teacherRepo
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.user', 'u')
+      .orderBy('u.name', 'ASC')
+      .addOrderBy('u.lastName', 'ASC')
+      .getMany();
+
+    return teachers.map(t => {
+      const user = t.user;
+      const nameParts = [user?.name, user?.lastName].filter((p): p is string => !!p);
+      return {
+        teacherId: t.userId,
+        name: nameParts.length ? nameParts.join(' ') : t.userId,
+        email: user?.email ?? '',
+        cuil: user?.cuil ?? null,
+      };
+    });
+  }
+
   async findCommissionSubjects(commissionId: number) {
     const assignments = await this.subjectCommissionRepo
       .createQueryBuilder("sc")
@@ -696,6 +722,17 @@ export class CatalogsService {
     const normalizePartials = (n: number | null | undefined): 2 | 4 =>
       n === 4 ? 4 : 2;
 
+    const deriveCondition = (notes: Array<number | null | undefined>, attendance: number | null | undefined, existing: string | null | undefined): string => {
+      if (existing && existing.trim()) return existing;
+      const att = Number(attendance ?? 0);
+      const valid = notes.filter((n): n is number => typeof n === 'number' && !Number.isNaN(n));
+      if (valid.length === 0) return 'Inscripto';
+      const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+      if (att >= 90 && avg >= 7) return 'Promocionado';
+      if (att >= 75 && att < 90 && avg >= 4) return 'Regular';
+      return 'Libre';
+    };
+
     for (const row of bySubject.values()) {
       const yearNo = yearBySubject.get(row.subjectId) ?? null;
       const key = yearNo ? `${yearNo}° Año` : 'Sin año';
@@ -713,7 +750,12 @@ export class CatalogsService {
         note4: row.note4 ?? null,
         final: row.final ?? null,
         attendancePercentage: Number(row.attendancePercentage ?? 0) || 0,
-        condition: row.condition ?? null,
+        condition: deriveCondition([
+          row.note1,
+          row.note2,
+          row.note3,
+          row.note4,
+        ], Number(row.attendancePercentage ?? 0) || 0, row.condition ?? null),
       });
     }
 

@@ -12,7 +12,8 @@ import { catchError, switchMap } from "rxjs/operators";
 import { environment } from "../../../environments/environment";
 import { AuthStateService } from "../services/auth/auth-state.service";
 
-const AUTH_ENDPOINT_REGEX = /\/auth\/(login|refresh|logout)$/i;
+// Incluir reset-password endpoints para evitar intentos de refresh innecesarios
+const AUTH_ENDPOINT_REGEX = /\/auth\/(login|refresh|logout|reset-password(?:\/.*)?)$/i;
 
 export const REFRESH_ATTEMPTED = new HttpContextToken<boolean>(() => false);
 

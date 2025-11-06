@@ -1,6 +1,8 @@
 <div class="flex flex-column gap-3 m-w-custom">
   <h2>Inscripción a Finales</h2>
 
+  <p-message *ngIf="blocked$ | async" severity="warn" text="Tu cuenta está bloqueada. Las inscripciones están deshabilitadas."></p-message>
+
   <p *ngIf="!loading() && finals().length === 0" class="text-gray-600">
     No tenés materias disponibles para inscribirte a exámenes finales.
   </p>
@@ -38,6 +40,7 @@
             icon="pi pi-plus"
             size="small"
             *ngIf="!enrolledFake"
+            blockedAction
             (click)="openDialog(final)"
           />
           <p-button
@@ -45,6 +48,7 @@
             icon="pi pi-times"
             size="small"
             *ngIf="enrolledFake"
+            blockedAction
             (click)="openDialog(final)"
           />
         </td>
@@ -80,6 +84,7 @@
         *ngIf="!enrolledFake"
         label="Inscribirme"
         icon="pi pi-check"
+        blockedAction
         (click)="confirmInscription()"
       />
       <p-button
@@ -87,6 +92,7 @@
         label="Desinscribirme"
         icon="pi pi-ban"
         severity="danger"
+        blockedAction
         (click)="cancelInscription()"
       />
     </ng-template>

@@ -42,7 +42,20 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       "is_active" boolean DEFAULT true,
       CONSTRAINT "PK_43d31311c09cbaeac198842590f" PRIMARY KEY ("user_id")
     )`);
-    await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" text NOT NULL, "last_name" text NOT NULL, "email" text NOT NULL, "password" text NOT NULL, "cuil" text NOT NULL, "role_id" integer NOT NULL, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+    await queryRunner.query(`CREATE TABLE "users" (
+      "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+      "name" text NOT NULL,
+      "last_name" text NOT NULL,
+      "email" text NOT NULL,
+      "password" text NOT NULL,
+      "cuil" text NOT NULL,
+      "role_id" integer NOT NULL,
+      "is_blocked" boolean NOT NULL DEFAULT false,
+      "blocked_reason" text,
+      CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"),
+      CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"),
+      CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id")
+    )`);
     // Password reset tokens
     await queryRunner.query(`CREATE TABLE "password_reset_tokens" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -237,6 +250,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "notices" ADD CONSTRAINT "FK_5091560ec8975434a5add94c411" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "FK_password_reset_tokens_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "password_history" ADD CONSTRAINT "FK_password_history_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    await queryRunner.query(`ALTER TABLE "password_history" ADD CONSTRAINT "FK_password_history_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -302,7 +316,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "public"."IDX_5fef2a1967bce469e3d0cfa577"`);
     await queryRunner.query(`DROP TABLE "student_subject_progress"`);
     await queryRunner.query(`DROP TABLE "subject_status_type"`);
-  // Drop password reset tokens before users
+  // Drop user-dependent tables before users
   await queryRunner.query(`ALTER TABLE "password_reset_tokens" DROP CONSTRAINT IF EXISTS "FK_password_reset_tokens_user"`);
   await queryRunner.query(`DROP INDEX IF EXISTS "IDX_password_reset_tokens_user_id"`);
   await queryRunner.query(`DROP TABLE IF EXISTS "password_reset_tokens"`);

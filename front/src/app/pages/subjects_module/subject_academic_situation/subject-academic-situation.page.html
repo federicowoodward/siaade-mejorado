@@ -44,6 +44,7 @@
                 icon="pi pi-save"
                 [disabled]="!hasPendingChanges() || saving()"
                 [loading]="saving()"
+             blockedAction
                 (onClick)="onSaveChanges()"
               ></p-button>
               <p-button
@@ -84,7 +85,7 @@
             <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
             <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
             <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
-            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:6rem">Acc.</th>
+            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:10rem">Acc.</th>
           </tr>
           <!-- prettier-ignore-end -->
         </ng-template>
@@ -201,7 +202,14 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td style="width: 1rem">{{ row.condition || '-' }}</td>
+            <td style="width: 1rem">
+              <p-tag
+                *ngIf="row.condition; else noCondTpl"
+                [value]="row.condition!"
+                [severity]="conditionSeverity(row.condition)"
+              ></p-tag>
+              <ng-template #noCondTpl>-</ng-template>
+            </td>
             <td>
               <div class="flex items-center justify-center gap-2">
                 <button
@@ -215,6 +223,7 @@
                   text
                   rounded
                   severity="secondary"
+                  blockedAction
                 ></button>
                 <button
                   *ngIf="editing"
@@ -227,6 +236,21 @@
                   text
                   rounded
                   severity="secondary"
+                  blockedAction
+                ></button>
+                <button
+                  *ngIf="!editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  icon="pi pi-arrow-right-arrow-left"
+                  pTooltip="Mover a otra comisión"
+                  tooltipPosition="top"
+                  (click)="$event.stopPropagation(); openMoveCommission(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                  [blockedAction]="!canMoveStudents() ? true : false"
                 ></button>
                 <!-- // no damos la opcion de cancelar la edicion -->
                 <!-- <button
@@ -247,5 +271,26 @@
         </ng-template>
       </p-table>
     </div>
+    <!-- Diálogo de mover alumno de comisión (fuera de la tabla para evitar interferencias con p-cellEditor) -->
+    <p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()" [draggable]="false" [resizable]="false">
+      <div *ngIf="moveDialog().loading" class="p-3 flex gap-2 align-items-center">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Procesando...</span>
+      </div>
+      <div *ngIf="!moveDialog().loading">
+        <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
+        <select class="p-inputtext p-component w-full" [(ngModel)]="selectedNewCommission">
+          <option [ngValue]="null" disabled selected>Comisión destino</option>
+          <!-- No mostrar la opción 'Todas' y asegurar que el valor sea numérico -->
+          <option *ngFor="let c of moveCommissionOptions()" [ngValue]="c.id" [disabled]="c.id === moveDialog().currentCommissionId">
+            {{ c.letter || ('Comisión ' + c.id) }}
+          </option>
+        </select>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton label="Cancelar" class="p-button-text" (click)="closeMoveDialog()"></button>
+        <button pButton label="Mover" icon="pi pi-check" [disabled]="!selectedNewCommission || moveDialog().loading" (click)="confirmMoveCommission()"></button>
+      </ng-template>
+    </p-dialog>
   </ng-template>
 </div>

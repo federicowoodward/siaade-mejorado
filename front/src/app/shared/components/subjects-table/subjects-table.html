@@ -19,6 +19,7 @@
           type="button"
           label="Comisiones"
           (click)="viewComissions(subject.id)"
+          blockedAction
         ></button>
         <button
           pButton
@@ -26,6 +27,7 @@
           class="p-ml-2"
           label="Situacion academica"
           (click)="viewStatus(subject.id)"
+          blockedAction
         ></button>
       </td>
     </tr>
@@ -78,6 +80,7 @@
                 <th>Email</th>
                 <th>CUIL</th>
                 <th style="width: 1%"></th>
+                <th style="width: 1%"></th>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-t>
@@ -91,6 +94,17 @@
                     label="Ver perfil"
                     icon="pi pi-user"
                     (click)="goToTeacher(t.teacherId)"
+                    blockedAction
+                  ></button>
+                </td>
+                <td class="text-right">
+                  <button
+                    pButton
+                    class="p-button-warning"
+                    label="Cambiar"
+                    icon="pi pi-exchange"
+                    (click)="startChangeTeacher(data.subject.id, c.commission.id, t.teacherId)"
+                    blockedAction
                   ></button>
                 </td>
               </tr>
@@ -114,5 +128,32 @@
       icon="pi pi-times"
       (click)="closeTeachersDialog()"
     ></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Diálogo cambio de docente -->
+<p-dialog
+  [modal]="true"
+  [(visible)]="changeTeacherDialog().visible"
+  (onHide)="closeChangeTeacherDialog()"
+  [style]="{ width: '32rem', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="Cambiar docente"
+>
+  <div *ngIf="changeTeacherDialog().loading" class="p-3 flex gap-2 align-items-center">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Cargando docentes...</span>
+  </div>
+  <div *ngIf="!changeTeacherDialog().loading">
+    <p class="mb-2">Seleccione el nuevo docente para la comisión.</p>
+    <select class="p-inputtext p-component" [(ngModel)]="selectedNewTeacher" style="width:100%">
+      <option [ngValue]="null" disabled selected>Seleccione docente</option>
+      <option *ngFor="let opt of teacherOptions()" [value]="opt.value">{{ opt.label }}</option>
+    </select>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" class="p-button-text" (click)="closeChangeTeacherDialog()"></button>
+    <button pButton label="Guardar" [disabled]="!selectedNewTeacher" (click)="confirmChangeTeacher()" icon="pi pi-check" blockedAction></button>
   </ng-template>
 </p-dialog>

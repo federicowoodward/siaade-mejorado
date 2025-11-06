@@ -22,6 +22,11 @@ import { map } from 'rxjs/operators';
 import { TooltipModule } from 'primeng/tooltip';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
+import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
+import { DialogModule } from 'primeng/dialog';
+import { Tag } from 'primeng/tag';
+import { AuthService } from '../../../core/services/auth.service';
+import { ROLE } from '../../../core/auth/roles';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -39,7 +44,10 @@ import {
     SelectModule,
     ToastModule,
     ProgressSpinnerModule,
-    TooltipModule,
+  TooltipModule,
+  DialogModule,
+  Tag,
+  BlockedActionDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
@@ -50,6 +58,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly goBackSvc = inject(GoBackService);
   private readonly subjectsSvc = inject(SubjectsService);
   private readonly messages = inject(MessageService);
+  private readonly auth = inject(AuthService);
 
   loading = signal(true);
   error = signal<string | null>(null);
@@ -79,6 +88,46 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
 
+  canMoveStudents = computed(() => {
+    const user = this.currentUser();
+    if (!user) return false;
+    // Roles con permiso: preceptor, secretary, executive_secretary
+    const allowed: ROLE[] = [ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY];
+    return !!user.role && allowed.includes(user.role as ROLE);
+  });
+  private currentUser = signal<{ role: ROLE | null } | null>(null);
+
+  constructor() {
+    this.auth.getUser().subscribe(u => {
+      this.currentUser.set(u ? { role: u.role } : null);
+    });
+  }
+
+  conditionSeverity(condition: string | null | undefined): string {
+    switch ((condition || '').toLowerCase()) {
+      case 'promocionado':
+      case 'aprobado':
+        return 'success';
+      case 'regular':
+        return 'info';
+      case 'libre':
+      case 'desaprobado':
+        return 'danger';
+      case 'no inscripto':
+        return 'warn';
+      case 'inscripto':
+        return 'secondary';
+      default:
+        return 'secondary';
+    }
+  }
+
+  // Mover alumno de comisión
+  moveDialog = signal<{ visible: boolean; loading: boolean; studentId: string | null; currentCommissionId: number | null }>(
+    { visible: false, loading: false, studentId: null, currentCommissionId: null }
+  );
+  selectedNewCommission: number | null = null;
+
   commissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
     return [
@@ -88,6 +137,12 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         letter: entry.letter ?? null,
       })),
     ];
+  });
+
+  // Opciones para el diálogo de mover alumno (sin la opción "Todas")
+  moveCommissionOptions = computed(() => {
+    const base = this.data()?.commissions ?? [];
+    return base.map((entry) => ({ id: entry.id, letter: entry.letter ?? null }));
   });
 
   commissionSelectItems = computed(() =>
@@ -588,6 +643,37 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       severity: 'error',
       summary,
       detail,
+    });
+  }
+
+  openMoveCommission(row: AcademicSituationRow) {
+    if (!this.canMoveStudents()) return;
+    this.selectedNewCommission = null;
+    this.moveDialog.set({ visible: true, loading: false, studentId: row.studentId, currentCommissionId: row.commissionId });
+  }
+
+  closeMoveDialog() {
+    this.moveDialog.set({ visible: false, loading: false, studentId: null, currentCommissionId: null });
+    this.selectedNewCommission = null;
+  }
+
+  confirmMoveCommission() {
+    const d = this.moveDialog();
+    if (!d.studentId || !this.selectedNewCommission || this.selectedNewCommission === d.currentCommissionId) return;
+    this.moveDialog.update(v => ({ ...v, loading: true }));
+    this.subjectsSvc.moveStudentCommission(this.subjectId, d.studentId, this.selectedNewCommission).subscribe({
+      next: () => {
+        this.moveDialog.update(v => ({ ...v, loading: false }));
+        this.closeMoveDialog();
+        // refrescar situación académica
+        this.onReload();
+        this.messages.add({ severity: 'success', summary: 'Alumno movido', detail: 'La comisión del alumno fue actualizada.' });
+      },
+      error: (err: unknown) => {
+        console.error('Error moviendo alumno', err);
+        this.moveDialog.update(v => ({ ...v, loading: false }));
+        this.showError('Error', 'No se pudo mover el alumno de comisión.');
+      }
     });
   }
 }

@@ -6,6 +6,8 @@ export interface UserProfileResult {
   email: string | null;
   cuil: string | null;
   role: { id: number; name: string } | null;
+  isBlocked?: boolean; // agregado para mostrar estado de bloqueo transversal
+  blockedReason?: string | null; // motivo visible mientras isBlocked=true
 
   userInfo?: {
     id: number;

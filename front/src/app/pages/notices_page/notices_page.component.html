@@ -10,12 +10,14 @@
     placeholder="Título"
     [(ngModel)]="newNotice.title"
     class="p-inputtext"
+    blockedAction
     />
 
     <p-editor
     [(ngModel)]="newNotice.content"
     [style]="{height: '200px'}"
     placeholder="Escribí el contenido del aviso…"
+    blockedAction
     ></p-editor>
 
     <label class="mt-2">Visible para:</label>
@@ -25,7 +27,7 @@
     <option value="teacher">Profesores</option>
     </select>
 
-    <button pButton type="button" label="Publicar" (click)="addNotice()" class="mt-2"></button>     
+    <button pButton type="button" label="Publicar" (click)="addNotice()" class="mt-2" blockedAction></button>     
     </div>
 
 <!-- Lista de avisos (admin ve todos) -->
@@ -39,7 +41,7 @@
         {{ n.createdBy }} · {{ n.createdAt | date:'short' }}
         </small>
 
-        <button *canAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)"></button>
+    <button *canAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)" blockedAction></button>
     </div>
     </li>
 </ul>

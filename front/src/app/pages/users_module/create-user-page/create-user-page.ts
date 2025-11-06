@@ -15,6 +15,7 @@ import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
 import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 import { buildPreviewRows } from '../../../shared/utils/create-user/user-preview-table';
+import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 
 import {
   ROLE_REQUIREMENTS,
@@ -46,6 +47,7 @@ type PreviewRow = { field: string; value: string };
     TableModule,
     FieldLabelPipe,
     RoleLabelPipe,
+    BlockedActionDirective,
   ],
   templateUrl: './create-user-page.html',
   styleUrl: './create-user-page.scss',

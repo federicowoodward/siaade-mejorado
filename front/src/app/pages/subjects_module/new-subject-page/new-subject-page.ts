@@ -17,6 +17,7 @@ import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
 import { Subject } from '../../../core/models/subject.model';
+import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 
 @Component({
   selector: 'app-subject-new-page',
@@ -30,6 +31,7 @@ import { Subject } from '../../../core/models/subject.model';
     IftaLabelModule,
     Button,
     ToastModule,
+    BlockedActionDirective,
   ],
   providers: [MessageService],
   templateUrl: './new-subject-page.html',

@@ -13,6 +13,7 @@ import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { Teacher } from "@/entities/users/teacher.entity";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
       SubjectCommission,
       CareerSubject,
       CareerStudent,
+      Teacher,
       Student,
       FinalExamStatus,
       SubjectStatusType,

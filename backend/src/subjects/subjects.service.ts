@@ -44,8 +44,22 @@ export class SubjectsService {
     private readonly subjectRepo: Repository<Subject>,
     @InjectRepository(SubjectGradesView)
     private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     private readonly dataSource: DataSource
   ) {}
+
+  private deriveConditionFromValues(notes: Array<number | null | undefined>, attendancePercentage: number | null | undefined): string {
+    const attendance = Number(attendancePercentage ?? 0);
+    const validNotes = (notes || []).filter((n): n is number => typeof n === 'number' && !Number.isNaN(n));
+    if (validNotes.length === 0) {
+      return 'Inscripto';
+    }
+    const avg = validNotes.reduce((a, b) => a + b, 0) / validNotes.length;
+    if (attendance >= 90 && avg >= 7) return 'Promocionado';
+    if (attendance >= 75 && attendance < 90 && avg >= 4) return 'Regular';
+    return 'Libre';
+  }
 
   async getGrades(subjectCommissionId: number): Promise<GradeRowDto[]> {
     await this.ensureCommissionExists(subjectCommissionId);
@@ -135,6 +149,10 @@ export class SubjectsService {
     }
 
     await this.progressRepo.save(progress);
+    // Autocalcular condición salvo que el campo modificado sea el statusId manual
+    if (dto.path !== 'statusId') {
+      await this.autoAssignCondition(progress);
+    }
     const [row] = await this.fetchGradeRows(subjectCommissionId, [studentId]);
     if (!row) {
       throw new NotFoundException("Updated grade row not found");
@@ -286,6 +304,7 @@ export class SubjectsService {
     const qb = this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .leftJoin(User, "user", "user.id = vg.student_id")
+      .leftJoin(StudentSubjectProgress, 'prog', 'prog.student_id = vg.student_id AND prog.subject_commission_id = vg.commission_id')
       .where("vg.subject_id = :subjectId", { subjectId })
       .orderBy("vg.commission_letter", "ASC", "NULLS LAST")
       .addOrderBy("vg.commission_id", "ASC")
@@ -312,11 +331,49 @@ export class SubjectsService {
 
     const { entities, raw } = await qb.getRawAndEntities();
 
+    // Pre-cache de flags de estudiantes para minimizar awaits dentro del map
+    const studentIds = Array.from(new Set(entities.map(e => e.studentId)));
+    const studentFlagsMap = new Map<string, { canLogin: boolean | null; isActive: boolean | null }>();
+    if (studentIds.length) {
+      // Batch query para performance
+      const flagsRows = await this.subjectStudentRepo.query(
+        `SELECT user_id, can_login, is_active FROM students WHERE user_id = ANY($1)`,
+        [studentIds]
+      );
+      for (const r of flagsRows) {
+        studentFlagsMap.set(r.user_id, { canLogin: r.can_login ?? null, isActive: r.is_active ?? null });
+      }
+    }
+
     const rows = entities.map((entity, index) => {
       const mapped = this.mapViewToGradeRow(entity);
       const rawRow = raw[index] as Record<string, any>;
       const cuil =
         (rawRow?.academicSituation_cuil as string | null | undefined) ?? "";
+
+      // Determinar condición override para bloqueados
+      let conditionOverride: string | null = null;
+      // Obtenemos flags de la entidad user (si estuvo eager en StudentSubjectProgress sería otra forma)
+      // Aquí preferimos buscar el student directamente para evitar otra query masiva: cache simple en mapa.
+      // Para eficiencia podríamos precargar todos los students, pero manteniendo simple de momento.
+      // Bloqueado si can_login = false OR is_active = false
+      // Mostramos 'No inscripto'
+      // Nota: si el status existente ya es distinto, lo reemplazamos visualmente.
+      // Si en el futuro se requiere mantenerlo, quitar esta lógica.
+      conditionOverride = null;
+      // Usamos el repo de estudiantes para revisar flags con un pequeño cache.
+      // Cache local estático por ejecución de este método:
+      const flags = studentFlagsMap.get(mapped.studentId) ?? { canLogin: null, isActive: null };
+      if (flags && (flags.canLogin === false || flags.isActive === false)) {
+        conditionOverride = 'No inscripto';
+      }
+
+      const computedCondition = conditionOverride ?? mapped.condition ?? this.deriveConditionFromValues([
+        mapped.note1,
+        mapped.note2,
+        mapped.note3,
+        mapped.note4,
+      ], mapped.attendancePercentage);
 
       return {
         studentId: mapped.studentId,
@@ -331,7 +388,7 @@ export class SubjectsService {
         note4: mapped.note4,
         final: mapped.final,
         attendancePercentage: mapped.attendancePercentage,
-        condition: mapped.condition,
+        condition: computedCondition,
       };
     });
 
@@ -564,6 +621,118 @@ export class SubjectsService {
     return commission.id;
   }
 
+  /**
+   * Cambia el docente asignado a una subject_commission.
+   */
+  async updateSubjectCommissionTeacher(
+    subjectCommissionId: number,
+    teacherId: string,
+    user?: AuthenticatedUser
+  ): Promise<{ id: number; teacherId: string }>{
+    // Validaciones básicas de existencia
+    const commission = await this.subjectCommissionRepo.findOne({ where: { id: subjectCommissionId } });
+    if (!commission) throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
+
+    // Verificar que el teacher exista
+    const existsTeacher = await this.dataSource
+      .createQueryBuilder()
+      .select('1')
+      .from('teachers', 't')
+      .where('t.user_id = :id', { id: teacherId })
+      .getExists();
+    if (!existsTeacher) {
+      throw new NotFoundException(`Teacher ${teacherId} was not found`);
+    }
+
+    commission.teacherId = teacherId;
+    await this.subjectCommissionRepo.save(commission);
+    return { id: commission.id, teacherId: commission.teacherId };
+  }
+
+  /**
+   * Mueve un alumno a otra comisión de la misma materia, trasladando sus notas/estado.
+   */
+  async moveStudentToCommission(
+    subjectId: number,
+    studentId: string,
+    toCommissionId: number,
+    user?: AuthenticatedUser
+  ): Promise<GradeRowDto> {
+    // Bloqueo transversal: impedir mover si el usuario está bloqueado
+    await this.assertNotBlocked(studentId);
+    // Verificar que la comisión destino pertenezca a la materia
+    const toCommission = await this.subjectCommissionRepo.findOne({ where: { id: toCommissionId } });
+    if (!toCommission) throw new NotFoundException(`Subject commission ${toCommissionId} was not found`);
+    if (toCommission.subjectId !== subjectId) {
+      throw new BadRequestException('La comisión destino no pertenece a la materia indicada');
+    }
+
+    // Permisos: si es docente, debe ser el asignado a la comisión destino
+    if (user?.role === ROLE.TEACHER && toCommission.teacherId !== user.id) {
+      throw new ForbiddenException('No está asignado a la comisión destino');
+    }
+
+    // Asegurar que el alumno esté inscripto a la materia
+    await this.ensureStudentEnrollment(subjectId, studentId);
+
+    // Descubrir comisión origen (si tuviera progreso en otra comisión)
+    const fromCommissionId = await this.resolveSubjectCommissionId(subjectId, studentId);
+
+    if (fromCommissionId === toCommissionId) {
+      // No hay nada que mover, devolver fila actual
+      const [row] = await this.fetchGradeRows(toCommissionId, [studentId]);
+      if (!row) throw new NotFoundException('No se encontró la fila de notas del alumno');
+      return row;
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const progressRepo = manager.getRepository(StudentSubjectProgress);
+      // progreso origen
+      const source = await progressRepo.findOne({ where: { subjectCommissionId: fromCommissionId, studentId } });
+      // progreso destino
+      let target = await progressRepo.findOne({ where: { subjectCommissionId: toCommissionId, studentId } });
+
+      if (source) {
+        const payload: Partial<StudentSubjectProgress> & Pick<StudentSubjectProgress, 'subjectCommissionId' | 'studentId'> = {
+          subjectCommissionId: toCommissionId,
+          studentId,
+          partialScores: source.partialScores ?? null,
+          attendancePercentage: source.attendancePercentage ?? '0',
+          statusId: source.statusId ?? null,
+        };
+        if (target) {
+          target.partialScores = payload.partialScores ?? null;
+          target.attendancePercentage = payload.attendancePercentage ?? target.attendancePercentage;
+          target.statusId = payload.statusId ?? target.statusId ?? null;
+        } else {
+          target = progressRepo.create(payload);
+        }
+        await progressRepo.save(target);
+        await this.autoAssignCondition(target, manager);
+        // borrar origen para evitar duplicados
+        await progressRepo.delete({ id: source.id });
+      } else {
+        // Si no había progreso en origen, asegurar que exista un registro vacío en destino
+        if (!target) {
+          target = progressRepo.create({
+            subjectCommissionId: toCommissionId,
+            studentId,
+            partialScores: null,
+            attendancePercentage: '0',
+            statusId: null,
+          });
+          await progressRepo.save(target);
+          await this.autoAssignCondition(target, manager);
+        }
+      }
+    });
+
+    // Devolver fila desde la comisión destino
+    const [row] = await this.fetchGradeRows(toCommissionId, [studentId]);
+    if (!row) throw new NotFoundException('No se encontró la fila de notas del alumno en la comisión destino');
+    return row;
+  }
+
   private normalizePartials(value: number | null | undefined): 2 | 4 {
     return value === 4 ? 4 : 2;
   }
@@ -700,6 +869,8 @@ export class SubjectsService {
     studentId: string,
     manager?: EntityManager
   ): Promise<void> {
+    // Chequeo de bloqueo: si está bloqueado, no permitir validar inscripción futura
+    await this.assertNotBlocked(studentId);
     const repo =
       manager?.getRepository(SubjectStudent) ?? this.subjectStudentRepo;
     const enrolled = await repo.exist({
@@ -709,6 +880,16 @@ export class SubjectsService {
       throw new BadRequestException(
         "Student is not enrolled in the subject commission"
       );
+    }
+  }
+
+  private async assertNotBlocked(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) return; // si no existe, otra validación fallará después
+    // Si está bloqueado, impedir acciones académicas (inscripciones, movimientos, etc.)
+    if ((user as any).isBlocked === true) {
+      const reason = (user as any).blockedReason || 'La cuenta está bloqueada';
+      throw new ForbiddenException(reason);
     }
   }
 
@@ -788,5 +969,83 @@ export class SubjectsService {
     }
 
     await manager.save(progress);
+    // Si el payload no trae statusId, autocalcular
+    if (row.statusId === undefined) {
+      await this.autoAssignCondition(progress, manager);
+    }
+  }
+
+  /**
+   * Asigna automáticamente la condición en base a asistencia y promedio.
+   * Promocionado: asistencia >= 90 y promedio >= 7
+   * Regular: 75 <= asistencia < 90 y promedio >= 4
+   * Libre: asistencia < 75 o promedio < 4 (con notas)
+   * Inscripto: sin notas cargadas
+   * Si existe statusId manual, no se sobreescribe.
+   */
+  private async autoAssignCondition(
+    progress: StudentSubjectProgress,
+    manager?: EntityManager
+  ): Promise<void> {
+    if (progress.statusId) return; // no tocar si está seteado manualmente
+
+    const attendance = Number(progress.attendancePercentage || '0');
+    const scores = progress.partialScores ?? {};
+    const values = Object.values(scores).filter(
+      (v): v is number => typeof v === 'number' && !Number.isNaN(v)
+    );
+
+    let condition = 'Inscripto';
+    if (values.length > 0) {
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      if (attendance >= 90 && avg >= 7) {
+        condition = 'Promocionado';
+      } else if (attendance >= 75 && attendance < 90 && avg >= 4) {
+        condition = 'Regular';
+      } else {
+        condition = 'Libre';
+      }
+    }
+
+    const repo = manager?.getRepository(SubjectStatusType) ?? this.statusRepo;
+    const status = await repo.findOne({ where: { statusName: condition } });
+    if (status) {
+      const progressRepo = manager?.getRepository(StudentSubjectProgress) ?? this.progressRepo;
+      await progressRepo.update({ id: progress.id }, { statusId: status.id });
+      progress.statusId = status.id;
+    }
+  }
+
+  /**
+   * Actualiza el docente para todas las subject_commissions activas de una materia.
+   */
+  async updateAllSubjectCommissionsTeacher(
+    subjectId: number,
+    teacherId: string,
+    user?: AuthenticatedUser
+  ): Promise<{ updated: number }> {
+    // Permisos: docente no puede realizar esta acción
+    if (user?.role === ROLE.TEACHER) {
+      throw new ForbiddenException('Los docentes no pueden reasignar otros docentes');
+    }
+    const subject = await this.subjectRepo.findOne({ where: { id: subjectId } });
+    if (!subject) throw new NotFoundException(`Subject ${subjectId} was not found`);
+
+    const commissions = await this.subjectCommissionRepo.find({ where: { subjectId } });
+    if (!commissions.length) return { updated: 0 };
+
+    const existsTeacher = await this.dataSource
+      .createQueryBuilder()
+      .select('1')
+      .from('teachers', 't')
+      .where('t.user_id = :id', { id: teacherId })
+      .getExists();
+    if (!existsTeacher) throw new NotFoundException(`Teacher ${teacherId} was not found`);
+
+    for (const sc of commissions) {
+      sc.teacherId = teacherId;
+    }
+    await this.subjectCommissionRepo.save(commissions);
+    return { updated: commissions.length };
   }
 }

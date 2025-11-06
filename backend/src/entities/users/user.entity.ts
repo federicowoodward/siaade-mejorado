@@ -58,4 +58,11 @@ export class User {
 
   @OneToOne(() => Secretary, (s) => s.user)
   secretary?: Secretary;
+
+  // Bloqueo lógico transversal (no elimina la cuenta). Si isBlocked=true se puede limitar acciones (ej: inscripciones) y mostrar blockedReason.
+  @Column({ name: 'is_blocked', type: 'bool', nullable: false, default: false })
+  isBlocked: boolean;
+
+  @Column({ name: 'blocked_reason', type: 'text', nullable: true })
+  blockedReason: string | null;
 }

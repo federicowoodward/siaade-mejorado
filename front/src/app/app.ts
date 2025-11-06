@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { map, Observable } from 'rxjs';
 import { RouterOutlet } from '@angular/router';
 import { MenuComponent } from './shared/components/menu/menu-component';
 import { ButtonModule } from 'primeng/button';
@@ -25,6 +26,11 @@ export class App {
   drawerVisibility = inject(DrawerVisibility);
   authService = inject(AuthService)
   protected title = 'front';
+
+  // Observable para estado de bloqueo
+  blocked$: Observable<{ blocked: boolean; reason: string | null }> = this.authService.getUser().pipe(
+    map(u => ({ blocked: !!u?.isBlocked, reason: (u as any)?.blockedReason ?? null }))
+  );
 
   constructor() {
     this.authService.loadUserFromStorage(); 

@@ -190,6 +190,13 @@ export class CatalogsController {
     return this.service.getSubjectCommissionTeachers(subjectId);
   }
 
+  @Get("teachers")
+  @ApiOperation({ summary: "Listar todos los docentes" })
+  @ApiOkResponse({ description: "Listado completo de docentes" })
+  getAllTeachers() {
+    return this.service.getAllTeachers();
+  }
+
   @Get("teacher/:teacherId/subject-commissions")
   @ApiOperation({
     summary: "Listar materias y comisiones a cargo de un docente",

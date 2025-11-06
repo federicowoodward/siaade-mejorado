@@ -50,6 +50,9 @@ export class UserProfileReaderService {
             name: normalizedRole ?? user.role.name,
           }
         : null,
+      // Campos de bloqueo
+      isBlocked: (user as any).isBlocked ?? false,
+      blockedReason: (user as any).blockedReason ?? null,
     };
 
     const ui = user.userInfo
