@@ -62,12 +62,12 @@ export class NoticesController {
   // Listar posts por audiencia
   @Get()
   @ApiQuery({ name: 'audience', required: false, enum: ['student', 'teacher', 'all'] })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiOperation({ summary: 'Listar avisos por audiencia (student/teacher/all)' })
   @ApiOkResponse({
     description: 'Lista paginada de avisos',
-    schema: { type: 'object', properties: { data: { type: 'array', items: { type: 'object' } }, meta: { type: 'object' } } }
+    schema: { type: 'object', properties: { data: { type: 'array', items: { type: 'object' } }, meta: { type: 'object' } } } as any
   })
   async findAll(
     @Query('audience') audience?: 'student' | 'teacher' | 'all',

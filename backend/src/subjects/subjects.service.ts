@@ -309,7 +309,9 @@ export class SubjectsService {
       .orderBy("vg.commission_letter", "ASC", "NULLS LAST")
       .addOrderBy("vg.commission_id", "ASC")
       .addOrderBy("vg.full_name", "ASC")
-      .addSelect("user.cuil", "academicSituation_cuil");
+      .addSelect("user.cuil", "academicSituation_cuil")
+      // bandera para saber si el alumno tiene progreso en esa comisión
+      .addSelect("prog.id", "academicSituation_hasProgress");
 
     const commissionFilter =
       filters?.commissionId && filters.commissionId > 0
@@ -331,6 +333,26 @@ export class SubjectsService {
 
     const { entities, raw } = await qb.getRawAndEntities();
 
+    // Elegimos una única comisión por alumno: si tiene progreso en alguna, esa;
+    // si no, la de menor id (comportamiento por defecto).
+    const desiredCommissionByStudent = new Map<string, number>();
+    for (let i = 0; i < entities.length; i++) {
+      const ent = entities[i];
+      const r = raw[i] as Record<string, any>;
+      const key = ent.studentId;
+      const hasProgress = r?.academicSituation_hasProgress != null;
+      const currentChosen = desiredCommissionByStudent.get(key);
+      if (currentChosen == null) {
+        // primer candidato
+        desiredCommissionByStudent.set(key, ent.commissionId);
+      }
+      // si encontramos progreso, priorizamos esa comisión
+      if (hasProgress) {
+        desiredCommissionByStudent.set(key, ent.commissionId);
+      }
+      // si no hay progreso en ninguna, quedará la menor id por el orderBy
+    }
+
     // Pre-cache de flags de estudiantes para minimizar awaits dentro del map
     const studentIds = Array.from(new Set(entities.map(e => e.studentId)));
     const studentFlagsMap = new Map<string, { canLogin: boolean | null; isActive: boolean | null }>();
@@ -345,7 +367,12 @@ export class SubjectsService {
       }
     }
 
-    const rows = entities.map((entity, index) => {
+    const rows = entities.flatMap((entity, index) => {
+      // Filtrar duplicados: mantener solo la comisión elegida para el alumno
+      const desired = desiredCommissionByStudent.get(entity.studentId);
+      if (desired !== undefined && desired !== entity.commissionId) {
+        return [] as any[];
+      }
       const mapped = this.mapViewToGradeRow(entity);
       const rawRow = raw[index] as Record<string, any>;
       const cuil =
@@ -375,7 +402,7 @@ export class SubjectsService {
         mapped.note4,
       ], mapped.attendancePercentage);
 
-      return {
+      return [{
         studentId: mapped.studentId,
         fullName: mapped.fullName,
         legajo: mapped.legajo,
@@ -389,7 +416,7 @@ export class SubjectsService {
         final: mapped.final,
         attendancePercentage: mapped.attendancePercentage,
         condition: computedCondition,
-      };
+      }];
     });
 
     const commissions = await this.subjectCommissionRepo
@@ -595,6 +622,22 @@ export class SubjectsService {
     subjectId: number,
     studentId: string
   ): Promise<number> {
+    // 1) Si existe progreso en alguna comisión de esta materia, priorizar esa
+    const progressRow = await this.dataSource
+      .createQueryBuilder()
+      .select('ssp.subject_commission_id', 'commissionId')
+      .from('student_subject_progress', 'ssp')
+      .innerJoin('subject_commissions', 'sc', 'sc.id = ssp.subject_commission_id')
+      .where('sc.subject_id = :subjectId', { subjectId })
+      .andWhere('ssp.student_id = :studentId', { studentId })
+      .limit(1)
+      .getRawOne<{ commissionId: number }>();
+
+    if (progressRow?.commissionId) {
+      return progressRow.commissionId;
+    }
+
+    // 2) Si no hay progreso, tomar la comisión de menor id como fallback
     const row = await this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .where("vg.subject_id = :subjectId", { subjectId })

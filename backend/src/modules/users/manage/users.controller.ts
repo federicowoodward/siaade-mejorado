@@ -77,7 +77,7 @@ export class UsersController {
 
   @Patch(':id/block')
   @ApiOperation({ summary: 'Bloquea un usuario y asigna motivo (impide acciones como inscripciones)' })
-  @ApiBody({ schema: { example: { reason: 'Incumplimiento de normativa' } } })
+  @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string' } } } as any })
   async blockUser(@Param('id') id: string, @Body() body: { reason?: string }) {
     const reason = (body?.reason || '').trim();
     if (!reason) {
@@ -141,8 +141,7 @@ export class UsersController {
     schema: {
       type: "object",
       additionalProperties: true,
-      example: { name: "Ana", "userInfo.documentType": "DNI" },
-    },
+    } as any,
   })
   async updateUser(@Param("id") id: string, @Body() body: Record<string, any>) {
     try {
@@ -157,26 +156,8 @@ export class UsersController {
   @Delete(":id")
   // @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete user" })
-  @ApiOkResponse({
-    description: "User deleted successfully",
-    schema: {
-      example: {
-        data: { deleted: true },
-        message: "User deleted successfully",
-      },
-    },
-  })
-  @ApiConflictResponse({
-    description: "User cannot be deleted due to linked subjects",
-    schema: {
-      example: {
-        statusCode: 409,
-        message:
-          "No se puede borrar el docente: existe al menos una materia vinculada.",
-        subject: { id: 12, subjectName: "Matemática I" },
-      },
-    },
-  })
+  @ApiOkResponse({ description: "User deleted successfully" })
+  @ApiConflictResponse({ description: "User cannot be deleted due to linked subjects" })
   async deleteUser(@Param("id") id: string) {
     await this.usersService.deleteTx(id);
     return { data: { deleted: true }, message: "User deleted successfully" };

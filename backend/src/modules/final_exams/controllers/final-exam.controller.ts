@@ -91,28 +91,28 @@ export class FinalExamController {
           items: {
             type: 'object',
             properties: {
-              id: { type: 'number', example: 10 },
-              subject_id: { type: 'number', example: 3 },
-              subject_name: { type: 'string', example: 'Matematica I' },
-              exam_date: { type: 'string', example: '2025-07-10' },
-              aula: { type: 'string', nullable: true, example: 'Aula 3' },
+              id: { type: 'number' },
+              subject_id: { type: 'number' },
+              subject_name: { type: 'string' },
+              exam_date: { type: 'string' },
+              aula: { type: 'string', nullable: true },
             },
           },
         },
         meta: {
           type: 'object',
           properties: {
-            total: { type: 'number', example: 12 },
-            page: { type: 'number', example: 1 },
-            limit: { type: 'number', example: 10 },
-            pages: { type: 'number', example: 2 },
+            total: { type: 'number' },
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            pages: { type: 'number' },
           },
         },
       },
-    },
+    } as any,
   })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @Get("list-all/:exam_table_id")
   listAll(
     @Param("exam_table_id") tableId: string,

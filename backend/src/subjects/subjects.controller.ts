@@ -120,9 +120,9 @@ export class SubjectGradesController {
   @ApiOperation({
     summary: "Obtener la situacion academica de una materia",
   })
-  @ApiParam({ name: "subjectId", type: Number })
-  @ApiOkResponse({
-    schema: {
+  @ApiParam({ name: "subjectId" })
+    @ApiOkResponse({
+      schema: {
       type: "object",
       properties: {
         subject: {
@@ -165,7 +165,7 @@ export class SubjectGradesController {
           },
         },
       },
-    },
+      } as any,
   })
   async getSubjectAcademicSituation(
     @Param("subjectId", ParseIntPipe) subjectId: number,
@@ -184,10 +184,10 @@ export class SubjectGradesController {
   @ApiOperation({
     summary: "Actualizar una nota puntual de un alumno dentro de una materia",
   })
-  @ApiParam({ name: "subjectId", type: Number })
-  @ApiParam({ name: "studentId", type: String })
-  @ApiBody({ type: UpdateSubjectGradeDto })
-  @ApiOkResponse({ type: GradeRowDto })
+  @ApiParam({ name: "subjectId" })
+  @ApiParam({ name: "studentId" })
+    @ApiBody({ type: UpdateSubjectGradeDto })
+    @ApiOkResponse({ type: GradeRowDto })
   async patchSubjectGrade(
     @Param("subjectId", ParseIntPipe) subjectId: number,
     @Param("studentId", ParseObjectIdPipe) studentId: string,
@@ -210,7 +210,7 @@ export class SubjectGradesController {
     ROLE.PRECEPTOR
   )
   @ApiOperation({ summary: 'Asignar/cambiar docente para todas las comisiones de una materia' })
-  @ApiParam({ name: 'subjectId', type: Number })
+  @ApiParam({ name: 'subjectId' })
   @ApiBody({ type: UpdateSubjectCommissionTeacherDto })
   async updateSubjectTeachers(
     @Param('subjectId', ParseIntPipe) subjectId: number,
@@ -229,8 +229,8 @@ export class SubjectGradesController {
     ROLE.TEACHER
   )
   @ApiOperation({ summary: 'Mover alumno de comisión dentro de la misma materia transfiriendo notas y estado' })
-  @ApiParam({ name: 'subjectId', type: Number })
-  @ApiParam({ name: 'studentId', type: String })
+  @ApiParam({ name: 'subjectId' })
+  @ApiParam({ name: 'studentId' })
   @ApiBody({ type: MoveStudentCommissionDto })
   @ApiOkResponse({ type: GradeRowDto })
   async moveStudentCommission(
@@ -268,8 +268,8 @@ export class SubjectStatusController {
   @ApiOperation({
     summary: "Actualizar una celda de notas y asistencia para un alumno",
   })
-  @ApiParam({ name: "subjectCommissionId", type: Number })
-  @ApiParam({ name: "studentId", type: String })
+  @ApiParam({ name: "subjectCommissionId" })
+  @ApiParam({ name: "studentId" })
   @ApiBody({ type: PatchCellDto })
   @ApiOkResponse({ type: GradeRowDto })
   async patchCell(
@@ -299,7 +299,7 @@ export class SubjectStatusController {
           statusName: { type: "string" },
         },
       },
-    },
+    } as any,
   })
   async listStatuses() {
     return this.subjectsService.getSubjectStatuses();
@@ -308,7 +308,7 @@ export class SubjectStatusController {
   @Get(":subjectCommissionId/grades")
   @Action("subjects.listCommissionGrades")
   @ApiOperation({ summary: "Listar notas y asistencia de una comision" })
-  @ApiParam({ name: "subjectCommissionId", type: Number })
+  @ApiParam({ name: "subjectCommissionId" })
   @ApiOkResponse({ type: GradeRowDto, isArray: true })
   async getGrades(
     @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number
@@ -322,9 +322,9 @@ export class SubjectStatusController {
     summary:
       "Listar notas y asistencia agrupadas por comision para una materia",
   })
-  @ApiParam({ name: "subjectId", type: Number })
-  @ApiOkResponse({
-    schema: {
+  @ApiParam({ name: "subjectId" })
+    @ApiOkResponse({
+      schema: {
       type: "object",
       properties: {
         subject: {
@@ -372,7 +372,7 @@ export class SubjectStatusController {
           },
         },
       },
-    },
+      } as any,
   })
   async getSubjectGrades(
     @Param("subjectId", ParseIntPipe) subjectId: number
