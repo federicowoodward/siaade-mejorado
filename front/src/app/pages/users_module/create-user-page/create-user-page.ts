@@ -112,8 +112,11 @@ export class CreateUserPage {
   }
 
   get canEditIsActive(): boolean {
-    // Solo Secretario Admin (Executive Secretary)
-    return this.permissions.hasRole(ROLE.EXECUTIVE_SECRETARY);
+    // Secretaría (incluye Secretario y Secretario Admin)
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
   }
 
   // Si el alumno no está activo o el rol no lo permite, no puede loguearse: reflejar en UI
