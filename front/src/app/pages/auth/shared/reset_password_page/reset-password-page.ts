@@ -173,26 +173,23 @@ export class ResetPasswordPage {
 
   private resolveCurrentFieldError(error: unknown): string | null {
     // Dedicado a errores del campo "Contraseña actual"
-    if (error instanceof HttpErrorResponse) {
-      const payload = error.error as any;
-      const raw =
-        this.normalizeErrorPayload(payload?.message) ||
-        this.normalizeErrorPayload(payload?.error) ||
-        this.normalizeErrorPayload(payload);
+    const status = (error as any)?.status as number | undefined;
+    const payload = (error as any)?.error ?? undefined;
+    const raw =
+      this.normalizeErrorPayload((payload as any)?.message) ||
+      this.normalizeErrorPayload((payload as any)?.error) ||
+      this.normalizeErrorPayload(payload) ||
+      this.normalizeErrorPayload((error as any)?.message);
 
-      // 401 suele indicar contraseña actual inválida
-      if (error.status === 401) {
-        // Mensaje específico del backend o uno por defecto claro
-        if (raw) {
-          return raw;
-        }
-        return 'Contraseña actual incorrecta';
-      }
+    // 401 suele indicar contraseña actual inválida en este flujo
+    if (status === 401) {
+      if (raw) return raw;
+      return 'Contraseña actual incorrecta';
+    }
 
-      // Mensajes que mencionan explícitamente la contraseña actual
-      if (raw && /(contraseña\s+actual|current\s*password)/i.test(raw)) {
-        return raw;
-      }
+    // Mensajes que mencionan explícitamente la contraseña actual
+    if (raw && /(contraseña\s+actual|current\s*password)/i.test(raw)) {
+      return raw;
     }
     return null;
   }

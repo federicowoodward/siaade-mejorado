@@ -71,7 +71,8 @@ export class ErrorInterceptor implements HttpInterceptor {
         break;
       
       case 401:
-        message = 'No autorizado. Por favor, inicia sesión nuevamente.';
+        // Si el backend envió un mensaje específico, lo preservamos; si no, usamos el genérico
+        message = message || 'No autorizado. Por favor, inicia sesión nuevamente.';
         break;
       
       case 403:
