@@ -173,10 +173,8 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
 
     // Si vamos a bloquear (next=false), primero pedir motivo
     if (next === false) {
-      // mantener visualmente habilitado hasta confirmar (en próximo tick)
-      setTimeout(() => {
-        row.canLogin = true;
-      });
+      // mantener visualmente habilitado hasta confirmar (revertir inmediatamente)
+      row.canLogin = true;
       this.pendingRow = row;
       this.reasonDraft.set('');
       this.dialogCloseMode = 'none';
@@ -239,23 +237,17 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   cancelBlockAccess(): void {
     this.dialogCloseMode = 'cancel';
     this.showReasonDialog.set(false);
-    if (this.pendingRow && this.pendingRow.canLogin !== true) {
-      setTimeout(() => {
-        if (this.pendingRow) this.pendingRow.canLogin = true;
-        this.pendingRow = null;
-      });
-    } else {
+    if (this.pendingRow) {
+      this.pendingRow.canLogin = true;
       this.pendingRow = null;
     }
   }
 
   onReasonDialogHide(): void {
     if (this.dialogCloseMode !== 'confirm') {
-      if (this.pendingRow && this.pendingRow.canLogin !== true) {
-        setTimeout(() => {
-          if (this.pendingRow) this.pendingRow.canLogin = true;
-          this.pendingRow = null;
-        });
+      if (this.pendingRow) {
+        this.pendingRow.canLogin = true;
+        this.pendingRow = null;
       }
     }
     this.dialogCloseMode = 'none';

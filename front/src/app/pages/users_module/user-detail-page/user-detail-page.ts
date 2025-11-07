@@ -179,10 +179,8 @@ export class UserDetailPage implements OnInit {
 
     // Si vamos a bloquear (next=false), primero pedir motivo
     if (next === false) {
-      // mantener visualmente habilitado hasta confirmar
-      setTimeout(() => {
-        this.canLogin.set(true);
-      });
+      // mantener visualmente habilitado hasta confirmar (revertir inmediatamente)
+      this.canLogin.set(true);
       this.reasonDraft.set('');
       console.debug('[UserDetail] Opening reason dialog for block');
       this.showReasonDialog.set(true);
@@ -263,19 +261,14 @@ export class UserDetailPage implements OnInit {
     console.debug('[UserDetail] Cancel block dialog');
     this.dialogCloseMode = 'cancel';
     this.showReasonDialog.set(false);
-    // Revertir visualmente el toggle si se había intentado bloquear
-    if (this.canLogin() !== true) {
-      // asegurar revertir en el próximo tick por si el evento del toggle aún no terminó
-      setTimeout(() => this.canLogin.set(true));
-    }
+    // Revertir visualmente el toggle sin condiciones
+    this.canLogin.set(true);
   }
 
   onReasonDialogHide(): void {
     // Se cerró el diálogo (X, ESC o click afuera). Si no fue por confirmación, actúa como cancelar.
     if (this.dialogCloseMode !== 'confirm') {
-      if (this.canLogin() !== true) {
-        setTimeout(() => this.canLogin.set(true));
-      }
+      this.canLogin.set(true);
     }
     this.dialogCloseMode = 'none';
   }
