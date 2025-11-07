@@ -48,6 +48,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   reasonDraft = signal('');
   // fila seleccionada para bloquear
   private pendingRow: CareerStudentItem | null = null;
+  private dialogCloseMode: 'none' | 'confirm' | 'cancel' = 'none';
 
   private response = signal<CareerStudentsByCommissionResponse | null>(null);
 
@@ -178,6 +179,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
       });
       this.pendingRow = row;
       this.reasonDraft.set('');
+      this.dialogCloseMode = 'none';
       this.showReasonDialog.set(true);
       return;
     }
@@ -223,6 +225,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
       await this.api.update('users', row.studentId, { 'student.canLogin': false }).toPromise();
       await this.api.request('PATCH', `users/${row.studentId}/block`, { reason }).toPromise();
       row.canLogin = false;
+      this.dialogCloseMode = 'confirm';
       this.showReasonDialog.set(false);
       this.pendingRow = null;
     } catch (e) {
@@ -234,6 +237,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   }
 
   cancelBlockAccess(): void {
+    this.dialogCloseMode = 'cancel';
     this.showReasonDialog.set(false);
     if (this.pendingRow && this.pendingRow.canLogin !== true) {
       setTimeout(() => {
@@ -243,5 +247,17 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     } else {
       this.pendingRow = null;
     }
+  }
+
+  onReasonDialogHide(): void {
+    if (this.dialogCloseMode !== 'confirm') {
+      if (this.pendingRow && this.pendingRow.canLogin !== true) {
+        setTimeout(() => {
+          if (this.pendingRow) this.pendingRow.canLogin = true;
+          this.pendingRow = null;
+        });
+      }
+    }
+    this.dialogCloseMode = 'none';
   }
 }

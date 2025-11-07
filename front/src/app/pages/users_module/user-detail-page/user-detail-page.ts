@@ -36,6 +36,7 @@ export class UserDetailPage implements OnInit {
   // UI de motivo al bloquear acceso
   showReasonDialog = signal(false);
   reasonDraft = signal('');
+  private dialogCloseMode: 'none' | 'confirm' | 'cancel' = 'none';
 
   constructor(private route: ActivatedRoute, private router: Router) {}
 
@@ -185,6 +186,7 @@ export class UserDetailPage implements OnInit {
       this.reasonDraft.set('');
       console.debug('[UserDetail] Opening reason dialog for block');
       this.showReasonDialog.set(true);
+      this.dialogCloseMode = 'none';
       return;
     }
 
@@ -245,6 +247,7 @@ export class UserDetailPage implements OnInit {
       );
       this.canLogin.set(false);
       this.cache.update(this.userId, { canLogin: false });
+      this.dialogCloseMode = 'confirm';
       this.showReasonDialog.set(false);
       console.debug('[UserDetail] Blocked access and closed dialog');
     } catch (e) {
@@ -258,11 +261,22 @@ export class UserDetailPage implements OnInit {
 
   cancelBlockAccess(): void {
     console.debug('[UserDetail] Cancel block dialog');
+    this.dialogCloseMode = 'cancel';
     this.showReasonDialog.set(false);
     // Revertir visualmente el toggle si se había intentado bloquear
     if (this.canLogin() !== true) {
       // asegurar revertir en el próximo tick por si el evento del toggle aún no terminó
       setTimeout(() => this.canLogin.set(true));
     }
+  }
+
+  onReasonDialogHide(): void {
+    // Se cerró el diálogo (X, ESC o click afuera). Si no fue por confirmación, actúa como cancelar.
+    if (this.dialogCloseMode !== 'confirm') {
+      if (this.canLogin() !== true) {
+        setTimeout(() => this.canLogin.set(true));
+      }
+    }
+    this.dialogCloseMode = 'none';
   }
 }
