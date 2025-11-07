@@ -6,6 +6,7 @@ import { Button } from 'primeng/button';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { FormsModule } from '@angular/forms';
 import { ToggleButtonModule } from 'primeng/togglebutton';
+import { DialogModule } from 'primeng/dialog';
 import { ApiService } from '../../../core/services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '../../../core/auth/permission.service';
@@ -15,7 +16,7 @@ import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.s
 @Component({
   selector: 'app-user-detail-page',
   standalone: true,
-  imports: [PersonalDataComponent, CommonModule, Button, FormsModule, ToggleButtonModule],
+  imports: [PersonalDataComponent, CommonModule, Button, FormsModule, ToggleButtonModule, DialogModule],
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
 })
@@ -32,6 +33,9 @@ export class UserDetailPage implements OnInit {
   targetRole = signal<ROLE | null>(null);
   targetRoleId = signal<number | null>(null);
   saving = signal(false);
+  // UI de motivo al bloquear acceso
+  showReasonDialog = signal(false);
+  reasonDraft = signal('');
 
   constructor(private route: ActivatedRoute, private router: Router) {}
 
@@ -165,13 +169,22 @@ export class UserDetailPage implements OnInit {
     const prefix = this.getUpdatePrefix();
     if (!prefix) return;
     if (this.isActive() === false && next) return;
+
+    // Si vamos a bloquear (next=false), primero pedir motivo
+    if (next === false) {
+      this.reasonDraft.set('');
+      this.showReasonDialog.set(true);
+      return;
+    }
+
+    // Si habilitamos acceso (next=true), solo actualizamos flag
     try {
       this.saving.set(true);
       await firstValueFrom(
-        this.api.update('users', this.userId, { [`${prefix}canLogin`]: !!next })
+        this.api.update('users', this.userId, { [`${prefix}canLogin`]: true })
       );
-      this.canLogin.set(!!next);
-      this.cache.update(this.userId, { canLogin: !!next });
+      this.canLogin.set(true);
+      this.cache.update(this.userId, { canLogin: true });
     } catch (e) {
       // noop
     } finally {
@@ -196,5 +209,38 @@ export class UserDetailPage implements OnInit {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  // Confirmación de bloqueo con motivo (bloquea acceso y registra motivo)
+  async confirmBlockAccessWithReason(): Promise<void> {
+    const prefix = this.getUpdatePrefix();
+    if (!prefix) return;
+    const reason = (this.reasonDraft() || '').trim();
+    if (reason.length < 2) return;
+    try {
+      this.saving.set(true);
+      // 1) Cortar acceso
+      await firstValueFrom(
+        this.api.update('users', this.userId, { [`${prefix}canLogin`]: false })
+      );
+      // 2) Registrar motivo global
+      await firstValueFrom(
+        this.api.request('PATCH', `users/${this.userId}/block`, { reason })
+      );
+      this.canLogin.set(false);
+      this.cache.update(this.userId, { canLogin: false });
+      this.showReasonDialog.set(false);
+    } catch (e) {
+      // Si falla, mantenemos el toggle visual habilitado
+      this.canLogin.set(true);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  cancelBlockAccess(): void {
+    this.showReasonDialog.set(false);
+    // Revertir visualmente el toggle si se había intentado bloquear
+    if (this.canLogin() !== true) this.canLogin.set(true);
   }
 }
