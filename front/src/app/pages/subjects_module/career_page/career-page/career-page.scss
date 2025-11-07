@@ -12,23 +12,14 @@
 }
 
 .career-header {
-  margin-bottom: 1.5rem;
   text-align: center;
 }
 
+.header-row th {
+  font-size: 0.8rem;
+}
 .year-block {
   margin-bottom: 2rem;
-}
-
-.year-title {
-  margin: 1rem 0 0.5rem;
-  font-weight: 700;
-  font-size: 1.15rem;
-}
-
-.section-title {
-  margin: 0.75rem 0;
-  font-weight: 600;
 }
 
 .cuatri-block {
@@ -52,4 +43,10 @@
 
 .p-datatable .p-datatable-tbody > tr > td {
   text-align: center;
+}
+
+::ng-deep {
+  .p-divider-content {
+    background: transparent !important;
+  }
 }

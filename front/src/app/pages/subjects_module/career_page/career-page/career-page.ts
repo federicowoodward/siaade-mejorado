@@ -6,7 +6,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { Router, RouterLink } from '@angular/router';
 import { CareerCatalogService } from '../../../../core/services/career-catalog.service';
-
+import { DividerModule } from 'primeng/divider';
 @Component({
   selector: 'app-career-page',
   standalone: true,
@@ -17,6 +17,7 @@ import { CareerCatalogService } from '../../../../core/services/career-catalog.s
     ProgressSpinnerModule,
     ButtonModule,
     RouterLink,
+    DividerModule,
   ],
   templateUrl: './career-page.html',
   styleUrls: ['./career-page.scss'],

@@ -1,5 +1,5 @@
 <div class="m-w-custom">
-  <div class="py-2 flex gap-2 flex-wrap">
+  <div class="pb-3 flex gap-2 flex-wrap">
     <p-button (onClick)="goBack()"> Volver </p-button>
     <p-button
       label="Ver alumnos de la carrera"
@@ -9,7 +9,7 @@
   </div>
 
   <p-card
-    *ngIf="!loading() && data()?.career; else loadingTpl"
+    *ngIf="!loading() && data().career; else loadingTpl"
     class="career-header"
   >
     <h2>{{ data()!.career!.name }}</h2>
@@ -29,9 +29,15 @@
 
   <div *ngIf="error() && !loading()" class="error">{{ error() }}</div>
 
-  <div *ngIf="data()?.academicPeriods?.length">
-    <div *ngFor="let period of data()!.academicPeriods" class="period-block">
-      <h3 class="year-title">{{ period.academicPeriod.name }}</h3>
+  <div *ngIf="data().academicPeriods.length">
+    <div
+      *ngFor="let period of data()!.academicPeriods; let i = index"
+      class="period-block py-2"
+    >
+      <p-divider *ngIf="[0,3,6,9].includes(i)" align="center" type="dotted" class="bg-custom">
+        <b>{{ period.academicPeriod.name.replace('anual', '').trim() }}</b>
+      </p-divider>
+      <h4 class="mb-2">{{ period.academicPeriod.name }}</h4>
 
       <p-table
         [value]="period.subjects"
@@ -39,8 +45,8 @@
         styleClass="p-datatable-sm p-datatable-gridlines"
       >
         <ng-template pTemplate="header">
-          <tr>
-            <th style="width: 4rem">N° de orden</th>
+          <tr class="header-row">
+            <th>N° de orden</th>
             <th>Asignatura</th>
             <th>Campo de formación</th>
             <th>Forma</th>
