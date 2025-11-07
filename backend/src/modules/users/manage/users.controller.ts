@@ -76,13 +76,10 @@ export class UsersController {
   // ---------------- BLOQUEO / DESBLOQUEO -----------------
 
   @Patch(':id/block')
-  @ApiOperation({ summary: 'Bloquea un usuario y asigna motivo (impide acciones como inscripciones)' })
-  @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string' } } } as any })
-  async blockUser(@Param('id') id: string, @Body() body: { reason?: string }) {
-    const reason = (body?.reason || '').trim();
-    if (!reason) {
-      throw new BadRequestException('reason requerido para bloqueo');
-    }
+  @ApiOperation({ summary: 'Bloquea un usuario y (opcional) asigna motivo visible' })
+  @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string', nullable: true } } } as any })
+  async blockUser(@Param('id') id: string, @Body() body: { reason?: string | null }) {
+    const reason = (body?.reason ?? '').trim();
     const data = await this.usersService.blockUser(id, reason);
     return { data, message: 'Usuario bloqueado' };
   }

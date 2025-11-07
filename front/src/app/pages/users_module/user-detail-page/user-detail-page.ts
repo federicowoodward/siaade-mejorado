@@ -172,6 +172,8 @@ export class UserDetailPage implements OnInit {
 
     // Si vamos a bloquear (next=false), primero pedir motivo
     if (next === false) {
+      // mantener visualmente habilitado hasta confirmar
+      this.canLogin.set(true);
       this.reasonDraft.set('');
       this.showReasonDialog.set(true);
       return;
@@ -183,6 +185,8 @@ export class UserDetailPage implements OnInit {
       await firstValueFrom(
         this.api.update('users', this.userId, { [`${prefix}canLogin`]: true })
       );
+      // Limpia motivo si existía
+      await firstValueFrom(this.api.request('PATCH', `users/${this.userId}/unblock`));
       this.canLogin.set(true);
       this.cache.update(this.userId, { canLogin: true });
     } catch (e) {
@@ -216,7 +220,6 @@ export class UserDetailPage implements OnInit {
     const prefix = this.getUpdatePrefix();
     if (!prefix) return;
     const reason = (this.reasonDraft() || '').trim();
-    if (reason.length < 2) return;
     try {
       this.saving.set(true);
       // 1) Cortar acceso

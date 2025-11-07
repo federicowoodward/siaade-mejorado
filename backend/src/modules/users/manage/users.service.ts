@@ -405,13 +405,15 @@ export class UsersService {
   }
 
   // ---------------- BLOQUEO / DESBLOQUEO -----------------
-  async blockUser(userId: string, reason: string) {
+  async blockUser(userId: string, reason?: string) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    if ((user as any).isBlocked && (user as any).blockedReason === reason) {
+    const final = (reason ?? '').trim();
+    const dbReason: string | null = final.length ? final : null;
+    if ((user as any).isBlocked && ((user as any).blockedReason ?? null) === dbReason) {
       return this.mapToResponseDto(user, undefined as any);
     }
-    await this.usersRepository.update({ id: userId }, { isBlocked: true, blockedReason: reason } as any);
+    await this.usersRepository.update({ id: userId }, { isBlocked: true, blockedReason: dbReason } as any);
     const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
     return this.mapToResponseDto(updated!, updated?.role);
   }
