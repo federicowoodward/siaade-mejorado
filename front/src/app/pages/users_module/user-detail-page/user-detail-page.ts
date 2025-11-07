@@ -165,6 +165,12 @@ export class UserDetailPage implements OnInit {
 
   // ---- acciones ----
   async onToggleCanLogin(next: boolean): Promise<void> {
+    console.debug('[UserDetail] onToggleCanLogin called with next=', next, {
+      canToggle: this.canToggleCanLogin(),
+      isActive: this.isActive(),
+      currentCanLogin: this.canLogin(),
+      dialogOpen: this.showReasonDialog(),
+    });
     if (!this.canToggleCanLogin()) return;
     const prefix = this.getUpdatePrefix();
     if (!prefix) return;
@@ -175,6 +181,7 @@ export class UserDetailPage implements OnInit {
       // mantener visualmente habilitado hasta confirmar
       this.canLogin.set(true);
       this.reasonDraft.set('');
+      console.debug('[UserDetail] Opening reason dialog for block');
       this.showReasonDialog.set(true);
       return;
     }
@@ -182,6 +189,7 @@ export class UserDetailPage implements OnInit {
     // Si habilitamos acceso (next=true), solo actualizamos flag
     try {
       this.saving.set(true);
+      console.debug('[UserDetail] Enabling access...');
       await firstValueFrom(
         this.api.update('users', this.userId, { [`${prefix}canLogin`]: true })
       );
@@ -189,8 +197,10 @@ export class UserDetailPage implements OnInit {
       await firstValueFrom(this.api.request('PATCH', `users/${this.userId}/unblock`));
       this.canLogin.set(true);
       this.cache.update(this.userId, { canLogin: true });
+      console.debug('[UserDetail] Access enabled and reason cleared');
     } catch (e) {
       // noop
+      console.error('[UserDetail] Error enabling access', e);
     } finally {
       this.saving.set(false);
     }
@@ -222,6 +232,7 @@ export class UserDetailPage implements OnInit {
     const reason = (this.reasonDraft() || '').trim();
     try {
       this.saving.set(true);
+      console.debug('[UserDetail] Confirming block with reason=', reason);
       // 1) Cortar acceso
       await firstValueFrom(
         this.api.update('users', this.userId, { [`${prefix}canLogin`]: false })
@@ -233,15 +244,18 @@ export class UserDetailPage implements OnInit {
       this.canLogin.set(false);
       this.cache.update(this.userId, { canLogin: false });
       this.showReasonDialog.set(false);
+      console.debug('[UserDetail] Blocked access and closed dialog');
     } catch (e) {
       // Si falla, mantenemos el toggle visual habilitado
       this.canLogin.set(true);
+      console.error('[UserDetail] Error blocking access', e);
     } finally {
       this.saving.set(false);
     }
   }
 
   cancelBlockAccess(): void {
+    console.debug('[UserDetail] Cancel block dialog');
     this.showReasonDialog.set(false);
     // Revertir visualmente el toggle si se había intentado bloquear
     if (this.canLogin() !== true) this.canLogin.set(true);

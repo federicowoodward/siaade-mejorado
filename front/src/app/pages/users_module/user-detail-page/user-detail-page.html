@@ -13,7 +13,7 @@
       <p-togglebutton
         [ngModel]="canLogin()"
         (ngModelChange)="onToggleCanLogin(!!$event)"
-        [disabled]="saving() || !canToggleCanLogin() || isActive() === false"
+        [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
         onLabel="Habilitado"
         offLabel="Bloqueado"
         [onIcon]="'pi pi-lock-open'"
@@ -52,22 +52,21 @@
     [modal]="true"
     [style]="{ width: '28rem' }"
     [closable]="!saving()"
-    (onHide)="cancelBlockAccess()"
   >
     <div class="flex flex-column gap-2">
       <span class="text-sm text-color-secondary">
-        Ingresá el motivo por el cual se bloquea el acceso de este usuario.
+        Podés ingresar un motivo para el bloqueo (opcional). Si lo dejás vacío, se bloqueará igual.
       </span>
       <textarea
         class="p-inputtext w-full"
         rows="4"
         [ngModel]="reasonDraft()"
         (ngModelChange)="reasonDraft.set($event)"
-        placeholder="Motivo del bloqueo..."
+        placeholder="Motivo del bloqueo (opcional)..."
       ></textarea>
       <div class="flex justify-content-end gap-2 mt-2">
         <p-button label="Cancelar" class="p-button-text" (onClick)="cancelBlockAccess()" [disabled]="saving()"></p-button>
-        <p-button label="Bloquear" icon="pi pi-lock" (onClick)="confirmBlockAccessWithReason()" [disabled]="saving() || !reasonDraft() || reasonDraft().trim().length < 2"></p-button>
+        <p-button label="Bloquear" icon="pi pi-lock" (onClick)="confirmBlockAccessWithReason()" [disabled]="saving()"></p-button>
       </div>
     </div>
   </p-dialog>
