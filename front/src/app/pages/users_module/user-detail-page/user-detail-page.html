@@ -11,8 +11,8 @@
     <div class="flex flex-column gap-1">
       <span class="text-sm font-medium">Acceso</span>
       <p-togglebutton
-        [ngModel]="canLogin() === true"
-        (onChange)="onToggleCanLogin(!!$event.checked)"
+        [ngModel]="canLogin()"
+        (ngModelChange)="onToggleCanLogin(!!$event)"
         [disabled]="saving() || !canToggleCanLogin() || isActive() === false"
         onLabel="Habilitado"
         offLabel="Bloqueado"
