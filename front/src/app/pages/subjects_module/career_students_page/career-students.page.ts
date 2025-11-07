@@ -6,9 +6,11 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToggleButtonModule } from 'primeng/togglebutton';
+import { DialogModule } from 'primeng/dialog';
 import { Router } from '@angular/router';
 import { PermissionService } from '@/core/auth/permission.service';
 import { ROLE } from '@/core/auth/roles';
+import { ApiService } from '@/core/services/api.service';
 
 import {
   CatalogsService,
@@ -27,6 +29,7 @@ import {
     InputTextModule,
     ProgressSpinnerModule,
     ToggleButtonModule,
+    DialogModule,
   ],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
@@ -35,10 +38,16 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   private readonly catalogs = inject(CatalogsService);
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
+  private readonly api = inject(ApiService);
 
   loading = signal(true);
   saving = signal(false);
   error = signal<string | null>(null);
+  // UI de motivo al bloquear acceso
+  showReasonDialog = signal(false);
+  reasonDraft = signal('');
+  // fila seleccionada para bloquear
+  private pendingRow: CareerStudentItem | null = null;
 
   private response = signal<CareerStudentsByCommissionResponse | null>(null);
 
@@ -157,17 +166,31 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
 
   // ---- Acciones ----
   async onToggleCanLogin(row: CareerStudentItem, next: boolean): Promise<void> {
+    console.debug('[CareerStudents] onToggleCanLogin', { next, row });
     if (!this.canToggleCanLogin()) return;
-    if (row.isActive === false) return; // inactivo: canLogin queda false
+    if (row.isActive === false && next) return; // inactivo: no habilitar
+
+    // Si vamos a bloquear (next=false), primero pedir motivo
+    if (next === false) {
+      // mantener visualmente habilitado hasta confirmar (en próximo tick)
+      setTimeout(() => {
+        row.canLogin = true;
+      });
+      this.pendingRow = row;
+      this.reasonDraft.set('');
+      this.showReasonDialog.set(true);
+      return;
+    }
+
+    // habilitar (next=true) => actualizar flag y limpiar motivo
     try {
       this.saving.set(true);
-      await this.catalogs['api'].update('users', row.studentId, {
-        'student.canLogin': !!next,
-      }).toPromise();
-      row.canLogin = !!next;
+      await this.api.update('users', row.studentId, { 'student.canLogin': true }).toPromise();
+      await this.api.request('PATCH', `users/${row.studentId}/unblock`).toPromise();
+      row.canLogin = true;
     } catch (e) {
-      // revertir UI si falla
-      row.canLogin = !next;
+      console.error('[CareerStudents] enable access error', e);
+      row.canLogin = false;
     } finally {
       this.saving.set(false);
     }
@@ -179,7 +202,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
       this.saving.set(true);
       const payload: any = { 'student.isActive': !!next };
       if (next === false) payload['student.canLogin'] = false; // regla de negocio
-      await this.catalogs['api'].update('users', row.studentId, payload).toPromise();
+      await this.api.update('users', row.studentId, payload).toPromise();
       row.isActive = !!next;
       if (row.isActive === false) row.canLogin = false;
     } catch (e) {
@@ -187,6 +210,38 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
       row.isActive = !next;
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  // Confirmación de bloqueo con motivo (bloquea acceso y registra motivo)
+  async confirmBlockAccessWithReason(): Promise<void> {
+    const row = this.pendingRow;
+    if (!row) return;
+    const reason = (this.reasonDraft() || '').trim();
+    try {
+      this.saving.set(true);
+      await this.api.update('users', row.studentId, { 'student.canLogin': false }).toPromise();
+      await this.api.request('PATCH', `users/${row.studentId}/block`, { reason }).toPromise();
+      row.canLogin = false;
+      this.showReasonDialog.set(false);
+      this.pendingRow = null;
+    } catch (e) {
+      console.error('[CareerStudents] block access error', e);
+      row.canLogin = true;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  cancelBlockAccess(): void {
+    this.showReasonDialog.set(false);
+    if (this.pendingRow && this.pendingRow.canLogin !== true) {
+      setTimeout(() => {
+        if (this.pendingRow) this.pendingRow.canLogin = true;
+        this.pendingRow = null;
+      });
+    } else {
+      this.pendingRow = null;
     }
   }
 }
