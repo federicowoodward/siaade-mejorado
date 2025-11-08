@@ -91,6 +91,21 @@ export class UsersController {
     return { data, message: 'Usuario desbloqueado' };
   }
 
+  // Activar/Inactivar (soft delete reversible)
+  @Patch(':id/activate')
+  @ApiOperation({ summary: 'Marca un usuario como ACTIVO (reversión de inactivo/eliminado lógico)' })
+  async activateUser(@Param('id') id: string) {
+    const data = await this.usersService.setUserActiveState(id, true);
+    return { data, message: 'Usuario activado' };
+  }
+
+  @Patch(':id/inactivate')
+  @ApiOperation({ summary: 'Marca un usuario como INACTIVO (equivalente a eliminado lógico, bloquea login)' })
+  async inactivateUser(@Param('id') id: string) {
+    const data = await this.usersService.setUserActiveState(id, false);
+    return { data, message: 'Usuario inactivado' };
+  }
+
   // -----------------------------
 
   @Get()

@@ -177,6 +177,7 @@ export class UsersService {
 
   async findAll(): Promise<any[]> {
     const users = await this.usersRepository.find({
+      where: { isActive: true } as any,
       relations: ["role"],
     });
     return users.map((user) => this.mapToResponseDto(user, user.role));
@@ -232,8 +233,20 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<void> {
-    // Dejar método para compatibilidad pero usar transacción con QB
+    // Cambio de semántica: dejamos delete físico sólo para casos especiales y fomentamos inactivate.
     await this.deleteTx(id);
+  }
+
+  // Soft activate/inactivate
+  async setUserActiveState(userId: string, active: boolean) {
+    const user = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    if (!user) throw new NotFoundException('User not found');
+    if ((user as any).isActive === active) {
+      return this.mapToResponseDto(user, user.role);
+    }
+    await this.usersRepository.update({ id: userId }, { isActive: active } as any);
+    const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    return this.mapToResponseDto(updated!, updated?.role);
   }
 
   // Borrado transaccional con QueryBuilder/QueryRunner y rollback automático
@@ -401,6 +414,7 @@ export class UsersService {
         : undefined,
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
+      isActive: (user as any).isActive ?? true,
     };
   }
 

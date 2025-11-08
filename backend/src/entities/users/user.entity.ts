@@ -65,4 +65,9 @@ export class User {
 
   @Column({ name: 'blocked_reason', type: 'text', nullable: true })
   blockedReason: string | null;
+
+  // Nuevo flag de actividad reversible (INACTIVO se comporta como borrado lógico para login y listados).
+  // NOTA: Se añade vía migración posterior; si todavía no existe la columna, TypeORM la agregará.
+  @Column({ name: 'is_active', type: 'bool', nullable: false, default: true })
+  isActive: boolean;
 }

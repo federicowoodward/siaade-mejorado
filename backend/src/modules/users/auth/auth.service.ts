@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, UnauthorizedException, Logger, ForbiddenException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, MoreThan, Repository } from "typeorm";
@@ -281,7 +281,18 @@ export class AuthService {
     const isDirective =
       userEntity.secretary?.isDirective ?? role === ROLE.EXECUTIVE_SECRETARY;
 
-    // Gating de acceso para alumnos: isActive=false bloquea siempre; si isActive=true pero canLogin=false, también bloquea login.
+    // Gating de acceso global: si el usuario está INACTIVO o BLOQUEADO, no puede loguear.
+    // INACTIVO se trata como eliminado (401 genérico); BLOQUEADO devuelve 403 con motivo (si existe).
+    if ((userEntity as any).isActive === false) {
+      throw new UnauthorizedException("Usuario inactivo o eliminado");
+    }
+    if ((userEntity as any).isBlocked === true) {
+      const reason = (userEntity as any).blockedReason ?? null;
+      const message = reason ? `Tu usuario está bloqueado: ${reason}` : "Tu usuario está bloqueado";
+      throw new ForbiddenException({ error: 'USER_BLOCKED', message, reason });
+    }
+
+    // Gating adicional para alumnos: isActive=false bloquea siempre; si isActive=true pero canLogin=false, también bloquea login.
     if (role === ROLE.STUDENT) {
       // Traer flags del alumno; como las columnas pueden ser null, sólo bloqueamos si son estrictamente false
       const student = await this.studentRepository.findOne({ where: { userId } });
@@ -289,15 +300,14 @@ export class AuthService {
         throw new UnauthorizedException("Student record not found");
       }
       if (student.isActive === false) {
-        throw new UnauthorizedException("Student is inactive");
+        throw new UnauthorizedException("Usuario inactivo o eliminado");
       }
       if (student.canLogin === false) {
-        throw new UnauthorizedException("Login disabled for this student");
+        throw new ForbiddenException({ error: 'STUDENT_LOGIN_DISABLED', message: "El acceso está deshabilitado para este alumno" });
       }
     }
 
-    // NOTA: Permitimos login aunque esté bloqueado (isBlocked=true) para mostrar el aviso dentro del sistema y restringir acciones puntuales.
-    // Las acciones sensibles (inscripción, mover comisión, etc.) validan isBlocked y fallan con Forbidden.
+    // NOTA: Antes se permitía login bloqueado; ahora se corta en login para cumplir requerimiento.
 
     const email = profile.email ?? userEntity.email ?? null;
     if (!email) {
