@@ -23,10 +23,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
+import { DisableIfUnauthorizedDirective } from '../../../shared/directives/disable-if-unauthorized.directive';
 import { DialogModule } from 'primeng/dialog';
 import { Tag } from 'primeng/tag';
-import { AuthService } from '../../../core/services/auth.service';
 import { ROLE } from '../../../core/auth/roles';
+import { RoleService } from '@/core/auth/role.service';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -48,6 +49,7 @@ import {
   DialogModule,
   Tag,
   BlockedActionDirective,
+  DisableIfUnauthorizedDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
@@ -58,7 +60,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly goBackSvc = inject(GoBackService);
   private readonly subjectsSvc = inject(SubjectsService);
   private readonly messages = inject(MessageService);
-  private readonly auth = inject(AuthService);
+  private readonly roleService = inject(RoleService);
 
   loading = signal(true);
   error = signal<string | null>(null);
@@ -88,20 +90,10 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
 
-  canMoveStudents = computed(() => {
-    const user = this.currentUser();
-    if (!user) return false;
-    // Roles con permiso: preceptor, secretary, executive_secretary
-    const allowed: ROLE[] = [ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY];
-    return !!user.role && allowed.includes(user.role as ROLE);
-  });
-  private currentUser = signal<{ role: ROLE | null } | null>(null);
-
-  constructor() {
-    this.auth.getUser().subscribe(u => {
-      this.currentUser.set(u ? { role: u.role } : null);
-    });
-  }
+  readonly ROLE = ROLE;
+  canMoveStudents = computed(() =>
+    this.roleService.hasAny([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])
+  );
 
   conditionSeverity(condition: string | null | undefined): string {
     switch ((condition || '').toLowerCase()) {

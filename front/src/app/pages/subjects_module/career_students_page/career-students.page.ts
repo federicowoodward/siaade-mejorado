@@ -8,8 +8,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { DialogModule } from 'primeng/dialog';
 import { Router } from '@angular/router';
-import { PermissionService } from '@/core/auth/permission.service';
 import { ROLE } from '@/core/auth/roles';
+import { RoleService } from '@/core/auth/role.service';
 import { ApiService } from '@/core/services/api.service';
 
 import {
@@ -17,6 +17,7 @@ import {
   CareerStudentItem,
   CareerStudentsByCommissionResponse,
 } from '@/core/services/catalogs.service';
+import { DisableIfUnauthorizedDirective } from '@/shared/directives/disable-if-unauthorized.directive';
 
 @Component({
   selector: 'app-career-students-page',
@@ -30,6 +31,7 @@ import {
     ProgressSpinnerModule,
     ToggleButtonModule,
     DialogModule,
+    DisableIfUnauthorizedDirective,
   ],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
@@ -37,8 +39,15 @@ import {
 export class CareerStudentsPage implements OnInit, OnDestroy {
   private readonly catalogs = inject(CatalogsService);
   private readonly router = inject(Router);
-  private readonly permissions = inject(PermissionService);
+  private readonly rolesService = inject(RoleService);
   private readonly api = inject(ApiService);
+  readonly ROLE = ROLE;
+  private readonly accessRoles: ROLE[] = [
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY,
+  ];
+  private readonly statusRoles: ROLE[] = [ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY];
 
   loading = signal(true);
   saving = signal(false);
@@ -149,26 +158,10 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     this.router.navigate(['/users/user_detail', studentId]);
   }
 
-  // ---- Permisos para toggles ----
-  canToggleCanLogin(): boolean {
-    return this.permissions.hasAnyRole([
-      ROLE.PRECEPTOR,
-      ROLE.SECRETARY,
-      ROLE.EXECUTIVE_SECRETARY,
-    ]);
-  }
-
-  canToggleIsActive(): boolean {
-    return this.permissions.hasAnyRole([
-      ROLE.SECRETARY,
-      ROLE.EXECUTIVE_SECRETARY,
-    ]);
-  }
-
   // ---- Acciones ----
   async onToggleCanLogin(row: CareerStudentItem, next: boolean): Promise<void> {
     console.debug('[CareerStudents] onToggleCanLogin', { next, row });
-    if (!this.canToggleCanLogin()) return;
+    if (!this.rolesService.hasAny(this.accessRoles)) return;
     if (row.isActive === false && next) return; // inactivo: no habilitar
 
     // Si vamos a bloquear (next=false), primero pedir motivo
@@ -197,7 +190,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   }
 
   async onToggleIsActive(row: CareerStudentItem, next: boolean): Promise<void> {
-    if (!this.canToggleIsActive()) return;
+    if (!this.rolesService.hasAny(this.statusRoles)) return;
     try {
       this.saving.set(true);
       const payload: any = { 'student.isActive': !!next };

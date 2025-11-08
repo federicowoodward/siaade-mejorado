@@ -33,7 +33,8 @@ export class App {
   );
 
   constructor() {
-    this.authService.loadUserFromStorage(); 
+    this.authService.loadUserFromStorage();
+    void this.authService.loadUserRoles();
   }
 
   get sidebarVisible() {

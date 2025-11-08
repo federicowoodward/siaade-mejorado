@@ -250,7 +250,8 @@
                   text
                   rounded
                   severity="secondary"
-                  [blockedAction]="!canMoveStudents() ? true : false"
+                  blockedAction
+                  [disableIfUnauthorized]="[ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]"
                 ></button>
                 <!-- // no damos la opcion de cancelar la edicion -->
                 <!-- <button

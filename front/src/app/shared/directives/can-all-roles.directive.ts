@@ -10,10 +10,10 @@ import { RoleService } from '@/core/auth/role.service';
 import { RoleLike } from '@/core/auth/roles';
 
 @Directive({
-  selector: '[canAnyRole]',
+  selector: '[canAllRoles]',
   standalone: true,
 })
-export class CanAnyRoleDirective {
+export class CanAllRolesDirective {
   private readonly template = inject(TemplateRef<unknown>);
   private readonly viewContainer = inject(ViewContainerRef);
   private readonly rolesService = inject(RoleService);
@@ -26,13 +26,13 @@ export class CanAnyRoleDirective {
   }
 
   @Input({ required: true })
-  set canAnyRole(value: RoleLike[] | RoleLike) {
+  set canAllRoles(value: RoleLike[] | RoleLike) {
     this.requiredRoles = Array.isArray(value) ? value : [value];
     this.render();
   }
 
   private render() {
-    const allowed = this.rolesService.hasAny(this.requiredRoles);
+    const allowed = this.rolesService.hasAll(this.requiredRoles);
     if (allowed && !this.viewAttached) {
       this.viewContainer.createEmbeddedView(this.template);
       this.viewAttached = true;

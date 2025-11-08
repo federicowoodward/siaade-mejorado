@@ -7,6 +7,7 @@ export enum ROLE {
 }
 
 export type VisibleRole = ROLE;
+export type RoleLike = ROLE | string;
 
 export const ROLE_VALUES: ROLE[] = Object.values(ROLE);
 

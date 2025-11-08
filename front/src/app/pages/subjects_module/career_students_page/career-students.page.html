@@ -72,7 +72,8 @@
               <p-togglebutton
                 [ngModel]="row.canLogin === true"
                 (ngModelChange)="onToggleCanLogin(row, !!$event)"
-                [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || row.isActive === false"
+                [disabled]="saving() || showReasonDialog() || row.isActive === false"
+                [disableIfUnauthorized]="[ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]"
                 onLabel="Habilitado"
                 offLabel="Bloqueado"
                 [onIcon]="'pi pi-lock-open'"
@@ -89,7 +90,8 @@
               <p-togglebutton
                 [ngModel]="row.isActive !== false"
                 (onChange)="onToggleIsActive(row, !!$event.checked)"
-                [disabled]="saving() || !canToggleIsActive()"
+                [disabled]="saving()"
+                [disableIfUnauthorized]="[ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]"
                 onLabel="Activo"
                 offLabel="Inactivo"
                 [onIcon]="'pi pi-check'"

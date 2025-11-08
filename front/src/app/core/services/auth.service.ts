@@ -4,12 +4,14 @@ import { Observable, firstValueFrom, of } from "rxjs";
 import { catchError } from "rxjs/operators";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { PermissionService } from "../auth/permission.service";
+import { RoleService } from "../auth/role.service";
 import {
   ROLE,
   ROLE_BY_ID,
   ROLE_IDS,
   normalizeRole,
 } from "../auth/roles";
+import { ApiService } from "./api.service";
 import { AuthApiService } from "./auth/auth-api.service";
 import { AuthStateService } from "./auth/auth-state.service";
 
@@ -33,25 +35,15 @@ export interface LocalUser {
 export class AuthService {
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
+  private readonly roles = inject(RoleService);
   private readonly authApi = inject(AuthApiService);
   private readonly authState = inject(AuthStateService);
+  private readonly api = inject(ApiService);
 
   constructor() {
     this.authState.currentUser$
       .pipe(takeUntilDestroyed())
-      .subscribe((user) => {
-        if (!user) {
-          this.permissions.reset();
-          return;
-        }
-
-        const resolved = this.resolveRole(user);
-        if (resolved.role) {
-          this.permissions.setRole(resolved.role, resolved.roleId ?? null);
-        } else {
-          this.permissions.reset();
-        }
-      });
+      .subscribe((user) => this.applyRolesFromUser(user));
 
     this.authState.refreshFailed$
       .pipe(takeUntilDestroyed())
@@ -76,11 +68,7 @@ export class AuthService {
       this.authState.setCurrentUser(userLocal, { persist: true });
       this.authState.setAccessToken(response.accessToken, { persist: true });
       const resolved = this.resolveRole(userLocal);
-      if (resolved.role) {
-        this.permissions.setRole(resolved.role, resolved.roleId ?? null);
-      } else {
-        this.permissions.reset();
-      }
+      this.applyResolvedRole(resolved);
 
       return true;
     } catch (error) {
@@ -120,6 +108,7 @@ export class AuthService {
 
     this.authState.clearSession();
     this.permissions.reset();
+    this.roles.setRoles([]);
     if (options?.redirect === false) {
       return;
     }
@@ -139,6 +128,26 @@ export class AuthService {
 
   loadUserFromStorage(): void {
     this.authState.initializeFromStorage();
+  }
+
+  async loadUserRoles(): Promise<ROLE[]> {
+    const userId = this.getUserId();
+    if (!userId) {
+      this.roles.setRoles([]);
+      this.permissions.reset();
+      return [];
+    }
+
+    try {
+      const profile = await firstValueFrom(this.api.getById<any>("users", userId));
+      const resolved = this.resolveRole(profile);
+      this.applyResolvedRole(resolved);
+      return resolved.role ? [resolved.role] : [];
+    } catch (error) {
+      console.error("[AuthService] No se pudieron cargar los roles del usuario", error);
+      this.roles.setRoles([]);
+      return [];
+    }
   }
 
   getUserId(): string | null {
@@ -215,5 +224,26 @@ export class AuthService {
     }
 
     return { role: null, roleId: null };
+  }
+
+  private applyRolesFromUser(user: AnyRecord | null): void {
+    if (!user) {
+      this.permissions.reset();
+      this.roles.setRoles([]);
+      return;
+    }
+
+    const resolved = this.resolveRole(user);
+    this.applyResolvedRole(resolved);
+  }
+
+  private applyResolvedRole(resolved: { role: ROLE | null; roleId: number | null }): void {
+    if (resolved.role) {
+      this.permissions.setRole(resolved.role, resolved.roleId ?? null);
+      this.roles.setRoles([resolved.role]);
+    } else {
+      this.permissions.reset();
+      this.roles.setRoles([]);
+    }
   }
 }

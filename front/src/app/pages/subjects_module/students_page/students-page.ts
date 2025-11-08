@@ -4,8 +4,8 @@ import { UsersTableComponent } from "../../../shared/components/users-table/user
 import { CommonModule } from "@angular/common";
 import { ApiService } from "../../../core/services/api.service";
 import { GoBackService } from "../../../core/services/go_back.service";
-import { PermissionService } from "../../../core/auth/permission.service";
 import { ROLE, ROLE_BY_ID } from "../../../core/auth/roles";
+import { RoleService } from "@/core/auth/role.service";
 import { UserRow } from "../../../core/models/users-table.models";
 import { mapApiUserToRow } from "../../../shared/adapters/users.adapter";
 import { ButtonModule } from "primeng/button";
@@ -21,12 +21,15 @@ export class StudentsPage implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private goBack = inject(GoBackService);
-  private permissions = inject(PermissionService);
+  private roles = inject(RoleService);
 
   public ROLE = ROLE;
   subjectId!: string;
-  viewerRole: ROLE | null = this.permissions.currentRole();
   rows = signal<UserRow[]>([]);
+
+  get viewerRole(): ROLE | null {
+    return this.roles.roles()[0] ?? null;
+  }
 
   ngOnInit() {
     this.subjectId = this.route.snapshot.paramMap.get("subjectId")!;
