@@ -24,7 +24,6 @@ import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { DisableIfUnauthorizedDirective } from '../../../shared/directives/disable-if-unauthorized.directive';
-import { DialogModule } from 'primeng/dialog';
 import { Tag } from 'primeng/tag';
 import { ROLE } from '../../../core/auth/roles';
 import { RoleService } from '@/core/auth/role.service';
@@ -32,6 +31,14 @@ import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
 } from './subject-academic-situation.types';
+import { SubjectMoveCommissionDialog } from './subject-move-commission.dialog';
+import {
+  computeFinalForRow as computeFinalForRowUtil,
+  finalClass as finalClassUtil,
+  parseAttendanceValue,
+  parseGradeValue,
+  rowsTrackBy as rowsTrackByFn,
+} from './utils/academic-utils';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
@@ -45,11 +52,11 @@ import {
     SelectModule,
     ToastModule,
     ProgressSpinnerModule,
-  TooltipModule,
-  DialogModule,
-  Tag,
-  BlockedActionDirective,
-  DisableIfUnauthorizedDirective,
+    TooltipModule,
+    Tag,
+    BlockedActionDirective,
+    DisableIfUnauthorizedDirective,
+    SubjectMoveCommissionDialog,
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
@@ -89,6 +96,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   subjectName = computed(() => this.data()?.subject.name ?? 'Materia');
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
+  readonly rowsTrackBy = rowsTrackByFn;
+  readonly finalClass = finalClassUtil;
 
   readonly ROLE = ROLE;
   canMoveStudents = computed(() =>
@@ -118,7 +127,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   moveDialog = signal<{ visible: boolean; loading: boolean; studentId: string | null; currentCommissionId: number | null }>(
     { visible: false, loading: false, studentId: null, currentCommissionId: null }
   );
-  selectedNewCommission: number | null = null;
 
   commissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
@@ -179,10 +187,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
   back(): void {
     this.goBackSvc.back();
-  }
-
-  rowsTrackBy(_: number, item: AcademicSituationRow): string {
-    return item.studentId;
   }
 
   onSearchChange(value: string): void {
@@ -271,8 +275,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
     for (const field of fields) {
       const parsed = field === 'attendancePercentage'
-        ? this.parseAttendanceValue(row[field])
-        : this.parseGradeValue(row[field]);
+        ? parseAttendanceValue(row[field])
+        : parseGradeValue(row[field]);
       if (parsed === undefined) {
         const original = this.clonedRows.get(row.studentId);
         if (original) {
@@ -293,8 +297,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
     for (const field of fields) {
       const parsed = field === 'attendancePercentage'
-        ? this.parseAttendanceValue(row[field])
-        : this.parseGradeValue(row[field]);
+        ? parseAttendanceValue(row[field])
+        : parseGradeValue(row[field]);
       const normalized = field === 'attendancePercentage'
         ? (parsed ?? 0)
         : (parsed ?? null);
@@ -316,7 +320,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       );
     }
 
-    const newFinal = this.computeFinalForRow(row);
+    const newFinal = computeFinalForRowUtil(row, this.partials());
     const baselineFinal = base ? base.final ?? null : null;
     row.final = newFinal;
     this.updatePendingChanges(row.studentId, 'final', newFinal, baselineFinal);
@@ -350,14 +354,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.clonedRows.delete(row.studentId);
   }
 
-  finalClass(score: number | null): string {
-    if (score === null || score === undefined) return '';
-    if (this.isGradePromoted(score)) return 'nota-promocionada';
-    if (this.isGradeApproved(score)) return 'nota-aprobada';
-    if (this.isGradeDisapproved(score)) return 'nota-desaprobada';
-    return '';
-  }
-
   private fetchAcademicSituation(params?: {
     q?: string;
     commissionId?: number;
@@ -373,7 +369,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           const partialsCount = payload.subject.partials;
           const rowsWithComputedFinal = payload.rows.map((row) => ({
             ...row,
-            final: this.computeFinalForRow(row, partialsCount),
+            final: computeFinalForRowUtil(row, partialsCount),
           }));
           this.data.set({
             ...payload,
@@ -551,7 +547,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       );
     }
 
-    const currentFinal = this.computeFinalForRow(row);
+    const currentFinal = computeFinalForRowUtil(row, this.partials());
     const baselineFinal = base ? base.final ?? null : null;
     row.final = currentFinal;
     this.updatePendingChanges(row.studentId, 'final', currentFinal, baselineFinal);
@@ -565,71 +561,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     return [...gradeFields, 'attendancePercentage'];
   }
 
-  private computeFinalForRow(
-    row: AcademicSituationRow,
-    partialsCount?: number
-  ): number | null {
-    const count = partialsCount ?? this.partials();
-    const rawValues =
-      count === 4
-        ? [row.note1, row.note2, row.note3, row.note4]
-        : [row.note1, row.note2];
-
-    const numericValues = rawValues.filter(
-      (value): value is number =>
-        typeof value === 'number' && !Number.isNaN(value) && value >= 0 && value <= 10
-    );
-
-    if (numericValues.length === 0) {
-      return null;
-    }
-
-    const divisor = count === 4 ? 4 : 2;
-    const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
-    const average = sum / divisor;
-
-    if (!Number.isFinite(average)) {
-      return null;
-    }
-
-    return Number(average.toFixed(2));
-  }
-
-  private parseGradeValue(value: unknown): number | null | undefined {
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
-    const numeric = Number(value);
-    if (Number.isNaN(numeric) || numeric < 0 || numeric > 10) {
-      return undefined;
-    }
-    return numeric;
-  }
-
-  private parseAttendanceValue(value: unknown): number | undefined {
-    if (value === null || value === undefined || value === '') {
-      return 0;
-    }
-    const numeric = Number(value);
-    if (Number.isNaN(numeric) || numeric < 0 || numeric > 100) {
-      return undefined;
-    }
-    // redondeo a entero si hace falta
-    return Math.round(numeric);
-  }
-
-  private isGradeApproved(score: number | null): boolean {
-    return score !== null && score >= 4 && score < 7;
-  }
-
-  private isGradePromoted(score: number | null): boolean {
-    return score !== null && score >= 7;
-  }
-
-  private isGradeDisapproved(score: number | null): boolean {
-    return score !== null && score < 4;
-  }
-
   private showError(summary: string, detail: string): void {
     this.messages.add({
       severity: 'error',
@@ -640,20 +571,18 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
   openMoveCommission(row: AcademicSituationRow) {
     if (!this.canMoveStudents()) return;
-    this.selectedNewCommission = null;
     this.moveDialog.set({ visible: true, loading: false, studentId: row.studentId, currentCommissionId: row.commissionId });
   }
 
   closeMoveDialog() {
     this.moveDialog.set({ visible: false, loading: false, studentId: null, currentCommissionId: null });
-    this.selectedNewCommission = null;
   }
 
-  confirmMoveCommission() {
+  confirmMoveCommission(newCommissionId: number | null) {
     const d = this.moveDialog();
-    if (!d.studentId || !this.selectedNewCommission || this.selectedNewCommission === d.currentCommissionId) return;
+    if (!d.studentId || !newCommissionId || newCommissionId === d.currentCommissionId) return;
     this.moveDialog.update(v => ({ ...v, loading: true }));
-    this.subjectsSvc.moveStudentCommission(this.subjectId, d.studentId, this.selectedNewCommission).subscribe({
+    this.subjectsSvc.moveStudentCommission(this.subjectId, d.studentId, newCommissionId).subscribe({
       next: () => {
         this.moveDialog.update(v => ({ ...v, loading: false }));
         this.closeMoveDialog();

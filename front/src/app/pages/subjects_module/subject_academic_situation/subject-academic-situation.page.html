@@ -1,10 +1,30 @@
 ﻿<div class="m-w-custom">
   <p-toast></p-toast>
-
-  <p-button label="Volver" icon="pi pi-arrow-left" (onClick)="back()" />
+  <div class="pt-3">
+    <p-button label="Volver" icon="pi pi-arrow-left" (onClick)="back()" />
+  </div>
 
   <div class="flex justify-content-between align-items-center mb-3">
-    <h2 class="m-0">Situacion academica: {{ subjectName() }}</h2>
+    <div>
+      <h2 class="m-0">Situacion academica:</h2>
+      <p class="">{{ subjectName() }}</p>
+    </div>
+    <div class="flex flex-column align-items-end gap-1">
+      <p-button
+        label="Guardar cambios"
+        icon="pi pi-save"
+        [disabled]="!hasPendingChanges() || saving()"
+        [loading]="saving()"
+        blockedAction
+        (onClick)="onSaveChanges()"
+      ></p-button>
+      <p-button
+        label="Recargar datos"
+        icon="pi pi-refresh"
+        [disabled]="saving()"
+        (onClick)="onReload()"
+      ></p-button>
+    </div>
   </div>
 
   <ng-container *ngIf="loading(); else loadedTpl">
@@ -38,20 +58,6 @@
                 [outlined]="true"
                 icon="pi pi-filter-slash"
                 (onClick)="clearFilters(dt)"
-              ></p-button>
-              <p-button
-                label="Guardar cambios"
-                icon="pi pi-save"
-                [disabled]="!hasPendingChanges() || saving()"
-                [loading]="saving()"
-             blockedAction
-                (onClick)="onSaveChanges()"
-              ></p-button>
-              <p-button
-                label="Recargar datos"
-                icon="pi pi-refresh"
-                [disabled]="saving()"
-                (onClick)="onReload()"
               ></p-button>
             </div>
 
@@ -113,7 +119,7 @@
                     type="number"
                     min="0"
                     max="10"
-                    style="width: 4rem"
+                    style="width: 4rem; height: 2.5rem"
                     pInputText
                     [(ngModel)]="row.note1"
                     [ngModelOptions]="{ standalone: true }"
@@ -131,7 +137,7 @@
                     type="number"
                     min="0"
                     max="10"
-                    style="width: 4rem"
+                    style="width: 4rem; height: 2.5rem"
                     pInputText
                     [(ngModel)]="row.note2"
                     [ngModelOptions]="{ standalone: true }"
@@ -149,7 +155,7 @@
                     type="number"
                     min="0"
                     max="10"
-                    style="width: 4rem"
+                    style="width: 4rem; height: 2.5rem"
                     pInputText
                     [(ngModel)]="row.note3"
                     [ngModelOptions]="{ standalone: true }"
@@ -167,7 +173,7 @@
                     type="number"
                     min="0"
                     max="10"
-                    style="width: 4rem"
+                    style="width: 4rem; height: 2.5rem"
                     pInputText
                     [(ngModel)]="row.note4"
                     [ngModelOptions]="{ standalone: true }"
@@ -189,7 +195,7 @@
                       type="number"
                       min="0"
                       max="100"
-                      style="width: 4rem"
+                      style="width: 4rem; height: 2.5rem"
                       pInputText
                       [(ngModel)]="row.attendancePercentage"
                       [ngModelOptions]="{ standalone: true }"
@@ -198,7 +204,9 @@
                   </span>
                 </ng-template>
                 <ng-template pTemplate="output">
-                  {{ row.attendancePercentage !== null && row.attendancePercentage !== undefined ? (row.attendancePercentage + '%') : '-' }}
+                  {{ row.attendancePercentage !== null &&
+                  row.attendancePercentage !== undefined ?
+                  (row.attendancePercentage + '%') : '-' }}
                 </ng-template>
               </p-cellEditor>
             </td>
@@ -211,7 +219,7 @@
               <ng-template #noCondTpl>-</ng-template>
             </td>
             <td>
-              <div class="flex items-center justify-center gap-2">
+              <div class="flex items-center justify-center">
                 <button
                   *ngIf="!editing"
                   pButton
@@ -251,47 +259,21 @@
                   rounded
                   severity="secondary"
                   blockedAction
-                  [disableIfUnauthorized]="[ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]"
                 ></button>
-                <!-- // no damos la opcion de cancelar la edicion -->
-                <!-- <button
-                  *ngIf="editing"
-                  pButton
-                  pRipple
-                  type="button"
-                  pCancelEditableRow
-                  icon="pi pi-times"
-                  (click)="onRowEditCancel(row, ri)"
-                  text
-                  rounded
-                  severity="secondary"
-                ></button> -->
               </div>
             </td>
           </tr>
         </ng-template>
       </p-table>
     </div>
-    <!-- Diálogo de mover alumno de comisión (fuera de la tabla para evitar interferencias con p-cellEditor) -->
-    <p-dialog [(visible)]="moveDialog().visible" [modal]="true" [style]="{width:'28rem'}" header="Mover alumno de comisión" (onHide)="closeMoveDialog()" [draggable]="false" [resizable]="false">
-      <div *ngIf="moveDialog().loading" class="p-3 flex gap-2 align-items-center">
-        <i class="pi pi-spin pi-spinner"></i>
-        <span>Procesando...</span>
-      </div>
-      <div *ngIf="!moveDialog().loading">
-        <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
-        <select class="p-inputtext p-component w-full" [(ngModel)]="selectedNewCommission">
-          <option [ngValue]="null" disabled selected>Comisión destino</option>
-          <!-- No mostrar la opción 'Todas' y asegurar que el valor sea numérico -->
-          <option *ngFor="let c of moveCommissionOptions()" [ngValue]="c.id" [disabled]="c.id === moveDialog().currentCommissionId">
-            {{ c.letter || ('Comisión ' + c.id) }}
-          </option>
-        </select>
-      </div>
-      <ng-template pTemplate="footer">
-        <button pButton label="Cancelar" class="p-button-text" (click)="closeMoveDialog()"></button>
-        <button pButton label="Mover" icon="pi pi-check" [disabled]="!selectedNewCommission || moveDialog().loading" (click)="confirmMoveCommission()"></button>
-      </ng-template>
-    </p-dialog>
+    <app-subject-move-commission-dialog
+      [visible]="moveDialog().visible"
+      [loading]="moveDialog().loading"
+      [currentCommissionId]="moveDialog().currentCommissionId"
+      [options]="moveCommissionOptions()"
+      [disableMove]="moveDialog().loading"
+      (cancel)="closeMoveDialog()"
+      (confirm)="confirmMoveCommission($event)"
+    ></app-subject-move-commission-dialog>
   </ng-template>
 </div>
