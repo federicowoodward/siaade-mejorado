@@ -18,6 +18,7 @@ import {
   CareerStudentsByCommissionResponse,
 } from '@/core/services/catalogs.service';
 import { DisableIfUnauthorizedDirective } from '@/shared/directives/disable-if-unauthorized.directive';
+import { CanAnyRoleDirective } from "@/shared/directives/can-any-role.directive";
 
 @Component({
   selector: 'app-career-students-page',
@@ -32,7 +33,8 @@ import { DisableIfUnauthorizedDirective } from '@/shared/directives/disable-if-u
     ToggleButtonModule,
     DialogModule,
     DisableIfUnauthorizedDirective,
-  ],
+    CanAnyRoleDirective
+],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
 })
