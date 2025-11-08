@@ -63,30 +63,25 @@ export class AuthService {
   }
 
   async login(credentials: { identity: string; password: string }): Promise<boolean> {
-    try {
-      const response = await firstValueFrom(
-        this.authApi.login(credentials)
-      );
+    const response = await firstValueFrom(
+      this.authApi.login(credentials)
+    );
 
-      if (!response?.accessToken || !response?.user) {
-        return false;
-      }
-
-      const userLocal = this.buildLocalUser(response.user);
-      this.authState.setCurrentUser(userLocal, { persist: true });
-      this.authState.setAccessToken(response.accessToken, { persist: true });
-      const resolved = this.resolveRole(userLocal);
-      if (resolved.role) {
-        this.permissions.setRole(resolved.role, resolved.roleId ?? null);
-      } else {
-        this.permissions.reset();
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Login failed:", error);
+    if (!response?.accessToken || !response?.user) {
       return false;
     }
+
+    const userLocal = this.buildLocalUser(response.user);
+    this.authState.setCurrentUser(userLocal, { persist: true });
+    this.authState.setAccessToken(response.accessToken, { persist: true });
+    const resolved = this.resolveRole(userLocal);
+    if (resolved.role) {
+      this.permissions.setRole(resolved.role, resolved.roleId ?? null);
+    } else {
+      this.permissions.reset();
+    }
+
+    return true;
   }
 
   async loginFlexible(credentials: {
@@ -96,7 +91,35 @@ export class AuthService {
   }): Promise<boolean> {
     const identity = credentials.identity ?? credentials.username;
     if (!identity) return false;
-    return this.login({ identity, password: credentials.password });
+    try {
+      return await this.login({ identity, password: credentials.password });
+    } catch (error: any) {
+      // Relay error upward so UI pueda decidir mensaje específico
+      throw error;
+    }
+  }
+
+  async loginWithReason(credentials: { identity: string; password: string }): Promise<{ ok: boolean; blocked?: boolean; blockedReason?: string | null; inactive?: boolean; message?: string }> {
+    try {
+      const ok = await this.login(credentials);
+      return { ok };
+    } catch (error: any) {
+      const msg: string = (error?.error?.message || error?.message || '').toLowerCase();
+      const raw = error?.error?.message || error?.message || '';
+      let blocked = false;
+      let inactive = false;
+      let blockedReason: string | null = null;
+      if (msg.includes('inactivo') || msg.includes('eliminado')) inactive = true;
+      if (msg.includes('bloqueado')) {
+        blocked = true;
+        // Extraer motivo después de ':' si existe
+        const colonIdx = raw.indexOf(':');
+        if (colonIdx >= 0) {
+          blockedReason = raw.slice(colonIdx + 1).trim() || null;
+        }
+      }
+      return { ok: false, blocked, blockedReason, inactive, message: raw };
+    }
   }
 
   requestPasswordRecovery(identity: string) {

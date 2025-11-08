@@ -96,25 +96,34 @@ export class AuthPage {
     this.submittingLogin.set(true);
 
     try {
-      const success = await this.auth.loginFlexible({
+      const result = await this.auth.loginWithReason({
         identity: identity!,
         password: password!,
       });
-      if (success) {
+      if (result.ok) {
         this.router.navigate(['/welcome']);
+      } else if (result.blocked) {
+        const detail = result.blockedReason
+          ? `Tu cuenta está bloqueada. Motivo: ${result.blockedReason}`
+          : 'Tu cuenta está bloqueada.';
+        this.message.add({ severity: 'warn', summary: 'Acceso bloqueado', detail });
+      } else if (result.inactive) {
+        this.message.add({ severity: 'warn', summary: 'Cuenta inactiva', detail: 'Esta cuenta fue desactivada/eliminada.' });
       } else {
-        this.message.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Usuario o contraseña incorrectos',
-        });
+        this.message.add({ severity: 'error', summary: 'Error', detail: 'Usuario o contraseña incorrectos' });
       }
-    } catch (error) {
-      this.message.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo iniciar sesión',
-      });
+    } catch (error: any) {
+      const status = error?.status;
+      const reason = error?.error?.reason ?? null;
+      if (status === 403 && reason) {
+        this.message.add({ severity: 'warn', summary: 'Acceso bloqueado', detail: `Tu cuenta está bloqueada. Motivo: ${reason}` });
+      } else if (status === 403) {
+        this.message.add({ severity: 'warn', summary: 'Acceso bloqueado', detail: 'Tu cuenta está bloqueada.' });
+      } else if (status === 401) {
+        this.message.add({ severity: 'warn', summary: 'Cuenta inactiva', detail: 'Esta cuenta está inactiva o eliminada.' });
+      } else {
+        this.message.add({ severity: 'error', summary: 'Error', detail: 'No se pudo iniciar sesión' });
+      }
     } finally {
       this.submittingLogin.set(false);
     }
