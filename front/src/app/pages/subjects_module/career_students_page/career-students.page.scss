@@ -23,3 +23,10 @@
 .table-container {
   overflow-x: auto;
 }
+
+::ng-deep {
+  .tr-container td {
+    height: 3.5rem !important;
+    padding: 0 1rem !important;
+  }
+}

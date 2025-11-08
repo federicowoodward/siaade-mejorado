@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -18,7 +25,8 @@ import {
   CareerStudentsByCommissionResponse,
 } from '@/core/services/catalogs.service';
 import { DisableIfUnauthorizedDirective } from '@/shared/directives/disable-if-unauthorized.directive';
-import { CanAnyRoleDirective } from "@/shared/directives/can-any-role.directive";
+import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
+import { GoBackService } from '@/core/services/go_back.service';
 
 @Component({
   selector: 'app-career-students-page',
@@ -33,8 +41,8 @@ import { CanAnyRoleDirective } from "@/shared/directives/can-any-role.directive"
     ToggleButtonModule,
     DialogModule,
     DisableIfUnauthorizedDirective,
-    CanAnyRoleDirective
-],
+    CanAnyRoleDirective,
+  ],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
 })
@@ -49,7 +57,10 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
   ];
-  private readonly statusRoles: ROLE[] = [ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY];
+  private readonly statusRoles: ROLE[] = [
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY,
+  ];
 
   loading = signal(true);
   saving = signal(false);
@@ -160,6 +171,11 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     this.router.navigate(['/users/user_detail', studentId]);
   }
 
+  private readonly GoBackService = inject(GoBackService);
+  back() {
+    this.GoBackService.back();
+  }
+
   // ---- Acciones ----
   async onToggleCanLogin(row: CareerStudentItem, next: boolean): Promise<void> {
     console.debug('[CareerStudents] onToggleCanLogin', { next, row });
@@ -180,8 +196,12 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     // habilitar (next=true) => actualizar flag y limpiar motivo
     try {
       this.saving.set(true);
-      await this.api.update('users', row.studentId, { 'student.canLogin': true }).toPromise();
-      await this.api.request('PATCH', `users/${row.studentId}/unblock`).toPromise();
+      await this.api
+        .update('users', row.studentId, { 'student.canLogin': true })
+        .toPromise();
+      await this.api
+        .request('PATCH', `users/${row.studentId}/unblock`)
+        .toPromise();
       row.canLogin = true;
     } catch (e) {
       console.error('[CareerStudents] enable access error', e);
@@ -215,8 +235,12 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     const reason = (this.reasonDraft() || '').trim();
     try {
       this.saving.set(true);
-      await this.api.update('users', row.studentId, { 'student.canLogin': false }).toPromise();
-      await this.api.request('PATCH', `users/${row.studentId}/block`, { reason }).toPromise();
+      await this.api
+        .update('users', row.studentId, { 'student.canLogin': false })
+        .toPromise();
+      await this.api
+        .request('PATCH', `users/${row.studentId}/block`, { reason })
+        .toPromise();
       row.canLogin = false;
       this.dialogCloseMode = 'confirm';
       this.showReasonDialog.set(false);
