@@ -36,7 +36,7 @@ export class MenuComponent {
       {
         label: "Inscripciones",
         icon: "pi pi-pencil",
-        routerLink: ["/students/enrollments"],
+        routerLink: ["/alumno/mesas"],
       },
       {
         label: "Documentacion",
@@ -46,7 +46,7 @@ export class MenuComponent {
       {
         label: "Situacion academica",
         icon: "pi pi-book",
-        routerLink: ["/students/academic-status"],
+        routerLink: ["/alumno/situacion-academica"],
       },
       { label: "Avisos", icon: "pi pi-bell", routerLink: ["/notices"] },
     ],

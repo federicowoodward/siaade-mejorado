@@ -1,0 +1,39 @@
+.mesas-wrapper {
+  width: 100%;
+}
+
+.subject-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.subject-name {
+  font-weight: 600;
+}
+
+.mesas-table {
+  border-radius: 0 0 1rem 1rem;
+  overflow: hidden;
+}
+
+.mesas-spinner {
+  width: 48px;
+  height: 48px;
+}
+
+.mesas-block {
+  margin-top: 0.5rem;
+}
+
+.confirmation-list {
+  list-style: disc;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .mesas-wrapper {
+    gap: 1rem;
+  }
+}

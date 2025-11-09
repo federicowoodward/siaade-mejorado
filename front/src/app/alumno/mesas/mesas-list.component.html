@@ -1,0 +1,230 @@
+<p-toast position="bottom-right"></p-toast>
+
+<div class="mesas-wrapper flex flex-column gap-4">
+  <div class="surface-card shadow-2 border-round p-4">
+    <div class="flex flex-column gap-2 sm:flex-row sm:align-items-center sm:justify-content-between">
+      <div>
+        <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">Alumno / Inscripciones</p>
+        <h2 class="m-0 text-2xl font-semibold">Inscribirme a Mesas</h2>
+        <p class="text-color-secondary mt-1 mb-0">
+          Filtra por materia, fecha de mesa y estado de ventana. El listado se actualiza con datos oficiales.
+        </p>
+      </div>
+      <div class="flex gap-2 flex-wrap mt-2 sm:mt-0">
+        <p-button
+          type="button"
+          label="Limpiar"
+          icon="pi pi-undo"
+          severity="secondary"
+          (onClick)="clearFilters()"
+        />
+        <p-button
+          type="button"
+          label="Aplicar filtros"
+          icon="pi pi-filter"
+          (onClick)="applyFilters()"
+        />
+      </div>
+    </div>
+
+    <div class="grid mt-3 gap-3">
+      <div class="col-12 md:col-4 flex flex-column gap-1">
+        <label class="text-sm font-semibold" for="subjectFilter">Materia</label>
+        <p-select
+          id="subjectFilter"
+          [options]="subjectOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas"
+          showClear="true"
+          [style]="{ width: '100%' }"
+          [ngModel]="filters.subjectId"
+          (ngModelChange)="onSubjectFilterChange($event)"
+        ></p-select>
+      </div>
+
+      <div class="col-12 md:col-4 flex flex-column gap-1">
+        <label class="text-sm font-semibold" for="dateRange">Fecha de mesa</label>
+        <p-datepicker
+          inputId="dateRange"
+          selectionMode="range"
+          [touchUI]="true"
+          showIcon="true"
+          dateFormat="dd/mm/yy"
+          [style]="{ width: '100%' }"
+          [ngModel]="filters.dateRange"
+          (ngModelChange)="onDateFilterChange($event)"
+        ></p-datepicker>
+      </div>
+
+      <div class="col-12 md:col-4 flex flex-column gap-1">
+        <label class="text-sm font-semibold" for="windowFilter">Ventana</label>
+        <p-select
+          id="windowFilter"
+          [options]="[
+            { label: 'Abiertas', value: 'open' },
+            { label: 'Proximas', value: 'upcoming' },
+            { label: 'Cerradas', value: 'closed' },
+            { label: 'Finalizadas', value: 'past' },
+            { label: 'Todas', value: 'all' }
+          ]"
+          optionLabel="label"
+          optionValue="value"
+          [style]="{ width: '100%' }"
+          [ngModel]="filters.windowState"
+          (ngModelChange)="onWindowFilterChange($event)"
+        ></p-select>
+      </div>
+    </div>
+  </div>
+
+  <div class="surface-card shadow-2 border-round p-0 overflow-hidden">
+    <div class="flex align-items-center justify-content-between px-4 py-3 border-bottom surface-border-light">
+      <div>
+        <h3 class="m-0 text-lg font-semibold">Mesas disponibles</h3>
+        <small class="text-color-secondary">{{ rows().length }} llamados publicados</small>
+      </div>
+      <p-button
+        type="button"
+        label="Actualizar"
+        icon="pi pi-refresh"
+        size="small"
+        severity="secondary"
+        (onClick)="loadTables()"
+      />
+    </div>
+
+    <div *ngIf="loading(); else mesasTable" class="flex justify-content-center py-5">
+      <p-progressSpinner styleClass="mesas-spinner" strokeWidth="3"></p-progressSpinner>
+    </div>
+
+    <ng-template #mesasTable>
+      <div *ngIf="rows().length === 0" class="text-center py-5 px-4 text-color-secondary">
+        No hay mesas disponibles con los filtros seleccionados. Proba ajustarlos o consulta mas tarde.
+      </div>
+
+      <p-table
+        *ngIf="rows().length > 0"
+        [value]="rows()"
+        [responsiveLayout]="'scroll'"
+        class="mesas-table"
+        stripedRows
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Materia</th>
+            <th>Llamado</th>
+            <th>Fecha</th>
+            <th>Ventana</th>
+            <th>Cupo</th>
+            <th class="text-center">Accion</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td>
+              <div class="subject-cell">
+                <span class="subject-name">{{ row.subjectName }}</span>
+                <small class="text-color-secondary" *ngIf="row.commissionLabel">
+                  Comision {{ row.commissionLabel }}
+                </small>
+              </div>
+            </td>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <span>{{ row.call.label }}</span>
+                <p-tag
+                  *ngIf="row.call.additional"
+                  severity="info"
+                  value="Llamado adicional"
+                  styleClass="text-xs"
+                />
+              </div>
+            </td>
+            <td>
+              {{ row.call.examDate | date: 'dd/MM/yyyy' }}
+            </td>
+            <td>
+              <div class="flex flex-column gap-1">
+                <p-tag
+                  [severity]="stateSeverity(row.windowState)"
+                  [value]="stateLabel(row.windowState)"
+                />
+                <small class="text-color-secondary">{{ row.windowRange }}</small>
+              </div>
+            </td>
+            <td>
+              <div class="flex flex-column gap-1">
+                <span>{{ row.quotaText }}</span>
+                <small class="text-color-secondary" *ngIf="row.call.quotaTotal">
+                  Actualizado por Secretaria
+                </small>
+              </div>
+            </td>
+            <td class="text-center">
+              <p-button
+                type="button"
+                label="Inscribirme"
+                icon="pi pi-check"
+                size="small"
+                [disabled]="isActionBlocked(row)"
+                [pTooltip]="blockTooltip(row) || ''"
+                tooltipPosition="top"
+                (onClick)="onEnroll(row, $event)"
+                ariaLabel="Inscribirme a {{ row.subjectName }} - {{ row.call.label }}"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </ng-template>
+  </div>
+
+  <app-block-message
+    *ngIf="blockAlert() as block"
+    class="mesas-block"
+    [title]="block.title"
+    [message]="block.message"
+    [variant]="block.variant"
+    [reasonCode]="block.reasonCode"
+    [autoFocus]="true"
+    [actions]="defaultBlockActions"
+  ></app-block-message>
+</div>
+
+<p-dialog
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closeOnEscape]="true"
+  [dismissableMask]="true"
+  [style]="{ width: '420px' }"
+  [header]="'Confirmar inscripcion'"
+  [(visible)]="dialogVisible"
+  (onHide)="cancelDialog()"
+>
+  <p class="mb-3">
+    Confirmas la inscripcion a <strong>{{ selectedRow?.subjectName }}</strong>
+    en el <strong>{{ selectedRow?.call?.label }}</strong>?
+  </p>
+  <ul class="confirmation-list">
+    <li><strong>Fecha:</strong> {{ selectedRow?.call?.examDate | date: 'dd/MM/yyyy' }}</li>
+    <li><strong>Ventana:</strong> {{ selectedRow?.windowRange }}</li>
+  </ul>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        type="button"
+        label="Cancelar"
+        severity="secondary"
+        (onClick)="cancelDialog()"
+      />
+      <p-button
+        type="button"
+        label="Confirmar"
+        icon="pi pi-check"
+        (onClick)="confirmEnroll()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
