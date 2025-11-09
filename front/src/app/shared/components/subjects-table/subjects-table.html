@@ -37,16 +37,16 @@
   [modal]="true"
   [(visible)]="dialogTeachers().visible"
   (onHide)="closeTeachersDialog()"
-  [style]="{ width: '48rem', maxWidth: '95vw' }"
+  [style]="{ width: '78rem', maxWidth: '95vw' }"
   [draggable]="false"
   [resizable]="false"
   [contentStyle]="{ 'max-height': '70vh', overflow: 'auto' }"
-  [header]="dialogData()?.subject?.name ? ('Comisiones y docentes — ' + dialogData()?.subject?.name) : 'Comisiones y docentes'"
+  [header]="dialogData()?.subject?.name && ('Comisiones: ' + dialogData()?.subject?.name)"
 >
   <!-- Loading -->
   <div *ngIf="dialogLoading()" class="p-4 flex align-items-center gap-2">
     <i class="pi pi-spin pi-spinner" style="font-size: 1.2rem"></i>
-    <span>Cargando comisiones y docentes…</span>
+    <span>Cargando comisiones...</span>
   </div>
 
   <!-- Error -->
@@ -64,52 +64,49 @@
   <ng-container
     *ngIf="!dialogLoading() && !dialogError() && dialogData() as data"
   >
-    <ng-container *ngIf="data.commissions?.length; else emptyStateTpl">
+    <ng-container *ngIf="data.commissions.length; else emptyStateTpl">
       <div class="flex flex-column gap-4">
-        <div *ngFor="let c of data.commissions" class="flex flex-column gap-2">
+        <!-- Comisión -->
+        <div *ngFor="let c of data.commissions" class="flex flex-column gap-3">
           <h4 class="m-0">Comisión {{ c.commission.letter || '—' }}</h4>
 
-          <p-table
-            [value]="c.teachers"
-            [tableStyle]="{ 'min-width': '100%' }"
-            [paginator]="false"
-          >
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Docente</th>
-                <th>Email</th>
-                <th>CUIL</th>
-                <th style="width: 1%"></th>
-                <th style="width: 1%"></th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-t>
-              <tr>
-                <td>{{ t.name }}</td>
-                <td>{{ t.email }}</td>
-                <td>{{ t.cuil || '—' }}</td>
-                <td class="text-right">
+          <!-- Grid de tarjetas -->
+          <div class="col-12" *ngFor="let t of c.teachers">
+            <p-card
+              [header]="'Profesor/a: ' + t.name"
+              [subheader]="t.email"
+              class="h-full flex flex-column"
+            >
+              <ng-template pTemplate="content">
+                <div class="text-600 text-sm">CUIL</div>
+                <div class="text-900 text-base font-medium">
+                  {{ t.cuil || '—' }}
+                </div>
+              </ng-template>
+
+              <ng-template pTemplate="footer">
+                <div class="flex gap-2 justify-content-end flex-wrap">
                   <button
                     pButton
                     label="Ver perfil"
                     icon="pi pi-user"
+                    class="p-button-outlined"
                     (click)="goToTeacher(t.teacherId)"
                     blockedAction
                   ></button>
-                </td>
-                <td class="text-right">
+
                   <button
                     pButton
                     class="p-button-warning"
                     label="Cambiar"
-                    icon="pi pi-exchange"
+                    icon="pi pi-arrow-right-arrow-left"
                     (click)="startChangeTeacher(data.subject.id, c.commission.id, t.teacherId)"
                     blockedAction
                   ></button>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
+                </div>
+              </ng-template>
+            </p-card>
+          </div>
         </div>
       </div>
     </ng-container>
@@ -141,19 +138,40 @@
   [resizable]="false"
   header="Cambiar docente"
 >
-  <div *ngIf="changeTeacherDialog().loading" class="p-3 flex gap-2 align-items-center">
+  <div
+    *ngIf="changeTeacherDialog().loading"
+    class="p-3 flex gap-2 align-items-center"
+  >
     <i class="pi pi-spin pi-spinner"></i>
     <span>Cargando docentes...</span>
   </div>
   <div *ngIf="!changeTeacherDialog().loading">
     <p class="mb-2">Seleccione el nuevo docente para la comisión.</p>
-    <select class="p-inputtext p-component" [(ngModel)]="selectedNewTeacher" style="width:100%">
+    <select
+      class="p-inputtext p-component"
+      [(ngModel)]="selectedNewTeacher"
+      style="width: 100%"
+    >
       <option [ngValue]="null" disabled selected>Seleccione docente</option>
-      <option *ngFor="let opt of teacherOptions()" [value]="opt.value">{{ opt.label }}</option>
+      <option *ngFor="let opt of teacherOptions()" [value]="opt.value">
+        {{ opt.label }}
+      </option>
     </select>
   </div>
   <ng-template pTemplate="footer">
-    <button pButton label="Cancelar" class="p-button-text" (click)="closeChangeTeacherDialog()"></button>
-    <button pButton label="Guardar" [disabled]="!selectedNewTeacher" (click)="confirmChangeTeacher()" icon="pi pi-check" blockedAction></button>
+    <button
+      pButton
+      label="Cancelar"
+      class="p-button-text"
+      (click)="closeChangeTeacherDialog()"
+    ></button>
+    <button
+      pButton
+      label="Guardar"
+      [disabled]="!selectedNewTeacher"
+      (click)="confirmChangeTeacher()"
+      icon="pi pi-check"
+      blockedAction
+    ></button>
   </ng-template>
 </p-dialog>

@@ -9,10 +9,11 @@ import { ApiService } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { BlockedActionDirective } from '../../directives/blocked-action.directive';
+import { CardModule } from 'primeng/card';
 @Component({
   selector: 'app-subjects-table',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, DialogModule, FormsModule, BlockedActionDirective],
+  imports: [CommonModule, TableModule, ButtonModule, DialogModule, FormsModule, BlockedActionDirective, CardModule],
   templateUrl: './subjects-table.html',
   styleUrls: ['./subjects-table.scss'],
 })
