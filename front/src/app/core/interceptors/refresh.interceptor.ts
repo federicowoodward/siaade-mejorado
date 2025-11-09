@@ -7,7 +7,7 @@ import {
   HttpInterceptor,
   HttpRequest,
 } from "@angular/common/http";
-import { Observable, throwError } from "rxjs";
+import { Observable, from, throwError, firstValueFrom } from "rxjs";
 import { catchError, switchMap } from "rxjs/operators";
 import { environment } from "../../../environments/environment";
 import { AuthStateService } from "../services/auth/auth-state.service";
@@ -21,6 +21,7 @@ export const REFRESH_ATTEMPTED = new HttpContextToken<boolean>(() => false);
 export class RefreshInterceptor implements HttpInterceptor {
   private readonly authState = inject(AuthStateService);
   private readonly apiBase = environment.apiBaseUrl.replace(/\/$/, "");
+  private refreshPromise: Promise<string> | null = null;
 
   intercept(
     request: HttpRequest<unknown>,
@@ -32,7 +33,7 @@ export class RefreshInterceptor implements HttpInterceptor {
           return throwError(() => error);
         }
 
-        return this.authState.refreshTokens().pipe(
+        return from(this.enqueueRefresh()).pipe(
           switchMap(() => {
             const retriedRequest = request.clone({
               context: request.context.set(REFRESH_ATTEMPTED, true),
@@ -50,6 +51,22 @@ export class RefreshInterceptor implements HttpInterceptor {
         );
       })
     );
+  }
+
+  private enqueueRefresh(): Promise<string> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = firstValueFrom(this.authState.refreshTokens())
+        .then((token) => {
+          this.refreshPromise = null;
+          return token;
+        })
+        .catch((error) => {
+          this.refreshPromise = null;
+          throw error;
+        });
+    }
+
+    return this.refreshPromise;
   }
 
   private shouldAttemptRefresh(

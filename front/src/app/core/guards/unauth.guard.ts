@@ -8,7 +8,8 @@ import { AuthService } from '../services/auth.service';
 export class UnAuthGuard implements CanActivate {
   constructor(private router: Router, private auth: AuthService) {}
 
-  canActivate(): boolean | UrlTree {
+  async canActivate(): Promise<boolean | UrlTree> {
+    await this.auth.ensureSessionLoaded();
     if (this.auth.isLoggedIn()) {
       return this.router.createUrlTree(['/welcome']);
     }

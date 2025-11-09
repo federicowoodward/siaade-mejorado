@@ -1,13 +1,13 @@
-<div class="notices-page">
+﻿<div class="notices-page">
     <h2 class="page-title">
     <i class="pi pi-bell text-primary mr-2"></i>
-    Avisos (Administración)
+    Avisos (AdministraciÃ³n)
     </h2>
 
-    <div class="new-notice-form" *canAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]">
+    <div class="new-notice-form" *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]">
     <input
     type="text"
-    placeholder="Título"
+    placeholder="TÃ­tulo"
     [(ngModel)]="newNotice.title"
     class="p-inputtext"
     blockedAction
@@ -16,7 +16,7 @@
     <p-editor
     [(ngModel)]="newNotice.content"
     [style]="{height: '200px'}"
-    placeholder="Escribí el contenido del aviso…"
+    placeholder="EscribÃ­ el contenido del avisoâ€¦"
     blockedAction
     ></p-editor>
 
@@ -37,12 +37,13 @@
         <h3>{{ n.title }}</h3>
         <div class="content" [innerHTML]="n.content"></div>
         <small class="meta">
-        Destinatarios: {{ n.visibleFor === 'student' ? 'Alumnos' : 'Profesores' }} ·
-        {{ n.createdBy }} · {{ n.createdAt | date:'short' }}
+        Destinatarios: {{ n.visibleFor === 'student' ? 'Alumnos' : 'Profesores' }} Â·
+        {{ n.createdBy }} Â· {{ n.createdAt | date:'short' }}
         </small>
 
-    <button *canAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)" blockedAction></button>
+    <button *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)" blockedAction></button>
     </div>
     </li>
 </ul>
 </div>
+

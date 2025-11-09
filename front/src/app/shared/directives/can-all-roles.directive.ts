@@ -6,7 +6,7 @@ import {
   effect,
   inject,
 } from '@angular/core';
-import { RoleService } from '@/core/auth/role.service';
+import { RbacService } from '@/core/rbac/rbac.service';
 import { RoleLike } from '@/core/auth/roles';
 
 @Directive({
@@ -16,7 +16,7 @@ import { RoleLike } from '@/core/auth/roles';
 export class CanAllRolesDirective {
   private readonly template = inject(TemplateRef<unknown>);
   private readonly viewContainer = inject(ViewContainerRef);
-  private readonly rolesService = inject(RoleService);
+  private readonly rbac = inject(RbacService);
 
   private requiredRoles: RoleLike[] = [];
   private viewAttached = false;
@@ -32,7 +32,16 @@ export class CanAllRolesDirective {
   }
 
   private render() {
-    const allowed = this.rolesService.hasAll(this.requiredRoles);
+    const rolesState = this.rbac.roles();
+    if (rolesState === null) {
+      if (!this.viewAttached) {
+        this.viewContainer.createEmbeddedView(this.template);
+        this.viewAttached = true;
+      }
+      return;
+    }
+
+    const allowed = this.rbac.hasAll(this.requiredRoles);
     if (allowed && !this.viewAttached) {
       this.viewContainer.createEmbeddedView(this.template);
       this.viewAttached = true;

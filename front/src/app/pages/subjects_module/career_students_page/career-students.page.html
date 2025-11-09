@@ -1,4 +1,4 @@
-<div class="m-w-custom">
+﻿<div class="m-w-custom">
   <div class="pt-3">
 
     <p-button
@@ -49,11 +49,11 @@
                 type="number"
                 [ngModel]="year()"
                 (ngModelChange)="year.set($event ? +$event : null)"
-                placeholder="Año ingreso (ej: 2026)"
+                placeholder="AÃ±o ingreso (ej: 2026)"
                 style="width: 12rem"
               />
               <p-button
-                label="Aplicar año"
+                label="Aplicar aÃ±o"
                 icon="pi pi-filter"
                 (onClick)="onApplyYearFilter()"
                 [disabled]="loading()"
@@ -64,11 +64,11 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th>Comisión</th>
+            <th>ComisiÃ³n</th>
             <th>Alumno</th>
             <th>Email</th>
             <th>Acceso</th>
-            <th *canAnyRole="[ROLE.SECRETARY]">Estado</th>
+            <th *appCanAnyRole="[ROLE.SECRETARY]">Estado</th>
             <th style="width: 6rem">Acciones</th>
           </tr>
         </ng-template>
@@ -99,7 +99,7 @@
                 Inactivo: acceso bloqueado
               </div>
             </td>
-            <td *canAnyRole="[ROLE.SECRETARY]">
+            <td *appCanAnyRole="[ROLE.SECRETARY]">
               <p-togglebutton
                 [ngModel]="row.isActive !== false"
                 (onChange)="onToggleIsActive(row, !!$event.checked)"
@@ -129,7 +129,7 @@
       </p-table>
     </div>
   </ng-template>
-  <!-- Diálogo para motivo de bloqueo del acceso -->
+  <!-- DiÃ¡logo para motivo de bloqueo del acceso -->
   <p-dialog
     header="Motivo del bloqueo"
     [visible]="showReasonDialog()"
@@ -142,8 +142,8 @@
   >
     <div class="flex flex-column gap-2">
       <span class="text-sm text-color-secondary">
-        Podés ingresar un motivo para el bloqueo (opcional). Si lo dejás vacío,
-        se bloqueará igual.
+        PodÃ©s ingresar un motivo para el bloqueo (opcional). Si lo dejÃ¡s vacÃ­o,
+        se bloquearÃ¡ igual.
       </span>
       <textarea
         class="p-inputtext w-full"
@@ -169,3 +169,4 @@
     </div>
   </p-dialog>
 </div>
+

@@ -5,7 +5,7 @@ import { CommonModule } from "@angular/common";
 import { ApiService } from "../../../core/services/api.service";
 import { GoBackService } from "../../../core/services/go_back.service";
 import { ROLE, ROLE_BY_ID } from "../../../core/auth/roles";
-import { RoleService } from "@/core/auth/role.service";
+import { RbacService } from "@/core/rbac/rbac.service";
 import { UserRow } from "../../../core/models/users-table.models";
 import { mapApiUserToRow } from "../../../shared/adapters/users.adapter";
 import { ButtonModule } from "primeng/button";
@@ -21,14 +21,15 @@ export class StudentsPage implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private goBack = inject(GoBackService);
-  private roles = inject(RoleService);
+  private rbac = inject(RbacService);
 
   public ROLE = ROLE;
   subjectId!: string;
   rows = signal<UserRow[]>([]);
 
   get viewerRole(): ROLE | null {
-    return this.roles.roles()[0] ?? null;
+    const roles = this.rbac.getSnapshot();
+    return roles && roles.length ? roles[0] ?? null : null;
   }
 
   ngOnInit() {

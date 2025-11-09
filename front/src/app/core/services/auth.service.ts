@@ -4,7 +4,7 @@ import { Observable, firstValueFrom, of } from "rxjs";
 import { catchError } from "rxjs/operators";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { PermissionService } from "../auth/permission.service";
-import { RoleService } from "../auth/role.service";
+import { RbacService } from "../rbac/rbac.service";
 import {
   ROLE,
   ROLE_BY_ID,
@@ -35,10 +35,13 @@ export interface LocalUser {
 export class AuthService {
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
-  private readonly roles = inject(RoleService);
+  private readonly rbac = inject(RbacService);
   private readonly authApi = inject(AuthApiService);
   private readonly authState = inject(AuthStateService);
   private readonly api = inject(ApiService);
+
+  private storageBootstrapped = false;
+  private sessionLoadPromise: Promise<void> | null = null;
 
   constructor() {
     this.authState.currentUser$
@@ -67,11 +70,7 @@ export class AuthService {
     this.authState.setCurrentUser(userLocal, { persist: true });
     this.authState.setAccessToken(response.accessToken, { persist: true });
     const resolved = this.resolveRole(userLocal);
-    if (resolved.role) {
-      this.permissions.setRole(resolved.role, resolved.roleId ?? null);
-    } else {
-      this.permissions.reset();
-    }
+    this.applyResolvedRole(resolved);
 
     return true;
   }
@@ -126,6 +125,64 @@ export class AuthService {
     return this.authApi.verifyResetCode(identity, code);
   }
 
+  async ensureSessionLoaded(options?: { force?: boolean }): Promise<void> {
+    const force = options?.force === true;
+    if (!force && this.hasStableSession()) {
+      return;
+    }
+
+    if (this.sessionLoadPromise) {
+      await this.sessionLoadPromise;
+      if (!force) {
+        return;
+      }
+    }
+
+    this.sessionLoadPromise = this.bootstrapSession(force);
+    try {
+      await this.sessionLoadPromise;
+    } finally {
+      this.sessionLoadPromise = null;
+    }
+  }
+
+  private async bootstrapSession(force = false): Promise<void> {
+    this.initializeFromStorage(force);
+    const token = this.authState.getAccessTokenSnapshot();
+
+    if (!token) {
+      this.permissions.reset();
+      this.rbac.reset();
+      return;
+    }
+
+    if (!force && this.rbac.getSnapshot() !== null) {
+      return;
+    }
+
+    await this.loadUserRoles();
+  }
+
+  private hasStableSession(): boolean {
+    if (!this.storageBootstrapped) {
+      return false;
+    }
+    const token = this.authState.getAccessTokenSnapshot();
+    const rolesSnapshot = this.rbac.getSnapshot();
+    if (!token) {
+      return rolesSnapshot !== null;
+    }
+    return rolesSnapshot !== null;
+  }
+
+  private initializeFromStorage(force = false): void {
+    if (this.storageBootstrapped && !force) {
+      return;
+    }
+    this.authState.initializeFromStorage();
+    this.storageBootstrapped = true;
+  }
+
   async logout(options?: { redirect?: boolean }): Promise<void> {
     await firstValueFrom(
       this.authApi.logout().pipe(
@@ -135,7 +192,7 @@ export class AuthService {
 
     this.authState.clearSession();
     this.permissions.reset();
-    this.roles.setRoles([]);
+    this.rbac.reset();
     if (options?.redirect === false) {
       return;
     }
@@ -154,25 +211,30 @@ export class AuthService {
   }
 
   loadUserFromStorage(): void {
-    this.authState.initializeFromStorage();
+    this.initializeFromStorage();
   }
 
   async loadUserRoles(): Promise<ROLE[]> {
     const userId = this.getUserId();
     if (!userId) {
-      this.roles.setRoles([]);
       this.permissions.reset();
+      this.rbac.reset();
       return [];
     }
 
+    this.rbac.markLoading("loadUserRoles");
+
     try {
       const profile = await firstValueFrom(this.api.getById<any>("users", userId));
-      const resolved = this.resolveRole(profile);
+      const normalized = this.buildLocalUser(profile);
+      this.authState.setCurrentUser(normalized, { persist: true });
+      const resolved = this.resolveRole(normalized);
       this.applyResolvedRole(resolved);
       return resolved.role ? [resolved.role] : [];
     } catch (error) {
       console.error("[AuthService] No se pudieron cargar los roles del usuario", error);
-      this.roles.setRoles([]);
+      this.permissions.reset();
+      this.rbac.reset();
       return [];
     }
   }
@@ -256,7 +318,7 @@ export class AuthService {
   private applyRolesFromUser(user: AnyRecord | null): void {
     if (!user) {
       this.permissions.reset();
-      this.roles.setRoles([]);
+      this.rbac.reset();
       return;
     }
 
@@ -267,10 +329,10 @@ export class AuthService {
   private applyResolvedRole(resolved: { role: ROLE | null; roleId: number | null }): void {
     if (resolved.role) {
       this.permissions.setRole(resolved.role, resolved.roleId ?? null);
-      this.roles.setRoles([resolved.role]);
+      this.rbac.setRoles([resolved.role]);
     } else {
       this.permissions.reset();
-      this.roles.setRoles([]);
+      this.rbac.reset();
     }
   }
 }

@@ -32,11 +32,6 @@ export class App {
     map(u => ({ blocked: !!u?.isBlocked, reason: (u as any)?.blockedReason ?? null }))
   );
 
-  constructor() {
-    this.authService.loadUserFromStorage();
-    void this.authService.loadUserRoles();
-  }
-
   get sidebarVisible() {
     return this.drawerVisibility.sidebarVisible();
   }

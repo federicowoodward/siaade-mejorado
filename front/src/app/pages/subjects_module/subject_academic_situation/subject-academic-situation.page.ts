@@ -23,10 +23,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
-import { DisableIfUnauthorizedDirective } from '../../../shared/directives/disable-if-unauthorized.directive';
 import { Tag } from 'primeng/tag';
 import { ROLE } from '../../../core/auth/roles';
-import { RoleService } from '@/core/auth/role.service';
+import { RbacService } from '@/core/rbac/rbac.service';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
@@ -55,7 +54,6 @@ import {
     TooltipModule,
     Tag,
     BlockedActionDirective,
-    DisableIfUnauthorizedDirective,
     SubjectMoveCommissionDialog,
   ],
   templateUrl: './subject-academic-situation.page.html',
@@ -67,7 +65,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly goBackSvc = inject(GoBackService);
   private readonly subjectsSvc = inject(SubjectsService);
   private readonly messages = inject(MessageService);
-  private readonly roleService = inject(RoleService);
+  private readonly rbac = inject(RbacService);
 
   loading = signal(true);
   error = signal<string | null>(null);
@@ -101,7 +99,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
   readonly ROLE = ROLE;
   canMoveStudents = computed(() =>
-    this.roleService.hasAny([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])
+    this.rbac.hasAny([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])
   );
 
   conditionSeverity(condition: string | null | undefined): string {

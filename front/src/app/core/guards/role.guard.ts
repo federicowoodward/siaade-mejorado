@@ -1,15 +1,34 @@
 import { inject, isDevMode } from '@angular/core';
 import { CanActivateFn, CanMatchFn, Router, UrlTree } from '@angular/router';
-import { PermissionService } from '../auth/permission.service';
 import { ROLE } from '../auth/roles';
+import { AuthService } from '../services/auth.service';
+import { RbacService } from '../rbac/rbac.service';
 
-function createGuardResult(
+async function resolveRolesGuard(
   allowed: ROLE[],
-  current: ROLE | null,
-  router: Router
-): boolean | UrlTree {
-  if (!allowed.length) return true;
-  if (current && allowed.includes(current)) {
+  router: Router,
+  auth: AuthService,
+  rbac: RbacService
+): Promise<boolean | UrlTree> {
+  if (!allowed.length) {
+    return true;
+  }
+
+  await auth.ensureSessionLoaded();
+
+  if (rbac.hasAny(allowed)) {
+    return true;
+  }
+
+  if (rbac.isLoading()) {
+    try {
+      await rbac.waitUntilReady();
+    } catch {
+      return router.parseUrl('/auth');
+    }
+  }
+
+  if (rbac.hasAny(allowed)) {
     return true;
   }
 
@@ -17,7 +36,7 @@ function createGuardResult(
     // eslint-disable-next-line no-console
     console.warn('[RBAC][Front][DENY]', {
       allowed,
-      current,
+      current: rbac.getSnapshot(),
     });
   }
 
@@ -26,18 +45,18 @@ function createGuardResult(
 
 export const roleCanMatch =
   (allowed: ROLE[]): CanMatchFn =>
-  () => {
-    const permissions = inject(PermissionService);
+  async () => {
     const router = inject(Router);
-    const current = permissions.currentRole();
-    return createGuardResult(allowed, current, router);
+    const auth = inject(AuthService);
+    const rbac = inject(RbacService);
+    return resolveRolesGuard(allowed, router, auth, rbac);
   };
 
 export const roleCanActivate =
   (allowed: ROLE[]): CanActivateFn =>
-  () => {
-    const permissions = inject(PermissionService);
+  async () => {
     const router = inject(Router);
-    const current = permissions.currentRole();
-    return createGuardResult(allowed, current, router);
+    const auth = inject(AuthService);
+    const rbac = inject(RbacService);
+    return resolveRolesGuard(allowed, router, auth, rbac);
   };

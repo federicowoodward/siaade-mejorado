@@ -16,7 +16,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { DialogModule } from 'primeng/dialog';
 import { Router } from '@angular/router';
 import { ROLE } from '@/core/auth/roles';
-import { RoleService } from '@/core/auth/role.service';
+import { RbacService } from '@/core/rbac/rbac.service';
 import { ApiService } from '@/core/services/api.service';
 
 import {
@@ -49,7 +49,7 @@ import { GoBackService } from '@/core/services/go_back.service';
 export class CareerStudentsPage implements OnInit, OnDestroy {
   private readonly catalogs = inject(CatalogsService);
   private readonly router = inject(Router);
-  private readonly rolesService = inject(RoleService);
+  private readonly rbac = inject(RbacService);
   private readonly api = inject(ApiService);
   readonly ROLE = ROLE;
   private readonly accessRoles: ROLE[] = [
@@ -179,7 +179,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   // ---- Acciones ----
   async onToggleCanLogin(row: CareerStudentItem, next: boolean): Promise<void> {
     console.debug('[CareerStudents] onToggleCanLogin', { next, row });
-    if (!this.rolesService.hasAny(this.accessRoles)) return;
+    if (!this.rbac.hasAny(this.accessRoles)) return;
     if (row.isActive === false && next) return; // inactivo: no habilitar
 
     // Si vamos a bloquear (next=false), primero pedir motivo
@@ -212,7 +212,7 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   }
 
   async onToggleIsActive(row: CareerStudentItem, next: boolean): Promise<void> {
-    if (!this.rolesService.hasAny(this.statusRoles)) return;
+    if (!this.rbac.hasAny(this.statusRoles)) return;
     try {
       this.saving.set(true);
       const payload: any = { 'student.isActive': !!next };
