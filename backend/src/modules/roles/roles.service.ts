@@ -17,7 +17,13 @@ export class RolesService {
   }
 
   async getRoles(opts?: { skip?: number; take?: number }): Promise<[Role[], number]> {
-    return this.rolesRepository.findAndCount({ skip: opts?.skip, take: opts?.take, order: { id: 'ASC' } });
+    // Ordenar con roles administrativos primero y estudiante al final
+    // Ms simple: id DESC (segn ROLE_IDS actuales: student=1, ... executive_secretary=5)
+    return this.rolesRepository.findAndCount({
+      skip: opts?.skip,
+      take: opts?.take,
+      order: { id: 'DESC' },
+    });
   }
 
   async getRoleById(id: number): Promise<Role> {

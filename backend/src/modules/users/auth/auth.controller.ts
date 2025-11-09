@@ -7,6 +7,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -193,6 +194,61 @@ export class AuthController {
     this.rateLimit.check(`reset-verify:${ip}`, max, windowMs);
     this.rateLimit.check(`reset-verify-id:${id}`, max, windowMs);
     return this.authService.verifyResetCode(dto);
+  }
+
+  // Cambio forzado (primer login) - requiere estar autenticado, por eso NO es @Public
+  @Post("password/force-change")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Forzar cambio de contraseña en primer login" })
+  async forceChange(@Req() req: Request, @Body() body: { password: string }) {
+    const userId = (req as any).user?.sub; // payload de JWT
+    if (!userId) throw new UnauthorizedException("Missing user in request");
+    const pwd = (body?.password || '').trim();
+    if (!pwd) throw new BadRequestException('Password requerida');
+    return this.authService.forceChangePassword(userId, pwd);
+  }
+
+  // Solicitar código para cambio voluntario dentro de sesión
+  @Post("password/request-change-code")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Solicita un código para cambio voluntario de contraseña" })
+  async requestChangeCode(@Req() req: Request) {
+    const userId = (req as any).user?.sub;
+    if (!userId) throw new UnauthorizedException("Missing user in request");
+    // Reutilizamos issueResetToken internamente a través de resetPassword(identity)
+    const user = await this.authService.validateUser(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    // Llamamos a resetPassword con identidad segura (email)
+    const result = await this.authService.resetPassword({ identity: user.email } as any);
+    // En entorno dev/test exponemos el code y token para facilitar pruebas sin SMTP.
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      return {
+        message: result.message,
+        code: result.code ?? undefined, // si internamente lo devolviera
+        token: result.token ?? undefined,
+        expiresInSeconds: result.expiresInSeconds ?? undefined,
+        devIdentity: user.email,
+      };
+    }
+    return result;
+  }
+
+  // Cambio con código (flujo interno) - requiere currentPassword y code (token ya emitido)
+  @Post("password/change-with-code")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Confirma cambio de contraseña con código dentro de sesión" })
+  async changeWithCode(@Req() req: Request, @Body() body: { code: string; currentPassword: string; newPassword: string }) {
+    const userId = (req as any).user?.sub;
+    if (!userId) throw new UnauthorizedException("Missing user in request");
+    const { code, currentPassword, newPassword } = body || {};
+    if (!code || !/^[0-9]{6}$/.test(code)) throw new BadRequestException('Código inválido');
+    if (!currentPassword || !newPassword) throw new BadRequestException('Contraseñas requeridas');
+
+    // Verificar código generar token temporal luego confirmar con currentPassword
+    const user = await this.authService.validateUser(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    const verify = await this.authService.verifyResetCode({ identity: user.email, code });
+    return this.authService.confirmResetPassword({ token: verify.token, currentPassword, password: newPassword });
   }
 
   private extractRefreshToken(req: Request): string | null {

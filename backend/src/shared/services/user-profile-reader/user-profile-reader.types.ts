@@ -8,6 +8,7 @@ export interface UserProfileResult {
   role: { id: number; name: string } | null;
   isBlocked?: boolean; // agregado para mostrar estado de bloqueo transversal
   blockedReason?: string | null; // motivo visible mientras isBlocked=true
+  requiresPasswordChange?: boolean; // UI puede forzar rotación en primer login
 
   userInfo?: {
     id: number;

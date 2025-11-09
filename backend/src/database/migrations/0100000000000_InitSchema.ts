@@ -259,10 +259,20 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     const secretaryEmail = 'sec.auto4@example.com';
     const secretaryPassword = 'pass1234';
 
-    // Normalizar roles existentes a lower(trim(name)) antes de insertar.
+    // Normalizar roles existentes a lower(trim(name)) antes de insertar y asegurar IDs fijos.
     await queryRunner.query(`UPDATE roles SET name = lower(trim(name))`);
-    // Asegurar rol 'secretary'
-    await queryRunner.query(`INSERT INTO roles(name) VALUES($1) ON CONFLICT (name) DO NOTHING`, [secretaryRoleSlug]);
+    // Insertar todos los roles con IDs estables, y si ya existen por nombre, forzar su id al esperado
+    await queryRunner.query(`
+      INSERT INTO roles(id, name) VALUES
+        (1, 'student'),
+        (2, 'teacher'),
+        (3, 'preceptor'),
+        (4, 'secretary'),
+        (5, 'executive_secretary')
+      ON CONFLICT (name) DO UPDATE SET id = EXCLUDED.id
+    `);
+    // Ajustar la secuencia del SERIAL para que continúe luego del mayor id definido
+    await queryRunner.query(`SELECT setval(pg_get_serial_sequence('roles','id'), GREATEST((SELECT MAX(id) FROM roles), 5))`);
     const [{ id: secretaryRoleId }] = await queryRunner.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [secretaryRoleSlug]);
     if (!secretaryRoleId) {
       throw new Error('InitSchema seed: no se pudo obtener id de rol secretary');

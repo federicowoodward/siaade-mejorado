@@ -5,11 +5,12 @@ import { PermissionService } from "../../core/auth/permission.service";
 import { ROLE } from "../../core/auth/roles";
 import { QuickAccessComponent } from "../../shared/components/quick-access-component/quick-access-component";
 import { CommonModule } from "@angular/common";
+import { FirstPasswordChangeModalComponent } from "../../shared/components/first-password-change-modal/first-password-change-modal";
 
 @Component({
   selector: "app-welcome-page",
   standalone: true,
-  imports: [CommonModule, QuickAccessComponent],
+  imports: [CommonModule, QuickAccessComponent, FirstPasswordChangeModalComponent],
   templateUrl: "./welcome-page.html",
   styleUrls: ["./welcome-page.scss"],
 })
@@ -25,11 +26,16 @@ export class WelcomePage implements OnInit {
 
   userName = signal<string>("");
   userRole = computed(() => this.permissions.role());
+    showPasswordChangeModal = signal(false);
 
   ngOnInit() {
     this.authService.getUser().subscribe((user) => {
       if (user) {
         this.userName.set(`${user.name ?? ""} ${user.lastName ?? ""}`.trim());
+          // Verificar si necesita cambiar la contraseña
+          if (user.requiresPasswordChange) {
+            this.showPasswordChangeModal.set(true);
+          }
       }
     });
   }

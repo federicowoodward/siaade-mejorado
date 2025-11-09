@@ -37,7 +37,9 @@ export class ResetCodePage implements OnDestroy {
   constructor() {
     // Recuperar identidad del state o sessionStorage
     const nav = this.router.getCurrentNavigation();
-    const identityFromNav = (nav?.extras?.state as any)?.identity ?? (history?.state?.identity);
+    const navState = (nav?.extras?.state as any) ?? (history?.state as any) ?? {};
+    const identityFromNav = navState?.identity;
+    const modeFromNav = (navState?.mode === 'change') ? 'change' : 'recovery';
     const identityFromStorage = (() => {
       try { return sessionStorage.getItem('resetIdentity'); } catch { return null; }
     })();
@@ -45,7 +47,9 @@ export class ResetCodePage implements OnDestroy {
     if (identity) {
       this.form.patchValue({ identity });
     }
+    // Persistir identidad y modo para continuidad
     this.updateMaskedIdentity();
+    try { sessionStorage.setItem('resetMode', modeFromNav); } catch {}
     // actualizar cuando cambie la identidad (fallback/manual)
     this.form.get('identity')?.valueChanges.subscribe(() => this.updateMaskedIdentity());
     // Iniciar cooldown automático
@@ -72,7 +76,14 @@ export class ResetCodePage implements OnDestroy {
           return;
         }
         this.message.add({ severity: 'success', summary: 'Código verificado', detail: 'Continuá para crear tu nueva contraseña.' });
-        this.router.navigate(['/auth/reset-password'], { queryParams: { token } });
+        let modeParam = 'recovery';
+        try {
+          modeParam = sessionStorage.getItem('resetMode') === 'change' ? 'change' : 'recovery';
+        } catch {}
+        // Si es cambio voluntario (mode=change), redirigir a /account/password/reset
+        // Si es recovery, redirigir a /auth/reset-password
+        const targetPath = modeParam === 'change' ? '/account/password/reset' : '/auth/reset-password';
+        this.router.navigate([targetPath], { queryParams: { token, mode: modeParam } });
       },
       error: () => {
         this.message.add({ severity: 'error', summary: 'Código inválido', detail: 'El código es incorrecto o venció.' });
