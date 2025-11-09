@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   OnDestroy,
   OnInit,
@@ -22,6 +22,10 @@ import { map } from 'rxjs/operators';
 import { TooltipModule } from 'primeng/tooltip';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { SubjectsService } from '../../../core/services/subjects.service';
+import {
+  ApiService,
+  ToggleEnrollmentResponse,
+} from '../../../core/services/api.service';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { Tag } from 'primeng/tag';
 import { ROLE } from '../../../core/auth/roles';
@@ -31,6 +35,8 @@ import {
   AcademicSituationRow,
 } from './subject-academic-situation.types';
 import { SubjectMoveCommissionDialog } from './subject-move-commission.dialog';
+import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
+import { environment } from '../../../../environments/environment';
 import {
   computeFinalForRow as computeFinalForRowUtil,
   finalClass as finalClassUtil,
@@ -55,18 +61,26 @@ import {
     Tag,
     BlockedActionDirective,
     SubjectMoveCommissionDialog,
+    CanAnyRoleDirective,
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
   providers: [MessageService],
 })
 export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
+  // =======================
+  // Dependencias
+  // =======================
   private readonly route = inject(ActivatedRoute);
   private readonly goBackSvc = inject(GoBackService);
   private readonly subjectsSvc = inject(SubjectsService);
+  private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
   private readonly rbac = inject(RbacService);
 
+  // =======================
+  // Estado y seÃ±ales
+  // =======================
   loading = signal(true);
   error = signal<string | null>(null);
   data = signal<AcademicSituationApiResponse | null>(null);
@@ -89,8 +103,12 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     () => Object.keys(this.pendingSignal()).length > 0
   );
   readonly saving = signal(false);
+  readonly enrollmentLoading = signal<string | null>(null);
 
   subjectId = Number(this.route.snapshot.paramMap.get('subjectId') ?? 0);
+  // =======================
+  // Derivados (computed)
+  // =======================
   subjectName = computed(() => this.data()?.subject.name ?? 'Materia');
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.data()?.rows ?? []);
@@ -121,10 +139,18 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }
   }
 
-  // Mover alumno de comisión
-  moveDialog = signal<{ visible: boolean; loading: boolean; studentId: string | null; currentCommissionId: number | null }>(
-    { visible: false, loading: false, studentId: null, currentCommissionId: null }
-  );
+  // Mover alumno de comisiÃ³n
+  moveDialog = signal<{
+    visible: boolean;
+    loading: boolean;
+    studentId: string | null;
+    currentCommissionId: number | null;
+  }>({
+    visible: false,
+    loading: false,
+    studentId: null,
+    currentCommissionId: null,
+  });
 
   commissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
@@ -137,10 +163,13 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     ];
   });
 
-  // Opciones para el diálogo de mover alumno (sin la opción "Todas")
+  // Opciones para el diÃ¡logo de mover alumno (sin la opciÃ³n "Todas")
   moveCommissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
-    return base.map((entry) => ({ id: entry.id, letter: entry.letter ?? null }));
+    return base.map((entry) => ({
+      id: entry.id,
+      letter: entry.letter ?? null,
+    }));
   });
 
   commissionSelectItems = computed(() =>
@@ -168,6 +197,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }, 300);
   });
 
+  // =======================
+  // Efectos (effects) y ciclo de vida
+  // =======================
   ngOnInit(): void {
     this.fetchAcademicSituation();
   }
@@ -183,6 +215,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.filtersEffect.destroy();
   }
 
+  // =======================
+  // Handlers de UI (clicks, ediciones, inscripción)
+  // =======================
   back(): void {
     this.goBackSvc.back();
   }
@@ -272,9 +307,10 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     const fields = this.getEditableFields();
 
     for (const field of fields) {
-      const parsed = field === 'attendancePercentage'
-        ? parseAttendanceValue(row[field])
-        : parseGradeValue(row[field]);
+      const parsed =
+        field === 'attendancePercentage'
+          ? parseAttendanceValue(row[field])
+          : parseGradeValue(row[field]);
       if (parsed === undefined) {
         const original = this.clonedRows.get(row.studentId);
         if (original) {
@@ -283,7 +319,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         }
         this.showError(
           'Valores invalidos',
-          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacías.'
+          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacÃ­as.'
         );
         return;
       }
@@ -294,22 +330,24 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.clearPendingForStudent(row.studentId);
 
     for (const field of fields) {
-      const parsed = field === 'attendancePercentage'
-        ? parseAttendanceValue(row[field])
-        : parseGradeValue(row[field]);
-      const normalized = field === 'attendancePercentage'
-        ? (parsed ?? 0)
-        : (parsed ?? null);
+      const parsed =
+        field === 'attendancePercentage'
+          ? parseAttendanceValue(row[field])
+          : parseGradeValue(row[field]);
+      const normalized =
+        field === 'attendancePercentage' ? parsed ?? 0 : parsed ?? null;
       if (field === 'attendancePercentage') {
         row.attendancePercentage = normalized as number;
       } else {
         (row as any)[field] = normalized;
       }
       const baselineValue = base
-        ? (field === 'attendancePercentage'
-            ? (base.attendancePercentage as number)
-            : (base[field] ?? null))
-        : (field === 'attendancePercentage' ? 0 : null);
+        ? field === 'attendancePercentage'
+          ? (base.attendancePercentage as number)
+          : base[field] ?? null
+        : field === 'attendancePercentage'
+        ? 0
+        : null;
       this.updatePendingChanges(
         row.studentId,
         field,
@@ -352,6 +390,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.clonedRows.delete(row.studentId);
   }
 
+  // =======================
+  // Llamadas a API / Persistencia
+  // =======================
   private fetchAcademicSituation(params?: {
     q?: string;
     commissionId?: number;
@@ -359,20 +400,21 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
     this.currentFetch?.unsubscribe();
+
     this.currentFetch = this.subjectsSvc
       .getSubjectAcademicSituation(this.subjectId, params)
       .subscribe({
         next: (payload) => {
           this.currentFetch = null;
           const partialsCount = payload.subject.partials;
-          const rowsWithComputedFinal = payload.rows.map((row) => ({
-            ...row,
-            final: computeFinalForRowUtil(row, partialsCount),
-          }));
-          this.data.set({
-            ...payload,
-            rows: rowsWithComputedFinal,
+          const rowsWithComputedFinal = (payload.rows ?? []).map((row) => {
+            const computedFinal = computeFinalForRowUtil(row, partialsCount);
+            // 👇 fuerza booleano para que el *ngIf funcione siempre
+            const enrolled = !!(row as any).enrolled;
+            return { ...row, final: computedFinal, enrolled };
           });
+
+          this.data.set({ ...payload, rows: rowsWithComputedFinal });
           this.setBaselineRows(rowsWithComputedFinal);
           this.pendingSignal.set({});
           this.clonedRows.clear();
@@ -387,17 +429,24 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       });
   }
 
-  private syncRow(updated: AcademicSituationRow): void {
-    const normalized: AcademicSituationRow = { ...updated };
+  // =======================
+  // Utilidades internas
+  // =======================
+  /** Reemplaza una fila por studentId en el array de la tabla (inmutable). */
+  private replaceRowInTable(updated: AcademicSituationRow): void {
+    const normalized = { ...updated };
     this.data.update((snapshot) => {
-      if (!snapshot) {
-        return snapshot;
-      }
-      const rows = snapshot.rows.map((row) =>
+      if (!snapshot) return snapshot;
+      const nextRows = snapshot.rows.map((row) =>
         row.studentId === normalized.studentId ? { ...row, ...normalized } : row
       );
-      return { ...snapshot, rows };
+      return { ...snapshot, rows: nextRows };
     });
+  }
+
+  /** Sincroniza una fila en memoria (uso general, no-optimista). */
+  private syncRow(updated: AcademicSituationRow): void {
+    this.replaceRowInTable(updated);
   }
 
   private setBaselineRows(rows: AcademicSituationRow[]): void {
@@ -548,14 +597,20 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     const currentFinal = computeFinalForRowUtil(row, this.partials());
     const baselineFinal = base ? base.final ?? null : null;
     row.final = currentFinal;
-    this.updatePendingChanges(row.studentId, 'final', currentFinal, baselineFinal);
+    this.updatePendingChanges(
+      row.studentId,
+      'final',
+      currentFinal,
+      baselineFinal
+    );
   }
 
   private getEditableFields(): EditableField[] {
-    const gradeFields: EditableField[] = this.partials() === 4
-      ? ['note1', 'note2', 'note3', 'note4']
-      : ['note1', 'note2'];
-    // también hacemos editable la asistencia
+    const gradeFields: EditableField[] =
+      this.partials() === 4
+        ? ['note1', 'note2', 'note3', 'note4']
+        : ['note1', 'note2'];
+    // tambiÃ©n hacemos editable la asistencia
     return [...gradeFields, 'attendancePercentage'];
   }
 
@@ -567,39 +622,132 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     });
   }
 
+  onToggleSubjectEnrollment(
+    row: AcademicSituationRow,
+    action: 'enroll' | 'unenroll'
+  ) {
+    if (!row?.commissionId) {
+      this.showError('Error', 'La fila no tiene una comisi�n asociada.');
+      return;
+    }
+
+    const prev = { ...row };
+    const optimisticEnrolled = action === 'enroll';
+    const optimisticRow: AcademicSituationRow = {
+      ...row,
+      enrolled: optimisticEnrolled,
+    };
+
+    this.enrollmentLoading.set(row.studentId);
+    row.enrolled = optimisticEnrolled;
+    this.replaceRowInTable(optimisticRow);
+
+    this.api
+      .toggleSubjectEnrollment({
+        subjectCommissionId: row.commissionId,
+        studentId: row.studentId,
+        action,
+      })
+      .subscribe({
+        next: (res: ToggleEnrollmentResponse) => {
+          const serverEnrolled = !!res?.enrolled;
+          const confirmedRow: AcademicSituationRow = {
+            ...optimisticRow,
+            enrolled: serverEnrolled,
+            condition:
+              res?.condition ??
+              optimisticRow.condition ??
+              (serverEnrolled ? optimisticRow.condition ?? null : 'No inscripto'),
+          };
+
+          row.enrolled = serverEnrolled;
+          this.replaceRowInTable(confirmedRow);
+
+          const actorLabel = res?.enrolled_by ?? '�';
+          const dateLabel = res?.enrolled_at
+            ? new Date(res.enrolled_at).toLocaleString()
+            : '';
+          const detail = serverEnrolled
+            ? `Por ${actorLabel}${dateLabel ? ` el ${dateLabel}` : ''}`
+            : 'Se removi� la inscripci�n en la comisi�n.';
+
+          this.messages.add({
+            severity: 'success',
+            summary: serverEnrolled ? 'Alumno inscripto' : 'Alumno desinscripto',
+            detail,
+          });
+        },
+        error: () => {
+          Object.assign(row, prev);
+          this.replaceRowInTable(prev);
+          this.showError('Error', 'No se pudo actualizar la inscripci�n.');
+        },
+        complete: () => this.enrollmentLoading.set(null),
+      });
+  }
+
   openMoveCommission(row: AcademicSituationRow) {
     if (!this.canMoveStudents()) return;
-    this.moveDialog.set({ visible: true, loading: false, studentId: row.studentId, currentCommissionId: row.commissionId });
+    this.moveDialog.set({
+      visible: true,
+      loading: false,
+      studentId: row.studentId,
+      currentCommissionId: row.commissionId,
+    });
   }
 
   closeMoveDialog() {
-    this.moveDialog.set({ visible: false, loading: false, studentId: null, currentCommissionId: null });
+    this.moveDialog.set({
+      visible: false,
+      loading: false,
+      studentId: null,
+      currentCommissionId: null,
+    });
   }
 
   confirmMoveCommission(newCommissionId: number | null) {
     const d = this.moveDialog();
-    if (!d.studentId || !newCommissionId || newCommissionId === d.currentCommissionId) return;
-    this.moveDialog.update(v => ({ ...v, loading: true }));
-    this.subjectsSvc.moveStudentCommission(this.subjectId, d.studentId, newCommissionId).subscribe({
-      next: () => {
-        this.moveDialog.update(v => ({ ...v, loading: false }));
-        this.closeMoveDialog();
-        // refrescar situación académica
-        this.onReload();
-        this.messages.add({ severity: 'success', summary: 'Alumno movido', detail: 'La comisión del alumno fue actualizada.' });
-      },
-      error: (err: unknown) => {
-        console.error('Error moviendo alumno', err);
-        this.moveDialog.update(v => ({ ...v, loading: false }));
-        this.showError('Error', 'No se pudo mover el alumno de comisión.');
-      }
-    });
+    if (
+      !d.studentId ||
+      !newCommissionId ||
+      newCommissionId === d.currentCommissionId
+    )
+      return;
+    this.moveDialog.update((v) => ({ ...v, loading: true }));
+    this.subjectsSvc
+      .moveStudentCommission(this.subjectId, d.studentId, newCommissionId)
+      .subscribe({
+        next: () => {
+          this.moveDialog.update((v) => ({ ...v, loading: false }));
+          this.closeMoveDialog();
+          // refrescar situaciÃ³n acadÃ©mica
+          this.onReload();
+          this.messages.add({
+            severity: 'success',
+            summary: 'Alumno movido',
+            detail: 'La comisiÃ³n del alumno fue actualizada.',
+          });
+        },
+        error: (err: unknown) => {
+          console.error('Error moviendo alumno', err);
+          this.moveDialog.update((v) => ({ ...v, loading: false }));
+          this.showError('Error', 'No se pudo mover el alumno de comisiÃ³n.');
+        },
+      });
   }
 }
 
-type EditableField = 'note1' | 'note2' | 'note3' | 'note4' | 'final' | 'attendancePercentage';
+type EditableField =
+  | 'note1'
+  | 'note2'
+  | 'note3'
+  | 'note4'
+  | 'final'
+  | 'attendancePercentage';
 type PendingRowChanges = Partial<Record<EditableField, number | null>>;
-type CommissionPayloadRow = { studentId: string } & (PendingRowChanges & { percentage?: number });
+type CommissionPayloadRow = { studentId: string } & (PendingRowChanges & {
+  percentage?: number;
+});
 type CommissionPayload = {
   commissionId: number;
   body: { rows: CommissionPayloadRow[] };

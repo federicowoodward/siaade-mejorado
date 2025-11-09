@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Put,
   Query,
   Req,
@@ -35,6 +36,10 @@ import { UpdateSubjectGradeDto } from "./dto/update-subject-grade.dto";
 import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
 import { MoveStudentCommissionDto } from "./dto/move-student-commission.dto";
 import { UpdateSubjectCommissionTeacherDto } from "./dto/update-subject-commission-teacher.dto";
+import {
+  ToggleEnrollmentDto,
+  ToggleEnrollmentResponseDto,
+} from "@/modules/shared/dto/toggle-enrollment.dto";
 
 type AuthenticatedUser = {
   id: string;
@@ -83,22 +88,24 @@ export class SubjectsController {
     );
   }
 
-  @Patch(':subjectCommissionId/teacher')
-  @Action('subjects.updateSubjectCommissionTeacher')
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR
-  )
-  @ApiOperation({ summary: 'Cambiar el docente asignado a una subject_commission' })
-  @ApiParam({ name: 'subjectCommissionId', type: Number })
+  @Patch(":subjectCommissionId/teacher")
+  @Action("subjects.updateSubjectCommissionTeacher")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
+  @ApiOperation({
+    summary: "Cambiar el docente asignado a una subject_commission",
+  })
+  @ApiParam({ name: "subjectCommissionId", type: Number })
   @ApiBody({ type: UpdateSubjectCommissionTeacherDto })
   async updateTeacher(
-    @Param('subjectCommissionId', ParseIntPipe) subjectCommissionId: number,
+    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
     @Body() dto: UpdateSubjectCommissionTeacherDto,
     @Req() req: Request
   ) {
-    return this.subjectsService.updateSubjectCommissionTeacher(subjectCommissionId, dto.teacherId, req.user as AuthenticatedUser);
+    return this.subjectsService.updateSubjectCommissionTeacher(
+      subjectCommissionId,
+      dto.teacherId,
+      req.user as AuthenticatedUser
+    );
   }
 }
 
@@ -121,8 +128,8 @@ export class SubjectGradesController {
     summary: "Obtener la situacion academica de una materia",
   })
   @ApiParam({ name: "subjectId" })
-    @ApiOkResponse({
-      schema: {
+  @ApiOkResponse({
+    schema: {
       type: "object",
       properties: {
         subject: {
@@ -161,11 +168,12 @@ export class SubjectGradesController {
               final: { type: "number", nullable: true },
               attendancePercentage: { type: "number" },
               condition: { type: "string", nullable: true },
+              enrolled: { type: "boolean" },
             },
           },
         },
       },
-      } as any,
+    } as any,
   })
   async getSubjectAcademicSituation(
     @Param("subjectId", ParseIntPipe) subjectId: number,
@@ -186,8 +194,8 @@ export class SubjectGradesController {
   })
   @ApiParam({ name: "subjectId" })
   @ApiParam({ name: "studentId" })
-    @ApiBody({ type: UpdateSubjectGradeDto })
-    @ApiOkResponse({ type: GradeRowDto })
+  @ApiBody({ type: UpdateSubjectGradeDto })
+  @ApiOkResponse({ type: GradeRowDto })
   async patchSubjectGrade(
     @Param("subjectId", ParseIntPipe) subjectId: number,
     @Param("studentId", ParseObjectIdPipe) studentId: string,
@@ -202,44 +210,54 @@ export class SubjectGradesController {
     );
   }
 
-  @Patch(':subjectId/teacher')
-  @Action('subjects.updateSubjectTeachers')
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR
-  )
-  @ApiOperation({ summary: 'Asignar/cambiar docente para todas las comisiones de una materia' })
-  @ApiParam({ name: 'subjectId' })
+  @Patch(":subjectId/teacher")
+  @Action("subjects.updateSubjectTeachers")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
+  @ApiOperation({
+    summary: "Asignar/cambiar docente para todas las comisiones de una materia",
+  })
+  @ApiParam({ name: "subjectId" })
   @ApiBody({ type: UpdateSubjectCommissionTeacherDto })
   async updateSubjectTeachers(
-    @Param('subjectId', ParseIntPipe) subjectId: number,
+    @Param("subjectId", ParseIntPipe) subjectId: number,
     @Body() dto: UpdateSubjectCommissionTeacherDto,
     @Req() req: Request
   ) {
-    return this.subjectsService.updateAllSubjectCommissionsTeacher(subjectId, dto.teacherId, req.user as AuthenticatedUser);
+    return this.subjectsService.updateAllSubjectCommissionsTeacher(
+      subjectId,
+      dto.teacherId,
+      req.user as AuthenticatedUser
+    );
   }
 
-  @Patch(':subjectId/students/:studentId/commission')
-  @Action('subjects.moveStudentCommission')
+  @Patch(":subjectId/students/:studentId/commission")
+  @Action("subjects.moveStudentCommission")
   @AllowRoles(
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
     ROLE.TEACHER
   )
-  @ApiOperation({ summary: 'Mover alumno de comisión dentro de la misma materia transfiriendo notas y estado' })
-  @ApiParam({ name: 'subjectId' })
-  @ApiParam({ name: 'studentId' })
+  @ApiOperation({
+    summary:
+      "Mover alumno de comisión dentro de la misma materia transfiriendo notas y estado",
+  })
+  @ApiParam({ name: "subjectId" })
+  @ApiParam({ name: "studentId" })
   @ApiBody({ type: MoveStudentCommissionDto })
   @ApiOkResponse({ type: GradeRowDto })
   async moveStudentCommission(
-    @Param('subjectId', ParseIntPipe) subjectId: number,
-    @Param('studentId', ParseObjectIdPipe) studentId: string,
+    @Param("subjectId", ParseIntPipe) subjectId: number,
+    @Param("studentId", ParseObjectIdPipe) studentId: string,
     @Body() dto: MoveStudentCommissionDto,
     @Req() req: Request
   ): Promise<GradeRowDto> {
-    return this.subjectsService.moveStudentToCommission(subjectId, studentId, dto.toCommissionId, req.user as AuthenticatedUser);
+    return this.subjectsService.moveStudentToCommission(
+      subjectId,
+      studentId,
+      dto.toCommissionId,
+      req.user as AuthenticatedUser
+    );
   }
 }
 
@@ -323,8 +341,8 @@ export class SubjectStatusController {
       "Listar notas y asistencia agrupadas por comision para una materia",
   })
   @ApiParam({ name: "subjectId" })
-    @ApiOkResponse({
-      schema: {
+  @ApiOkResponse({
+    schema: {
       type: "object",
       properties: {
         subject: {
@@ -372,11 +390,53 @@ export class SubjectStatusController {
           },
         },
       },
-      } as any,
+    } as any,
   })
   async getSubjectGrades(
     @Param("subjectId", ParseIntPipe) subjectId: number
   ): ReturnType<SubjectsService["getSubjectGradesBySubject"]> {
     return this.subjectsService.getSubjectGradesBySubject(subjectId);
+  }
+}
+
+@ApiTags("subjects")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.STUDENT
+)
+@Controller("subjects/enrollments")
+export class SubjectEnrollmentController {
+  constructor(private readonly subjectsService: SubjectsService) {}
+
+  @Post("toggle")
+  @ApiOperation({
+    summary: "Inscribir/Desinscribir alumno en una comisión de materia",
+  })
+  @ApiBody({ type: ToggleEnrollmentDto })
+  @ApiOkResponse({ type: ToggleEnrollmentResponseDto })
+  async toggleSubjectEnrollment(
+    @Body() dto: ToggleEnrollmentDto,
+    @Req() req: Request
+  ): Promise<ToggleEnrollmentResponseDto> {
+    const user = req.user as { role?: ROLE | null };
+    const actor =
+      user?.role === ROLE.PRECEPTOR
+        ? "preceptor"
+        : user?.role === ROLE.STUDENT
+        ? "student"
+        : "system";
+    if (!dto.subjectCommissionId) {
+      throw new BadRequestException("subjectCommissionId is required");
+    }
+    return this.subjectsService.toggleSubjectEnrollmentRich(
+      dto.subjectCommissionId,
+      dto.studentId,
+      dto.action,
+      actor
+    );
   }
 }

@@ -12,6 +12,7 @@
   final: number | null;
   attendancePercentage: number;
   condition: string | null;
+  enrolled: boolean;
 };
 
 export type AcademicSituationApiResponse = {

@@ -1,4 +1,5 @@
 <div class="m-w-custom">
+  <p-toast></p-toast>
   <div class="flex justify-content-between align-items-center mb-3">
     <h2 class="m-0">
       Examen • {{ exam()?.subject_name || 'Materia' }}
@@ -45,6 +46,7 @@
             severity="info"
             styleClass="w-full"
           >
+          <!-- boton para manejar inscripcion solamente para rol preceptor aca, ver docs/roles-visibility.md -->
             <div class="w-full text-center">
               Inscripto el<br />
               <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
@@ -56,6 +58,29 @@
               <div class="w-full text-center">No inscripto</div>
             </p-tag>
           </ng-template>
+          <div class="mt-2" *appCanAnyRole="['PRECEPTOR']">
+            <p-button
+              *ngIf="row.enrolled_at; else insBtn"
+              label="Desinscribir"
+              icon="pi pi-user-minus"
+              severity="danger"
+              size="small"
+              [loading]="loadingRow() === row.student_id"
+              (onClick)="onToggleExamEnrollment(row, 'unenroll')"
+              blockedAction
+            ></p-button>
+            <ng-template #insBtn>
+              <p-button
+                label="Inscribir"
+                icon="pi pi-user-plus"
+                severity="success"
+                size="small"
+                [loading]="loadingRow() === row.student_id"
+                (onClick)="onToggleExamEnrollment(row, 'enroll')"
+                blockedAction
+              ></p-button>
+            </ng-template>
+          </div>
         </td>
 
         <td>

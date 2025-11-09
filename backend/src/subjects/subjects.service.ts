@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -17,6 +17,11 @@ import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { GradeRowDto } from "./dto/grade-row.dto";
 import { UpdateSubjectGradeDto } from "./dto/update-subject-grade.dto";
+import {
+  EnrollmentAction,
+  EnrollmentActor,
+  ToggleEnrollmentResponseDto,
+} from "@/modules/shared/dto/toggle-enrollment.dto";
 import { ROLE } from "@/shared/rbac/roles.constants";
 
 type AuthenticatedUser = {
@@ -149,7 +154,7 @@ export class SubjectsService {
     }
 
     await this.progressRepo.save(progress);
-    // Autocalcular condición salvo que el campo modificado sea el statusId manual
+    // Autocalcular condiciÃ³n salvo que el campo modificado sea el statusId manual
     if (dto.path !== 'statusId') {
       await this.autoAssignCondition(progress);
     }
@@ -292,6 +297,7 @@ export class SubjectsService {
       final: number | null;
       attendancePercentage: number;
       condition: string | null;
+      enrolled: boolean;
     }>;
   }> {
     const subject = await this.subjectRepo.findOne({
@@ -310,7 +316,7 @@ export class SubjectsService {
       .addOrderBy("vg.commission_id", "ASC")
       .addOrderBy("vg.full_name", "ASC")
       .addSelect("user.cuil", "academicSituation_cuil")
-      // bandera para saber si el alumno tiene progreso en esa comisión
+      // bandera para saber si el alumno tiene progreso en esa comisiÃ³n
       .addSelect("prog.id", "academicSituation_hasProgress");
 
     const commissionFilter =
@@ -321,7 +327,7 @@ export class SubjectsService {
       qb.andWhere("vg.commission_id = :commissionId", {
         commissionId: commissionFilter,
       });
-      // Cuando se filtra por comisión, mostrar SOLO los alumnos que tienen progreso en esa comisión
+      // Cuando se filtra por comisiÃ³n, mostrar SOLO los alumnos que tienen progreso en esa comisiÃ³n
       // (si no, la vista v_subject_grades conserva la cartesian de alumnos x comisiones).
       qb.andWhere('prog.id IS NOT NULL');
     }
@@ -336,9 +342,9 @@ export class SubjectsService {
 
     const { entities, raw } = await qb.getRawAndEntities();
 
-    // Agrupar por alumno y elegir la comisión a mostrar por alumno:
-    // - Si tiene progreso en alguna comisión: esa.
-    // - Si no, la comisión de menor id.
+    // Agrupar por alumno y elegir la comisiÃ³n a mostrar por alumno:
+    // - Si tiene progreso en alguna comisiÃ³n: esa.
+    // - Si no, la comisiÃ³n de menor id.
     const grouped = new Map<string, Array<{ ent: SubjectGradesView; r: Record<string, any> }>>();
     for (let i = 0; i < entities.length; i++) {
       const ent = entities[i];
@@ -347,8 +353,27 @@ export class SubjectsService {
       grouped.get(ent.studentId)!.push({ ent, r });
     }
 
+    const studentIds = Array.from(new Set(entities.map((e) => e.studentId)));
+    const enrollmentMap = new Map<string, { commissionId: number | null }>();
+    if (studentIds.length) {
+      const enrollmentRows = await this.subjectStudentRepo.query(
+        `SELECT student_id, commission_id FROM subject_students WHERE subject_id = $1 AND student_id = ANY($2::uuid[])`,
+        [subjectId, studentIds]
+      );
+      for (const row of enrollmentRows as Array<{ student_id: string; commission_id: number | null }>) {
+        enrollmentMap.set(row.student_id, {
+          commissionId: row.commission_id != null ? Number(row.commission_id) : null,
+        });
+      }
+    }
+
     const desiredCommissionByStudent = new Map<string, number>();
     for (const [studentId, list] of grouped.entries()) {
+      const enrollment = enrollmentMap.get(studentId);
+      if (enrollment?.commissionId) {
+        desiredCommissionByStudent.set(studentId, enrollment.commissionId);
+        continue;
+      }
       const withProgress = list.find((e) => e.r?.academicSituation_hasProgress != null);
       if (withProgress) {
         desiredCommissionByStudent.set(studentId, withProgress.ent.commissionId);
@@ -359,7 +384,6 @@ export class SubjectsService {
     }
 
     // Pre-cache de flags de estudiantes para minimizar awaits dentro del map
-    const studentIds = Array.from(new Set(entities.map(e => e.studentId)));
     const studentFlagsMap = new Map<string, { canLogin: boolean | null; isActive: boolean | null }>();
     if (studentIds.length) {
       // Batch query para performance
@@ -373,7 +397,7 @@ export class SubjectsService {
     }
 
     const rows = entities.flatMap((entity, index) => {
-      // Filtrar duplicados: mantener solo la comisión elegida para el alumno
+      // Filtrar duplicados: mantener solo la comisiÃ³n elegida para el alumno
       const desired = desiredCommissionByStudent.get(entity.studentId);
       if (desired !== undefined && desired !== entity.commissionId) {
         return [] as any[];
@@ -383,18 +407,27 @@ export class SubjectsService {
       const cuil =
         (rawRow?.academicSituation_cuil as string | null | undefined) ?? "";
 
-      // Determinar condición override para bloqueados
+      
+
+      const enrollment = enrollmentMap.get(mapped.studentId);
+      const isEnrolled =
+        enrollment?.commissionId != null &&
+        enrollment.commissionId === entity.commissionId;
+// Determinar condiciÃ³n override para bloqueados
       let conditionOverride: string | null = null;
-      // Obtenemos flags de la entidad user (si estuvo eager en StudentSubjectProgress sería otra forma)
-      // Aquí preferimos buscar el student directamente para evitar otra query masiva: cache simple en mapa.
-      // Para eficiencia podríamos precargar todos los students, pero manteniendo simple de momento.
+      if (!isEnrolled) {
+        conditionOverride = 'No inscripto';
+      }
+      // Obtenemos flags de la entidad user (si estuvo eager en StudentSubjectProgress serÃ­a otra forma)
+      // AquÃ­ preferimos buscar el student directamente para evitar otra query masiva: cache simple en mapa.
+      // Para eficiencia podrÃ­amos precargar todos los students, pero manteniendo simple de momento.
       // Bloqueado si can_login = false OR is_active = false
       // Mostramos 'No inscripto'
       // Nota: si el status existente ya es distinto, lo reemplazamos visualmente.
-      // Si en el futuro se requiere mantenerlo, quitar esta lógica.
+      // Si en el futuro se requiere mantenerlo, quitar esta lÃ³gica.
       conditionOverride = null;
-      // Usamos el repo de estudiantes para revisar flags con un pequeño cache.
-      // Cache local estático por ejecución de este método:
+      // Usamos el repo de estudiantes para revisar flags con un pequeÃ±o cache.
+      // Cache local estÃ¡tico por ejecuciÃ³n de este mÃ©todo:
       const flags = studentFlagsMap.get(mapped.studentId) ?? { canLogin: null, isActive: null };
       if (flags && (flags.canLogin === false || flags.isActive === false)) {
         conditionOverride = 'No inscripto';
@@ -421,6 +454,7 @@ export class SubjectsService {
         final: mapped.final,
         attendancePercentage: mapped.attendancePercentage,
         condition: computedCondition,
+        enrolled: isEnrolled,
       }];
     });
 
@@ -627,7 +661,13 @@ export class SubjectsService {
     subjectId: number,
     studentId: string
   ): Promise<number> {
-    // 1) Si existe progreso en alguna comisión de esta materia, priorizar esa
+    const subjectStudent = await this.subjectStudentRepo.findOne({
+      where: { subjectId, studentId },
+    });
+    if (subjectStudent?.commissionId) {
+      return subjectStudent.commissionId;
+    }
+    // 1) Si existe progreso en alguna comisiÃ³n de esta materia, priorizar esa
     const progressRow = await this.dataSource
       .createQueryBuilder()
       .select('ssp.subject_commission_id', 'commissionId')
@@ -642,7 +682,7 @@ export class SubjectsService {
       return progressRow.commissionId;
     }
 
-    // 2) Si no hay progreso, tomar la comisión de menor id como fallback
+    // 2) Si no hay progreso, tomar la comisiÃ³n de menor id como fallback
     const row = await this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .where("vg.subject_id = :subjectId", { subjectId })
@@ -677,7 +717,7 @@ export class SubjectsService {
     teacherId: string,
     user?: AuthenticatedUser
   ): Promise<{ id: number; teacherId: string }>{
-    // Validaciones básicas de existencia
+    // Validaciones bÃ¡sicas de existencia
     const commission = await this.subjectCommissionRepo.findOne({ where: { id: subjectCommissionId } });
     if (!commission) throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
 
@@ -698,7 +738,7 @@ export class SubjectsService {
   }
 
   /**
-   * Mueve un alumno a otra comisión de la misma materia, trasladando sus notas/estado.
+   * Mueve un alumno a otra comisiÃ³n de la misma materia, trasladando sus notas/estado.
    */
   async moveStudentToCommission(
     subjectId: number,
@@ -706,30 +746,30 @@ export class SubjectsService {
     toCommissionId: number,
     user?: AuthenticatedUser
   ): Promise<GradeRowDto> {
-    // Bloqueo transversal: impedir mover si el usuario está bloqueado
+    // Bloqueo transversal: impedir mover si el usuario estÃ¡ bloqueado
     await this.assertNotBlocked(studentId);
-    // Verificar que la comisión destino pertenezca a la materia
+    // Verificar que la comisiÃ³n destino pertenezca a la materia
     const toCommission = await this.subjectCommissionRepo.findOne({ where: { id: toCommissionId } });
     if (!toCommission) throw new NotFoundException(`Subject commission ${toCommissionId} was not found`);
     if (toCommission.subjectId !== subjectId) {
-      throw new BadRequestException('La comisión destino no pertenece a la materia indicada');
+      throw new BadRequestException('La comisiÃ³n destino no pertenece a la materia indicada');
     }
 
-    // Permisos: si es docente, debe ser el asignado a la comisión destino
+    // Permisos: si es docente, debe ser el asignado a la comisiÃ³n destino
     if (user?.role === ROLE.TEACHER && toCommission.teacherId !== user.id) {
-      throw new ForbiddenException('No está asignado a la comisión destino');
+      throw new ForbiddenException('No estÃ¡ asignado a la comisiÃ³n destino');
     }
 
-    // Asegurar que el alumno esté inscripto a la materia
+    // Asegurar que el alumno estÃ© inscripto a la materia
     await this.ensureStudentEnrollment(subjectId, studentId);
 
-    // Descubrir comisión origen (si tuviera progreso en otra comisión)
+    // Descubrir comisiÃ³n origen (si tuviera progreso en otra comisiÃ³n)
     const fromCommissionId = await this.resolveSubjectCommissionId(subjectId, studentId);
 
     if (fromCommissionId === toCommissionId) {
       // No hay nada que mover, devolver fila actual
       const [row] = await this.fetchGradeRows(toCommissionId, [studentId]);
-      if (!row) throw new NotFoundException('No se encontró la fila de notas del alumno');
+      if (!row) throw new NotFoundException('No se encontrÃ³ la fila de notas del alumno');
       return row;
     }
 
@@ -760,7 +800,7 @@ export class SubjectsService {
         // borrar origen para evitar duplicados
         await progressRepo.delete({ id: source.id });
       } else {
-        // Si no había progreso en origen, asegurar que exista un registro vacío en destino
+        // Si no habÃ­a progreso en origen, asegurar que exista un registro vacÃ­o en destino
         if (!target) {
           target = progressRepo.create({
             subjectCommissionId: toCommissionId,
@@ -773,14 +813,104 @@ export class SubjectsService {
           await this.autoAssignCondition(target, manager);
         }
       }
+      const subjectStudentRepo = manager.getRepository(SubjectStudent);
+      const subjectStudent = await subjectStudentRepo.findOne({
+        where: { subjectId, studentId },
+      });
+      if (subjectStudent) {
+        subjectStudent.commissionId = toCommissionId;
+        await subjectStudentRepo.save(subjectStudent);
+      }
     });
 
-    // Devolver fila desde la comisión destino
+    // Devolver fila desde la comisiÃ³n destino
     const [row] = await this.fetchGradeRows(toCommissionId, [studentId]);
-    if (!row) throw new NotFoundException('No se encontró la fila de notas del alumno en la comisión destino');
+    if (!row) throw new NotFoundException('No se encontrÃ³ la fila de notas del alumno en la comisiÃ³n destino');
     return row;
   }
 
+    async toggleSubjectEnrollmentRich(
+    subjectCommissionId: number,
+    studentId: string,
+    action: EnrollmentAction,
+    actor: EnrollmentActor
+  ): Promise<ToggleEnrollmentResponseDto> {
+    if (!studentId) {
+      throw new BadRequestException("studentId is required");
+    }
+    const commission = await this.subjectCommissionRepo.findOne({
+      where: { id: subjectCommissionId },
+      relations: ['subject'],
+    });
+    if (!commission || !commission.subject?.id) {
+      throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
+    }
+
+    await this.assertNotBlocked(studentId);
+
+    const subjectId = commission.subject.id;
+    let record = await this.subjectStudentRepo.findOne({
+      where: { subjectId, studentId },
+    });
+
+    if (action === 'enroll') {
+      const now = new Date();
+      if (!record) {
+        record = this.subjectStudentRepo.create({ subjectId, studentId });
+      }
+      record.commissionId = subjectCommissionId;
+      record.enrollmentDate = now;
+      record.enrolledBy = actor;
+      await this.subjectStudentRepo.save(record);
+    } else if (action === 'unenroll') {
+      if (record) {
+        record.commissionId = null;
+        record.enrollmentDate = null;
+        record.enrolledBy = null;
+        await this.subjectStudentRepo.save(record);
+      }
+    } else {
+      throw new BadRequestException('Unsupported enrollment action');
+    }
+
+    const finalRow = await this.subjectStudentRepo.findOne({
+      where: { subjectId, studentId },
+    });
+    const enrolled = !!finalRow?.commissionId && finalRow.commissionId === subjectCommissionId && action === 'enroll';
+    const enrolledAt = finalRow?.enrollmentDate
+      ? new Date(finalRow.enrollmentDate).toISOString()
+      : null;
+    const enrolledBy = (finalRow as any)?.enrolledBy ?? null;
+    const condition = enrolled ? null : 'No inscripto';
+
+    return {
+      entity: 'subject',
+      action,
+      enrolled,
+      enrolled_by: enrolledBy,
+      enrolled_at: enrolledAt,
+      student_id: studentId,
+      subject_id: subjectId,
+      subject_commission_id: subjectCommissionId,
+      commission_id: finalRow?.commissionId ?? null,
+      condition,
+    };
+  }
+
+  async toggleSubjectEnrollment(
+    subjectCommissionId: number,
+    studentId: string,
+    action: EnrollmentAction,
+    actor: EnrollmentActor
+  ) {
+    return this.toggleSubjectEnrollmentRich(
+      subjectCommissionId,
+      studentId,
+      action,
+      actor
+    );
+  }
+
   private normalizePartials(value: number | null | undefined): 2 | 4 {
     return value === 4 ? 4 : 2;
   }
@@ -917,14 +1047,14 @@ export class SubjectsService {
     studentId: string,
     manager?: EntityManager
   ): Promise<void> {
-    // Chequeo de bloqueo: si está bloqueado, no permitir validar inscripción futura
+    // Chequeo de bloqueo: si estÃ¡ bloqueado, no permitir validar inscripciÃ³n futura
     await this.assertNotBlocked(studentId);
     const repo =
       manager?.getRepository(SubjectStudent) ?? this.subjectStudentRepo;
-    const enrolled = await repo.exist({
+    const record = await repo.findOne({
       where: { subjectId, studentId },
     });
-    if (!enrolled) {
+    if (!record || record.commissionId == null) {
       throw new BadRequestException(
         "Student is not enrolled in the subject commission"
       );
@@ -933,10 +1063,10 @@ export class SubjectsService {
 
   private async assertNotBlocked(userId: string) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) return; // si no existe, otra validación fallará después
-    // Si está bloqueado, impedir acciones académicas (inscripciones, movimientos, etc.)
+    if (!user) return; // si no existe, otra validaciÃ³n fallarÃ¡ despuÃ©s
+    // Si estÃ¡ bloqueado, impedir acciones acadÃ©micas (inscripciones, movimientos, etc.)
     if ((user as any).isBlocked === true) {
-      const reason = (user as any).blockedReason || 'La cuenta está bloqueada';
+      const reason = (user as any).blockedReason || 'La cuenta estÃ¡ bloqueada';
       throw new ForbiddenException(reason);
     }
   }
@@ -1024,7 +1154,7 @@ export class SubjectsService {
   }
 
   /**
-   * Asigna automáticamente la condición en base a asistencia y promedio.
+   * Asigna automÃ¡ticamente la condiciÃ³n en base a asistencia y promedio.
    * Promocionado: asistencia >= 90 y promedio >= 7
    * Regular: 75 <= asistencia < 90 y promedio >= 4
    * Libre: asistencia < 75 o promedio < 4 (con notas)
@@ -1035,7 +1165,7 @@ export class SubjectsService {
     progress: StudentSubjectProgress,
     manager?: EntityManager
   ): Promise<void> {
-    if (progress.statusId) return; // no tocar si está seteado manualmente
+    if (progress.statusId) return; // no tocar si estÃ¡ seteado manualmente
 
     const attendance = Number(progress.attendancePercentage || '0');
     const scores = progress.partialScores ?? {};
@@ -1072,7 +1202,7 @@ export class SubjectsService {
     teacherId: string,
     user?: AuthenticatedUser
   ): Promise<{ updated: number }> {
-    // Permisos: docente no puede realizar esta acción
+    // Permisos: docente no puede realizar esta acciÃ³n
     if (user?.role === ROLE.TEACHER) {
       throw new ForbiddenException('Los docentes no pueden reasignar otros docentes');
     }

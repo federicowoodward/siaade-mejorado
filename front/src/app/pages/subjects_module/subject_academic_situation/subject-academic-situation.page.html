@@ -49,6 +49,8 @@
         responsiveLayout="scroll"
         styleClass="p-datatable-sm p-datatable-gridlines"
         [rowTrackBy]="rowsTrackBy"
+        [stateStorage]="'local'"
+        [stateKey]="'subject-academic-' + subjectId"
       >
         <ng-template pTemplate="caption">
           <div class="flex justify-content-between align-items-center">
@@ -211,12 +213,19 @@
               </p-cellEditor>
             </td>
             <td style="width: 1rem">
-              <p-tag
-                *ngIf="row.condition; else noCondTpl"
-                [value]="row.condition!"
-                [severity]="conditionSeverity(row.condition)"
-              ></p-tag>
-              <ng-template #noCondTpl>-</ng-template>
+              <ng-container *ngIf="row.condition; else condByEnrollmentTpl">
+                <p-tag
+                  [value]="row.condition!"
+                  [severity]="conditionSeverity(row.condition)"
+                ></p-tag>
+              </ng-container>
+              <ng-template #condByEnrollmentTpl>
+                <p-tag
+                  [value]="row.enrolled ? 'Inscripto' : 'No inscripto'"
+                  [severity]="row.enrolled ? 'secondary' : 'warn'"
+                ></p-tag>
+              </ng-template>
+              <!-- edición de condición reservada a preceptor (si aplica) -->
             </td>
             <td>
               <div class="flex items-center justify-center">
@@ -225,6 +234,8 @@
                   pButton
                   pRipple
                   type="button"
+                  pTooltip="Editar notas/asistencia"
+                  tooltipPosition="top"
                   pInitEditableRow
                   icon="pi pi-pencil"
                   (click)="onRowEditInit(row)"
@@ -260,6 +271,39 @@
                   severity="secondary"
                   blockedAction
                 ></button>
+                <div
+                  class="flex items-center justify-center gap-2"
+                  *appCanAnyRole="['PRECEPTOR']"
+                >
+                  <button
+                    pButton
+                    icon="pi pi-user-plus"
+                    pTooltip="Inscribir"
+                    tooltipPosition="top"
+                    *ngIf="!row.enrolled; else enrolledTpl"
+                    [disabled]="enrollmentLoading() === row.studentId"
+                    (click)="onToggleSubjectEnrollment(row, 'enroll')"
+                    text
+                    rounded
+                    severity="secondary"
+                    blockedAction
+                  ></button>
+                  <ng-template #enrolledTpl>
+                    <button
+                      pButton
+                      pRipple
+                      icon="pi pi-user-minus"
+                      pTooltip="Desinscribir"
+                      tooltipPosition="top"
+                      [disabled]="enrollmentLoading() === row.studentId"
+                      (click)="onToggleSubjectEnrollment(row, 'unenroll')"
+                      text
+                      rounded
+                      severity="secondary"
+                      blockedAction
+                    ></button>
+                  </ng-template>
+                </div>
               </div>
             </td>
           </tr>

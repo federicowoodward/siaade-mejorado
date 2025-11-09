@@ -19,6 +19,8 @@ import { RecordFinalDto, ApproveFinalDto } from "@/modules/final_exams/dto/final
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
+import { ToggleEnrollmentResponseDto } from "@/modules/shared/dto/toggle-enrollment.dto";
+import { EnrollmentAction, EnrollmentActor } from "@/modules/shared/dto/toggle-enrollment.dto";
 
 @Injectable()
 export class FinalExamService {
@@ -186,6 +188,79 @@ export class FinalExamService {
     (link as any).approvedAt = new Date();
     await this.linkRepo.save(link);
     return { ok: true };
+  }
+
+  async toggleFinalExamEnrollmentRich(
+    finalExamId: number,
+    studentId: string,
+    action: EnrollmentAction,
+    actor: EnrollmentActor
+  ): Promise<ToggleEnrollmentResponseDto> {
+    if (!studentId) {
+      throw new BadRequestException("studentId is required");
+    }
+
+    const exam = await this.finalRepo.findOne({ where: { id: finalExamId } });
+    if (!exam) {
+      throw new NotFoundException("Final exam not found");
+    }
+
+    let link = await this.linkRepo.findOne({ where: { finalExamId, studentId } });
+
+    if (action === "enroll") {
+      const now = new Date();
+      if (!link) {
+        link = this.linkRepo.create({
+          finalExamId,
+          studentId,
+          score: null,
+          notes: "",
+        });
+      }
+      const storedActor: "student" | "preceptor" =
+        actor === "student" ? "student" : "preceptor";
+      link.enrolledAt = now;
+      link.enrolledBy = storedActor;
+      await this.linkRepo.save(link);
+    } else if (action === "unenroll") {
+      if (link) {
+        link.enrolledAt = null;
+        link.enrolledBy = null;
+        link.score = null;
+        link.notes = "";
+        await this.linkRepo.save(link);
+      }
+    } else {
+      throw new BadRequestException("Unsupported enrollment action");
+    }
+
+    const finalLink = await this.linkRepo.findOne({
+      where: { finalExamId, studentId },
+    });
+    const enrolled = !!finalLink?.enrolledAt && action === "enroll";
+    const enrolledAt = finalLink?.enrolledAt
+      ? new Date(finalLink.enrolledAt).toISOString()
+      : null;
+    const enrolledBy = (finalLink as any)?.enrolledBy ?? null;
+
+    return {
+      entity: "final_exam",
+      action,
+      enrolled,
+      enrolled_by: enrolledBy,
+      enrolled_at: enrolledAt,
+      student_id: studentId,
+      final_exam_id: finalExamId,
+    };
+  }
+
+  async toggleFinalExamEnrollment(
+    finalExamId: number,
+    studentId: string,
+    action: EnrollmentAction,
+    actor: EnrollmentActor
+  ) {
+    return this.toggleFinalExamEnrollmentRich(finalExamId, studentId, action, actor);
   }
 }
 

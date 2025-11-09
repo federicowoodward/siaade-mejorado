@@ -1,8 +1,28 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import { FinalExamService } from "@/modules/final_exams/services/final-exam.service";
 import { CreateFinalExamDto } from "@/modules/final_exams/dto/final-exam.dto";
 import { ApproveFinalDto, RecordFinalDto } from "@/modules/final_exams/dto/final-exam-admin.dto";
 import { normalizePagination, buildPageMeta } from '@/shared/utils/pagination';
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
+import {
+  ToggleEnrollmentDto,
+  ToggleEnrollmentResponseDto,
+} from "@/modules/shared/dto/toggle-enrollment.dto";
+import { Request } from "express";
 
 import {
   ApiBearerAuth,
@@ -144,6 +164,35 @@ export class FinalExamController {
   @Post('approve')
   approve(@Body() dto: ApproveFinalDto) {
     return this.svc.approve(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.STUDENT
+  )
+  @Post('enrollments/toggle')
+  @ApiOperation({ summary: "Inscribir/Desinscribir alumno en un examen final" })
+  @ApiBody({ type: ToggleEnrollmentDto })
+  @ApiOkResponse({ type: ToggleEnrollmentResponseDto })
+  async toggleEnrollment(
+    @Body() dto: ToggleEnrollmentDto,
+    @Req() req: Request
+  ): Promise<ToggleEnrollmentResponseDto> {
+    const user = req.user as { role?: ROLE | null };
+    const actor: "student" | "preceptor" =
+      user?.role === ROLE.STUDENT ? "student" : "preceptor";
+    if (!dto.finalExamId) {
+      throw new BadRequestException("finalExamId is required");
+    }
+    return this.svc.toggleFinalExamEnrollmentRich(
+      dto.finalExamId,
+      dto.studentId,
+      dto.action,
+      actor
+    );
   }
 }
 

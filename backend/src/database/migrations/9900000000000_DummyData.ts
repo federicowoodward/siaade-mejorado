@@ -584,7 +584,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const subjectStudentValues: Array<{
         subjectId: number;
         studentId: string;
+        commissionId: number | null;
         enrollmentDate: Date;
+        enrolledBy: 'system';
       }> = [];
 
       if (ENROLL_ALL_SUBJECTS) {
@@ -595,10 +597,19 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
               counters.subjectStudentsSkipped += 1;
               continue;
             }
+            const mapping = subjectCommissionMap.get(subjectId);
+            const preferredLetter = studentCommissionLetterByUserId.get(studentId) ?? "A";
+            const commissionId =
+              (preferredLetter === "B" ? mapping?.B : mapping?.A) ??
+              mapping?.A ??
+              mapping?.B ??
+              null;
             subjectStudentValues.push({
               subjectId,
               studentId,
+              commissionId: commissionId ?? null,
               enrollmentDate: DUMMY_ENROLLMENT_DATE,
+              enrolledBy: "system",
             });
             const set = subjectStudentsBySubject.get(subjectId) ?? new Set<string>();
             set.add(studentId);

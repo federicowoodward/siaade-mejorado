@@ -14,6 +14,7 @@ import {
   SubjectStatusController,
   SubjectsController,
   SubjectGradesController,
+  SubjectEnrollmentController,
 } from "./subjects.controller";
 import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
 
@@ -31,7 +32,12 @@ import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
       User,
     ]),
   ],
-  controllers: [SubjectsController, SubjectGradesController, SubjectStatusController],
+  controllers: [
+    SubjectsController,
+    SubjectGradesController,
+    SubjectStatusController,
+    SubjectEnrollmentController,
+  ],
   providers: [SubjectsService, ParseObjectIdPipe],
   exports: [SubjectsService],
 })

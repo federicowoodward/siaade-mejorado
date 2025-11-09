@@ -15,6 +15,20 @@ import { AuthStateService } from './auth/auth-state.service';
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type MaybeWrapped<T> = T | { data: T; error?: any };
 
+export interface ToggleEnrollmentResponse {
+  entity: 'subject' | 'final_exam';
+  action: 'enroll' | 'unenroll';
+  enrolled: boolean;
+  enrolled_by: 'student' | 'preceptor' | 'system' | null;
+  enrolled_at: string | null;
+  student_id: string;
+  subject_id?: number;
+  subject_commission_id?: number;
+  commission_id?: number | null;
+  final_exam_id?: number;
+  condition?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   constructor(
@@ -179,6 +193,28 @@ export class ApiService {
         }
       })
     );
+  }
+
+  toggleSubjectEnrollment(payload: {
+    subjectCommissionId: number;
+    studentId: string;
+    action: 'enroll' | 'unenroll';
+  }): Observable<ToggleEnrollmentResponse> {
+    return this.request<ToggleEnrollmentResponse>('POST', 'subjects/enrollments/toggle', {
+      entity: 'subject',
+      ...payload,
+    });
+  }
+
+  toggleFinalEnrollment(payload: {
+    finalExamId: number;
+    studentId: string;
+    action: 'enroll' | 'unenroll';
+  }): Observable<ToggleEnrollmentResponse> {
+    return this.request<ToggleEnrollmentResponse>('POST', 'finals/exam/enrollments/toggle', {
+      entity: 'final_exam',
+      ...payload,
+    });
   }
 
   getAll<T = any>(table: string): Observable<T[]> {

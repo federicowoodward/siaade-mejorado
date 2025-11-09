@@ -28,10 +28,13 @@ export class FinalExamsStudent {
   @Column({ name: 'enrolled_at', type: 'timestamptz', nullable: true })
   enrolledAt: Date | null;
 
+  @Column({ name: 'enrolled_by', type: 'text', nullable: true })
+  enrolledBy: 'student' | 'preceptor' | null;
+
   @Column({ type: 'decimal', precision: 4, scale: 2, nullable: true })
   score: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, default: '' })
   notes: string | null;
 
   @Column({ name: 'status_id', type: 'int', nullable: true })
