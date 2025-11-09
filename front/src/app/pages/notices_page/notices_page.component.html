@@ -1,13 +1,13 @@
 ﻿<div class="notices-page">
     <h2 class="page-title">
     <i class="pi pi-bell text-primary mr-2"></i>
-    Avisos (AdministraciÃ³n)
+    Avisos (Administración)
     </h2>
 
     <div class="new-notice-form" *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]">
     <input
     type="text"
-    placeholder="TÃ­tulo"
+    placeholder="Título"
     [(ngModel)]="newNotice.title"
     class="p-inputtext"
     blockedAction
@@ -16,7 +16,7 @@
     <p-editor
     [(ngModel)]="newNotice.content"
     [style]="{height: '200px'}"
-    placeholder="EscribÃ­ el contenido del avisoâ€¦"
+    placeholder="Escribí el contenido del aviso…"
     blockedAction
     ></p-editor>
 
