@@ -251,6 +251,40 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "notices" ADD CONSTRAINT "FK_5091560ec8975434a5add94c411" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "FK_password_reset_tokens_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "password_history" ADD CONSTRAINT "FK_password_history_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+
+    // ===== Seed inicial de usuario Secretary =====
+    // Idempotente: inserta rol y usuario sólo si no existen.
+    const secretaryRoleSlug = 'secretary';
+    const secretaryEmail = 'sec.auto4@example.com';
+    const secretaryPassword = 'pass1234';
+
+    // Normalizar roles existentes a lower(trim(name)) antes de insertar.
+    await queryRunner.query(`UPDATE roles SET name = lower(trim(name))`);
+    // Asegurar rol 'secretary'
+    await queryRunner.query(`INSERT INTO roles(name) VALUES($1) ON CONFLICT (name) DO NOTHING`, [secretaryRoleSlug]);
+    const [{ id: secretaryRoleId }] = await queryRunner.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [secretaryRoleSlug]);
+    if (!secretaryRoleId) {
+      throw new Error('InitSchema seed: no se pudo obtener id de rol secretary');
+    }
+    // Crear usuario si no existe
+    const existingSecretaryUsers = await queryRunner.query(`SELECT id FROM users WHERE email = $1`, [secretaryEmail]);
+    let secretaryUserId: string | null = null;
+    if (existingSecretaryUsers.length === 0) {
+      const insertRes = await queryRunner.query(
+        `INSERT INTO users(name, last_name, email, password, cuil, role_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+        ['Secretario', 'Sistema', secretaryEmail, secretaryPassword, '21000000000', secretaryRoleId]
+      );
+      secretaryUserId = insertRes[0].id;
+    } else {
+      secretaryUserId = existingSecretaryUsers[0].id;
+      // Asegurar que role_id esté correcto por si cambió
+      await queryRunner.query(`UPDATE users SET role_id=$1 WHERE id=$2 AND role_id<>$1`, [secretaryRoleId, secretaryUserId]);
+    }
+    if (!secretaryUserId) {
+      throw new Error('InitSchema seed: no se pudo determinar userId de secretario');
+    }
+    // Insertar fila en secretaries si falta
+    await queryRunner.query(`INSERT INTO secretaries(user_id, is_directive) VALUES($1,false) ON CONFLICT (user_id) DO NOTHING`, [secretaryUserId]);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
