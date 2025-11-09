@@ -11,6 +11,8 @@ import { FINAL_EXAMS_ROUTES } from "./pages/final_examns_module/final_examns_mod
 import { NoticesPageComponent } from "./pages/notices_page/notices_page.component";
 import { roleCanActivate } from "./core/guards/role.guard";
 import { ROLE } from "./core/auth/roles";
+import { MesasListComponent } from "./alumno/mesas/mesas-list.component";
+import { AcademicStatusComponent } from "./alumno/situacion-academica/academic-status.component";
 
 export const routes: Routes = [
   {
@@ -84,6 +86,15 @@ export const routes: Routes = [
     path: "notices",
     component: NoticesPageComponent,
     canActivate: [AuthGuard],
+  },
+  {
+    path: "alumno",
+    canActivate: [AuthGuard, roleCanActivate([ROLE.STUDENT])],
+    children: [
+      { path: "mesas", component: MesasListComponent },
+      { path: "situacion-academica", component: AcademicStatusComponent },
+      { path: "", redirectTo: "mesas", pathMatch: "full" },
+    ],
   },
   { path: "", redirectTo: "welcome", pathMatch: "full" },
   { path: "**", redirectTo: "welcome" },

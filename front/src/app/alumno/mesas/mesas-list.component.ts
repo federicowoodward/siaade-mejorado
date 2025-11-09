@@ -1,0 +1,447 @@
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TableModule } from 'primeng/table';
+import { SelectModule } from 'primeng/select';
+import { DatePickerModule } from 'primeng/datepicker';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { MessageService } from 'primeng/api';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  StudentExamBlockReason,
+  StudentExamCall,
+  StudentExamTable,
+  StudentWindowState,
+} from '../../core/models/student-exam.model';
+import { StudentInscriptionsService } from '../../core/services/student-inscriptions.service';
+import {
+  BlockMessageComponent,
+  BlockMessageVariant,
+  BlockMessageAction,
+} from '../../shared/block-message/block-message.component';
+import { AuthService } from '../../core/services/auth.service';
+
+interface ExamCallRow {
+  mesaId: number;
+  callId: number;
+  subjectId: number;
+  subjectName: string;
+  commissionLabel: string | null;
+  call: StudentExamCall;
+  windowState: StudentWindowState;
+  windowRange: string;
+  quotaText: string;
+  table: StudentExamTable;
+}
+
+type WindowFilter = StudentWindowState | 'all';
+
+const BLOCK_COPY: Record<
+  StudentExamBlockReason | 'DEFAULT',
+  { title: string; variant: BlockMessageVariant; message: string }
+> = {
+  WINDOW_CLOSED: {
+    title: 'Ventana cerrada',
+    variant: 'institutional',
+    message:
+      'Esta mesa se encuentra fuera del periodo habilitado. Verifica las fechas publicadas por Secretaria.',
+  },
+  MISSING_REQUIREMENTS: {
+    title: 'Requisito academico pendiente',
+    variant: 'official',
+    message:
+      'Tu plan indica que debes cumplir con los requisitos academicos antes de inscribirte. Regulariza la cursada o presenta la documentacion correspondiente.',
+  },
+  DUPLICATE: {
+    title: 'Ya estas inscripto',
+    variant: 'official',
+    message:
+      'No es posible duplicar inscripciones para el mismo llamado durante el mismo ano academico.',
+  },
+  QUOTA_FULL: {
+    title: 'Cupo completo',
+    variant: 'institutional',
+    message:
+      'El cupo disponible para esta mesa ya fue alcanzado segun la normativa institucional.',
+  },
+  BACKEND_BLOCK: {
+    title: 'Bloqueado por el sistema',
+    variant: 'official',
+    message:
+      'La mesa fue bloqueada por el area academica. Consulta con Secretaria para mas informacion.',
+  },
+  UNKNOWN: {
+    title: 'No se pudo procesar la accion',
+    variant: 'info',
+    message:
+      'Ocurrio un inconveniente al validar la inscripcion. Intenta nuevamente mas tarde.',
+  },
+  DEFAULT: {
+    title: 'Accion bloqueada',
+    variant: 'info',
+    message:
+      'El sistema bloqueo la accion. Volve a intentarlo o contacta a Secretaria.',
+  },
+};
+
+@Component({
+  selector: 'app-mesas-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableModule,
+    SelectModule,
+    DatePickerModule,
+    ButtonModule,
+    DialogModule,
+    TagModule,
+    ToastModule,
+    TooltipModule,
+    ProgressSpinnerModule,
+    BlockMessageComponent,
+  ],
+  templateUrl: './mesas-list.component.html',
+  styleUrl: './mesas-list.component.scss',
+  providers: [MessageService],
+})
+export class MesasListComponent implements OnInit {
+  private readonly inscriptions = inject(StudentInscriptionsService);
+  private readonly auth = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly messages = inject(MessageService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  readonly tables = this.inscriptions.tables;
+  readonly loading = this.inscriptions.loading;
+
+  readonly subjectOptions = computed(() => {
+    const seen = new Map<number, string>();
+    this.tables().forEach((table) => {
+      const id = table.subjectId;
+      if (!seen.has(id)) {
+        seen.set(id, table.subjectName);
+      }
+    });
+    return Array.from(seen.entries()).map(([value, label]) => ({
+      label,
+      value,
+    }));
+  });
+
+  readonly rows = computed(() => this.flattenRows(this.tables()));
+
+  filters: {
+    subjectId: number | null;
+    dateRange: Date[] | null;
+    windowState: WindowFilter;
+  } = {
+    subjectId: null,
+    dateRange: null,
+    windowState: 'open',
+  };
+
+  dialogVisible = false;
+  selectedRow: ExamCallRow | null = null;
+  private lastActionTrigger: HTMLElement | null = null;
+  readonly blockAlert = signal<{
+    title: string;
+    message: string;
+    variant: BlockMessageVariant;
+    reasonCode: StudentExamBlockReason | string;
+  } | null>(null);
+
+  readonly defaultBlockActions: BlockMessageAction[] = [
+    {
+      label: 'Ver situacion academica',
+      icon: 'pi pi-book',
+      command: () => this.navigateToStatus(),
+    },
+    {
+      label: 'Actualizar mesas',
+      icon: 'pi pi-refresh',
+      command: () => this.loadTables(),
+    },
+  ];
+
+  ngOnInit(): void {
+    const subjectId = Number(
+      this.route.snapshot.queryParamMap.get('subjectId') ?? NaN
+    );
+    if (Number.isFinite(subjectId)) {
+      this.filters.subjectId = subjectId;
+    }
+    this.loadTables();
+  }
+
+  loadTables(): void {
+    this.inscriptions
+      .listExamTables(this.buildFilterPayload())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
+
+  applyFilters(): void {
+    this.loadTables();
+  }
+
+  clearFilters(): void {
+    this.filters = {
+      subjectId: null,
+      dateRange: null,
+      windowState: 'all',
+    };
+    this.loadTables();
+  }
+
+  onSubjectFilterChange(value: number | null): void {
+    this.filters.subjectId = value;
+  }
+
+  onDateFilterChange(value: Date[] | null): void {
+    this.filters.dateRange = value;
+  }
+
+  onWindowFilterChange(value: WindowFilter): void {
+    this.filters.windowState = value;
+  }
+
+  onEnroll(row: ExamCallRow, event?: MouseEvent): void {
+    this.lastActionTrigger = (event?.currentTarget as HTMLElement) ?? null;
+    const validation = this.validateRow(row);
+    if (validation.blocked) {
+      this.showBlock(validation.reason, validation.message);
+      this.audit(row, 'blocked', validation.reason);
+      return;
+    }
+    this.selectedRow = row;
+    this.dialogVisible = true;
+  }
+
+  cancelDialog(): void {
+    this.dialogVisible = false;
+    this.selectedRow = null;
+    this.restoreFocus();
+  }
+
+  confirmEnroll(): void {
+    const row = this.selectedRow;
+    if (!row) return;
+    this.dialogVisible = false;
+    this.inscriptions
+      .enroll({ mesaId: row.mesaId, callId: row.call.id })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (response.ok) {
+          this.messages.add({
+            severity: 'success',
+            summary: 'Inscripcion confirmada',
+            detail: `${row.subjectName} - ${row.call.label}`,
+            life: 4000,
+          });
+          this.blockAlert.set(null);
+          this.audit(row, 'success');
+          this.refreshData();
+        } else {
+          const reason =
+            (response.reasonCode as StudentExamBlockReason) ?? 'UNKNOWN';
+          this.showBlock(reason, response.message ?? '');
+          this.audit(row, 'blocked', reason);
+        }
+        this.restoreFocus();
+        this.selectedRow = null;
+      });
+  }
+
+  private refreshData(): void {
+    this.inscriptions
+      .refresh()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+    void this.auth.loadUserRoles();
+  }
+
+  private flattenRows(tables: StudentExamTable[]): ExamCallRow[] {
+    const formatter = new Intl.DateTimeFormat('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+    });
+    return tables.flatMap((table) =>
+      table.availableCalls.map((call) => {
+        const opens = call.enrollmentWindow.opensAt;
+        const closes = call.enrollmentWindow.closesAt;
+        const windowRange =
+          opens && closes
+            ? `${formatter.format(new Date(opens))} - ${formatter.format(
+                new Date(closes)
+              )}`
+            : 'Sin rango publicado';
+        const quotaText =
+          call.quotaTotal && call.quotaUsed !== null
+            ? `${call.quotaUsed}/${call.quotaTotal}`
+            : call.quotaTotal
+            ? `Hasta ${call.quotaTotal}`
+            : 'Sin cupo publicado';
+        return {
+          mesaId: table.mesaId,
+          callId: call.id,
+          subjectId: table.subjectId,
+          subjectName: table.subjectName,
+          commissionLabel: table.commissionLabel ?? null,
+          call,
+          windowState: call.enrollmentWindow.state,
+          windowRange,
+          quotaText,
+          table,
+        };
+      })
+    );
+  }
+
+  private validateRow(
+    row: ExamCallRow
+  ): { blocked: false } | { blocked: true; reason: StudentExamBlockReason; message: string } {
+    const block = this.resolveBlock(row);
+    if (!block) {
+      return { blocked: false };
+    }
+    return { blocked: true, ...block };
+  }
+
+  private buildFilterPayload() {
+    const current = this.filters;
+    const [from, to] = current.dateRange ?? [null, null];
+    return {
+      subjectId: current.subjectId ?? undefined,
+      from: from ? this.toIso(from) : undefined,
+      to: to ? this.toIso(to) : undefined,
+      windowState: current.windowState,
+    };
+  }
+
+  private toIso(date: Date): string {
+    return date.toISOString().slice(0, 10);
+  }
+
+  private showBlock(
+    reason: StudentExamBlockReason | null,
+    customMessage?: string
+  ): void {
+    const template = BLOCK_COPY[reason ?? 'DEFAULT'] ?? BLOCK_COPY.DEFAULT;
+    this.blockAlert.set({
+      title: template.title,
+      variant: template.variant,
+      message: customMessage?.trim()?.length ? customMessage : template.message,
+      reasonCode: reason ?? 'UNKNOWN',
+    });
+  }
+
+  private audit(
+    row: ExamCallRow,
+    outcome: 'success' | 'blocked' | 'error',
+    reasonCode?: StudentExamBlockReason
+  ): void {
+    this.inscriptions
+      .logAudit({
+        context: 'enroll-exam',
+        mesaId: row.mesaId,
+        callId: row.call.id,
+        outcome,
+        reasonCode,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
+
+  private restoreFocus(): void {
+    setTimeout(() => this.lastActionTrigger?.focus(), 0);
+  }
+
+  navigateToStatus(): void {
+    void this.router.navigate(['/alumno/situacion-academica']);
+  }
+
+  isActionBlocked(row: ExamCallRow): boolean {
+    return !!this.resolveBlock(row);
+  }
+
+  blockTooltip(row: ExamCallRow): string | undefined {
+    return this.resolveBlock(row)?.message || undefined;
+  }
+
+  stateLabel(state: StudentWindowState): string {
+    switch (state) {
+      case 'open':
+        return 'Abierta';
+      case 'upcoming':
+        return 'Proxima';
+      case 'past':
+        return 'Finalizada';
+      default:
+        return 'Cerrada';
+    }
+  }
+
+  stateSeverity(state: StudentWindowState): 'success' | 'info' | 'danger' {
+    switch (state) {
+      case 'open':
+        return 'success';
+      case 'upcoming':
+        return 'info';
+      default:
+        return 'danger';
+    }
+  }
+
+  private resolveBlock(
+    row: ExamCallRow
+  ): { reason: StudentExamBlockReason; message: string } | null {
+    const call = row.call;
+    const table = row.table;
+    if (call.enrollmentWindow.state !== 'open') {
+      return {
+        reason: 'WINDOW_CLOSED',
+        message: `El periodo estuvo disponible hasta ${row.windowRange}.`,
+      };
+    }
+    if (table.academicRequirement) {
+      return {
+        reason: 'MISSING_REQUIREMENTS',
+        message: table.academicRequirement,
+      };
+    }
+    if (table.duplicateEnrollment) {
+      return {
+        reason: 'DUPLICATE',
+        message: 'Ya tenes una inscripcion vigente para este llamado.',
+      };
+    }
+    const quotaTotal = call.quotaTotal ?? null;
+    const quotaUsed = call.quotaUsed ?? null;
+    if (
+      quotaTotal !== null &&
+      quotaUsed !== null &&
+      quotaUsed >= quotaTotal
+    ) {
+      return {
+        reason: 'QUOTA_FULL',
+        message: 'El cupo informado fue alcanzado.',
+      };
+    }
+    return null;
+  }
+}

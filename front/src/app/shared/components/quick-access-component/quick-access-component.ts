@@ -35,22 +35,22 @@ export class QuickAccessComponent {
   private readonly accessesByRole: Record<ROLE, QuickAccess[]> = {
     [ROLE.STUDENT]: [
       {
-        label: "Ver Materias",
-        icon: "pi pi-book",
-        description: "Consulta tus materias inscritas y su informacion.",
-        route: ["/students/subjects"],
+        label: "Mi Legajo",
+        icon: "pi pi-id-card",
+        description: "Seguimiento de parciales, asistencia y condicion.",
+        route: ["/alumno/situacion-academica"],
       },
       {
-        label: "Situacion Academica",
-        icon: "pi pi-chart-line",
-        description: "Revisa tus notas y promedios actuales.",
-        route: ["/students/academic-status"],
+        label: "Inscripciones a Mesas",
+        icon: "pi pi-calendar-plus",
+        description: "Mesas disponibles y ventanas activas.",
+        route: ["/alumno/mesas"],
       },
       {
-        label: "Inscripciones a Finales",
-        icon: "pi pi-pencil",
-        description: "Inscribite o cancela inscripcion a examenes finales.",
-        route: ["/students/enrollments"],
+        label: "Avisos oficiales",
+        icon: "pi pi-bell",
+        description: "Comunicados publicados por Secretaria.",
+        route: ["/notices"],
       },
     ],
     [ROLE.TEACHER]: [

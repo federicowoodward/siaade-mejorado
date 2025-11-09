@@ -1,0 +1,27 @@
+.status-wrapper {
+  width: 100%;
+}
+
+.subject-card {
+  border: 1px solid var(--surface-border);
+}
+
+.partial-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-200);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .subject-card {
+    padding: 1.25rem;
+  }
+}
