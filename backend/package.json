@@ -14,7 +14,7 @@
     "db:schema:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/datasource.ts",
     "db:reset:dev": "npm run db:schema:drop && npm run db:migration:run && npm run --if-present seed:dev",
     "typeorm:migration:run": "npm run db:migration:run",
-    "dbml": "db2dbml postgres \"postgresql://postgres:Joeldatabase%2A@localhost:5432/dbsiaade2?schemas=public\" -o database.dbml",
+    "dbml": "db2dbml postgres \"postgresql://siad_admin:12345SIAAD*@localhost:5432/SIAD?schemas=public\" -o database.dbml",
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
     "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "reseed:prod": "npm run revert:prod && npm run migrate:prod",

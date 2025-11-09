@@ -1,15 +1,24 @@
-Table "academic_period" {
-  "academic_period_id" integer [pk, not null]
-  "period_name" text [not null]
-  "partials_score_needed" smallint [not null]
+Table "migrations" {
+  "id" int4 [pk, not null, increment]
+  "timestamp" int8 [not null]
+  "name" varchar [not null]
+}
 
-  Checks {
-    `(partials_score_needed = ANY (ARRAY[2, 4]))` [name: 'CHK_academic_period_partials']
-  }
+Table "roles" {
+  "id" int4 [pk, not null, increment]
+  "name" text [unique, not null]
+}
+
+Table "user_info" {
+  "id" int4 [pk, not null, increment]
+  "user_id" uuid [unique, not null]
+  "phone" text
+  "emergency_name" text
+  "emergency_phone" text
 }
 
 Table "address_data" {
-  "id" integer [pk, not null]
+  "id" int4 [pk, not null, increment]
   "street" text
   "number" text
   "floor" text
@@ -21,249 +30,60 @@ Table "address_data" {
   "country" text
 }
 
-Table "career_students" {
-  "id" integer [pk, not null]
-  "career_id" integer [not null]
-  "student_id" uuid [not null]
-  "enrolled_at" date
-}
-
-Table "career_subjects" {
-  "id" integer [pk, not null]
-  "career_id" integer [not null]
-  "subject_id" integer [not null]
-  "year_no" smallint
-  "period_order" smallint
-  "order_no" integer [not null]
-
-  Indexes {
-    (career_id, order_no) [type: btree, unique, name: "IDX_0a093df398afe9f019dabba5e8"]
-    subject_id [type: btree, name: "IDX_120deadc17ec96ea0da3a206c8"]
-    (career_id, subject_id) [type: btree, unique, name: "IDX_687b5fc3eaab5b8a3aa41b0b02"]
-  }
-}
-
-Table "careers" {
-  "id" integer [pk, not null]
-  "career_name" text [not null]
-  "academic_period_id" integer [not null]
-  "preceptor_id" uuid [not null]
-  "created_at" timestamp [not null, default: `now()`]
-}
-
-Table "commission" {
-  "id" integer [pk, not null]
-  "commission_letter" text
-}
-
 Table "common_data" {
-  "id" integer [pk, not null]
+  "id" int4 [pk, not null, increment]
   "user_id" uuid [unique, not null]
-  "address_data_id" integer
+  "address_data_id" int4
   "sex" text
   "birth_date" date
   "birth_place" text
   "nationality" text
 }
 
-Table "exam_results" {
-  "id" integer [pk, not null]
-  "exam_id" integer [not null]
-  "student_id" uuid [not null]
-  "score" numeric(4,2)
-}
-
-Table "exam_table" {
-  "id" integer [pk, not null]
-  "name" text [not null]
-  "start_date" date [not null]
-  "end_date" date [not null]
-  "created_by" uuid
-}
-
 Table "exams" {
-  "id" integer [pk, not null]
-  "subject_id" integer [not null]
-  "title" "character varying"
+  "id" int4 [pk, not null, increment]
+  "subject_id" int4 [not null]
+  "title" varchar
   "date" date
-  "is_valid" boolean [not null, default: true]
+  "is_valid" bool [not null, default: true]
 }
 
-Table "final_exam_status" {
-  "id" integer [pk, not null]
-  "name" text [unique, not null]
+Table "academic_period" {
+  "academic_period_id" int4 [pk, not null, increment]
+  "period_name" text [not null]
+  "partials_score_needed" int2 [not null]
 }
 
-Table "final_exams" {
-  "id" integer [pk, not null]
-  "exam_table_id" integer [not null]
-  "subject_id" integer [not null]
-  "exam_date" timestamp [not null]
-  "aula" text
+Table "commission" {
+  "id" int4 [pk, not null, increment]
+  "commission_letter" text
 }
 
-Table "final_exams_students" {
-  "id" integer [pk, not null]
-  "final_exam_id" integer [not null]
-  "student_id" uuid [not null]
-  "enrolled_at" timestamp
-  "score" numeric(4,2)
-  "notes" text
-  "status_id" integer
-  "recorded_by" uuid
-  "recorded_at" timestamp
-  "approved_by" uuid
-  "approved_at" timestamp
-
-  Indexes {
-    (final_exam_id, student_id) [type: btree, unique, name: "IDX_65608a94ff5905eb9bbcc3ce75"]
-  }
-}
-
-Table "migrations" {
-  "id" integer [pk, not null]
-  "timestamp" bigint [not null]
-  "name" "character varying" [not null]
-}
-
-Table "notices" {
-  "id" integer [pk, not null]
-  "title" text [not null, default: `''::text`]
-  "content" text [not null]
-  "visible_role_id" integer
-  "created_by" uuid
-  "created_at" timestamp [not null, default: `now()`]
-  "updated_at" timestamp [not null, default: `now()`]
-}
-
-Table "password_history" {
-  "id" uuid [pk, not null, default: `public.uuid_generate_v4()`]
-  "user_id" uuid [not null]
-  "password_hash" text [not null]
-  "created_at" timestamp [not null, default: `now()`]
-
-  Indexes {
-    user_id [type: btree, name: "IDX_password_history_user_id"]
-  }
-}
-
-Table "password_reset_tokens" {
-  "id" uuid [pk, not null, default: `public.uuid_generate_v4()`]
-  "user_id" uuid [not null]
-  "token_hash" text [unique, not null]
-  "code_hash" text
-  "created_at" timestamp [not null, default: `now()`]
-  "expires_at" timestamp [not null]
-  "code_expires_at" timestamp
-  "used_at" timestamp
-
-  Indexes {
-    user_id [type: btree, name: "IDX_password_reset_tokens_user_id"]
-  }
-}
-
-Table "preceptors" {
+Table "teachers" {
   "user_id" uuid [pk, not null]
-  "can_login" boolean [default: true]
-  "is_active" boolean [default: true]
-}
-
-Table "roles" {
-  "id" integer [pk, not null]
-  "name" text [unique, not null]
-
-  Indexes {
-    name [type: btree, unique, name: "ux_roles_name"]
-  }
-}
-
-Table "secretaries" {
-  "user_id" uuid [pk, not null]
-  "is_directive" boolean [not null, default: false]
-}
-
-Table "student_subject_progress" {
-  "id" integer [pk, not null]
-  "subject_commission_id" integer [not null]
-  "student_id" uuid [not null]
-  "status_id" integer
-  "partial_scores" jsonb [note: 'Validated and trimmed by trg_enforce_partial_scores trigger.']
-  "attendance_percentage" numeric(5,2) [not null, default: `'0'::numeric`]
-  "created_at" timestamp [not null, default: `now()`]
-  "updated_at" timestamp [not null, default: `now()`]
-
-  Checks {
-    `((attendance_percentage >= (0)::numeric) AND (attendance_percentage <= (100)::numeric))` [name: 'CHK_attendance_percentage']
-    `((partial_scores IS NULL) OR (jsonb_typeof(partial_scores) = 'object'::text))` [name: 'CHK_partial_scores_is_object']
-  }
-
-  Indexes {
-    (subject_commission_id, student_id) [type: btree, unique, name: "IDX_553c118da9bf0c4142b4b1920c"]
-    student_id [type: btree, name: "IDX_5fef2a1967bce469e3d0cfa577"]
-  }
-}
-
-Table "students" {
-  "user_id" uuid [pk, not null]
-  "legajo" text [unique, not null]
-  "commission" integer
-  "can_login" boolean [default: true]
-  "is_active" boolean [default: true]
-  "student_start_year" smallint
-
-  Checks {
-    `((student_start_year IS NULL) OR ((student_start_year >= 1990) AND (student_start_year <= 2100)))` [name: 'CHK_students_start_year']
-  }
+  "can_login" bool [default: true]
+  "is_active" bool [default: true]
 }
 
 Table "subject_commissions" {
-  "id" integer [pk, not null]
-  "subject_id" integer [not null]
-  "commission_id" integer [not null]
+  "id" int4 [pk, not null, increment]
+  "subject_id" int4 [not null]
+  "commission_id" int4 [not null]
   "teacher_id" uuid [not null]
-  "active" boolean [not null, default: true]
+  "active" bool [not null, default: true]
 
   Indexes {
+    (subject_id, commission_id) [type: btree, name: "IDX_b3074a12097b0e46d9a53d0aee"]
     subject_id [type: btree, name: "IDX_ad9281a6a38148ce7d9674a2a5"]
-    (subject_id, commission_id) [type: btree, unique, name: "IDX_b3074a12097b0e46d9a53d0aee"]
     teacher_id [type: btree, name: "IDX_e7e4849f084c18911c0dbbbc75"]
   }
 }
 
-Table "subject_prerequisites_by_order" {
-  "id" integer [pk, not null]
-  "career_id" integer [not null]
-  "subject_order_no" integer [not null]
-  "prereq_order_no" integer [not null]
-
-  Indexes {
-    (career_id, subject_order_no, prereq_order_no) [type: btree, unique, name: "IDX_5056193f7e7e31a75f64f82dbe"]
-    (career_id, prereq_order_no) [type: btree, name: "IDX_50ee4f7f0b189aa1e7c449ef92"]
-    (career_id, subject_order_no) [type: btree, name: "IDX_9cf580cc6862fe811d1f706167"]
-  }
-}
-
-Table "subject_status_type" {
-  "id" integer [pk, not null]
-  "status_name" text [unique, not null]
-}
-
-Table "subject_students" {
-  "id" integer [pk, not null]
-  "subject_id" integer [not null]
-  "student_id" uuid [not null]
-  "enrollment_date" date
-
-  Indexes {
-    (subject_id, student_id) [unique, name: "UQ_d7cccb0760404e6dd5ab7732eab"]
-  }
-}
-
 Table "subjects" {
-  "id" integer [pk, not null]
+  "id" int4 [pk, not null, increment]
   "subject_name" text [not null]
-  "academic_period_id" integer
-  "order_no" integer
+  "academic_period_id" int4
+  "order_no" int4
   "correlative" text
   "teacher_formation" text
   "subject_format" text
@@ -271,108 +91,277 @@ Table "subjects" {
   "weekly_workload" text
 }
 
-Table "teachers" {
-  "user_id" uuid [pk, not null]
-  "can_login" boolean [default: true]
-  "is_active" boolean [default: true]
+Table "subject_students" {
+  "id" int4 [pk, not null, increment]
+  "subject_id" int4 [not null]
+  "student_id" uuid [not null]
+  "commission_id" int4
+  "enrollment_date" date
+  "enrolled_by" text
+
+  Indexes {
+    (subject_id, student_id) [type: btree, name: "UQ_d7cccb0760404e6dd5ab7732eab"]
+  }
 }
 
-Table "user_info" {
-  "id" integer [pk, not null]
-  "user_id" uuid [unique, not null]
-  "phone" text
-  "emergency_name" text
-  "emergency_phone" text
+Table "exam_results" {
+  "id" int4 [pk, not null, increment]
+  "exam_id" int4 [not null]
+  "student_id" uuid [not null]
+  "score" numeric(4,2)
+}
+
+Table "exam_table" {
+  "id" int4 [pk, not null, increment]
+  "name" text [not null]
+  "start_date" date [not null]
+  "end_date" date [not null]
+  "created_by" uuid
+}
+
+Table "final_exams" {
+  "id" int4 [pk, not null, increment]
+  "exam_table_id" int4 [not null]
+  "subject_id" int4 [not null]
+  "exam_date" timestamptz [not null]
+  "aula" text
+}
+
+Table "final_exam_status" {
+  "id" int4 [pk, not null, increment]
+  "name" text [unique, not null]
+}
+
+Table "secretaries" {
+  "user_id" uuid [pk, not null]
+  "is_directive" bool [not null, default: false]
+}
+
+Table "final_exams_students" {
+  "id" int4 [pk, not null, increment]
+  "final_exam_id" int4 [not null]
+  "student_id" uuid [not null]
+  "enrolled_at" timestamptz
+  "enrolled_by" text
+  "score" numeric(4,2)
+  "notes" text [default: '']
+  "status_id" int4
+  "recorded_by" uuid
+  "recorded_at" timestamptz
+  "approved_by" uuid
+  "approved_at" timestamptz
+
+  Indexes {
+    (final_exam_id, student_id) [type: btree, name: "IDX_65608a94ff5905eb9bbcc3ce75"]
+  }
+}
+
+Table "students" {
+  "user_id" uuid [pk, not null]
+  "legajo" text [unique, not null]
+  "commission" int4
+  "can_login" bool [default: true]
+  "is_active" bool [default: true]
+  "student_start_year" int2
+}
+
+Table "preceptors" {
+  "user_id" uuid [pk, not null]
+  "can_login" bool [default: true]
+  "is_active" bool [default: true]
 }
 
 Table "users" {
-  "id" uuid [pk, not null, default: `public.uuid_generate_v4()`]
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
   "name" text [not null]
   "last_name" text [not null]
   "email" text [unique, not null]
   "password" text [not null]
   "cuil" text [unique, not null]
-  "role_id" integer [not null]
-  "is_blocked" boolean [not null, default: false]
+  "role_id" int4 [not null]
+  "is_blocked" bool [not null, default: false]
   "blocked_reason" text
+  "is_active" bool [not null, default: true]
 }
 
-Ref "FK_120deadc17ec96ea0da3a206c8b":"subjects"."id" < "career_subjects"."subject_id" [delete: cascade]
+Table "password_reset_tokens" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "user_id" uuid [not null]
+  "token_hash" text [unique, not null]
+  "code_hash" text
+  "created_at" timestamptz [not null, default: `now()`]
+  "expires_at" timestamptz [not null]
+  "code_expires_at" timestamptz
+  "used_at" timestamptz
 
-Ref "FK_1ef323c6e620f95c60adab91908":"address_data"."id" < "common_data"."address_data_id"
+  Indexes {
+    user_id [type: btree, name: "IDX_password_reset_tokens_user_id"]
+  }
+}
 
-Ref "FK_245ca3fcaecc8a8e25dcae0d08f":"careers"."id" < "subject_prerequisites_by_order"."career_id" [delete: cascade]
+Table "password_history" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "user_id" uuid [not null]
+  "password_hash" text [not null]
+  "created_at" timestamptz [not null, default: `now()`]
 
-Ref "FK_2e4f2f1f2ddf59ba477a7e531de":"academic_period"."academic_period_id" < "subjects"."academic_period_id"
+  Indexes {
+    user_id [type: btree, name: "IDX_password_history_user_id"]
+  }
+}
+
+Table "subject_status_type" {
+  "id" int4 [pk, not null, increment]
+  "status_name" text [unique, not null]
+}
+
+Table "student_subject_progress" {
+  "id" int4 [pk, not null, increment]
+  "subject_commission_id" int4 [not null]
+  "student_id" uuid [not null]
+  "status_id" int4
+  "partial_scores" jsonb [note: 'Validated and trimmed by trg_enforce_partial_scores trigger.']
+  "attendance_percentage" numeric(5,2) [not null, default: '0']
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (subject_commission_id, student_id) [type: btree, name: "IDX_553c118da9bf0c4142b4b1920c"]
+    student_id [type: btree, name: "IDX_5fef2a1967bce469e3d0cfa577"]
+  }
+}
+
+Table "careers" {
+  "id" int4 [pk, not null, increment]
+  "career_name" text [not null]
+  "academic_period_id" int4 [not null]
+  "preceptor_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+}
+
+Table "career_subjects" {
+  "id" int4 [pk, not null, increment]
+  "career_id" int4 [not null]
+  "subject_id" int4 [not null]
+  "year_no" int2
+  "period_order" int2
+  "order_no" int4 [not null]
+
+  Indexes {
+    (career_id, order_no) [type: btree, name: "IDX_0a093df398afe9f019dabba5e8"]
+    (career_id, subject_id) [type: btree, name: "IDX_687b5fc3eaab5b8a3aa41b0b02"]
+    subject_id [type: btree, name: "IDX_120deadc17ec96ea0da3a206c8"]
+  }
+}
+
+Table "subject_prerequisites_by_order" {
+  "id" int4 [pk, not null, increment]
+  "career_id" int4 [not null]
+  "subject_order_no" int4 [not null]
+  "prereq_order_no" int4 [not null]
+
+  Indexes {
+    (career_id, subject_order_no, prereq_order_no) [type: btree, name: "IDX_5056193f7e7e31a75f64f82dbe"]
+    (career_id, prereq_order_no) [type: btree, name: "IDX_50ee4f7f0b189aa1e7c449ef92"]
+    (career_id, subject_order_no) [type: btree, name: "IDX_9cf580cc6862fe811d1f706167"]
+  }
+}
+
+Table "career_students" {
+  "id" int4 [pk, not null, increment]
+  "career_id" int4 [not null]
+  "student_id" uuid [not null]
+  "enrolled_at" date
+}
+
+Table "notices" {
+  "id" int4 [pk, not null, increment]
+  "title" text [not null, default: '']
+  "content" text [not null]
+  "visible_role_id" int4
+  "created_by" uuid
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+}
 
 Ref "FK_3dddb847f5033682c672a973199":"careers"."id" < "career_students"."career_id" [delete: cascade]
 
-Ref "FK_42368f30908e238aa7d9af5e949":"students"."user_id" < "final_exams_students"."student_id" [delete: cascade]
+Ref "FK_f625a148a289aaca8d89da6bb80":"students"."user_id" < "career_students"."student_id" [delete: cascade]
 
-Ref "FK_432eeeb62e8ff8de6c2a341cd10":"subjects"."id" < "exams"."subject_id" [delete: cascade]
+Ref "FK_120deadc17ec96ea0da3a206c8b":"subjects"."id" < "career_subjects"."subject_id" [delete: cascade]
 
-Ref "FK_43d31311c09cbaeac198842590f":"users"."id" < "preceptors"."user_id"
-
-Ref "FK_466017be703ff67fe8ac8edf012":"final_exams"."id" < "final_exams_students"."final_exam_id" [delete: cascade]
-
-Ref "FK_4668d4752e6766682d1be0b346f":"users"."id" < "teachers"."user_id"
-
-Ref "FK_5091560ec8975434a5add94c411":"users"."id" < "notices"."created_by" [delete: set null]
-
-Ref "FK_587fe839f813c89f1a4ce0610f0":"exams"."id" < "exam_results"."exam_id" [delete: cascade]
-
-Ref "FK_59c55ac40f267d450246040899e":"users"."id" < "user_info"."user_id"
-
-Ref "FK_5fef2a1967bce469e3d0cfa5779":"students"."user_id" < "student_subject_progress"."student_id" [delete: cascade]
-
-Ref "FK_60613f37be9011642ff6a31f88c":"teachers"."user_id" < "final_exams_students"."recorded_by" [delete: set null]
-
-Ref "FK_61acdc5ce17ac680051378c0584":"final_exam_status"."id" < "final_exams_students"."status_id" [delete: set null]
-
-Ref "FK_81e71815c5d4bed8e8dae6ce734":"users"."id" < "secretaries"."user_id"
-
-Ref "FK_824b2bc6f305480dfff1fd9dcf4":"students"."user_id" < "exam_results"."student_id" [delete: cascade]
-
-Ref "FK_8edf397e84eebabdf5e5caae600":"roles"."id" < "notices"."visible_role_id" [delete: set null]
+Ref "FK_e3cfafdc32a121a61f4c42de10c":"careers"."id" < "career_subjects"."career_id" [delete: cascade]
 
 Ref "FK_8fa45f1407e199a5061eb3f4281":"preceptors"."user_id" < "careers"."preceptor_id"
 
-Ref "FK_a2cecd1a3531c0b041e29ba46e1":"roles"."id" < "users"."role_id"
-
-Ref "FK_ad9281a6a38148ce7d9674a2a59":"subjects"."id" < "subject_commissions"."subject_id" [delete: cascade]
-
-Ref "FK_b3b410787bedfa50358315cd538":"commission"."id" < "subject_commissions"."commission_id" [delete: restrict]
-
-Ref "FK_bca4f03d4efe3e7b77715ea90b2":"subject_status_type"."id" < "student_subject_progress"."status_id" [delete: set null]
-
 Ref "FK_c0a16a76beca291e2b89d1717af":"academic_period"."academic_period_id" < "careers"."academic_period_id"
 
-Ref "FK_c21cb589f287d725d3cdea9c0a8":"subjects"."id" < "subject_students"."subject_id" [delete: cascade]
+Ref "FK_1ef323c6e620f95c60adab91908":"address_data"."id" < "common_data"."address_data_id"
 
-Ref "FK_d3f279d8d86937741d42867f40f":"commission"."id" < "students"."commission"
+Ref "FK_e5f11ef95c7821a3b30897fc9d7":"users"."id" < "common_data"."user_id"
+
+Ref "FK_587fe839f813c89f1a4ce0610f0":"exams"."id" < "exam_results"."exam_id" [delete: cascade]
+
+Ref "FK_824b2bc6f305480dfff1fd9dcf4":"students"."user_id" < "exam_results"."student_id" [delete: cascade]
+
+Ref "FK_exam_table_created_by_users":"users"."id" < "exam_table"."created_by" [delete: set null]
+
+Ref "FK_432eeeb62e8ff8de6c2a341cd10":"subjects"."id" < "exams"."subject_id" [delete: cascade]
 
 Ref "FK_dda384e0515ed5b3fb0b63c18e2":"exam_table"."id" < "final_exams"."exam_table_id" [delete: cascade]
 
 Ref "FK_e0559f3f8c20b1fd6597becb959":"subjects"."id" < "final_exams"."subject_id" [delete: cascade]
 
-Ref "FK_e3cfafdc32a121a61f4c42de10c":"careers"."id" < "career_subjects"."career_id" [delete: cascade]
+Ref "FK_42368f30908e238aa7d9af5e949":"students"."user_id" < "final_exams_students"."student_id" [delete: cascade]
 
-Ref "FK_e5f11ef95c7821a3b30897fc9d7":"users"."id" < "common_data"."user_id"
+Ref "FK_466017be703ff67fe8ac8edf012":"final_exams"."id" < "final_exams_students"."final_exam_id" [delete: cascade]
 
-Ref "FK_e7e4849f084c18911c0dbbbc75a":"teachers"."user_id" < "subject_commissions"."teacher_id" [delete: restrict]
+Ref "FK_60613f37be9011642ff6a31f88c":"teachers"."user_id" < "final_exams_students"."recorded_by" [delete: set null]
 
-Ref "FK_ec73c7eef88b2a9c16dba618d7c":"students"."user_id" < "subject_students"."student_id" [delete: cascade]
-
-Ref "FK_exam_table_created_by_users":"users"."id" < "exam_table"."created_by" [delete: set null]
-
-Ref "FK_f625a148a289aaca8d89da6bb80":"students"."user_id" < "career_students"."student_id" [delete: cascade]
-
-Ref "FK_f991f9825a87d94bd3a21bd74d8":"subject_commissions"."id" < "student_subject_progress"."subject_commission_id" [delete: cascade]
-
-Ref "FK_fb3eff90b11bddf7285f9b4e281":"users"."id" < "students"."user_id"
+Ref "FK_61acdc5ce17ac680051378c0584":"final_exam_status"."id" < "final_exams_students"."status_id" [delete: set null]
 
 Ref "FK_fd8365a5f6fa3355e79ec9d61d4":"secretaries"."user_id" < "final_exams_students"."approved_by" [delete: set null]
+
+Ref "FK_5091560ec8975434a5add94c411":"users"."id" < "notices"."created_by" [delete: set null]
+
+Ref "FK_8edf397e84eebabdf5e5caae600":"roles"."id" < "notices"."visible_role_id" [delete: set null]
 
 Ref "FK_password_history_user":"users"."id" < "password_history"."user_id" [delete: cascade]
 
 Ref "FK_password_reset_tokens_user":"users"."id" < "password_reset_tokens"."user_id" [delete: cascade]
+
+Ref "FK_43d31311c09cbaeac198842590f":"users"."id" < "preceptors"."user_id"
+
+Ref "FK_81e71815c5d4bed8e8dae6ce734":"users"."id" < "secretaries"."user_id"
+
+Ref "FK_5fef2a1967bce469e3d0cfa5779":"students"."user_id" < "student_subject_progress"."student_id" [delete: cascade]
+
+Ref "FK_bca4f03d4efe3e7b77715ea90b2":"subject_status_type"."id" < "student_subject_progress"."status_id" [delete: set null]
+
+Ref "FK_f991f9825a87d94bd3a21bd74d8":"subject_commissions"."id" < "student_subject_progress"."subject_commission_id" [delete: cascade]
+
+Ref "FK_d3f279d8d86937741d42867f40f":"commission"."id" < "students"."commission"
+
+Ref "FK_fb3eff90b11bddf7285f9b4e281":"users"."id" < "students"."user_id"
+
+Ref "FK_ad9281a6a38148ce7d9674a2a59":"subjects"."id" < "subject_commissions"."subject_id" [delete: cascade]
+
+Ref "FK_b3b410787bedfa50358315cd538":"commission"."id" < "subject_commissions"."commission_id" [delete: restrict]
+
+Ref "FK_e7e4849f084c18911c0dbbbc75a":"teachers"."user_id" < "subject_commissions"."teacher_id" [delete: restrict]
+
+Ref "FK_245ca3fcaecc8a8e25dcae0d08f":"careers"."id" < "subject_prerequisites_by_order"."career_id" [delete: cascade]
+
+Ref "FK_c21cb589f287d725d3cdea9c0a8":"subjects"."id" < "subject_students"."subject_id" [delete: cascade]
+
+Ref "FK_ec73c7eef88b2a9c16dba618d7c":"students"."user_id" < "subject_students"."student_id" [delete: cascade]
+
+Ref "FK_subject_students_commission":"subject_commissions"."id" < "subject_students"."commission_id" [delete: set null]
+
+Ref "FK_2e4f2f1f2ddf59ba477a7e531de":"academic_period"."academic_period_id" < "subjects"."academic_period_id"
+
+Ref "FK_4668d4752e6766682d1be0b346f":"users"."id" < "teachers"."user_id"
+
+Ref "FK_59c55ac40f267d450246040899e":"users"."id" < "user_info"."user_id"
+
+Ref "FK_a2cecd1a3531c0b041e29ba46e1":"roles"."id" < "users"."role_id"
