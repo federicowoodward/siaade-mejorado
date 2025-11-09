@@ -11,40 +11,39 @@
       <p-autocomplete
         [(ngModel)]="selectedSubject"
         [suggestions]="subjectOptions()"
-        (completeMethod)="getSubjectsOptions()"
+        (completeMethod)="onSubjectsComplete($event)"
         optionLabel="label"
         [dropdown]="true"
         [forceSelection]="true"
+        [minLength]="0"
+        [appendTo]="'body'"
+        [emptyMessage]="'Sin resultados'"
+        [dropdownMode]="'current'"
+        (onDropdownClick)="showAllSubjects()"
         (onSelect)="selectedSubject = $event.value"
         (onClear)="selectedSubject = null"
       ></p-autocomplete>
     </div>
 
-    <div class="grid">
-      <div class="col-12 md:col-6">
-        <label class="block mb-1">Fecha y hora</label>
-        <p-datepicker
-          inputId="calendar-24h"
-          [(ngModel)]="dateTime"
-          [showTime]="true"
-          [hourFormat]="'24'"
-          [minDate]="minDate"
-          [maxDate]="maxDate"
-          [readonlyInput]="true"
-          [showIcon]="true"
-          appendTo="body"
-        ></p-datepicker>
-      </div>
-      <div class="col-12 md:col-6">
-        <label class="block mb-1">Aula</label>
-        <input
-          pInputText
-          class="w-full"
-          [(ngModel)]="aula"
-          placeholder="Ej: Aula 12"
-        />
-      </div>
-    </div>
+    <label class="mb-1">Fecha y hora</label>
+    <p-datepicker
+      inputId="calendar-24h"
+      [(ngModel)]="dateTime"
+      [showTime]="true"
+      [hourFormat]="'24'"
+      [minDate]="minDate"
+      [maxDate]="maxDate"
+      [readonlyInput]="true"
+      [showIcon]="true"
+      appendTo="body"
+    ></p-datepicker>
+    <label class="mb-1">Aula</label>
+    <input
+      pInputText
+      class="w-full"
+      [(ngModel)]="aula"
+      placeholder="Ej: Aula 12"
+    />
   </div>
 
   <ng-template pTemplate="footer">

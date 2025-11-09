@@ -13,7 +13,10 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Button } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import {
+  AutoCompleteCompleteEvent,
+  AutoCompleteModule,
+} from 'primeng/autocomplete';
 import { DatePicker } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { ApiService } from '../../../../../core/services/api.service';
@@ -64,21 +67,57 @@ export class FinalExamCreateDialogComponent {
   aula = '';
 
   // Opciones de materias
+  allSubjects = signal<SubjectOption[]>([]);
   subjectOptions = signal<SubjectOption[]>([]);
   loadingSubjects = signal<boolean>(false);
 
-  getSubjectsOptions() {
+  private subjectsLoaded = false;
+
+  private fetchAllSubjectsOnce() {
+    if (this.subjectsLoaded) return;
     this.loadingSubjects.set(true);
     this.api.getAll<Subject>('subjects/read').subscribe({
       next: (subjects) => {
-        const opts = (subjects ?? [])
-          .filter((s) => s?.id != null)
-          .map((s) => ({ label: s.subjectName, value: Number(s.id) }));
-        this.subjectOptions.set(opts);
+        const opts =
+          (subjects ?? [])
+            .filter((s) => s?.id != null && !!s.subjectName)
+            .map(
+              (s) => ({ label: s.subjectName, value: Number(s.id) }) as SubjectOption,
+            );
+
+        this.allSubjects.set(opts);
+        this.subjectsLoaded = true;
         this.loadingSubjects.set(false);
       },
-      error: () => this.loadingSubjects.set(false),
+      error: () => {
+        this.allSubjects.set([]);
+        this.loadingSubjects.set(false);
+        this.subjectsLoaded = true;
+      },
     });
+  }
+
+  onSubjectsComplete(e: AutoCompleteCompleteEvent) {
+    // Cargar una sola vez
+    if (!this.subjectsLoaded) this.fetchAllSubjectsOnce();
+
+    const q = (e.query ?? '').trim().toLowerCase();
+    const source = this.allSubjects();
+
+    if (!q) {
+      // si no hay query, no devolvemos todo salvo que lo pida el dropdown
+      this.subjectOptions.set([]);
+      return;
+    }
+
+    const filtered = source.filter((o) => o.label.toLowerCase().includes(q));
+    this.subjectOptions.set(filtered);
+  }
+
+  showAllSubjects() {
+    // Asegura datos y muestra todo al abrir el dropdown
+    if (!this.subjectsLoaded) this.fetchAllSubjectsOnce();
+    this.subjectOptions.set(this.allSubjects());
   }
 
   onCancel() {
