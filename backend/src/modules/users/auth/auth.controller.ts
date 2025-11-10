@@ -43,13 +43,13 @@ const REFRESH_COOKIE_PATH = "/api/auth/refresh";
 
 @ApiTags("Authentication")
 @Controller("auth")
-@Public()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly rateLimit: RateLimitService
   ) {}
 
+  @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -101,6 +101,7 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -140,6 +141,7 @@ export class AuthController {
     return { accessToken };
   }
 
+  @Public()
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -155,6 +157,7 @@ export class AuthController {
     return { success: true };
   }
 
+  @Public()
   @Post("reset-password")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Reset user password" })
@@ -173,6 +176,7 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
+  @Public()
   @Post("reset-password/confirm")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Confirm password reset with token" })
@@ -185,6 +189,7 @@ export class AuthController {
     return this.authService.confirmResetPassword(dto);
   }
 
+  @Public()
   @Post("reset-password/verify-code")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Verifica el código de 6 dígitos y emite un token" })
@@ -206,7 +211,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async forceChange(@Req() req: Request, @Body() body: { password: string }) {
-    const userId = (req as any).user?.sub; // payload de JWT
+  const userId = (req as any).user?.sub || (req as any).user?.id; // payload de JWT
     if (!userId) throw new UnauthorizedException("Missing user in request");
     const pwd = (body?.password || '').trim();
     if (!pwd) throw new BadRequestException('Password requerida');
@@ -220,7 +225,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async requestChangeCode(@Req() req: Request) {
-    const userId = (req as any).user?.sub;
+  const userId = (req as any).user?.sub || (req as any).user?.id;
     if (!userId) throw new UnauthorizedException("Missing user in request");
     // Reutilizamos issueResetToken internamente a través de resetPassword(identity)
     const user = await this.authService.validateUser(userId);
@@ -247,7 +252,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async changeWithCode(@Req() req: Request, @Body() body: { code: string; currentPassword: string; newPassword: string }) {
-    const userId = (req as any).user?.sub;
+  const userId = (req as any).user?.sub || (req as any).user?.id;
     if (!userId) throw new UnauthorizedException("Missing user in request");
     const { code, currentPassword, newPassword } = body || {};
     if (!code || !/^[0-9]{6}$/.test(code)) throw new BadRequestException('Código inválido');

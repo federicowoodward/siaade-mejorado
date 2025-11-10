@@ -52,6 +52,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       user.secretary?.isDirective ?? role === ROLE.EXECUTIVE_SECRETARY;
 
     return {
+      // Incluir "sub" para compatibilidad con controladores que esperan el estándar JWT (subject)
+      sub: user.id,
       id: user.id,
       email: user.email,
       role,
