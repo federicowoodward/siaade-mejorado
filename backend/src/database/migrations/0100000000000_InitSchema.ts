@@ -190,6 +190,29 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "notices" ("id" SERIAL NOT NULL, "title" text NOT NULL DEFAULT '', "content" text NOT NULL, "visible_role_id" integer, "created_by" uuid, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_3eb18c29da25d6935fcbe584237" PRIMARY KEY ("id"))`
     );
+    // Auditar intentos de inscripción de alumnos (histórico)
+    await queryRunner.query(
+      `CREATE TABLE "student_inscription_audits" (
+        "id" SERIAL NOT NULL,
+        "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "student_id" uuid NOT NULL,
+        "context" text NOT NULL,
+        "mesa_id" int NULL,
+        "call_id" int NULL,
+        "outcome" text NOT NULL,
+        "reason_code" text NULL,
+        "subject_id" int NULL,
+        "subject_order_no" int NULL,
+        "subject_name" text NULL,
+        "missing_correlatives" jsonb NULL,
+        "ip" text NULL,
+        "user_agent" text NULL,
+        CONSTRAINT "PK_student_inscription_audits" PRIMARY KEY ("id")
+      )`
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_sia_student" ON "student_inscription_audits" ("student_id")`
+    );
     await queryRunner.query(
       `ALTER TABLE "user_info" ADD CONSTRAINT "FK_59c55ac40f267d450246040899e" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
@@ -636,6 +659,9 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "user_info" DROP CONSTRAINT "FK_59c55ac40f267d450246040899e"`
     );
+    // Auditoría de inscripciones de alumnos
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_sia_student"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "student_inscription_audits"`);
     await queryRunner.query(`DROP TABLE "notices"`);
     await queryRunner.query(`DROP TABLE "career_students"`);
     await queryRunner.query(
