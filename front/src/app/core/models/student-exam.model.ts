@@ -70,4 +70,10 @@ export interface StudentExamAuditPayload {
   callId?: number;
   outcome: 'success' | 'blocked' | 'error';
   reasonCode?: StudentExamBlockReason | string | null;
+  // Optional context for richer auditing on blocked attempts
+  subjectId?: number;
+  subjectName?: string;
+  subjectCode?: string | null;
+  missingCorrelativesText?: string | string[] | null;
+  timestamp?: string; // ISO string set client-side when available
 }

@@ -20,5 +20,6 @@ import { PrerequisitesController } from "./prerequisites.controller";
   ],
   controllers: [PrerequisitesController],
   providers: [PrerequisitesService],
+  exports: [PrerequisitesService],
 })
 export class PrerequisitesModule {}

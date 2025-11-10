@@ -160,7 +160,7 @@ export class MesasListComponent implements OnInit {
   private lastActionTrigger: HTMLElement | null = null;
   readonly blockAlert = signal<{
     title: string;
-    message: string;
+    message: string | string[];
     variant: BlockMessageVariant;
     reasonCode: StudentExamBlockReason | string;
   } | null>(null);
@@ -224,7 +224,7 @@ export class MesasListComponent implements OnInit {
     this.lastActionTrigger = (event?.currentTarget as HTMLElement) ?? null;
     const validation = this.validateRow(row);
     if (validation.blocked) {
-      this.showBlock(validation.reason, validation.message);
+      this.showBlock(validation.reason, validation.message, row);
       this.audit(row, 'blocked', validation.reason);
       return;
     }
@@ -259,7 +259,7 @@ export class MesasListComponent implements OnInit {
         } else {
           const reason =
             (response.reasonCode as StudentExamBlockReason) ?? 'UNKNOWN';
-          this.showBlock(reason, response.message ?? '');
+          this.showBlock(reason, response.message ?? '', row);
           this.audit(row, 'blocked', reason);
         }
         this.restoreFocus();
@@ -339,15 +339,47 @@ export class MesasListComponent implements OnInit {
 
   private showBlock(
     reason: StudentExamBlockReason | null,
-    customMessage?: string
+    customMessage?: string,
+    row?: ExamCallRow
   ): void {
     const template = BLOCK_COPY[reason ?? 'DEFAULT'] ?? BLOCK_COPY.DEFAULT;
+
+    // Compose an official, accessible list when correlatives are missing
+    const msg: string | string[] =
+      reason === 'MISSING_REQUIREMENTS'
+        ? this.composeCorrelativeMessage(row, customMessage)
+        : (customMessage?.trim()?.length ? customMessage : template.message);
+
     this.blockAlert.set({
       title: template.title,
       variant: template.variant,
-      message: customMessage?.trim()?.length ? customMessage : template.message,
+      message: msg,
       reasonCode: reason ?? 'UNKNOWN',
     });
+  }
+
+  private composeCorrelativeMessage(
+    row: ExamCallRow | null | undefined,
+    backendMessage?: string | null
+  ): string[] {
+    const lines: string[] = [];
+    lines.push('Correlativas faltantes para inscribirte:');
+    // If backend provided a detailed message, split into readable lines
+    const raw = (backendMessage ?? row?.table.academicRequirement ?? '').trim();
+    if (raw) {
+      const parts = raw
+        .split(/\r?\n|;|\u2022|\-/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      if (parts.length) {
+        return lines.concat(parts);
+      }
+    }
+    // Fallback with subject context to keep it clear
+    const code = row?.table.subjectCode ? `(${row?.table.subjectCode}) ` : '';
+    const name = row?.table.subjectName ?? 'la materia seleccionada';
+    lines.push(`${code}${name}: Debes tener Regularizada o Aprobada la(s) correlativa(s) establecida(s).`);
+    return lines;
   }
 
   private audit(
@@ -355,14 +387,22 @@ export class MesasListComponent implements OnInit {
     outcome: 'success' | 'blocked' | 'error',
     reasonCode?: StudentExamBlockReason
   ): void {
+    const basePayload: any = {
+      context: 'enroll-exam',
+      mesaId: row.mesaId,
+      callId: row.call.id,
+      outcome,
+      reasonCode,
+      subjectId: row.subjectId,
+      subjectName: row.subjectName,
+      subjectCode: row.table.subjectCode ?? null,
+      timestamp: new Date().toISOString(),
+    };
+    if (reasonCode === 'MISSING_REQUIREMENTS') {
+      basePayload.missingCorrelativesText = this.composeCorrelativeMessage(row, row.table.academicRequirement);
+    }
     this.inscriptions
-      .logAudit({
-        context: 'enroll-exam',
-        mesaId: row.mesaId,
-        callId: row.call.id,
-        outcome,
-        reasonCode,
-      })
+      .logAudit(basePayload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }

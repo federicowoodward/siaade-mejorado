@@ -19,6 +19,7 @@ import { SubjectsModule } from "./subjects/subjects.module";
 import { CareersModule } from "./modules/careers/careers.module";
 import { PrerequisitesModule } from "./modules/prerequisites/prerequisites.module";
 import { StudentsReadModule } from "./modules/students/read/students.module";
+import { StudentInscriptionsModule } from "./modules/student_inscriptions/student-inscriptions.module";
 
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
@@ -49,6 +50,7 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     SubjectsModule,
     PrerequisitesModule,
     StudentsReadModule,
+    StudentInscriptionsModule,
   ],
   providers: [
     {
