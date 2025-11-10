@@ -96,8 +96,14 @@ export class ExamTablePage implements OnInit {
         aula: payload.aula,
       })
       .subscribe({
-        next: () => {
+        next: (created) => {
           this.messages.add({ severity: 'success', summary: 'Final creado' });
+          // Optimista: insertar el nuevo examen en el listado inmediatamente
+          try {
+            const current = this.finals();
+            this.finals.set([created, ...current.filter((x) => x.id !== created.id)]);
+          } catch {}
+          // Sincronizar con backend por si cambia el orden/formato
           this.refreshFinals();
           this.showCreate.set(false);
         },
