@@ -8,6 +8,7 @@ import {
   Res,
   UnauthorizedException,
   BadRequestException,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -15,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
@@ -23,6 +25,7 @@ import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { ConfirmResetPasswordDto } from "./dto/confirm-reset-password.dto";
 import { VerifyResetCodeDto } from "./dto/verify-reset-code.dto";
 import { Public } from "../../../shared/decorators/public.decorator";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
 import { UserProfileResult } from "@/shared/services/user-profile-reader/user-profile-reader.types";
 import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
 
@@ -200,6 +203,8 @@ export class AuthController {
   @Post("password/force-change")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Forzar cambio de contraseña en primer login" })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async forceChange(@Req() req: Request, @Body() body: { password: string }) {
     const userId = (req as any).user?.sub; // payload de JWT
     if (!userId) throw new UnauthorizedException("Missing user in request");
@@ -212,6 +217,8 @@ export class AuthController {
   @Post("password/request-change-code")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Solicita un código para cambio voluntario de contraseña" })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async requestChangeCode(@Req() req: Request) {
     const userId = (req as any).user?.sub;
     if (!userId) throw new UnauthorizedException("Missing user in request");
@@ -237,6 +244,8 @@ export class AuthController {
   @Post("password/change-with-code")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Confirma cambio de contraseña con código dentro de sesión" })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async changeWithCode(@Req() req: Request, @Body() body: { code: string; currentPassword: string; newPassword: string }) {
     const userId = (req as any).user?.sub;
     if (!userId) throw new UnauthorizedException("Missing user in request");

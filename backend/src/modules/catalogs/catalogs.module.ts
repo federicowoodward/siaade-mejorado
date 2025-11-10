@@ -34,6 +34,7 @@ import { Teacher } from "@/entities/users/teacher.entity";
   ],
   controllers: [CatalogsController],
   providers: [CatalogsService],
+  exports: [CatalogsService],
 })
 export class CatalogsModule {}
 
