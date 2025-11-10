@@ -38,24 +38,12 @@ export class RequestPasswordChangePage {
     
     try {
       const resp: any = await this.auth.requestPasswordChangeCode().toPromise();
-      let detail = 'Revisá tu correo para obtener el código de verificación';
-      // En dev ahora el backend expone code / token
-      if (resp?.code || resp?.token) {
-        detail = `DEV → Código: ${resp.code ?? 'n/d'}  Token: ${(resp.token || '').slice(0,18)}...`;
-      }
-      this.message.add({
-        severity: 'success',
-        summary: 'Código generado',
-        detail,
-        life: 8000,
+      // Guardar identidad y modo inmediatamente y navegar sin mostrar toast
+      try { sessionStorage.setItem('resetMode', 'change'); } catch {}
+      try { sessionStorage.setItem('resetIdentity', this.userEmail()); } catch {}
+      this.router.navigate(['/auth/reset-code'], {
+        state: { mode: 'change', identity: this.userEmail() }
       });
-      
-      // Navegar a la página de verificación de código
-      setTimeout(() => {
-        this.router.navigate(['/auth/reset-code'], {
-          state: { mode: 'change', identity: this.userEmail() }
-        });
-      }, 1500);
     } catch (error: any) {
       const msg = error?.error?.message || 'Error al enviar el código';
       this.message.add({
