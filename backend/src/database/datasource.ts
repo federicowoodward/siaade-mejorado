@@ -3,15 +3,12 @@ import * as path from "path";
 import { DataSource, DataSourceOptions } from "typeorm";
 
 function buildOptions(): DataSourceOptions {
-  const runningTs =
-    !!process.env.TS_NODE ||
-    !!process.env.TS_NODE_DEV ||
-    process.argv.join(" ").includes("ts-node");
+  const runningTs = path.extname(__filename) === ".ts";
 
   const root = process.cwd();
   const entitiesGlob = runningTs
-    ? path.join(root, "src/**/*.entity.ts")
-    : path.join(root, "dist/**/*.entity.js");
+    ? path.join(root, "src", "entities", "**", "*.entity.ts")
+    : path.join(root, "dist", "entities", "**", "*.entity.js");
 
   const migrationsGlob = runningTs
     ? path.join(root, "src/database/migrations/*.ts")

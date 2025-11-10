@@ -52,11 +52,27 @@ export class AuthService {
     private readonly userReader: UserProfileReaderService,
     private readonly configService: ConfigService
   ) {
-    this.refreshSecret =
-      this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
-    this.refreshTtl = this.configService.get<string>("JWT_REFRESH_TTL") || "1d";
+    const refreshSecret =
+      this.configService.get<string>("JWT_REFRESH_SECRET") ??
+      this.configService.get<string>("JWT_SECRET");
+    if (!refreshSecret) {
+      throw new Error(
+        "Missing JWT refresh secret. Define JWT_REFRESH_SECRET or JWT_SECRET."
+      );
+    }
+    this.refreshSecret = refreshSecret;
+
+    this.refreshTtl =
+      (
+        this.configService.get<string>("JWT_REFRESH_TTL") ??
+        this.configService.get<string>("JWT_REFRESH_EXPIRES_IN")
+      ) || "1d";
     this.refreshTtlMs = this.parseDurationToMs(this.refreshTtl);
-    this.accessTtl = this.configService.get<string>("JWT_ACCESS_TTL") || "15m";
+    this.accessTtl =
+      (
+        this.configService.get<string>("JWT_ACCESS_TTL") ??
+        this.configService.get<string>("JWT_EXPIRES_IN")
+      ) || "15m";
   }
 
   async login(loginDto: LoginDto) {

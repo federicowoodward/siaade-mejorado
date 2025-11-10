@@ -28,11 +28,45 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+class ExamTableWindowDto {
+  label!: string;
+  opensAt!: string | null;
+  closesAt!: string | null;
+  state!: 'open' | 'upcoming' | 'past' | 'closed';
+  message!: string | null;
+}
+
+class ExamTableVisibilityDto {
+  students!: boolean;
+  staff!: boolean;
+}
+
+class ExamTableQuotaDto {
+  max!: number | null;
+  used!: number | null;
+}
+
+class ExamTableCreatorDto {
+  id!: string;
+  name?: string | null;
+  last_name?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+}
+
 class ExamTableResponseDto {
   id!: number;
   name!: string;
-  startDate!: string;
-  endDate!: string;
+  start_date!: string | null;
+  end_date!: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  window_state!: 'open' | 'upcoming' | 'past' | 'closed';
+  window!: ExamTableWindowDto;
+  visibility!: ExamTableVisibilityDto;
+  quota!: ExamTableQuotaDto;
+  created_by!: string | null;
+  createdByUser?: ExamTableCreatorDto;
 }
 
 class DeletedResponseDto {

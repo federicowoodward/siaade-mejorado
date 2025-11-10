@@ -17,6 +17,7 @@ import { NoticesModule } from "./modules/notices/notices.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
 import { SubjectsModule } from "./subjects/subjects.module";
 import { CareersModule } from "./modules/careers/careers.module";
+import { StudentInscriptionsModule } from "./modules/student_inscriptions/student-inscriptions.module";
 
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
@@ -44,6 +45,7 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     NoticesModule,
     CatalogsModule,
     CareersModule,
+    StudentInscriptionsModule,
     SubjectsModule,
   ],
   providers: [

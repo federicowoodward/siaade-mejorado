@@ -6,6 +6,8 @@ import { Student } from "@/entities/users/student.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
+import { Exam } from "@/entities/subjects/exam.entity";
+import { ExamResult } from "@/entities/subjects/exam-result.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { SubjectsService } from "./subjects.service";
 import { Teacher } from "@/entities/users/teacher.entity";
@@ -26,6 +28,8 @@ import { ParseObjectIdPipe } from "./pipes/parse-object-id.pipe";
       SubjectStatusType,
       SubjectStudent,
       Subject,
+      Exam,
+      ExamResult,
       SubjectGradesView,
       Teacher,
       User,
