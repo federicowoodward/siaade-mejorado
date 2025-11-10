@@ -128,7 +128,15 @@ export class AuthService {
 
     async forcePasswordChange(password: string): Promise<boolean> {
       const result = await firstValueFrom(this.authApi.forcePasswordChange(password));
-      return result.success;
+      if (result?.success) {
+        // Actualizar el usuario local para que deje de pedir cambio de contraseña
+        const current = (this.authState.getCurrentUserSnapshot() as LocalUser | null);
+        if (current) {
+          const updated: LocalUser = { ...current, requiresPasswordChange: false };
+          this.authState.setCurrentUser(updated, { persist: true });
+        }
+      }
+      return !!result?.success;
     }
 
     requestPasswordChangeCode() {

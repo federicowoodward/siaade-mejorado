@@ -32,10 +32,10 @@ export class WelcomePage implements OnInit {
     this.authService.getUser().subscribe((user) => {
       if (user) {
         this.userName.set(`${user.name ?? ""} ${user.lastName ?? ""}`.trim());
-          // Verificar si necesita cambiar la contraseña
-          if (user.requiresPasswordChange) {
-            this.showPasswordChangeModal.set(true);
-          }
+          // Reflejar estado actual: mostrar u ocultar según flag
+          this.showPasswordChangeModal.set(Boolean(user.requiresPasswordChange));
+      } else {
+        this.showPasswordChangeModal.set(false);
       }
     });
   }
