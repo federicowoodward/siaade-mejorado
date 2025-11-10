@@ -64,7 +64,7 @@
             <td>{{ s.metadata.subjectFormat }}</td>
             <td>{{ s.metadata.weeklyWorkload }}</td>
             <td>{{ s.metadata.annualWorkload }}</td>
-            <td>{{ s.metadata.correlative || '-' }}</td>
+            <td>{{ s.prerequisites.length ? s.prerequisites.join(', ') : '-' }}</td>
           </tr>
         </ng-template>
       </p-table>

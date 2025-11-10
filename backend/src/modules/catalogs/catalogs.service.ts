@@ -13,6 +13,7 @@ import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entit
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { Teacher } from "@/entities/users/teacher.entity";
+import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequisite-by-order.entity";
 
 export type SubjectCommissionTeachersDto = {
   subject: { id: number; name: string };
@@ -44,8 +45,8 @@ export class CatalogsService {
     private readonly subjectCommissionRepo: Repository<SubjectCommission>,
     @InjectRepository(CareerStudent)
     private readonly careerStudentRepo: Repository<CareerStudent>,
-  @InjectRepository(Student)
-  private readonly studentRepo: Repository<Student>,
+    @InjectRepository(Student)
+    private readonly studentRepo: Repository<Student>,
     @InjectRepository(FinalExamStatus)
     private readonly finalExamStatusRepo: Repository<FinalExamStatus>,
     @InjectRepository(SubjectStatusType)
@@ -53,7 +54,9 @@ export class CatalogsService {
     @InjectRepository(SubjectGradesView)
     private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
     @InjectRepository(Teacher)
-    private readonly teacherRepo: Repository<Teacher>
+    private readonly teacherRepo: Repository<Teacher>,
+    @InjectRepository(SubjectPrerequisiteByOrder)
+    private readonly subjectPrerequisiteByOrderRepo: Repository<SubjectPrerequisiteByOrder>
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -90,9 +93,7 @@ export class CatalogsService {
       .getOne();
 
     if (!career) {
-      throw new NotFoundException(
-        `Career with id ${careerId} was not found`
-      );
+      throw new NotFoundException(`Career with id ${careerId} was not found`);
     }
 
     const careerSubjects = await this.careerSubjectRepo
@@ -104,6 +105,9 @@ export class CatalogsService {
       .addOrderBy("cs.periodOrder", "ASC", "NULLS LAST")
       .addOrderBy("cs.orderNo", "ASC")
       .getMany();
+
+    // Mapa: subject_order_no (career_subjects.order_no) -> prereq_order_no[]
+    const prereqMap = await this.buildPrereqMapByOrderNo(careerId);
 
     const subjectIds = new Set<number>();
     for (const cs of careerSubjects) {
@@ -147,8 +151,8 @@ export class CatalogsService {
             periodOrder: number | null;
             orderNo: number;
           };
+          prerequisites: number[];
           metadata: {
-            correlative: string | null;
             subjectFormat: string | null;
             teacherFormation: string | null;
             annualWorkload: string | null;
@@ -162,8 +166,7 @@ export class CatalogsService {
     for (const cs of careerSubjects) {
       if (!cs.subject) continue;
       const period = cs.subject.academicPeriod ?? null;
-      const periodKey: PeriodKey =
-        period?.academicPeriodId ?? "no_period";
+      const periodKey: PeriodKey = period?.academicPeriodId ?? "no_period";
       if (!periods.has(periodKey)) {
         periods.set(periodKey, {
           academicPeriod: period,
@@ -181,8 +184,8 @@ export class CatalogsService {
           periodOrder: cs.periodOrder ?? null,
           orderNo: cs.orderNo,
         },
+        prerequisites: prereqMap.get(cs.orderNo) ?? [],
         metadata: {
-          correlative: cs.subject.correlative ?? null,
           subjectFormat: cs.subject.subjectFormat ?? null,
           teacherFormation: cs.subject.teacherFormation ?? null,
           annualWorkload: cs.subject.annualWorkload ?? null,
@@ -211,8 +214,7 @@ export class CatalogsService {
             ? {
                 id: value.academicPeriod.academicPeriodId,
                 name: value.academicPeriod.periodName,
-                partialsScoreNeeded:
-                  value.academicPeriod.partialsScoreNeeded,
+                partialsScoreNeeded: value.academicPeriod.partialsScoreNeeded,
               }
             : null,
           subjects: value.subjects,
@@ -232,8 +234,7 @@ export class CatalogsService {
           ? {
               id: career.academicPeriod.academicPeriodId,
               name: career.academicPeriod.periodName,
-              partialsScoreNeeded:
-                career.academicPeriod.partialsScoreNeeded,
+              partialsScoreNeeded: career.academicPeriod.partialsScoreNeeded,
             }
           : null,
       },
@@ -258,9 +259,7 @@ export class CatalogsService {
     });
 
     if (!career) {
-      throw new NotFoundException(
-        `Career with id ${careerId} was not found`
-      );
+      throw new NotFoundException(`Career with id ${careerId} was not found`);
     }
 
     const qb = this.careerStudentRepo
@@ -365,9 +364,7 @@ export class CatalogsService {
     });
 
     if (!subject) {
-      throw new NotFoundException(
-        `Subject with id ${subjectId} was not found`
-      );
+      throw new NotFoundException(`Subject with id ${subjectId} was not found`);
     }
 
     const assignments = await this.subjectCommissionRepo
@@ -454,21 +451,30 @@ export class CatalogsService {
   /**
    * Listar todos los docentes del sistema (Teacher + User) ordenados por nombre.
    */
-  async getAllTeachers(): Promise<Array<{ teacherId: string; name: string; email: string; cuil: string | null }>> {
+  async getAllTeachers(): Promise<
+    Array<{
+      teacherId: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    }>
+  > {
     const teachers = await this.teacherRepo
-      .createQueryBuilder('t')
-      .leftJoinAndSelect('t.user', 'u')
-      .orderBy('u.name', 'ASC')
-      .addOrderBy('u.lastName', 'ASC')
+      .createQueryBuilder("t")
+      .leftJoinAndSelect("t.user", "u")
+      .orderBy("u.name", "ASC")
+      .addOrderBy("u.lastName", "ASC")
       .getMany();
 
-    return teachers.map(t => {
+    return teachers.map((t) => {
       const user = t.user;
-      const nameParts = [user?.name, user?.lastName].filter((p): p is string => !!p);
+      const nameParts = [user?.name, user?.lastName].filter(
+        (p): p is string => !!p
+      );
       return {
         teacherId: t.userId,
-        name: nameParts.length ? nameParts.join(' ') : t.userId,
-        email: user?.email ?? '',
+        name: nameParts.length ? nameParts.join(" ") : t.userId,
+        email: user?.email ?? "",
         cuil: user?.cuil ?? null,
       };
     });
@@ -514,7 +520,12 @@ export class CatalogsService {
    * Agrupa por materia y lista las comisiones en las que el docente está asignado.
    */
   async getTeacherSubjectAssignments(teacherId: string): Promise<{
-    teacher: { id: string; name: string; email: string; cuil: string | null } | null;
+    teacher: {
+      id: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    } | null;
     subjects: Array<{
       subject: { id: number; name: string };
       commissions: Array<{ id: number; letter: string | null }>;
@@ -522,25 +533,32 @@ export class CatalogsService {
   }> {
     // Traemos todas las asignaciones de comisiones del docente
     const assignments = await this.subjectCommissionRepo
-      .createQueryBuilder('sc')
-      .leftJoinAndSelect('sc.subject', 'subject')
-      .leftJoinAndSelect('sc.commission', 'commission')
-      .leftJoinAndSelect('sc.teacher', 'teacher')
-      .leftJoinAndSelect('teacher.user', 'user')
-      .where('sc.teacherId = :teacherId', { teacherId })
-      .orderBy('subject.subjectName', 'ASC')
-      .addOrderBy('commission.commissionLetter', 'ASC', 'NULLS LAST')
-      .addOrderBy('commission.id', 'ASC')
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.subject", "subject")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .leftJoinAndSelect("sc.teacher", "teacher")
+      .leftJoinAndSelect("teacher.user", "user")
+      .where("sc.teacherId = :teacherId", { teacherId })
+      .orderBy("subject.subjectName", "ASC")
+      .addOrderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("commission.id", "ASC")
       .getMany();
 
     // Info básica del docente (si existe)
-    let teacher: { id: string; name: string; email: string; cuil: string | null } | null = null;
+    let teacher: {
+      id: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    } | null = null;
     if (assignments[0]?.teacher) {
       const t = assignments[0].teacher;
       teacher = {
         id: t.userId,
-        name: [t.user?.name, t.user?.lastName].filter(Boolean).join(' ') || t.userId,
-        email: t.user?.email ?? '',
+        name:
+          [t.user?.name, t.user?.lastName].filter(Boolean).join(" ") ||
+          t.userId,
+        email: t.user?.email ?? "",
         cuil: t.user?.cuil ?? null,
       };
     }
@@ -548,7 +566,10 @@ export class CatalogsService {
     // Agrupar por materia
     const subjectsMap = new Map<
       number,
-      { subject: { id: number, name: string }, commissions: Array<{ id: number, letter: string | null }> }
+      {
+        subject: { id: number; name: string };
+        commissions: Array<{ id: number; letter: string | null }>;
+      }
     >();
 
     for (const a of assignments) {
@@ -570,10 +591,10 @@ export class CatalogsService {
     // Ordenar comisiones por letra/id y materias por nombre
     const subjects = Array.from(subjectsMap.values()).map((s) => {
       s.commissions.sort((a, b) => {
-        const la = a.letter ?? '';
-        const lb = b.letter ?? '';
+        const la = a.letter ?? "";
+        const lb = b.letter ?? "";
         if (la && lb) {
-          const cmp = la.localeCompare(lb, undefined, { sensitivity: 'base' });
+          const cmp = la.localeCompare(lb, undefined, { sensitivity: "base" });
           if (cmp !== 0) return cmp;
         } else if (la) {
           return -1;
@@ -596,7 +617,16 @@ export class CatalogsService {
    * Nota: no calcula notas reales; se marca todo como "Inscripto" y examInfo "-".
    */
   async getStudentAcademicSubjectsMinimal(studentId: string): Promise<{
-    byYear: Record<string, Array<{ subjectName: string; year: number | null; division: string | null; condition: string; examInfo: string }>>;
+    byYear: Record<
+      string,
+      Array<{
+        subjectName: string;
+        year: number | null;
+        division: string | null;
+        condition: string;
+        examInfo: string;
+      }>
+    >;
   }> {
     // Buscar la última inscripción del estudiante a una carrera
     const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
@@ -617,7 +647,16 @@ export class CatalogsService {
       commissionLetter = student.commission.commissionLetter ?? null;
     }
 
-    const byYear: Record<string, Array<{ subjectName: string; year: number | null; division: string | null; condition: string; examInfo: string }>> = {};
+    const byYear: Record<
+      string,
+      Array<{
+        subjectName: string;
+        year: number | null;
+        division: string | null;
+        condition: string;
+        examInfo: string;
+      }>
+    > = {};
 
     for (const period of careerData.academicPeriods) {
       for (const subject of period.subjects) {
@@ -628,14 +667,16 @@ export class CatalogsService {
           subjectName: subject.subjectName,
           year: yearNo,
           division: commissionLetter ? `${commissionLetter}` : null,
-          condition: 'Inscripto',
-          examInfo: '-',
+          condition: "Inscripto",
+          examInfo: "-",
         });
       }
     }
 
     // Ordenar materias dentro de cada año por nombre
-    Object.values(byYear).forEach((arr) => arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)));
+    Object.values(byYear).forEach((arr) =>
+      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
+    );
 
     return { byYear };
   }
@@ -647,40 +688,45 @@ export class CatalogsService {
    */
   async getStudentAcademicStatus(studentId: string): Promise<{
     studentId: string;
-    byYear: Record<string, Array<{
-      subjectId: number;
-      subjectName: string;
-      year: number | null;
-      commissionId: number;
-      commissionLetter: string | null;
-      partials: 2 | 4;
-      note1: number | null;
-      note2: number | null;
-      note3: number | null;
-      note4: number | null;
-      final: number | null;
-      attendancePercentage: number;
-      condition: string | null;
-    }>>;
+    byYear: Record<
+      string,
+      Array<{
+        subjectId: number;
+        subjectName: string;
+        year: number | null;
+        commissionId: number;
+        commissionLetter: string | null;
+        partials: 2 | 4;
+        note1: number | null;
+        note2: number | null;
+        note3: number | null;
+        note4: number | null;
+        final: number | null;
+        attendancePercentage: number;
+        condition: string | null;
+      }>
+    >;
   }> {
     // Validar que el usuario sea estudiante
-    const student = await this.studentRepo.findOne({ 
+    const student = await this.studentRepo.findOne({
       where: { userId: studentId },
-      relations: ['user', 'user.role']
+      relations: ["user", "user.role"],
     });
-    
+
     if (!student) {
-      throw new NotFoundException(`El usuario ${studentId} no es un estudiante o no existe.`);
+      throw new NotFoundException(
+        `El usuario ${studentId} no es un estudiante o no existe.`
+      );
     }
-    
+
     // Mapa subjectId -> yearNo según la carrera a la que está inscripto
     const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
     const yearBySubject = new Map<number, number | null>();
     if (cs) {
       const rows = await this.careerSubjectRepo
-        .createQueryBuilder('cs')
-        .leftJoinAndSelect('cs.subject', 'subject')
-        .where('cs.careerId = :careerId', { careerId: cs.careerId })
+        .createQueryBuilder("cs")
+        .leftJoinAndSelect("cs.subject", "subject")
+        .where("cs.careerId = :careerId", { careerId: cs.careerId })
         .getMany();
       for (const row of rows) {
         if (row.subject) {
@@ -691,51 +737,60 @@ export class CatalogsService {
 
     // Traer todas las filas de la vista por el estudiante
     const viewRows = await this.subjectGradesViewRepo
-      .createQueryBuilder('vg')
-      .where('vg.student_id = :studentId', { studentId })
-      .orderBy('vg.subject_id', 'ASC')
-      .addOrderBy('vg.commission_id', 'ASC')
+      .createQueryBuilder("vg")
+      .where("vg.student_id = :studentId", { studentId })
+      .orderBy("vg.subject_id", "ASC")
+      .addOrderBy("vg.commission_id", "ASC")
       .getMany();
 
     // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
-    const bySubject = new Map<number, typeof viewRows[number]>();
+    const bySubject = new Map<number, (typeof viewRows)[number]>();
     for (const row of viewRows) {
       if (!bySubject.has(row.subjectId)) bySubject.set(row.subjectId, row);
     }
 
-    const byYear: Record<string, Array<{
-      subjectId: number;
-      subjectName: string;
-      year: number | null;
-      commissionId: number;
-      commissionLetter: string | null;
-      partials: 2 | 4;
-      note1: number | null;
-      note2: number | null;
-      note3: number | null;
-      note4: number | null;
-      final: number | null;
-      attendancePercentage: number;
-      condition: string | null;
-    }>> = {};
+    const byYear: Record<
+      string,
+      Array<{
+        subjectId: number;
+        subjectName: string;
+        year: number | null;
+        commissionId: number;
+        commissionLetter: string | null;
+        partials: 2 | 4;
+        note1: number | null;
+        note2: number | null;
+        note3: number | null;
+        note4: number | null;
+        final: number | null;
+        attendancePercentage: number;
+        condition: string | null;
+      }>
+    > = {};
 
     const normalizePartials = (n: number | null | undefined): 2 | 4 =>
       n === 4 ? 4 : 2;
 
-    const deriveCondition = (notes: Array<number | null | undefined>, attendance: number | null | undefined, existing: string | null | undefined): string => {
+    const deriveCondition = (
+      notes: Array<number | null | undefined>,
+      attendance: number | null | undefined,
+      existing: string | null | undefined
+    ): string => {
       if (existing && existing.trim()) return existing;
       const att = Number(attendance ?? 0);
-      const valid = notes.filter((n): n is number => typeof n === 'number' && !Number.isNaN(n));
-      if (valid.length === 0) return 'Inscripto';
+      const valid = notes.filter(
+        (n): n is number => typeof n === "number" && !Number.isNaN(n)
+      );
+      if (valid.length === 0) return "Inscripto";
       const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
-      if (att >= 90 && avg >= 7) return 'Promocionado';
-      if (att >= 75 && att < 90 && avg >= 4) return 'Regular';
-      return 'Libre';
+      if (att >= 90 && avg >= 7) return "Promocionado";
+      if (att >= 75 && att < 90 && avg >= 4) return "Regular";
+      return "Libre";
     };
 
     for (const row of bySubject.values()) {
       const yearNo = yearBySubject.get(row.subjectId) ?? null;
-      const key = yearNo ? `${yearNo}° Año` : 'Sin año';
+      const key = yearNo ? `${yearNo}° Año` : "Sin año";
       if (!byYear[key]) byYear[key] = [];
       byYear[key].push({
         subjectId: row.subjectId,
@@ -750,12 +805,11 @@ export class CatalogsService {
         note4: row.note4 ?? null,
         final: row.final ?? null,
         attendancePercentage: Number(row.attendancePercentage ?? 0) || 0,
-        condition: deriveCondition([
-          row.note1,
-          row.note2,
-          row.note3,
-          row.note4,
-        ], Number(row.attendancePercentage ?? 0) || 0, row.condition ?? null),
+        condition: deriveCondition(
+          [row.note1, row.note2, row.note3, row.note4],
+          Number(row.attendancePercentage ?? 0) || 0,
+          row.condition ?? null
+        ),
       });
     }
 
@@ -765,5 +819,23 @@ export class CatalogsService {
     );
 
     return { studentId, byYear };
+  }
+
+  private async buildPrereqMapByOrderNo(
+    careerId: number,
+  ): Promise<Map<number, number[]>> {
+    const rows = await this.subjectPrerequisiteByOrderRepo
+      .createQueryBuilder("p")
+      .where("p.career_id = :careerId", { careerId })
+      .orderBy("p.subject_order_no", "ASC")
+      .addOrderBy("p.prereq_order_no", "ASC")
+      .getMany();
+
+    const map = new Map<number, number[]>();
+    for (const r of rows) {
+      if (!map.has(r.subject_order_no)) map.set(r.subject_order_no, []);
+      map.get(r.subject_order_no)!.push(r.prereq_order_no);
+    }
+    return map;
   }
 }

@@ -556,35 +556,29 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       .orIgnore()
       .execute();
 
-    const subjects = await subjectRepository.find({
-      where: { subjectName: In(SUBJECTS.map((subject) => subject.name)) },
+    // --- ORDEN GLOBAL: periodOrder asc + subjectOrder asc
+    const sortedSubjects = [...SUBJECTS].sort((a, b) => {
+      if (a.periodOrder !== b.periodOrder) return a.periodOrder - b.periodOrder;
+      return a.subjectOrder - b.subjectOrder;
     });
-    const subjectIdMap = new Map(
-      subjects.map((subject) => [subject.subjectName, subject.id])
-    );
 
-    const missingSubjects = SUBJECTS.filter(
-      (subject) => !subjectIdMap.has(subject.name)
-    ).map((subject) => subject.name);
-    if (missingSubjects.length > 0) {
-      throw new Error(
-        `Subjects ${missingSubjects.join(", ")} were not created as expected.`
-      );
-    }
+    // Mapear ids
+    const subjects = await subjectRepository.find({
+      where: { subjectName: In(sortedSubjects.map((s) => s.name)) },
+    });
+    const subjectIdMap = new Map(subjects.map((s) => [s.subjectName, s.id]));
 
-    const careerSubjectsValues = SUBJECTS.map((subject) => {
+    // Asignar career_subjects.order_no = 1..N en el orden oficial
+    const careerSubjectsValues = sortedSubjects.map((subject, idx) => {
       const subjectId = subjectIdMap.get(subject.name);
-      if (!subjectId) {
+      if (!subjectId)
         throw new Error(`Subject id not found for '${subject.name}'`);
-      }
-      const orderNo =
-        subject.year * 100 + subject.periodOrder * 10 + subject.subjectOrder;
       return {
         careerId,
         subjectId,
         yearNo: subject.year,
         periodOrder: subject.periodOrder,
-        orderNo,
+        orderNo: idx + 1, // <-- ascendente global
       };
     });
 
@@ -638,5 +632,3 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
     await roleRepository.delete({ name: In(ROLE_NAMES) });
   }
 }
-
-

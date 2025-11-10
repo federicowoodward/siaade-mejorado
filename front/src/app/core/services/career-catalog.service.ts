@@ -12,8 +12,8 @@ type ApiResponse = {
       id: number;
       subjectName: string;
       careerOrdering: { yearNo: number; periodOrder: number; orderNo: number };
+      prerequisites: number[];
       metadata: {
-        correlative: string | null;
         subjectFormat: 'Anual' | 'Cuatrimestral';
         teacherFormation: string;
         annualWorkload: string;
