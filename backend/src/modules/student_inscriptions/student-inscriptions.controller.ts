@@ -25,6 +25,7 @@ import { Subject } from '@/entities/subjects/subject.entity';
 import { CareerStudent } from '@/entities/registration/career-student.entity';
 import { CareerSubject } from '@/entities/registration/career-subject.entity';
 import { PrerequisitesService } from '@/modules/prerequisites/prerequisites.service';
+import { StudentInscriptionAudit } from '@/entities/inscriptions/student-inscription-audit.entity';
 
 type WindowState = 'open' | 'upcoming' | 'closed' | 'past';
 
@@ -42,6 +43,8 @@ export class StudentInscriptionsController {
     @InjectRepository(CareerStudent) private readonly careerStudentRepo: Repository<CareerStudent>,
     @InjectRepository(CareerSubject) private readonly careerSubjectRepo: Repository<CareerSubject>,
     private readonly prereqSvc: PrerequisitesService,
+    @InjectRepository(StudentInscriptionAudit)
+    private readonly auditRepo: Repository<StudentInscriptionAudit>,
   ) {}
 
   @Get('exam-tables')
@@ -195,12 +198,79 @@ export class StudentInscriptionsController {
       return { ok: false, blocked: true, reasonCode: 'UNKNOWN', message: 'callId es requerido' };
     }
     try {
-      // Enrolamiento directo sobre la tabla de finals
-      await this.linkRepo.save(
-        this.linkRepo.create({ finalExamId: Number(body.callId), studentId, enrolledAt: new Date(), notes: '', score: null } as any),
-      );
+      // Server-side correlatives enforcement
+      const finalExam = await this.finalRepo.findOne({ where: { id: Number(body.callId) }, relations: ['subject', 'examTable'] });
+      if (!finalExam) return { ok: false, blocked: true, reasonCode: 'UNKNOWN', message: 'Final no encontrado' };
+
+      const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
+      const subject = await this.subjectRepo.findOne({ where: { id: finalExam.subjectId } });
+
+      if (cs && subject?.orderNo) {
+        try {
+          const validation = await this.prereqSvc.validateEnrollment(cs.careerId, studentId!, subject.orderNo);
+          if (!validation.canEnroll && Array.isArray(validation.unmet) && validation.unmet.length > 0) {
+            const unmet = await this.careerSubjectRepo.find({ where: { careerId: cs.careerId, orderNo: In(validation.unmet) }, relations: ['subject'] });
+            const lines = unmet.map((row) => `${row.orderNo} - ${row.subject?.subjectName ?? 'Materia'} (Aprobada o Regularizada)`).sort();
+            // Audit blocked attempt
+            await this.auditSafeSave({
+              studentId: studentId!,
+              context: 'enroll-exam',
+              mesaId: finalExam.examTableId,
+              callId: finalExam.id,
+              outcome: 'blocked',
+              reasonCode: 'MISSING_REQUIREMENTS',
+              subjectId: finalExam.subjectId,
+              subjectOrderNo: subject.orderNo,
+              subjectName: subject.subjectName,
+              missingCorrelatives: lines,
+              ip: req.ip || null,
+              userAgent: req.headers['user-agent'] ? String(req.headers['user-agent']) : null,
+            });
+            return { ok: false, blocked: true, reasonCode: 'MISSING_REQUIREMENTS', message: lines.join('; ') };
+          }
+        } catch {}
+      }
+
+      // Proceed with enrollment
+      let link: FinalExamsStudent | null = await this.linkRepo.findOne({ where: { finalExamId: finalExam.id, studentId } });
+      if (!link) {
+        link = this.linkRepo.create({ finalExamId: finalExam.id, studentId, score: null, notes: '' });
+      }
+      (link as any).enrolledAt = new Date();
+      (link as any).enrolledBy = 'student';
+      await this.linkRepo.save(link as any);
+
+      await this.auditSafeSave({
+        studentId: studentId!,
+        context: 'enroll-exam',
+        mesaId: finalExam.examTableId,
+        callId: finalExam.id,
+        outcome: 'success',
+        reasonCode: null,
+        subjectId: finalExam.subjectId,
+        subjectOrderNo: subject?.orderNo ?? null,
+        subjectName: subject?.subjectName ?? null,
+        missingCorrelatives: null,
+        ip: req.ip || null,
+        userAgent: req.headers['user-agent'] ? String(req.headers['user-agent']) : null,
+      });
+
       return { ok: true, blocked: false, message: 'Inscripción confirmada' };
     } catch (e: any) {
+      await this.auditSafeSave({
+        studentId: studentId!,
+        context: 'enroll-exam',
+        mesaId: null,
+        callId: body.callId ?? null,
+        outcome: 'error',
+        reasonCode: 'UNKNOWN',
+        subjectId: null,
+        subjectOrderNo: null,
+        subjectName: null,
+        missingCorrelatives: null,
+        ip: req.ip || null,
+        userAgent: req.headers['user-agent'] ? String(req.headers['user-agent']) : null,
+      });
       return { ok: false, blocked: true, reasonCode: 'UNKNOWN', message: String(e?.message || 'No se pudo inscribir') };
     }
   }
@@ -208,10 +278,31 @@ export class StudentInscriptionsController {
   @Post('audit-events')
   @ApiOperation({ summary: 'Auditoría de eventos de inscripción (no persistente)' })
   @ApiOkResponse({ description: 'Aceptado' })
-  async audit(@Body() payload: any) {
-    // Dejar trazas en logs por ahora; se puede persistir luego
-    try { console.log('[audit-events]', payload); } catch {}
+  async audit(@Body() payload: any, @Req() req: Request) {
+    const studentId = (payload?.studentId as string) || (req.user as any)?.id || null;
+    await this.auditSafeSave({
+      studentId: studentId!,
+      context: String(payload?.context || ''),
+      mesaId: (payload?.mesaId as number) ?? null,
+      callId: (payload?.callId as number) ?? null,
+      outcome: (payload?.outcome as any) ?? 'blocked',
+      reasonCode: (payload?.reasonCode as string) ?? null,
+      subjectId: (payload?.subjectId as number) ?? null,
+      subjectOrderNo: (payload?.subjectOrderNo as number) ?? null,
+      subjectName: (payload?.subjectName as string) ?? null,
+      missingCorrelatives: Array.isArray(payload?.missingCorrelativesText) ? payload.missingCorrelativesText : (typeof payload?.missingCorrelativesText === 'string' ? [payload.missingCorrelativesText] : null),
+      ip: req.ip || null,
+      userAgent: req.headers['user-agent'] ? String(req.headers['user-agent']) : null,
+    });
     return { ok: true };
   }
-}
 
+  private async auditSafeSave(data: Partial<StudentInscriptionAudit>) {
+    try {
+      const entity = this.auditRepo.create(data as any);
+      await this.auditRepo.save(entity);
+    } catch (e) {
+      try { console.warn('[audit-events][save-failed]', e); } catch {}
+    }
+  }
+}

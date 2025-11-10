@@ -8,6 +8,7 @@ import { Subject } from '@/entities/subjects/subject.entity';
 import { CareerStudent } from '@/entities/registration/career-student.entity';
 import { CareerSubject } from '@/entities/registration/career-subject.entity';
 import { PrerequisitesModule } from '@/modules/prerequisites/prerequisites.module';
+import { StudentInscriptionAudit } from '@/entities/inscriptions/student-inscription-audit.entity';
 
 @Module({
   imports: [
@@ -18,10 +19,10 @@ import { PrerequisitesModule } from '@/modules/prerequisites/prerequisites.modul
       Subject,
       CareerStudent,
       CareerSubject,
+      StudentInscriptionAudit,
     ]),
     PrerequisitesModule,
   ],
   controllers: [StudentInscriptionsController],
 })
 export class StudentInscriptionsModule {}
-
