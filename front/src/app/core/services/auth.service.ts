@@ -272,9 +272,9 @@ export class AuthService {
       return resolved.role ? [resolved.role] : [];
     } catch (error) {
       console.error("[AuthService] No se pudieron cargar los roles del usuario", error);
-      this.permissions.reset();
-      this.rbac.reset();
-      return [];
+      // No derribar la sesión si falla este fetch: conservar estado previo
+      const prev = this.rbac.getSnapshot();
+      return Array.isArray(prev) ? (prev as ROLE[]) : [];
     }
   }
 

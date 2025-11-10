@@ -272,7 +272,6 @@ export class MesasListComponent implements OnInit {
       .refresh()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
-    void this.auth.loadUserRoles();
   }
 
   private flattenRows(tables: StudentExamTable[]): ExamCallRow[] {
