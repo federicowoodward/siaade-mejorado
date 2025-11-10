@@ -22,6 +22,9 @@ export class ResetCodePage implements OnDestroy {
   private auth = inject(AuthService);
   private message = inject(MessageService);
 
+  // Modo del flujo: 'recovery' (sin contraseña actual) o 'change' (dentro de sesión)
+  private mode: 'recovery' | 'change' = 'recovery';
+
   form = this.fb.group({
     identity: ['', Validators.required],
     code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
@@ -49,7 +52,8 @@ export class ResetCodePage implements OnDestroy {
     }
     // Persistir identidad y modo para continuidad
     this.updateMaskedIdentity();
-    try { sessionStorage.setItem('resetMode', modeFromNav); } catch {}
+  try { sessionStorage.setItem('resetMode', modeFromNav); } catch {}
+  this.mode = modeFromNav;
     // actualizar cuando cambie la identidad (fallback/manual)
     this.form.get('identity')?.valueChanges.subscribe(() => this.updateMaskedIdentity());
     // Iniciar cooldown automático
@@ -101,17 +105,31 @@ export class ResetCodePage implements OnDestroy {
     if (!identity || !this.canResend) return;
     this.canResend = false;
     this.resendIn = 30;
-    this.auth.requestPasswordRecovery(identity!).subscribe({
-      next: () => {
-        this.message.add({ severity: 'success', summary: 'Código reenviado', detail: 'Revisá tu correo.' });
-        this.startCooldown();
-      },
-      error: () => {
-        this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No pudimos reenviar el código aún.' });
-        // aun así reactivar cooldown para evitar spam
-        this.startCooldown();
-      }
-    });
+    // En modo 'change' usamos el endpoint autenticado del backend; en 'recovery', el clásico por identidad
+    if (this.mode === 'change') {
+      this.auth.requestPasswordChangeCode().subscribe({
+        next: () => {
+          this.message.add({ severity: 'success', summary: 'Código reenviado', detail: 'Revisá tu correo.' });
+          this.startCooldown();
+        },
+        error: () => {
+          this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No pudimos reenviar el código aún.' });
+          this.startCooldown();
+        }
+      });
+    } else {
+      this.auth.requestPasswordRecovery(identity!).subscribe({
+        next: () => {
+          this.message.add({ severity: 'success', summary: 'Código reenviado', detail: 'Revisá tu correo.' });
+          this.startCooldown();
+        },
+        error: () => {
+          this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No pudimos reenviar el código aún.' });
+          // aun así reactivar cooldown para evitar spam
+          this.startCooldown();
+        }
+      });
+    }
   }
 
   private startCooldown() {
