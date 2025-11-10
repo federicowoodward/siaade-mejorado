@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
@@ -33,6 +33,7 @@ import {
   BlockMessageAction,
 } from '../../shared/block-message/block-message.component';
 import { AuthService } from '../../core/services/auth.service';
+import { ExamTableSyncService } from '../../core/services/exam-table-sync.service';
 
 interface ExamCallRow {
   mesaId: number;
@@ -125,6 +126,8 @@ export class MesasListComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly sync = inject(ExamTableSyncService);
+  private readonly documentRef = inject(DOCUMENT, { optional: true });
 
   readonly tables = this.inscriptions.tables;
   readonly loading = this.inscriptions.loading;
@@ -174,7 +177,7 @@ export class MesasListComponent implements OnInit {
     {
       label: 'Actualizar mesas',
       icon: 'pi pi-refresh',
-      command: () => this.loadTables(),
+      command: () => this.loadTables(true),
     },
   ];
 
@@ -185,12 +188,18 @@ export class MesasListComponent implements OnInit {
     if (Number.isFinite(subjectId)) {
       this.filters.subjectId = subjectId;
     }
-    this.loadTables();
+    const needsForce = this.sync.consumePendingFlag();
+    if (needsForce) {
+      this.inscriptions.invalidateCache();
+    }
+    this.loadTables(needsForce);
+    this.observeSyncEvents();
+    this.setupVisibilityRefresh();
   }
 
-  loadTables(): void {
+  loadTables(force = false): void {
     this.inscriptions
-      .listExamTables(this.buildFilterPayload())
+      .listExamTables(this.buildFilterPayload(), { refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
@@ -255,7 +264,7 @@ export class MesasListComponent implements OnInit {
           });
           this.blockAlert.set(null);
           this.audit(row, 'success');
-          this.refreshData();
+          this.refreshData(true);
         } else {
           const reason =
             (response.reasonCode as StudentExamBlockReason) ?? 'UNKNOWN';
@@ -267,9 +276,9 @@ export class MesasListComponent implements OnInit {
       });
   }
 
-  private refreshData(): void {
+  private refreshData(force = false): void {
     this.inscriptions
-      .refresh()
+      .refresh({ refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
     void this.auth.loadUserRoles();
@@ -443,5 +452,30 @@ export class MesasListComponent implements OnInit {
       };
     }
     return null;
+  }
+
+  private observeSyncEvents(): void {
+    this.sync.changes$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.inscriptions.invalidateCache();
+        this.refreshData(true);
+      });
+  }
+
+  private setupVisibilityRefresh(): void {
+    const doc = this.documentRef;
+    if (!doc) {
+      return;
+    }
+    const handler = () => {
+      if (doc.visibilityState === 'visible') {
+        this.refreshData(true);
+      }
+    };
+    doc.addEventListener('visibilitychange', handler);
+    this.destroyRef.onDestroy(() =>
+      doc.removeEventListener('visibilitychange', handler)
+    );
   }
 }

@@ -21,6 +21,16 @@ type RawExamTablesResponse =
   | { tables?: any[] }
   | any[];
 
+const buildParamsCacheKey = (params: Record<string, string>): string => {
+  const sorted = Object.keys(params)
+    .sort()
+    .reduce<Record<string, string>>((acc, key) => {
+      acc[key] = params[key];
+      return acc;
+    }, {});
+  return JSON.stringify(sorted);
+};
+
 @Injectable({ providedIn: 'root' })
 export class StudentInscriptionsService {
   private readonly api = inject(ApiService);
@@ -29,6 +39,10 @@ export class StudentInscriptionsService {
   private readonly tablesSignal = signal<StudentExamTable[]>([]);
   private readonly loadingSignal = signal(false);
   private readonly filtersSignal = signal<StudentExamFilters | undefined>(undefined);
+  private readonly cacheTtlMs = 30_000;
+  private cacheEntry: { key: string; data: StudentExamTable[]; ts: number } | null =
+    null;
+  private pendingRefresh = false;
 
   readonly tables = this.tablesSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
@@ -51,11 +65,29 @@ export class StudentInscriptionsService {
   };
 
   listExamTables(
-    filters: StudentExamFilters = {}
+    filters: StudentExamFilters = {},
+    options?: { refresh?: boolean }
   ): Observable<StudentExamTable[]> {
-    this.loadingSignal.set(true);
-    this.filtersSignal.set({ ...filters });
     const params = this.serializeFilters(filters);
+    const cacheKey = buildParamsCacheKey(params);
+    const forceRefresh = options?.refresh === true || this.pendingRefresh;
+    this.filtersSignal.set({ ...filters });
+
+    const cached =
+      !forceRefresh &&
+      this.cacheEntry &&
+      this.cacheEntry.key === cacheKey &&
+      Date.now() - this.cacheEntry.ts <= this.cacheTtlMs
+        ? this.cacheEntry.data
+        : null;
+
+    if (cached) {
+      this.tablesSignal.set(cached);
+      this.loadingSignal.set(false);
+      return of(cached);
+    }
+
+    this.loadingSignal.set(true);
 
     return this.api
       .request<RawExamTablesResponse>(
@@ -66,18 +98,38 @@ export class StudentInscriptionsService {
       )
       .pipe(
         map((payload) => this.mapExamTables(payload)),
-        tap((tables) => this.tablesSignal.set(tables)),
+        tap((tables) => {
+          this.tablesSignal.set(tables);
+          this.cacheEntry = { key: cacheKey, data: tables, ts: Date.now() };
+          this.pendingRefresh = false;
+        }),
         catchError((error) => {
           console.error('[StudentInscriptions] listExamTables failed', error);
           this.tablesSignal.set([]);
+          this.cacheEntry = null;
           return of([]);
         }),
         finalize(() => this.loadingSignal.set(false))
       );
   }
 
-  refresh(): Observable<StudentExamTable[]> {
-    return this.listExamTables(this.filtersSignal() ?? {});
+  refresh(options?: { refresh?: boolean }): Observable<StudentExamTable[]> {
+    return this.listExamTables(this.filtersSignal() ?? {}, {
+      refresh: options?.refresh ?? true,
+    });
+  }
+
+  invalidateCache(): void {
+    this.cacheEntry = null;
+    this.pendingRefresh = true;
+  }
+
+  consumePendingRefresh(): boolean {
+    const pending = this.pendingRefresh;
+    if (pending) {
+      this.pendingRefresh = false;
+    }
+    return pending;
   }
 
   enroll(payload: StudentEnrollPayload): Observable<StudentEnrollmentResponse> {

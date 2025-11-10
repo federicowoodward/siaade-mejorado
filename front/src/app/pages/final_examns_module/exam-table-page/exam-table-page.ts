@@ -12,6 +12,7 @@ import { ExamTablesService } from '../../../core/services/final-exam-tables.serv
 import { FinalExamsService } from '../../../core/services/final-exams.service';
 import { ExamTable } from '../../../core/models/exam_table.model';
 import { FinalExam } from '../../../core/models/final_exam.model';
+import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 
 @Component({
   selector: 'app-exam-table-page',
@@ -34,6 +35,7 @@ export class ExamTablePage implements OnInit {
   private tablesSvc = inject(ExamTablesService);
   private finalsSvc = inject(FinalExamsService);
   private messages = inject(MessageService);
+  private sync = inject(ExamTableSyncService);
 
   tableId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 
@@ -99,6 +101,11 @@ export class ExamTablePage implements OnInit {
         next: () => {
           this.messages.add({ severity: 'success', summary: 'Final creado' });
           this.refreshFinals();
+          this.sync.notify({
+            action: 'updated',
+            mesaId: this.tableId,
+            subjectId: payload.subject_id,
+          });
           this.showCreate.set(false);
         },
         error: (e) => {
@@ -125,6 +132,11 @@ export class ExamTablePage implements OnInit {
       next: () => {
         this.messages.add({ severity: 'success', summary: 'Final eliminado' });
         this.refreshFinals();
+        this.sync.notify({
+          action: 'updated',
+          mesaId: this.tableId,
+          subjectId: f.subject_id,
+        });
       },
       error: (e) =>
         this.messages.add({
