@@ -162,17 +162,22 @@
               </div>
             </td>
             <td class="text-center">
-              <p-button
-                type="button"
-                label="Inscribirme"
-                icon="pi pi-check"
-                size="small"
-                [disabled]="isActionBlocked(row)"
-                [pTooltip]="blockTooltip(row) || ''"
-                tooltipPosition="top"
-                (onClick)="onEnroll(row, $event)"
-                ariaLabel="Inscribirme a {{ row.subjectName }} - {{ row.call.label }}"
-              />
+              <ng-container *ngIf="!isEnrolled(row); else enrolledTag">
+                <p-button
+                  type="button"
+                  label="Inscribirme"
+                  icon="pi pi-check"
+                  size="small"
+                  [disabled]="isActionBlocked(row)"
+                  [pTooltip]="blockTooltip(row) || ''"
+                  tooltipPosition="top"
+                  (onClick)="onEnroll(row, $event)"
+                  ariaLabel="Inscribirme a {{ row.subjectName }} - {{ row.call.label }}"
+                />
+              </ng-container>
+              <ng-template #enrolledTag>
+                <p-tag severity="success" value="Inscripto" />
+              </ng-template>
             </td>
           </tr>
         </ng-template>

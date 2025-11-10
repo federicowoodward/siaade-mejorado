@@ -253,6 +253,10 @@ export class MesasListComponent implements OnInit {
             detail: `${row.subjectName} - ${row.call.label}`,
             life: 4000,
           });
+          // Optimista: marcar la materia como inscripta para esta mesa
+          try {
+            (row.table as any).duplicateEnrollment = true;
+          } catch {}
           this.blockAlert.set(null);
           this.audit(row, 'success');
           this.refreshData();
@@ -420,6 +424,10 @@ export class MesasListComponent implements OnInit {
 
   blockTooltip(row: ExamCallRow): string | undefined {
     return this.resolveBlock(row)?.message || undefined;
+  }
+
+  isEnrolled(row: ExamCallRow): boolean {
+    return Boolean(row.table?.duplicateEnrollment);
   }
 
   stateLabel(state: StudentWindowState): string {
