@@ -10,7 +10,8 @@ import { Student } from "@/entities/users/student.entity";
 import { StudentSubjectProgress } from "@/entities/subjects/student-subject-progress.entity";
 import { Career } from "@/entities/registration/career.entity";
 import { CareerStudent } from "@/entities/registration/career-student.entity";
-import { CareerSubject, SubjectPrerequisiteByOrder } from "@/entities/registration/career-subject.entity";
+import { CareerSubject } from "@/entities/registration/career-subject.entity";
+import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequisite-by-order.entity";
 import { ExamTable } from "@/entities/finals/exam-table.entity";
 import { FinalExam } from "@/entities/finals/final-exam.entity";
 import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
@@ -145,13 +146,21 @@ async function main() {
       }
 
       const spRepo = qr.manager.getRepository(SubjectPrerequisiteByOrder);
-      const spro = spRepo.create({ careerId: career.id, subjectOrderNo: 2, prereqOrderNo: 1 });
+      const spro = spRepo.create({
+        career_id: career.id,
+        subject_order_no: 2,
+        prereq_order_no: 1,
+      });
       await spRepo.save(spro);
       log("subject_prerequisites_by_order OK", spro.id);
       const sp2 = `sp_spro_${nowTag}`;
       await qr.query(`SAVEPOINT ${sp2}`);
       try {
-        const sproDup = spRepo.create({ careerId: career.id, subjectOrderNo: 2, prereqOrderNo: 1 });
+        const sproDup = spRepo.create({
+          career_id: career.id,
+          subject_order_no: 2,
+          prereq_order_no: 1,
+        });
         await spRepo.save(sproDup);
         log("WARN: subject_prerequisites_by_order duplicate no lanzó error");
       } catch {

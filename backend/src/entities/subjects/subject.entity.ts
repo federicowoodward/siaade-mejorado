@@ -32,9 +32,6 @@ export class Subject {
   @Column({ name: "order_no", type: "int", nullable: true })
   orderNo: number | null;
 
-  @Column({ name: "correlative", type: "text", nullable: true })
-  correlative: string | null;
-
   @Column({ name: "teacher_formation", type: "text", nullable: true })
   teacherFormation?: string | null;
 
@@ -55,5 +52,4 @@ export class Subject {
 
   @OneToMany(() => Exam, (e) => e.subject)
   exams?: Exam[];
-
 }
