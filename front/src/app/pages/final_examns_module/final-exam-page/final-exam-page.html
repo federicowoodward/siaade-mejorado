@@ -58,7 +58,7 @@
               <div class="w-full text-center">No inscripto</div>
             </p-tag>
           </ng-template>
-          <div class="mt-2" *appCanAnyRole="['PRECEPTOR']">
+          <div class="mt-2" *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']">
             <p-button
               *ngIf="row.enrolled_at; else insBtn"
               label="Desinscribir"
