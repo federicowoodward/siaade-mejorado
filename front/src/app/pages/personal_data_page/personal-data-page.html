@@ -1,5 +1,11 @@
 <div class="m-w-custom flex flex-column gap-3">
     <h2>Datos personales</h2>
     <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
+    <div class="mt-3">
+      <a routerLink="/account/password/change-request" class="p-button p-component">
+        <span class="p-button-icon pi pi-key"></span>
+        <span class="p-button-label">Cambiar contraseña</span>
+      </a>
+    </div>
   </div>
   

@@ -183,13 +183,12 @@ export class AuthService {
 
     const bcrypt = await import("bcryptjs");
 
-    // Validar contraseña actual (ahora requerida)
-    if (!dto.currentPassword) {
-      throw new BadRequestException("Contraseña actual requerida");
-    }
-    const ok = await bcrypt.compare(dto.currentPassword, user.password);
-    if (!ok) {
-      throw new UnauthorizedException("Contraseña actual incorrecta");
+    // Si el payload incluye la contraseña actual (flujo 'change'), validarla.
+    if (dto.currentPassword) {
+      const ok = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!ok) {
+        throw new UnauthorizedException("Contraseña actual incorrecta");
+      }
     }
 
     // No permitir reutilizar la contraseña vigente
@@ -235,6 +234,34 @@ export class AuthService {
     return { success: true };
   }
 
+  async forceChangePassword(userId: string, newPassword: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException("User not found");
+    const bcrypt = await import("bcryptjs");
+
+    // No permitir igual a actual
+    if (await bcrypt.compare(newPassword, user.password)) {
+      throw new BadRequestException("La nueva contraseña no puede ser igual a la actual");
+    }
+
+    // No permitir reutilizar última 10
+    const last10 = await this.passwordHistoryRepo.find({
+      where: { userId: user.id },
+      order: { createdAt: "DESC" },
+      take: 10,
+    });
+    for (const entry of last10) {
+      if (await bcrypt.compare(newPassword, entry.passwordHash)) {
+        throw new BadRequestException("Ya usaste esa contraseña anteriormente. Elegí una diferente.");
+      }
+    }
+
+    await this.passwordHistoryRepo.insert({ userId: user.id, passwordHash: user.password } as any);
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update({ id: user.id }, { password: hashed });
+    return { success: true };
+  }
+
   private issueTokens(payload: AuthPayload) {
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.accessTtl,
@@ -248,7 +275,7 @@ export class AuthService {
   }
 
   private async resolveProfileAndPayload(userId: string): Promise<{
-    profile: AuthProfile;
+    profile: AuthProfile & { requiresPasswordChange?: boolean };
     payload: AuthPayload;
   }> {
     const profile = await this.userReader.findById(userId);
@@ -322,7 +349,15 @@ export class AuthService {
       isDirective,
     };
 
-    return { profile, payload };
+    // Calcular si la contraseña es "default" (CUIL o "pass1234")
+    try {
+      const bcrypt = await import("bcryptjs");
+      const isPass1234 = await bcrypt.compare("pass1234", userEntity.password);
+      const isCuil = userEntity.cuil ? await bcrypt.compare(userEntity.cuil, userEntity.password) : false;
+      (profile as any).requiresPasswordChange = Boolean(isPass1234 || isCuil);
+    } catch {}
+
+    return { profile: profile as any, payload };
   }
 
   private parseDurationToMs(value: string): number {

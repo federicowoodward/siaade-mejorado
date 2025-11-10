@@ -124,10 +124,45 @@ Todas devuelven `{ data, meta }` (aun las listas cortas, con `meta.total = lengt
 
 ## Otros listados con paginación
 - Roles: GET `/api/roles?page&limit` → `{ data, meta }`
+  - Orden: roles administrativos primero y el de estudiante al final (orden descendente por id)
 - Notices: GET `/api/notices?audience=student|teacher|all&page&limit` → `{ data, meta }`
 - Subjects (read):
   - GET `/api/subjects/read?page&limit` → `{ data, meta }`
   - GET `/api/subjects` (alias protegido) → `{ data, meta }`
+
+---
+
+## Students (read)
+Base: `/api/students/read`
+
+- Listado de status de un alumno en todas sus materias (plano)
+  - GET `/api/students/read/{studentId}/subjects/status`
+  - Respuesta: `Array<{ subjectId, subjectName, year, commissionId, commissionLetter, condition }>`
+  - Reglas: requiere JWT; accesible para roles administrativos (EXECUTIVE_SECRETARY, SECRETARY, PRECEPTOR, TEACHER)
+
+- Toda la data de un alumno (agregada)
+  - GET `/api/students/read/{studentId}/full`
+### Endpoints self (/me)
+
+- GET `/api/students/read/me/subjects/status` → igual formato que `{studentId}/subjects/status` pero toma el id del JWT.
+- GET `/api/students/read/me/full` → igual formato que `{studentId}/full`.
+  - Roles permitidos: incluye también `student` para auto-consulta.
+
+  - Respuesta:
+```
+{
+  user: { id, name, lastName, email, roleId, isBlocked, blockedReason, isActive },
+  student: { userId, legajo, commissionId, commissionLetter, canLogin, isActive, studentStartYear },
+  academicStatus: { studentId, byYear: { "1° Año": [...], ... } },
+  finals: [{ id, finalExamId, subjectId, subjectName, examDate, score, statusId, statusName, enrolledAt, approvedAt }],
+  notices: [{ id, title, content, visibleRoleId, createdAt }]
+}
+```
+  - Reglas: requiere JWT; accesible para roles administrativos (EXECUTIVE_SECRETARY, SECRETARY, PRECEPTOR, TEACHER)
+
+Notas:
+- `condition` se deriva desde la vista `v_subject_grades` y reglas de asistencia/promedio cuando corresponda.
+- `notices` incluye avisos globales (visibleRoleId null) o específicos del rol del usuario.
 
 ---
 

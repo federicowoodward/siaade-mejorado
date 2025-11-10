@@ -86,4 +86,32 @@ export class AuthApiService {
       }
     );
   }
+
+    forcePasswordChange(password: string): Observable<{ success: boolean }> {
+      return this.http.post<{ success: boolean }>(
+        `${this.baseUrl}/auth/password/force-change`,
+        { password },
+        { withCredentials: true }
+      );
+    }
+
+    requestPasswordChangeCode(): Observable<{ message: string }> {
+      return this.http.post<{ message: string }>(
+        `${this.baseUrl}/auth/password/request-change-code`,
+        {},
+        { withCredentials: true }
+      );
+    }
+
+    changePasswordWithCode(payload: {
+      code: string;
+      currentPassword: string;
+      newPassword: string;
+    }): Observable<{ success: boolean }> {
+      return this.http.post<{ success: boolean }>(
+        `${this.baseUrl}/auth/password/change-with-code`,
+        payload,
+        { withCredentials: true }
+      );
+    }
 }

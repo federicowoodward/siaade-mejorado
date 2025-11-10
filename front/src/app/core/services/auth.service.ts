@@ -28,6 +28,7 @@ export interface LocalUser {
   role: ROLE | null;
   roleId?: number;
   isExecutive?: boolean;
+    requiresPasswordChange?: boolean;
   [key: string]: unknown;
 }
 
@@ -124,6 +125,36 @@ export class AuthService {
   verifyResetCode(identity: string, code: string) {
     return this.authApi.verifyResetCode(identity, code);
   }
+
+    async forcePasswordChange(password: string): Promise<boolean> {
+      const result = await firstValueFrom(this.authApi.forcePasswordChange(password));
+      return result.success;
+    }
+
+    requestPasswordChangeCode() {
+      const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
+      const email = user?.email || '';
+      return this.authApi.requestPasswordChangeCode().pipe(
+        catchError((err) => {
+          // Compatibilidad: si el backend no tiene /password/request-change-code aún, caer al flujo de reset-password
+          if ((err?.status === 404 || err?.status === 405) && email) {
+            return this.authApi.requestPasswordReset(email);
+          }
+          throw err;
+        })
+      );
+    }
+
+    changePasswordWithCode(code: string, currentPassword: string, newPassword: string) {
+      return this.authApi.changePasswordWithCode({ code, currentPassword, newPassword });
+    }
+
+    needsPasswordChange(): boolean {
+      const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
+      if (!user) return false;
+      // Verificar si el usuario tiene una propiedad que indique que necesita cambiar contraseña
+      return (user as any).requiresPasswordChange === true;
+    }
 
   async ensureSessionLoaded(options?: { force?: boolean }): Promise<void> {
     const force = options?.force === true;
@@ -260,6 +291,7 @@ export class AuthService {
       role: extracted.role,
       roleId: extracted.roleId ?? undefined,
       isExecutive: extracted.role === ROLE.EXECUTIVE_SECRETARY,
+        requiresPasswordChange: Boolean(user?.["requiresPasswordChange"] ?? false),
     };
   }
 

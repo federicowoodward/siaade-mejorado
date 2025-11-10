@@ -1,11 +1,12 @@
-import { IsString, MinLength, Matches } from "class-validator";
+import { IsOptional, IsString, MinLength, Matches } from "class-validator";
 
 export class ConfirmResetPasswordDto {
   @IsString()
   token: string;
 
   @IsString()
-  currentPassword: string;
+  @IsOptional()
+  currentPassword?: string;
 
   @IsString()
   @MinLength(8)
