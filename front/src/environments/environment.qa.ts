@@ -4,4 +4,3 @@ export const environment = {
   debugApi: true,
   debugRbac: false,
 };
-

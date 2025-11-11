@@ -63,4 +63,3 @@ export interface UserProfileResult {
     canLogin: boolean | null;
   } | null;
 }
-

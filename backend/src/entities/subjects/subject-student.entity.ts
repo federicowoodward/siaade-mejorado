@@ -1,11 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  Unique,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { Subject } from './subject.entity';
 import { Student } from '@/entities/users/student.entity';
 import { SubjectCommission } from './subject-commission.entity';
@@ -45,4 +38,3 @@ export class SubjectStudent {
   @Column({ name: 'enrolled_by', type: 'text', nullable: true })
   enrolledBy: SubjectEnrollmentActor | null;
 }
-

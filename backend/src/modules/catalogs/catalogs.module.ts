@@ -15,7 +15,6 @@ import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequisite-by-order.entity";
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -31,7 +30,7 @@ import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequi
       Student,
       FinalExamStatus,
       SubjectStatusType,
-      SubjectPrerequisiteByOrder,
+      SubjectPrerequisiteByOrder
     ]),
   ],
   controllers: [CatalogsController],

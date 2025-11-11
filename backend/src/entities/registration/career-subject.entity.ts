@@ -1,11 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  Index,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Career } from './career.entity';
 import { Subject } from '@/entities/subjects/subject.entity';
 
@@ -40,6 +33,3 @@ export class CareerSubject {
   @Column({ name: 'order_no', type: 'int' })
   orderNo: number;
 }
-
-export { SubjectPrerequisiteByOrder } from '@/entities/subjects/subject-prerequisite-by-order.entity';
-
