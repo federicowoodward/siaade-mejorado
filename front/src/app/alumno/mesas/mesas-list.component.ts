@@ -158,6 +158,8 @@ export class MesasListComponent implements OnInit {
   dialogVisible = false;
   selectedRow: ExamCallRow | null = null;
   private lastActionTrigger: HTMLElement | null = null;
+  // Marca local optimista para evitar re-inscripciones mientras llega el refresh
+  private enrolledLocal = new Set<number>();
   readonly blockAlert = signal<{
     title: string;
     message: string | string[];
@@ -254,9 +256,8 @@ export class MesasListComponent implements OnInit {
             life: 4000,
           });
           // Optimista: marcar la materia como inscripta para esta mesa
-          try {
-            (row.table as any).duplicateEnrollment = true;
-          } catch {}
+          try { (row.table as any).duplicateEnrollment = true; } catch {}
+          this.enrolledLocal.add(row.call.id);
           this.blockAlert.set(null);
           this.audit(row, 'success');
           this.refreshData();
@@ -418,16 +419,18 @@ export class MesasListComponent implements OnInit {
     void this.router.navigate(['/alumno/situacion-academica']);
   }
 
-  isActionBlocked(row: ExamCallRow): boolean {
-    return !!this.resolveBlock(row);
-  }
-
   blockTooltip(row: ExamCallRow): string | undefined {
     return this.resolveBlock(row)?.message || undefined;
   }
 
   isEnrolled(row: ExamCallRow): boolean {
-    return Boolean(row.table?.duplicateEnrollment);
+    return Boolean(row.table?.duplicateEnrollment) || this.enrolledLocal.has(row.call.id);
+  }
+
+  isActionBlocked(row: ExamCallRow): boolean {
+    // No permitir acción si ya quedó inscripto (optimista o por backend)
+    if (this.isEnrolled(row)) return true;
+    return !!this.resolveBlock(row);
   }
 
   stateLabel(state: StudentWindowState): string {
