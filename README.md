@@ -35,3 +35,6 @@
 - Traefik configuration lives in `traefik/traefik.yml` (static) and `traefik/dynamic.yml` (middlewares). Certificates are stored in the `traefik_letsencrypt` volume.
 - `deploy/nginx.conf` is not used anymore; Traefik acts as the reverse proxy and TLS terminator for both services.
 - Validate the stack with `docker compose --profile local config` or `docker compose --profile prod config`.
+
+### Variables de entorno
+- `DBML_DSN`: cadena de conexión que usa `npm run dbml` para generar el archivo `database.dbml` sin exponer credenciales en texto plano (por ejemplo `postgresql://user:pass@localhost:5432/SIAD?schemas=public`).

@@ -28,44 +28,29 @@ export class FinalExamTableService {
 
   async list(id?: number) {
     const qb = this.tableRepo
-      .createQueryBuilder('t')
-      .leftJoin('users', 'u', 'u.id = t.created_by')
+      .createQueryBuilder("t")
+      .leftJoin("users", "u", "u.id = t.created_by")
       .select([
-        't.id AS id',
-        't.name AS name',
+        "t.id AS id",
+        "t.name AS name",
         "to_char(t.start_date, 'YYYY-MM-DD') AS start_date",
         "to_char(t.end_date, 'YYYY-MM-DD') AS end_date",
-        't.created_by AS created_by',
-        'u.id AS created_by_user_id',
-        'u.name AS created_by_user_name',
-        'u.last_name AS created_by_user_last_name',
-        'u.email AS created_by_user_email',
+        "t.created_by AS created_by",
+        "u.id AS created_by_user_id",
+        "u.name AS created_by_user_name",
+        "u.last_name AS created_by_user_last_name",
+        "u.email AS created_by_user_email",
       ])
-      .orderBy('t.start_date', 'DESC')
-      .addOrderBy('t.id', 'DESC');
+      .orderBy("t.start_date", "DESC")
+      .addOrderBy("t.id", "DESC");
 
-    if (id) qb.where('t.id = :id', { id });
+    if (id) qb.where("t.id = :id", { id });
 
     const rows = await qb.getRawMany();
-    if (id && !rows.length) throw new NotFoundException('Exam table not found');
+    if (id && !rows.length) throw new NotFoundException("Exam table not found");
 
-    const mapRow = (r: any) => ({
-      id: r.id,
-      name: r.name,
-      start_date: r.start_date,
-      end_date: r.end_date,
-      created_by: r.created_by,
-      createdByUser: r.created_by_user_id
-        ? {
-            id: r.created_by_user_id,
-            name: r.created_by_user_name,
-            last_name: r.created_by_user_last_name,
-            email: r.created_by_user_email,
-          }
-        : undefined,
-    });
-
-    return id ? mapRow(rows[0]) : rows.map(mapRow);
+    const mapped = rows.map((r) => this.mapRawRow(r));
+    return id ? mapped[0] : mapped;
   }
 
   async init(dto: InitFinalExamTableDto) {
@@ -81,7 +66,8 @@ export class FinalExamTableService {
       endDate: end,
       createdBy: dto.created_by ?? null,
     });
-    return this.tableRepo.save(row);
+    const saved = await this.tableRepo.save(row);
+    return this.mapEntity(saved);
   }
 
   async edit(id: number, dto: EditFinalExamTableDto) {
@@ -95,7 +81,9 @@ export class FinalExamTableService {
     }
 
     const finals = await this.finalRepo.find({ where: { examTableId: id } });
-    const outOfRange = finals.find((f) => !dateInRange(f.examDate, nextStart, nextEnd));
+    const outOfRange = finals.find((f) =>
+      !dateInRange(f.examDate, nextStart, nextEnd)
+    );
     if (outOfRange) {
       throw new BadRequestException(
         "There are final exams outside the new date range",
@@ -105,7 +93,8 @@ export class FinalExamTableService {
     row.name = dto.name ?? row.name;
     row.startDate = nextStart;
     row.endDate = nextEnd;
-    return this.tableRepo.save(row);
+    const saved = await this.tableRepo.save(row);
+    return this.mapEntity(saved);
   }
 
   /**
@@ -125,6 +114,130 @@ export class FinalExamTableService {
 
     await this.tableRepo.remove(row);
     return { deleted: true };
+  }
+
+  private mapRawRow(row: any) {
+    const creator = row.created_by_user_id
+      ? {
+          id: row.created_by_user_id,
+          name: row.created_by_user_name,
+          last_name: row.created_by_user_last_name,
+          lastName: row.created_by_user_last_name,
+          email: row.created_by_user_email,
+        }
+      : undefined;
+
+    return this.composeResponse({
+      id: Number(row.id),
+      name: row.name,
+      start: row.start_date,
+      end: row.end_date,
+      createdBy: row.created_by ?? null,
+      createdByUser: creator,
+    });
+  }
+
+  private mapEntity(entity: ExamTable) {
+    const creator = entity.createdByUser
+      ? {
+          id: entity.createdByUser.id,
+          name: entity.createdByUser.name,
+          last_name: entity.createdByUser.lastName,
+          lastName: entity.createdByUser.lastName,
+          email: entity.createdByUser.email,
+        }
+      : undefined;
+
+    return this.composeResponse({
+      id: entity.id,
+      name: entity.name,
+      start: entity.startDate,
+      end: entity.endDate,
+      createdBy: entity.createdBy ?? null,
+      createdByUser: creator,
+    });
+  }
+
+  private composeResponse(input: {
+    id: number;
+    name: string;
+    start: Date | string | null;
+    end: Date | string | null;
+    createdBy: string | null;
+    createdByUser?:
+      | {
+          id: string;
+          name?: string;
+          last_name?: string | null;
+          lastName?: string | null;
+          email?: string | null;
+        }
+      | undefined;
+  }) {
+    const startIso = this.toIsoDate(input.start);
+    const endIso = this.toIsoDate(input.end);
+    const windowState = this.resolveWindowState(startIso, endIso);
+    return {
+      id: input.id,
+      name: input.name,
+      start_date: startIso,
+      startDate: startIso,
+      end_date: endIso,
+      endDate: endIso,
+      window_state: windowState,
+      windowState,
+      window: {
+        label: input.name,
+        opensAt: startIso,
+        closesAt: endIso,
+        state: windowState,
+        message: null,
+      },
+      visibility: {
+        students: true,
+        staff: true,
+      },
+      quota: {
+        max: null,
+        used: null,
+      },
+      created_by: input.createdBy,
+      createdBy: input.createdBy,
+      createdByUser: input.createdByUser
+        ? {
+            id: input.createdByUser.id,
+            name: input.createdByUser.name ?? null,
+            last_name: input.createdByUser.last_name ?? input.createdByUser.lastName ?? null,
+            lastName: input.createdByUser.last_name ?? input.createdByUser.lastName ?? null,
+            email: input.createdByUser.email ?? null,
+          }
+        : undefined,
+    };
+  }
+
+  private toIsoDate(value: Date | string | null | undefined): string | null {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 10);
+    }
+    if (typeof value === "string" && value.length >= 10) {
+      return value.includes("T") ? value.slice(0, 10) : value;
+    }
+    return null;
+  }
+
+  private resolveWindowState(
+    start?: string | null,
+    end?: string | null,
+  ): "open" | "upcoming" | "past" | "closed" {
+    if (!start || !end) return "closed";
+    const from = Date.parse(start);
+    const to = Date.parse(end);
+    if (Number.isNaN(from) || Number.isNaN(to)) return "closed";
+    const now = Date.now();
+    if (now < from) return "upcoming";
+    if (now > to) return "past";
+    return "open";
   }
 }
 

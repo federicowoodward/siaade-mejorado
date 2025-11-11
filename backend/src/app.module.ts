@@ -17,15 +17,16 @@ import { NoticesModule } from "./modules/notices/notices.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
 import { SubjectsModule } from "./subjects/subjects.module";
 import { CareersModule } from "./modules/careers/careers.module";
+import { StudentInscriptionsModule } from "./modules/student_inscriptions/student-inscriptions.module";
 import { PrerequisitesModule } from "./modules/prerequisites/prerequisites.module";
 import { StudentsReadModule } from "./modules/students/read/students.module";
-import { StudentInscriptionsModule } from "./modules/student_inscriptions/student-inscriptions.module";
-
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
+
+
 @Module({
   imports: [
-    ConfigModule,
+        ConfigModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [TYPEORM_OPTIONS],
@@ -47,10 +48,10 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     NoticesModule,
     CatalogsModule,
     CareersModule,
+    StudentInscriptionsModule,
     SubjectsModule,
     PrerequisitesModule,
     StudentsReadModule,
-    StudentInscriptionsModule,
   ],
   providers: [
     {

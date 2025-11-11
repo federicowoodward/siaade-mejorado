@@ -1,13 +1,16 @@
 // src/app/features/exams/services/exam-tables.service.ts
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { ExamTable } from '../models/exam_table.model';
 
 @Injectable({ providedIn: 'root' })
 export class ExamTablesService {
   private base = 'finals/exam-table';
+  private cache: ExamTable[] | null = null;
+  private cacheTimestamp = 0;
+  private readonly cacheTtlMs = 60_000;
 
   constructor(private api: ApiService) {}
 
@@ -36,12 +39,19 @@ export class ExamTablesService {
   });
 
   // --- API calls ---
-  list(): Observable<ExamTable[]> {
+  list(forceRefresh = false): Observable<ExamTable[]> {
+    if (!forceRefresh && this.cache && this.isCacheFresh()) {
+      return of(this.cache);
+    }
     return this.api.request<any>('GET', `${this.base}/list`).pipe(
       map((resp) =>
         Array.isArray(resp) ? resp : resp?.data ?? resp?.items ?? []
       ),
-      map((arr: any[]) => arr.map(this.toExamTable))
+      map((arr: any[]) => arr.map(this.toExamTable)),
+      tap((rows) => {
+        this.cache = rows;
+        this.cacheTimestamp = Date.now();
+      })
     );
   }
 
@@ -53,7 +63,9 @@ export class ExamTablesService {
   }
 
   create(
-    dto: Pick<ExamTable, 'name' | 'start_date' | 'end_date' | 'created_by'>
+    dto: Pick<ExamTable, 'name' | 'start_date' | 'end_date'> & {
+      created_by?: string;
+    }
   ): Observable<ExamTable> {
     const payload = {
       name: dto.name,
@@ -63,7 +75,8 @@ export class ExamTablesService {
     };
     return this.api.request<any>('POST', `${this.base}/init`, payload).pipe(
       map((resp) => ('data' in resp ? resp.data : resp)),
-      map(this.toExamTable)
+      map(this.toExamTable),
+      tap(() => this.invalidateCache())
     );
   }
 
@@ -82,11 +95,24 @@ export class ExamTablesService {
       .request<any>('PUT', `${this.base}/edit/${id}`, payload)
       .pipe(
         map((resp) => ('data' in resp ? resp.data : resp)),
-        map(this.toExamTable)
+        map(this.toExamTable),
+        tap(() => this.invalidateCache())
       );
   }
 
   delete(id: number): Observable<void> {
-    return this.api.request<void>('DELETE', `${this.base}/delete/${id}`);
+    return this.api
+      .request<void>('DELETE', `${this.base}/delete/${id}`)
+      .pipe(tap(() => this.invalidateCache()));
+  }
+
+  invalidateCache(): void {
+    this.cache = null;
+    this.cacheTimestamp = 0;
+  }
+
+  private isCacheFresh(): boolean {
+    if (!this.cache) return false;
+    return Date.now() - this.cacheTimestamp < this.cacheTtlMs;
   }
 }

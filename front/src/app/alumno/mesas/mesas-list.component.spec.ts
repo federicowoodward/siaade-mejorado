@@ -6,6 +6,7 @@ import { MessageService } from 'primeng/api';
 import { MesasListComponent } from './mesas-list.component';
 import { StudentInscriptionsService } from '../../core/services/student-inscriptions.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ExamTableSyncService } from '../../core/services/exam-table-sync.service';
 
 class InscriptionsStub {
   tables = signal<any[]>([]);
@@ -21,6 +22,14 @@ class AuthStub {
   getUserId = jasmine.createSpy('getUserId').and.returnValue('student-1');
 }
 
+class SyncStub {
+  changes$ = of();
+  consumePendingFlag = jasmine
+    .createSpy('consumePendingFlag')
+    .and.returnValue(false);
+  notify = jasmine.createSpy('notify');
+}
+
 describe('MesasListComponent', () => {
   let component: MesasListComponent;
   let fixture: ComponentFixture<MesasListComponent>;
@@ -33,6 +42,7 @@ describe('MesasListComponent', () => {
         { provide: AuthService, useClass: AuthStub },
         { provide: MessageService, useValue: { add: () => undefined } },
         { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
+        { provide: ExamTableSyncService, useClass: SyncStub },
       ],
     }).compileComponents();
 

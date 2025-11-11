@@ -81,6 +81,12 @@ export class QuickAccessComponent {
         route: ["/subjects"],
       },
       {
+        label: "Finales",
+        icon: "pi pi-book",
+        description: "Publica mesas y gestiona llamados para tus cursos.",
+        route: ["/final_examns"],
+      },
+      {
         label: "Usuarios",
         icon: "pi pi-users",
         description: "Accede a datos de estudiantes.",

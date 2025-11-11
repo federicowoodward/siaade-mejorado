@@ -829,88 +829,170 @@ export class SubjectsService {
     return row;
   }
 
-    async toggleSubjectEnrollmentRich(
-    subjectCommissionId: number,
-    studentId: string,
-    action: EnrollmentAction,
-    actor: EnrollmentActor
-  ): Promise<ToggleEnrollmentResponseDto> {
-    if (!studentId) {
-      throw new BadRequestException("studentId is required");
-    }
-    const commission = await this.subjectCommissionRepo.findOne({
-      where: { id: subjectCommissionId },
-      relations: ['subject'],
-    });
-    if (!commission || !commission.subject?.id) {
-      throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
-    }
-
-    await this.assertNotBlocked(studentId);
-
-    const subjectId = commission.subject.id;
-    let record = await this.subjectStudentRepo.findOne({
-      where: { subjectId, studentId },
-    });
-
-    if (action === 'enroll') {
-      const now = new Date();
-      if (!record) {
-        record = this.subjectStudentRepo.create({ subjectId, studentId });
-      }
-      record.commissionId = subjectCommissionId;
-      record.enrollmentDate = now;
-      record.enrolledBy = actor;
-      await this.subjectStudentRepo.save(record);
-    } else if (action === 'unenroll') {
-      if (record) {
-        record.commissionId = null;
-        record.enrollmentDate = null;
-        record.enrolledBy = null;
-        await this.subjectStudentRepo.save(record);
-      }
-    } else {
-      throw new BadRequestException('Unsupported enrollment action');
-    }
-
-    const finalRow = await this.subjectStudentRepo.findOne({
-      where: { subjectId, studentId },
-    });
-    const enrolled = !!finalRow?.commissionId && finalRow.commissionId === subjectCommissionId && action === 'enroll';
-    const enrolledAt = finalRow?.enrollmentDate
-      ? new Date(finalRow.enrollmentDate).toISOString()
-      : null;
-    const enrolledBy = (finalRow as any)?.enrolledBy ?? null;
-    const condition = enrolled ? null : 'No inscripto';
-
-    return {
-      entity: 'subject',
-      action,
-      enrolled,
-      enrolled_by: enrolledBy,
-      enrolled_at: enrolledAt,
-      student_id: studentId,
-      subject_id: subjectId,
-      subject_commission_id: subjectCommissionId,
-      commission_id: finalRow?.commissionId ?? null,
-      condition,
-    };
-  }
-
-  async toggleSubjectEnrollment(
-    subjectCommissionId: number,
-    studentId: string,
-    action: EnrollmentAction,
-    actor: EnrollmentActor
-  ) {
-    return this.toggleSubjectEnrollmentRich(
-      subjectCommissionId,
-      studentId,
-      action,
-      actor
-    );
-  }
-
+    async toggleSubjectEnrollmentRich(
+
+    subjectCommissionId: number,
+
+    studentId: string,
+
+    action: EnrollmentAction,
+
+    actor: EnrollmentActor
+
+  ): Promise<ToggleEnrollmentResponseDto> {
+
+    if (!studentId) {
+
+      throw new BadRequestException("studentId is required");
+
+    }
+
+    const commission = await this.subjectCommissionRepo.findOne({
+
+      where: { id: subjectCommissionId },
+
+      relations: ['subject'],
+
+    });
+
+    if (!commission || !commission.subject?.id) {
+
+      throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
+
+    }
+
+
+
+    await this.assertNotBlocked(studentId);
+
+
+
+    const subjectId = commission.subject.id;
+
+    let record = await this.subjectStudentRepo.findOne({
+
+      where: { subjectId, studentId },
+
+    });
+
+
+
+    if (action === 'enroll') {
+
+      const now = new Date();
+
+      if (!record) {
+
+        record = this.subjectStudentRepo.create({ subjectId, studentId });
+
+      }
+
+      record.commissionId = subjectCommissionId;
+
+      record.enrollmentDate = now;
+
+      record.enrolledBy = actor;
+
+      await this.subjectStudentRepo.save(record);
+
+    } else if (action === 'unenroll') {
+
+      if (record) {
+
+        record.commissionId = null;
+
+        record.enrollmentDate = null;
+
+        record.enrolledBy = null;
+
+        await this.subjectStudentRepo.save(record);
+
+      }
+
+    } else {
+
+      throw new BadRequestException('Unsupported enrollment action');
+
+    }
+
+
+
+    const finalRow = await this.subjectStudentRepo.findOne({
+
+      where: { subjectId, studentId },
+
+    });
+
+    const enrolled = !!finalRow?.commissionId && finalRow.commissionId === subjectCommissionId && action === 'enroll';
+
+    const enrolledAt = finalRow?.enrollmentDate
+
+      ? new Date(finalRow.enrollmentDate).toISOString()
+
+      : null;
+
+    const enrolledBy = (finalRow as any)?.enrolledBy ?? null;
+
+    const condition = enrolled ? null : 'No inscripto';
+
+
+
+    return {
+
+      entity: 'subject',
+
+      action,
+
+      enrolled,
+
+      enrolled_by: enrolledBy,
+
+      enrolled_at: enrolledAt,
+
+      student_id: studentId,
+
+      subject_id: subjectId,
+
+      subject_commission_id: subjectCommissionId,
+
+      commission_id: finalRow?.commissionId ?? null,
+
+      condition,
+
+    };
+
+  }
+
+
+
+  async toggleSubjectEnrollment(
+
+    subjectCommissionId: number,
+
+    studentId: string,
+
+    action: EnrollmentAction,
+
+    actor: EnrollmentActor
+
+  ) {
+
+    return this.toggleSubjectEnrollmentRich(
+
+      subjectCommissionId,
+
+      studentId,
+
+      action,
+
+      actor
+
+    );
+
+  }
+
+
+
   private normalizePartials(value: number | null | undefined): 2 | 4 {
     return value === 4 ? 4 : 2;
   }
