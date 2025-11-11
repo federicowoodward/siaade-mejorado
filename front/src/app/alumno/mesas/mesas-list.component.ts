@@ -18,6 +18,7 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageService } from 'primeng/api';
+import { ApiService } from '../../core/services/api.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -33,6 +34,7 @@ import {
   BlockMessageAction,
 } from '../../shared/block-message/block-message.component';
 import { AuthService } from '../../core/services/auth.service';
+import { ROLE } from '../../core/auth/roles';
 
 interface ExamCallRow {
   mesaId: number;
@@ -121,6 +123,7 @@ const BLOCK_COPY: Record<
 export class MesasListComponent implements OnInit {
   private readonly inscriptions = inject(StudentInscriptionsService);
   private readonly auth = inject(AuthService);
+  private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messages = inject(MessageService);
   private readonly router = inject(Router);
@@ -160,6 +163,8 @@ export class MesasListComponent implements OnInit {
   private lastActionTrigger: HTMLElement | null = null;
   // Marca local optimista para evitar re-inscripciones mientras llega el refresh
   private enrolledLocal = new Set<number>();
+  private get enrolledStorageKey() { return 'mesas_enrolled_calls'; }
+  isStudent = false;
   readonly blockAlert = signal<{
     title: string;
     message: string | string[];
@@ -187,6 +192,18 @@ export class MesasListComponent implements OnInit {
     if (Number.isFinite(subjectId)) {
       this.filters.subjectId = subjectId;
     }
+    // Rol actual
+    this.auth.getUser().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((u) => {
+      this.isStudent = (u?.role ?? null) === ROLE.STUDENT;
+    });
+    // Cargar estado optimista persistido para esta sesión
+    try {
+      const raw = sessionStorage.getItem(this.enrolledStorageKey);
+      if (raw) {
+        const arr = JSON.parse(raw) as number[];
+        if (Array.isArray(arr)) arr.forEach((id) => this.enrolledLocal.add(Number(id)));
+      }
+    } catch {}
     this.loadTables();
   }
 
@@ -258,6 +275,7 @@ export class MesasListComponent implements OnInit {
           // Optimista: marcar la materia como inscripta para esta mesa
           try { (row.table as any).duplicateEnrollment = true; } catch {}
           this.enrolledLocal.add(row.call.id);
+          this.persistEnrolledLocal();
           this.blockAlert.set(null);
           this.audit(row, 'success');
           this.refreshData();
@@ -431,6 +449,29 @@ export class MesasListComponent implements OnInit {
     // No permitir acción si ya quedó inscripto (optimista o por backend)
     if (this.isEnrolled(row)) return true;
     return !!this.resolveBlock(row);
+  }
+
+  private persistEnrolledLocal(): void {
+    try {
+      sessionStorage.setItem(this.enrolledStorageKey, JSON.stringify(Array.from(this.enrolledLocal.values())));
+    } catch {}
+  }
+
+  onUnenroll(row: ExamCallRow): void {
+    const studentId = this.auth.getUserId();
+    if (!studentId) return;
+    this.api.toggleFinalEnrollment({ finalExamId: row.call.id, studentId, action: 'unenroll' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.messages.add({ severity: 'success', summary: 'Inscripción anulada', detail: `${row.subjectName} - ${row.call.label}`, life: 3000 });
+          try { (row.table as any).duplicateEnrollment = false; } catch {}
+          this.enrolledLocal.delete(row.call.id);
+          this.persistEnrolledLocal();
+          this.refreshData();
+        },
+        error: () => this.messages.add({ severity: 'error', summary: 'No se pudo anular', life: 3000 }),
+      });
   }
 
   stateLabel(state: StudentWindowState): string {

@@ -179,7 +179,20 @@
                 />
               </ng-container>
               <ng-template #enrolledTag>
-                <p-tag severity="success" value="Inscripto" />
+                <ng-container *ngIf="isStudent; else enrolledBadge">
+                  <p-button
+                    type="button"
+                    label="Desinscribirme"
+                    icon="pi pi-times"
+                    size="small"
+                    severity="danger"
+                    (onClick)="onUnenroll(row)"
+                    ariaLabel="Desinscribirme de {{ row.subjectName }} - {{ row.call.label }}"
+                  />
+                </ng-container>
+                <ng-template #enrolledBadge>
+                  <p-tag severity="success" value="Inscripto" />
+                </ng-template>
               </ng-template>
             </td>
           </tr>
