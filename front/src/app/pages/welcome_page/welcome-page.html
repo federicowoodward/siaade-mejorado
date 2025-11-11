@@ -1,29 +1,66 @@
-<!-- Banner principal -->
-<div class="banner h-10rem flex align-items-center px-4 bg-primary text-white">
-  <div class="flex align-items-center gap-3">
-    <div>
-      <h1 class="text-2xl font-bold">Sistema Académico Quality</h1>
-      <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
-    </div>
-  </div>
-  <div class="ml-auto text-right">
-  </div>
-</div>
-
-<!-- Aviso de bloqueo (persistente mientras isBlocked=true) -->
-<div *ngIf="authService.isLoggedIn() && (blockedUser$ | async)?.isBlocked" class="p-3 m-3 border-round bg-red-100 text-red-800">
-  <div class="flex align-items-start gap-2">
-    <span class="font-bold">Cuenta bloqueada</span>
-    <span class="text-sm">{{ (blockedUser$ | async)?.blockedReason || 'Contactá a administración para más información.' }}</span>
-  </div>
-  <p class="mt-2 text-xs opacity-70">Mientras la cuenta esté bloqueada no podrás realizar inscripciones ni modificaciones académicas.</p>
-</div>
-
-<!-- Quick Access -->
-<div class="p-4">
-  <p class="text-gray-500 mb-4">
-    Aquí encontrarás tus accesos rápidos e información importante.
-  </p>
-
-  <app-quick-access></app-quick-access>
-</div>
+<!-- // TODO: REVIEW_CONFLICT_SIAD [logic]
+/* incoming_branch_snapshot:
+   <!-- Banner principal -->
+   <div class="banner h-10rem flex align-items-center px-4 bg-primary text-white">
+     <div class="flex align-items-center gap-3">
+       <div>
+         <h1 class="text-2xl font-bold">Sistema Académico Quality</h1>
+         <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
+       </div>
+     </div>
+     <div class="ml-auto text-right">
+     </div>
+   </div>
+   
+   <!-- Aviso de bloqueo (persistente mientras isBlocked=true) -->
+   <div *ngIf="authService.isLoggedIn() && (blockedUser$ | async)?.isBlocked" class="p-3 m-3 border-round bg-red-100 text-red-800">
+     <div class="flex align-items-start gap-2">
+       <span class="font-bold">Cuenta bloqueada</span>
+       <span class="text-sm">{{ (blockedUser$ | async)?.blockedReason || 'Contactá a administración para más información.' }}</span>
+     </div>
+     <p class="mt-2 text-xs opacity-70">Mientras la cuenta esté bloqueada no podrás realizar inscripciones ni modificaciones académicas.</p>
+   </div>
+   
+   <!-- Quick Access -->
+   <div class="p-4">
+     <p class="text-gray-500 mb-4">
+       Aquí encontrarás tus accesos rápidos e información importante.
+     </p>
+   
+     <app-quick-access></app-quick-access>
+   </div>
+   
+   <!-- Modal de cambio de contraseña obligatorio -->
+   <app-first-password-change-modal *ngIf="showPasswordChangeModal()"></app-first-password-change-modal>
+*/
+-->
+<!-- Banner principal -->
+<div class="banner h-10rem flex align-items-center px-4 bg-primary text-white">
+  <div class="flex align-items-center gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Sistema Académico Quality</h1>
+      <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
+    </div>
+  </div>
+  <div class="ml-auto text-right">
+  </div>
+</div>
+
+<!-- Aviso de bloqueo (persistente mientras isBlocked=true) -->
+<div *ngIf="authService.isLoggedIn() && (blockedUser$ | async)?.isBlocked" class="p-3 m-3 border-round bg-red-100 text-red-800">
+  <div class="flex align-items-start gap-2">
+    <span class="font-bold">Cuenta bloqueada</span>
+    <span class="text-sm">{{ (blockedUser$ | async)?.blockedReason || 'Contactá a administración para más información.' }}</span>
+  </div>
+  <p class="mt-2 text-xs opacity-70">Mientras la cuenta esté bloqueada no podrás realizar inscripciones ni modificaciones académicas.</p>
+</div>
+
+<!-- Quick Access -->
+<div class="p-4">
+  <p class="text-gray-500 mb-4">
+    Aquí encontrarás tus accesos rápidos e información importante.
+  </p>
+
+  <app-quick-access></app-quick-access>
+</div>
+<!-- // KEEP: HEAD (lógica vigente hasta revisión) -->

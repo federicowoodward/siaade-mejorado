@@ -1,107 +1,244 @@
-<div class="m-w-custom">
-  <div class="flex justify-content-between align-items-center mb-3">
-    <h2 class="m-0">
-      Examen • {{ exam()?.subject_name || 'Materia' }}
-      <small class="text-color-secondary block">
-        Fecha: {{ exam()?.exam_date }} • Hora: {{ exam()?.exam_time }} • Aula:
-        {{ exam()?.aula || '—' }}
-      </small>
-    </h2>
-
-    <div class="flex gap-2">
-      <p-button
-        label="Volver a la mesa"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        (onClick)="back()"
-      ></p-button>
-    </div>
-  </div>
-
-  <p-table
-    [value]="rows()"
-    responsiveLayout="scroll"
-    [paginator]="true"
-    [rows]="10"
-    [loading]="loading()"
-    [tableStyle]="{ 'min-width': '60rem' }"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Alumno</th>
-        <th style="width: 9rem">Estado</th>
-        <th style="width: 10rem">Nota</th>
-        <th>Observaciones</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-row>
-      <tr>
-        <td class="font-medium">{{ row.name }}</td>
-
-        <td class="flex flex-column justify-content-center w-12rem h-5rem">
-          <p-tag
-            *ngIf="row.enrolled_at; else noIns"
-            severity="info"
-            styleClass="w-full"
-          >
-            <div class="w-full text-center">
-              Inscripto el<br />
-              <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
-            </div>
-          </p-tag>
-
-          <ng-template #noIns>
-            <p-tag severity="warn" styleClass="w-full">
-              <div class="w-full text-center">No inscripto</div>
-            </p-tag>
-          </ng-template>
-        </td>
-
-        <td>
-          <p-inputNumber
-            [min]="0"
-            [max]="10"
-            [step]="0.5"
-            [useGrouping]="false"
-            mode="decimal"
-            [(ngModel)]="row.score"
-            inputStyleClass="w-7rem"
-            [disabled]="!canEditScores()"
-          ></p-inputNumber>
-        </td>
-
-        <td>
-          <input
-            pInputText
-            class="w-full"
-            [(ngModel)]="row.notes"
-            placeholder="Notas del acta (opcional)"
-            [disabled]="!canEditNotes()"
-          />
-        </td>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="4">
-          <div class="flex align-items-center gap-2">
-            <i class="pi pi-inbox"></i>
-            No hay alumnos para este examen.
-          </div>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
-
-  <div class="flex justify-end mt-3">
-    <p-button
-      label="Guardar cambios"
-      icon="pi pi-check"
-      [disabled]="true"
-      blockedAction
-      pTooltip="MVP: sin persistencia"
-    ></p-button>
-  </div>
-</div>
+<!-- // TODO: REVIEW_CONFLICT_SIAD [logic]
+/* incoming_branch_snapshot:
+   <div class="m-w-custom">
+     <p-toast></p-toast>
+     <div class="flex justify-content-between align-items-center mb-3">
+       <h2 class="m-0">
+         Examen • {{ exam()?.subject_name || 'Materia' }}
+         <small class="text-color-secondary block">
+           Fecha: {{ exam()?.exam_date }} • Hora: {{ exam()?.exam_time }} • Aula:
+           {{ exam()?.aula || '—' }}
+         </small>
+       </h2>
+   
+       <div class="flex gap-2">
+         <p-button
+           label="Volver a la mesa"
+           icon="pi pi-arrow-left"
+           severity="secondary"
+           (onClick)="back()"
+         ></p-button>
+       </div>
+     </div>
+   
+     <p-table
+       [value]="rows()"
+       responsiveLayout="scroll"
+       [paginator]="true"
+       [rows]="10"
+       [loading]="loading()"
+       [tableStyle]="{ 'min-width': '60rem' }"
+     >
+       <ng-template pTemplate="header">
+         <tr>
+           <th>Alumno</th>
+           <th style="width: 9rem">Estado</th>
+           <th style="width: 10rem">Nota</th>
+           <th>Observaciones</th>
+         </tr>
+       </ng-template>
+   
+       <ng-template pTemplate="body" let-row>
+         <tr>
+           <td class="font-medium">{{ row.name }}</td>
+   
+           <td class="flex flex-column justify-content-center w-12rem h-5rem">
+             <p-tag
+               *ngIf="row.enrolled_at; else noIns"
+               severity="info"
+               styleClass="w-full"
+             >
+             <!-- boton para manejar inscripcion solamente para rol preceptor aca, ver docs/roles-visibility.md -->
+               <div class="w-full text-center">
+                 Inscripto el<br />
+                 <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
+               </div>
+             </p-tag>
+   
+             <ng-template #noIns>
+               <p-tag severity="warn" styleClass="w-full">
+                 <div class="w-full text-center">No inscripto</div>
+               </p-tag>
+             </ng-template>
+             <div class="mt-2" *appCanAnyRole="['PRECEPTOR']">
+               <p-button
+                 *ngIf="row.enrolled_at; else insBtn"
+                 label="Desinscribir"
+                 icon="pi pi-user-minus"
+                 severity="danger"
+                 size="small"
+                 [loading]="loadingRow() === row.student_id"
+                 (onClick)="onToggleExamEnrollment(row, 'unenroll')"
+                 blockedAction
+               ></p-button>
+               <ng-template #insBtn>
+                 <p-button
+                   label="Inscribir"
+                   icon="pi pi-user-plus"
+                   severity="success"
+                   size="small"
+                   [loading]="loadingRow() === row.student_id"
+                   (onClick)="onToggleExamEnrollment(row, 'enroll')"
+                   blockedAction
+                 ></p-button>
+               </ng-template>
+             </div>
+           </td>
+   
+           <td>
+             <p-inputNumber
+               [min]="0"
+               [max]="10"
+               [step]="0.5"
+               [useGrouping]="false"
+               mode="decimal"
+               [(ngModel)]="row.score"
+               inputStyleClass="w-7rem"
+               [disabled]="!canEditScores()"
+             ></p-inputNumber>
+           </td>
+   
+           <td>
+             <input
+               pInputText
+               class="w-full"
+               [(ngModel)]="row.notes"
+               placeholder="Notas del acta (opcional)"
+               [disabled]="!canEditNotes()"
+             />
+           </td>
+         </tr>
+       </ng-template>
+   
+       <ng-template pTemplate="emptymessage">
+         <tr>
+           <td colspan="4">
+             <div class="flex align-items-center gap-2">
+               <i class="pi pi-inbox"></i>
+               No hay alumnos para este examen.
+             </div>
+           </td>
+         </tr>
+       </ng-template>
+     </p-table>
+   
+     <div class="flex justify-end mt-3">
+       <p-button
+         label="Guardar cambios"
+         icon="pi pi-check"
+         [disabled]="true"
+         blockedAction
+         pTooltip="MVP: sin persistencia"
+       ></p-button>
+     </div>
+   </div>
+*/
+-->
+<div class="m-w-custom">
+  <div class="flex justify-content-between align-items-center mb-3">
+    <h2 class="m-0">
+      Examen • {{ exam()?.subject_name || 'Materia' }}
+      <small class="text-color-secondary block">
+        Fecha: {{ exam()?.exam_date }} • Hora: {{ exam()?.exam_time }} • Aula:
+        {{ exam()?.aula || '—' }}
+      </small>
+    </h2>
+
+    <div class="flex gap-2">
+      <p-button
+        label="Volver a la mesa"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        (onClick)="back()"
+      ></p-button>
+    </div>
+  </div>
+
+  <p-table
+    [value]="rows()"
+    responsiveLayout="scroll"
+    [paginator]="true"
+    [rows]="10"
+    [loading]="loading()"
+    [tableStyle]="{ 'min-width': '60rem' }"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Alumno</th>
+        <th style="width: 9rem">Estado</th>
+        <th style="width: 10rem">Nota</th>
+        <th>Observaciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td class="font-medium">{{ row.name }}</td>
+
+        <td class="flex flex-column justify-content-center w-12rem h-5rem">
+          <p-tag
+            *ngIf="row.enrolled_at; else noIns"
+            severity="info"
+            styleClass="w-full"
+          >
+            <div class="w-full text-center">
+              Inscripto el<br />
+              <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
+            </div>
+          </p-tag>
+
+          <ng-template #noIns>
+            <p-tag severity="warn" styleClass="w-full">
+              <div class="w-full text-center">No inscripto</div>
+            </p-tag>
+          </ng-template>
+        </td>
+
+        <td>
+          <p-inputNumber
+            [min]="0"
+            [max]="10"
+            [step]="0.5"
+            [useGrouping]="false"
+            mode="decimal"
+            [(ngModel)]="row.score"
+            inputStyleClass="w-7rem"
+            [disabled]="!canEditScores()"
+          ></p-inputNumber>
+        </td>
+
+        <td>
+          <input
+            pInputText
+            class="w-full"
+            [(ngModel)]="row.notes"
+            placeholder="Notas del acta (opcional)"
+            [disabled]="!canEditNotes()"
+          />
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="4">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-inbox"></i>
+            No hay alumnos para este examen.
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <div class="flex justify-end mt-3">
+    <p-button
+      label="Guardar cambios"
+      icon="pi pi-check"
+      [disabled]="true"
+      blockedAction
+      pTooltip="MVP: sin persistencia"
+    ></p-button>
+  </div>
+</div>
+<!-- // KEEP: HEAD (lógica vigente hasta revisión) -->

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { Career } from './career.entity';
 import { Subject } from '@/entities/subjects/subject.entity';
 
@@ -34,24 +41,5 @@ export class CareerSubject {
   orderNo: number;
 }
 
-@Entity('subject_prerequisites_by_order')
-@Index(['careerId', 'subjectOrderNo', 'prereqOrderNo'], { unique: true })
-@Index(['careerId', 'subjectOrderNo'])
-@Index(['careerId', 'prereqOrderNo'])
-export class SubjectPrerequisiteByOrder {
-  @PrimaryGeneratedColumn()
-  id: number;
+export { SubjectPrerequisiteByOrder } from '@/entities/subjects/subject-prerequisite-by-order.entity';
 
-  @Column({ name: 'career_id', type: 'int' })
-  careerId: number;
-
-  @ManyToOne(() => Career, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'career_id' })
-  career: Career;
-
-  @Column({ name: 'subject_order_no', type: 'int' })
-  subjectOrderNo: number;
-
-  @Column({ name: 'prereq_order_no', type: 'int' })
-  prereqOrderNo: number;
-}

@@ -11,7 +11,10 @@
     "db:migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/datasource.ts",
     "db:migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/datasource.ts",
     "db:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:log -d src/database/datasource.ts",
-    "dbml": "db2dbml postgres \"postgresql://postgres:Joeldatabase%2A@localhost:5432/dbsiaade2?schemas=public\" -o database.dbml",
+    "db:schema:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/datasource.ts",
+    "db:reset:dev": "npm run db:schema:drop && npm run db:migration:run && npm run --if-present seed:dev",
+    "typeorm:migration:run": "npm run db:migration:run",
+    "dbml": "db2dbml postgres \"$DBML_DSN\" -o database.dbml",
     "migrate:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/datasource.js",
     "revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/datasource.js",
     "reseed:prod": "npm run revert:prod && npm run migrate:prod",
@@ -21,7 +24,8 @@
     "test:finals-admin": "ts-node -r tsconfig-paths/register src/scripts/test-finals-admin.ts",
     "seed:prod": "npm run migration:run",
     "seed:dummy": "npm run migration:run",
-    "unseed:dummy": "npm run migration:revert"
+    "unseed:dummy": "npm run migration:revert",
+    "test:prerequisites": "vitest run src/modules/prerequisites/__tests__/prerequisites.service.spec.ts"
   },
   "keywords": [],
   "author": "",
@@ -60,6 +64,7 @@
     "@types/passport-jwt": "^4.0.1",
     "nodemon": "^3.1.4",
     "ts-node-dev": "^2.0.0",
-    "tsc-alias": "^1.8.16"
+    "tsc-alias": "^1.8.16",
+    "vitest": "^4.0.8"
   }
 }

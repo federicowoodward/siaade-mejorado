@@ -1,279 +1,607 @@
-﻿<div class="m-w-custom">
-  <p-toast></p-toast>
-  <div class="pt-3">
-    <p-button label="Volver" icon="pi pi-arrow-left" (onClick)="back()" />
-  </div>
-
-  <div class="flex justify-content-between align-items-center mb-3">
-    <div>
-      <h2 class="m-0">Situacion academica:</h2>
-      <p class="">{{ subjectName() }}</p>
-    </div>
-    <div class="flex flex-column align-items-end gap-1">
-      <p-button
-        label="Guardar cambios"
-        icon="pi pi-save"
-        [disabled]="!hasPendingChanges() || saving()"
-        [loading]="saving()"
-        blockedAction
-        (onClick)="onSaveChanges()"
-      ></p-button>
-      <p-button
-        label="Recargar datos"
-        icon="pi pi-refresh"
-        [disabled]="saving()"
-        (onClick)="onReload()"
-      ></p-button>
-    </div>
-  </div>
-
-  <ng-container *ngIf="loading(); else loadedTpl">
-    <div class="center">
-      <p-progressSpinner ariaLabel="Cargando"></p-progressSpinner>
-    </div>
-  </ng-container>
-
-  <ng-template #loadedTpl>
-    <div *ngIf="error(); else contentTpl" class="error">{{ error() }}</div>
-  </ng-template>
-
-  <ng-template #contentTpl>
-    <div class="table-container">
-      <p-table
-        #dt
-        [value]="rows()"
-        [paginator]="true"
-        [rows]="15"
-        dataKey="studentId"
-        editMode="row"
-        responsiveLayout="scroll"
-        styleClass="p-datatable-sm p-datatable-gridlines"
-        [rowTrackBy]="rowsTrackBy"
-      >
-        <ng-template pTemplate="caption">
-          <div class="flex justify-content-between align-items-center">
-            <div class="flex gap-2">
-              <p-button
-                label="Limpiar filtros"
-                [outlined]="true"
-                icon="pi pi-filter-slash"
-                (onClick)="clearFilters(dt)"
-              ></p-button>
-            </div>
-
-            <div class="flex gap-3 align-items-center">
-              <input
-                pInputText
-                [ngModel]="searchTerm()"
-                (ngModelChange)="onSearchChange($event)"
-                placeholder="Buscar por nombre o CUIL"
-              />
-              <p-select
-                [options]="commissionSelectItems()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="selectedCommission()"
-                (onChange)="onCommissionChange($event.value)"
-              ></p-select>
-            </div>
-          </div>
-        </ng-template>
-
-        <ng-template pTemplate="header">
-          <!-- prettier-ignore -->
-          <tr>
-            <th pTooltip="Alumno" tooltipPosition="top" appendTo="body">Alumno</th>
-            <th pTooltip="Comisión" tooltipPosition="top" appendTo="body">Com.</th>
-            <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N° 1</th>
-            <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N° 2</th>
-            <th *ngIf="partials() === 4" pTooltip="Nota 3" tooltipPosition="top" appendTo="body">N° 3</th>
-            <th *ngIf="partials() === 4" pTooltip="Nota 4" tooltipPosition="top" appendTo="body">N° 4</th>
-            <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
-            <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
-            <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
-            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:10rem">Acc.</th>
-          </tr>
-          <!-- prettier-ignore-end -->
-        </ng-template>
-
-        <ng-template
-          pTemplate="body"
-          let-row
-          let-editing="editing"
-          let-ri="rowIndex"
-        >
-          <tr [pEditableRow]="row">
-            <td class="alumno-cell max-w-8rem">
-              <div class="flex flex-column">
-                <span class="font-medium">{{ row.fullName }}</span>
-                <small class="text-color-secondary">CUIL: {{ row.dni }}</small>
-              </div>
-            </td>
-            <td style="width: 1rem">
-              {{ row.commissionLetter || row.commissionId }}
-            </td>
-            <td class="note-cell">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    style="width: 4rem; height: 2.5rem"
-                    pInputText
-                    [(ngModel)]="row.note1"
-                    [ngModelOptions]="{ standalone: true }"
-                  />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ row.note1 ?? '-' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-            <td class="note-cell">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    style="width: 4rem; height: 2.5rem"
-                    pInputText
-                    [(ngModel)]="row.note2"
-                    [ngModelOptions]="{ standalone: true }"
-                  />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ row.note2 ?? '-' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-            <td *ngIf="partials() === 4" class="note-cell">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    style="width: 4rem; height: 2.5rem"
-                    pInputText
-                    [(ngModel)]="row.note3"
-                    [ngModelOptions]="{ standalone: true }"
-                  />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ row.note3 ?? '-' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-            <td *ngIf="partials() === 4" class="note-cell">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    style="width: 4rem; height: 2.5rem"
-                    pInputText
-                    [(ngModel)]="row.note4"
-                    [ngModelOptions]="{ standalone: true }"
-                  />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ row.note4 ?? '-' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-            <td class="final-cell" [ngClass]="finalClass(row.final)">
-              {{ row.final ?? '-' }}
-            </td>
-            <td class="note-cell" style="width: 6rem">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <span class="flex align-items-center gap-1">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      style="width: 4rem; height: 2.5rem"
-                      pInputText
-                      [(ngModel)]="row.attendancePercentage"
-                      [ngModelOptions]="{ standalone: true }"
-                    />
-                    <span>%</span>
-                  </span>
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ row.attendancePercentage !== null &&
-                  row.attendancePercentage !== undefined ?
-                  (row.attendancePercentage + '%') : '-' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-            <td style="width: 1rem">
-              <p-tag
-                *ngIf="row.condition; else noCondTpl"
-                [value]="row.condition!"
-                [severity]="conditionSeverity(row.condition)"
-              ></p-tag>
-              <ng-template #noCondTpl>-</ng-template>
-            </td>
-            <td>
-              <div class="flex items-center justify-center">
-                <button
-                  *ngIf="!editing"
-                  pButton
-                  pRipple
-                  type="button"
-                  pInitEditableRow
-                  icon="pi pi-pencil"
-                  (click)="onRowEditInit(row)"
-                  text
-                  rounded
-                  severity="secondary"
-                  blockedAction
-                ></button>
-                <button
-                  *ngIf="editing"
-                  pButton
-                  pRipple
-                  type="button"
-                  pSaveEditableRow
-                  icon="pi pi-check"
-                  (click)="onRowEditSave(row)"
-                  text
-                  rounded
-                  severity="secondary"
-                  blockedAction
-                ></button>
-                <button
-                  *ngIf="!editing"
-                  pButton
-                  pRipple
-                  type="button"
-                  icon="pi pi-arrow-right-arrow-left"
-                  pTooltip="Mover a otra comisión"
-                  tooltipPosition="top"
-                  (click)="$event.stopPropagation(); openMoveCommission(row)"
-                  text
-                  rounded
-                  severity="secondary"
-                  blockedAction
-                ></button>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-    <app-subject-move-commission-dialog
-      [visible]="moveDialog().visible"
-      [loading]="moveDialog().loading"
-      [currentCommissionId]="moveDialog().currentCommissionId"
-      [options]="moveCommissionOptions()"
-      [disableMove]="moveDialog().loading"
-      (cancel)="closeMoveDialog()"
-      (confirm)="confirmMoveCommission($event)"
-    ></app-subject-move-commission-dialog>
-  </ng-template>
-</div>
+<!-- // TODO: REVIEW_CONFLICT_SIAD [logic]
+/* incoming_branch_snapshot:
+   ﻿<div class="m-w-custom">
+     <p-toast></p-toast>
+     <div class="pt-3">
+       <p-button label="Volver" icon="pi pi-arrow-left" (onClick)="back()" />
+     </div>
+   
+     <div class="flex justify-content-between align-items-center mb-3">
+       <div>
+         <h2 class="m-0">Situacion academica:</h2>
+         <p class="">{{ subjectName() }}</p>
+       </div>
+       <div class="flex flex-column align-items-end gap-1">
+         <p-button
+           label="Guardar cambios"
+           icon="pi pi-save"
+           [disabled]="!hasPendingChanges() || saving()"
+           [loading]="saving()"
+           blockedAction
+           (onClick)="onSaveChanges()"
+         ></p-button>
+         <p-button
+           label="Recargar datos"
+           icon="pi pi-refresh"
+           [disabled]="saving()"
+           (onClick)="onReload()"
+         ></p-button>
+       </div>
+     </div>
+   
+     <ng-container *ngIf="loading(); else loadedTpl">
+       <div class="center">
+         <p-progressSpinner ariaLabel="Cargando"></p-progressSpinner>
+       </div>
+     </ng-container>
+   
+     <ng-template #loadedTpl>
+       <div *ngIf="error(); else contentTpl" class="error">{{ error() }}</div>
+     </ng-template>
+   
+     <ng-template #contentTpl>
+       <div class="table-container">
+         <p-table
+           #dt
+           [value]="rows()"
+           [paginator]="true"
+           [rows]="15"
+           dataKey="studentId"
+           editMode="row"
+           responsiveLayout="scroll"
+           styleClass="p-datatable-sm p-datatable-gridlines"
+           [rowTrackBy]="rowsTrackBy"
+           [stateStorage]="'local'"
+           [stateKey]="'subject-academic-' + subjectId"
+         >
+           <ng-template pTemplate="caption">
+             <div class="flex justify-content-between align-items-center">
+               <div class="flex gap-2">
+                 <p-button
+                   label="Limpiar filtros"
+                   [outlined]="true"
+                   icon="pi pi-filter-slash"
+                   (onClick)="clearFilters(dt)"
+                 ></p-button>
+               </div>
+   
+               <div class="flex gap-3 align-items-center">
+                 <input
+                   pInputText
+                   [ngModel]="searchTerm()"
+                   (ngModelChange)="onSearchChange($event)"
+                   placeholder="Buscar por nombre o CUIL"
+                 />
+                 <p-select
+                   [options]="commissionSelectItems()"
+                   optionLabel="label"
+                   optionValue="value"
+                   [ngModel]="selectedCommission()"
+                   (onChange)="onCommissionChange($event.value)"
+                 ></p-select>
+               </div>
+             </div>
+           </ng-template>
+   
+           <ng-template pTemplate="header">
+             <!-- prettier-ignore -->
+             <tr>
+               <th pTooltip="Alumno" tooltipPosition="top" appendTo="body">Alumno</th>
+               <th pTooltip="Comisión" tooltipPosition="top" appendTo="body">Com.</th>
+               <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N° 1</th>
+               <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N° 2</th>
+               <th *ngIf="partials() === 4" pTooltip="Nota 3" tooltipPosition="top" appendTo="body">N° 3</th>
+               <th *ngIf="partials() === 4" pTooltip="Nota 4" tooltipPosition="top" appendTo="body">N° 4</th>
+               <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
+               <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
+               <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
+               <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:10rem">Acc.</th>
+             </tr>
+             <!-- prettier-ignore-end -->
+           </ng-template>
+   
+           <ng-template
+             pTemplate="body"
+             let-row
+             let-editing="editing"
+             let-ri="rowIndex"
+           >
+             <tr [pEditableRow]="row">
+               <td class="alumno-cell max-w-8rem">
+                 <div class="flex flex-column">
+                   <span class="font-medium">{{ row.fullName }}</span>
+                   <small class="text-color-secondary">CUIL: {{ row.dni }}</small>
+                 </div>
+               </td>
+               <td style="width: 1rem">
+                 {{ row.commissionLetter || row.commissionId }}
+               </td>
+               <td class="note-cell">
+                 <p-cellEditor>
+                   <ng-template pTemplate="input">
+                     <input
+                       type="number"
+                       min="0"
+                       max="10"
+                       style="width: 4rem; height: 2.5rem"
+                       pInputText
+                       [(ngModel)]="row.note1"
+                       [ngModelOptions]="{ standalone: true }"
+                     />
+                   </ng-template>
+                   <ng-template pTemplate="output">
+                     {{ row.note1 ?? '-' }}
+                   </ng-template>
+                 </p-cellEditor>
+               </td>
+               <td class="note-cell">
+                 <p-cellEditor>
+                   <ng-template pTemplate="input">
+                     <input
+                       type="number"
+                       min="0"
+                       max="10"
+                       style="width: 4rem; height: 2.5rem"
+                       pInputText
+                       [(ngModel)]="row.note2"
+                       [ngModelOptions]="{ standalone: true }"
+                     />
+                   </ng-template>
+                   <ng-template pTemplate="output">
+                     {{ row.note2 ?? '-' }}
+                   </ng-template>
+                 </p-cellEditor>
+               </td>
+               <td *ngIf="partials() === 4" class="note-cell">
+                 <p-cellEditor>
+                   <ng-template pTemplate="input">
+                     <input
+                       type="number"
+                       min="0"
+                       max="10"
+                       style="width: 4rem; height: 2.5rem"
+                       pInputText
+                       [(ngModel)]="row.note3"
+                       [ngModelOptions]="{ standalone: true }"
+                     />
+                   </ng-template>
+                   <ng-template pTemplate="output">
+                     {{ row.note3 ?? '-' }}
+                   </ng-template>
+                 </p-cellEditor>
+               </td>
+               <td *ngIf="partials() === 4" class="note-cell">
+                 <p-cellEditor>
+                   <ng-template pTemplate="input">
+                     <input
+                       type="number"
+                       min="0"
+                       max="10"
+                       style="width: 4rem; height: 2.5rem"
+                       pInputText
+                       [(ngModel)]="row.note4"
+                       [ngModelOptions]="{ standalone: true }"
+                     />
+                   </ng-template>
+                   <ng-template pTemplate="output">
+                     {{ row.note4 ?? '-' }}
+                   </ng-template>
+                 </p-cellEditor>
+               </td>
+               <td class="final-cell" [ngClass]="finalClass(row.final)">
+                 {{ row.final ?? '-' }}
+               </td>
+               <td class="note-cell" style="width: 6rem">
+                 <p-cellEditor>
+                   <ng-template pTemplate="input">
+                     <span class="flex align-items-center gap-1">
+                       <input
+                         type="number"
+                         min="0"
+                         max="100"
+                         style="width: 4rem; height: 2.5rem"
+                         pInputText
+                         [(ngModel)]="row.attendancePercentage"
+                         [ngModelOptions]="{ standalone: true }"
+                       />
+                       <span>%</span>
+                     </span>
+                   </ng-template>
+                   <ng-template pTemplate="output">
+                     {{ row.attendancePercentage !== null &&
+                     row.attendancePercentage !== undefined ?
+                     (row.attendancePercentage + '%') : '-' }}
+                   </ng-template>
+                 </p-cellEditor>
+               </td>
+               <td style="width: 1rem">
+                 <ng-container *ngIf="row.condition; else condByEnrollmentTpl">
+                   <p-tag
+                     [value]="row.condition!"
+                     [severity]="conditionSeverity(row.condition)"
+                   ></p-tag>
+                 </ng-container>
+                 <ng-template #condByEnrollmentTpl>
+                   <p-tag
+                     [value]="row.enrolled ? 'Inscripto' : 'No inscripto'"
+                     [severity]="row.enrolled ? 'secondary' : 'warn'"
+                   ></p-tag>
+                 </ng-template>
+                 <!-- edición de condición reservada a preceptor (si aplica) -->
+               </td>
+               <td>
+                 <div class="flex items-center justify-center">
+                   <button
+                     *ngIf="!editing"
+                     pButton
+                     pRipple
+                     type="button"
+                     pTooltip="Editar notas/asistencia"
+                     tooltipPosition="top"
+                     pInitEditableRow
+                     icon="pi pi-pencil"
+                     (click)="onRowEditInit(row)"
+                     text
+                     rounded
+                     severity="secondary"
+                     blockedAction
+                   ></button>
+                   <button
+                     *ngIf="editing"
+                     pButton
+                     pRipple
+                     type="button"
+                     pSaveEditableRow
+                     icon="pi pi-check"
+                     (click)="onRowEditSave(row)"
+                     text
+                     rounded
+                     severity="secondary"
+                     blockedAction
+                   ></button>
+                   <button
+                     *ngIf="!editing"
+                     pButton
+                     pRipple
+                     type="button"
+                     icon="pi pi-arrow-right-arrow-left"
+                     pTooltip="Mover a otra comisión"
+                     tooltipPosition="top"
+                     (click)="$event.stopPropagation(); openMoveCommission(row)"
+                     text
+                     rounded
+                     severity="secondary"
+                     blockedAction
+                   ></button>
+                   <div
+                     class="flex items-center justify-center gap-2"
+                     *appCanAnyRole="['PRECEPTOR']"
+                   >
+                     <button
+                       pButton
+                       icon="pi pi-user-plus"
+                       pTooltip="Inscribir"
+                       tooltipPosition="top"
+                       *ngIf="!row.enrolled; else enrolledTpl"
+                       [disabled]="enrollmentLoading() === row.studentId"
+                       (click)="onToggleSubjectEnrollment(row, 'enroll')"
+                       text
+                       rounded
+                       severity="secondary"
+                       blockedAction
+                     ></button>
+                     <ng-template #enrolledTpl>
+                       <button
+                         pButton
+                         pRipple
+                         icon="pi pi-user-minus"
+                         pTooltip="Desinscribir"
+                         tooltipPosition="top"
+                         [disabled]="enrollmentLoading() === row.studentId"
+                         (click)="onToggleSubjectEnrollment(row, 'unenroll')"
+                         text
+                         rounded
+                         severity="secondary"
+                         blockedAction
+                       ></button>
+                     </ng-template>
+                   </div>
+                 </div>
+               </td>
+             </tr>
+           </ng-template>
+         </p-table>
+       </div>
+       <app-subject-move-commission-dialog
+         [visible]="moveDialog().visible"
+         [loading]="moveDialog().loading"
+         [currentCommissionId]="moveDialog().currentCommissionId"
+         [options]="moveCommissionOptions()"
+         [disableMove]="moveDialog().loading"
+         (cancel)="closeMoveDialog()"
+         (confirm)="confirmMoveCommission($event)"
+       ></app-subject-move-commission-dialog>
+     </ng-template>
+   </div>
+*/
+-->
+﻿<div class="m-w-custom">
+  <p-toast></p-toast>
+  <div class="pt-3">
+    <p-button label="Volver" icon="pi pi-arrow-left" (onClick)="back()" />
+  </div>
+
+  <div class="flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="m-0">Situacion academica:</h2>
+      <p class="">{{ subjectName() }}</p>
+    </div>
+    <div class="flex flex-column align-items-end gap-1">
+      <p-button
+        label="Guardar cambios"
+        icon="pi pi-save"
+        [disabled]="!hasPendingChanges() || saving()"
+        [loading]="saving()"
+        blockedAction
+        (onClick)="onSaveChanges()"
+      ></p-button>
+      <p-button
+        label="Recargar datos"
+        icon="pi pi-refresh"
+        [disabled]="saving()"
+        (onClick)="onReload()"
+      ></p-button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="loading(); else loadedTpl">
+    <div class="center">
+      <p-progressSpinner ariaLabel="Cargando"></p-progressSpinner>
+    </div>
+  </ng-container>
+
+  <ng-template #loadedTpl>
+    <div *ngIf="error(); else contentTpl" class="error">{{ error() }}</div>
+  </ng-template>
+
+  <ng-template #contentTpl>
+    <div class="table-container">
+      <p-table
+        #dt
+        [value]="rows()"
+        [paginator]="true"
+        [rows]="15"
+        dataKey="studentId"
+        editMode="row"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-sm p-datatable-gridlines"
+        [rowTrackBy]="rowsTrackBy"
+      >
+        <ng-template pTemplate="caption">
+          <div class="flex justify-content-between align-items-center">
+            <div class="flex gap-2">
+              <p-button
+                label="Limpiar filtros"
+                [outlined]="true"
+                icon="pi pi-filter-slash"
+                (onClick)="clearFilters(dt)"
+              ></p-button>
+            </div>
+
+            <div class="flex gap-3 align-items-center">
+              <input
+                pInputText
+                [ngModel]="searchTerm()"
+                (ngModelChange)="onSearchChange($event)"
+                placeholder="Buscar por nombre o CUIL"
+              />
+              <p-select
+                [options]="commissionSelectItems()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="selectedCommission()"
+                (onChange)="onCommissionChange($event.value)"
+              ></p-select>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <!-- prettier-ignore -->
+          <tr>
+            <th pTooltip="Alumno" tooltipPosition="top" appendTo="body">Alumno</th>
+            <th pTooltip="Comisión" tooltipPosition="top" appendTo="body">Com.</th>
+            <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N° 1</th>
+            <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N° 2</th>
+            <th *ngIf="partials() === 4" pTooltip="Nota 3" tooltipPosition="top" appendTo="body">N° 3</th>
+            <th *ngIf="partials() === 4" pTooltip="Nota 4" tooltipPosition="top" appendTo="body">N° 4</th>
+            <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
+            <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
+            <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
+            <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:10rem">Acc.</th>
+          </tr>
+          <!-- prettier-ignore-end -->
+        </ng-template>
+
+        <ng-template
+          pTemplate="body"
+          let-row
+          let-editing="editing"
+          let-ri="rowIndex"
+        >
+          <tr [pEditableRow]="row">
+            <td class="alumno-cell max-w-8rem">
+              <div class="flex flex-column">
+                <span class="font-medium">{{ row.fullName }}</span>
+                <small class="text-color-secondary">CUIL: {{ row.dni }}</small>
+              </div>
+            </td>
+            <td style="width: 1rem">
+              {{ row.commissionLetter || row.commissionId }}
+            </td>
+            <td class="note-cell">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    style="width: 4rem; height: 2.5rem"
+                    pInputText
+                    [(ngModel)]="row.note1"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note1 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td class="note-cell">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    style="width: 4rem; height: 2.5rem"
+                    pInputText
+                    [(ngModel)]="row.note2"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note2 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td *ngIf="partials() === 4" class="note-cell">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    style="width: 4rem; height: 2.5rem"
+                    pInputText
+                    [(ngModel)]="row.note3"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note3 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td *ngIf="partials() === 4" class="note-cell">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    style="width: 4rem; height: 2.5rem"
+                    pInputText
+                    [(ngModel)]="row.note4"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.note4 ?? '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td class="final-cell" [ngClass]="finalClass(row.final)">
+              {{ row.final ?? '-' }}
+            </td>
+            <td class="note-cell" style="width: 6rem">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <span class="flex align-items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      style="width: 4rem; height: 2.5rem"
+                      pInputText
+                      [(ngModel)]="row.attendancePercentage"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                    <span>%</span>
+                  </span>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ row.attendancePercentage !== null &&
+                  row.attendancePercentage !== undefined ?
+                  (row.attendancePercentage + '%') : '-' }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td style="width: 1rem">
+              <p-tag
+                *ngIf="row.condition; else noCondTpl"
+                [value]="row.condition!"
+                [severity]="conditionSeverity(row.condition)"
+              ></p-tag>
+              <ng-template #noCondTpl>-</ng-template>
+            </td>
+            <td>
+              <div class="flex items-center justify-center">
+                <button
+                  *ngIf="!editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  pInitEditableRow
+                  icon="pi pi-pencil"
+                  (click)="onRowEditInit(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                  blockedAction
+                ></button>
+                <button
+                  *ngIf="editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  pSaveEditableRow
+                  icon="pi pi-check"
+                  (click)="onRowEditSave(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                  blockedAction
+                ></button>
+                <button
+                  *ngIf="!editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  icon="pi pi-arrow-right-arrow-left"
+                  pTooltip="Mover a otra comisión"
+                  tooltipPosition="top"
+                  (click)="$event.stopPropagation(); openMoveCommission(row)"
+                  text
+                  rounded
+                  severity="secondary"
+                  blockedAction
+                ></button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+    <app-subject-move-commission-dialog
+      [visible]="moveDialog().visible"
+      [loading]="moveDialog().loading"
+      [currentCommissionId]="moveDialog().currentCommissionId"
+      [options]="moveCommissionOptions()"
+      [disableMove]="moveDialog().loading"
+      (cancel)="closeMoveDialog()"
+      (confirm)="confirmMoveCommission($event)"
+    ></app-subject-move-commission-dialog>
+  </ng-template>
+</div>
+<!-- // KEEP: HEAD (lógica vigente hasta revisión) -->
