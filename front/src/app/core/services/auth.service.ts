@@ -265,8 +265,15 @@ export class AuthService {
 
     try {
       const profile = await firstValueFrom(this.api.getById<any>("users", userId));
-      const normalized = this.buildLocalUser(profile);
-      this.authState.setCurrentUser(normalized, { persist: true });
+      let normalized = this.buildLocalUser(profile);
+      // Si el perfil leído no trae el flag de cambio obligatorio, conservar el que ya teníamos
+      const current = (this.authState.getCurrentUserSnapshot() as LocalUser | null);
+      const incomingFlag = (normalized as any)?.requiresPasswordChange;
+      const existingFlag = (current as any)?.requiresPasswordChange;
+      if (incomingFlag === undefined && existingFlag !== undefined) {
+        normalized = { ...normalized, requiresPasswordChange: existingFlag } as LocalUser;
+      }
+      this.authState.setCurrentUser(normalized as LocalUser, { persist: true });
       const resolved = this.resolveRole(normalized);
       this.applyResolvedRole(resolved);
       return resolved.role ? [resolved.role] : [];

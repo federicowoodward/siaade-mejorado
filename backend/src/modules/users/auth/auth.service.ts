@@ -352,9 +352,18 @@ export class AuthService {
     // Calcular si la contraseña es "default" (CUIL o "pass1234")
     try {
       const bcrypt = await import("bcryptjs");
-      const isPass1234 = await bcrypt.compare("pass1234", userEntity.password);
-      const isCuil = userEntity.cuil ? await bcrypt.compare(userEntity.cuil, userEntity.password) : false;
-      (profile as any).requiresPasswordChange = Boolean(isPass1234 || isCuil);
+      let requires = false;
+      try {
+        const isPass1234 = await bcrypt.compare("pass1234", userEntity.password);
+        const isCuil = userEntity.cuil ? await bcrypt.compare(userEntity.cuil, userEntity.password) : false;
+        requires = Boolean(isPass1234 || isCuil);
+      } catch {}
+      const looksHashed = /^\$2[aby]\$/.test(userEntity.password || "");
+      // Si no parece hash (texto plano importado), forzar cambio siempre
+      if (!requires && !looksHashed) {
+        requires = true;
+      }
+      (profile as any).requiresPasswordChange = requires;
     } catch {}
 
     return { profile: profile as any, payload };
