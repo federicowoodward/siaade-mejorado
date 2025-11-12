@@ -425,7 +425,8 @@ export class SubjectsService {
       // Mostramos 'No inscripto'
       // Nota: si el status existente ya es distinto, lo reemplazamos visualmente.
       // Si en el futuro se requiere mantenerlo, quitar esta lÃ³gica.
-      conditionOverride = null;
+      // keep previous override if already set; do not reset to null
+      // conditionOverride = null;
       // Usamos el repo de estudiantes para revisar flags con un pequeÃ±o cache.
       // Cache local estÃ¡tico por ejecuciÃ³n de este mÃ©todo:
       const flags = studentFlagsMap.get(mapped.studentId) ?? { canLogin: null, isActive: null };

@@ -203,7 +203,17 @@ export class ApiService {
     return this.request<ToggleEnrollmentResponse>('POST', 'subjects/enrollments/toggle', {
       entity: 'subject',
       ...payload,
-    });
+    }).pipe(
+      map((res) => {
+        const enrolled = !!res?.enrolled;
+        // Normalizar coherencia para el front: cuando queda inscripto, forzar condition falsy
+        // para que el template use el fallback por "enrolled". Al desinscribir, setear "No inscripto".
+        return {
+          ...res,
+          condition: enrolled ? '' : (res?.condition ?? 'No inscripto'),
+        } as ToggleEnrollmentResponse;
+      })
+    );
   }
 
   toggleFinalEnrollment(payload: {
