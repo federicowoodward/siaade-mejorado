@@ -54,16 +54,25 @@ export class SubjectsService {
     private readonly dataSource: DataSource
   ) {}
 
-  private deriveConditionFromValues(notes: Array<number | null | undefined>, attendancePercentage: number | null | undefined): string {
+  private deriveConditionFromValues(
+    notes: Array<number | null | undefined>,
+    attendancePercentage: number | null | undefined
+  ): string {
     const attendance = Number(attendancePercentage ?? 0);
-    const validNotes = (notes || []).filter((n): n is number => typeof n === 'number' && !Number.isNaN(n));
-    if (validNotes.length === 0) {
-      return 'Inscripto';
-    }
+    const validNotes = (notes || []).filter(
+      (n): n is number => typeof n === 'number' && !Number.isNaN(n)
+    );
+    if (validNotes.length === 0) return 'Inscripto';
+
     const avg = validNotes.reduce((a, b) => a + b, 0) / validNotes.length;
-    if (attendance >= 90 && avg >= 7) return 'Promocionado';
-    if (attendance >= 75 && attendance < 90 && avg >= 4) return 'Regular';
-    return 'Libre';
+
+    // New rules:
+    // - attendance < 75 OR avg < 4 => Libre
+    // - attendance >= 90 AND avg > 7 => Promocionado
+    // - otherwise => Regular
+    if (attendance < 75 || avg < 4) return 'Libre';
+    if (attendance >= 90 && avg > 7) return 'Promocionado';
+    return 'Regular';
   }
 
   async getGrades(subjectCommissionId: number): Promise<GradeRowDto[]> {
@@ -153,6 +162,10 @@ export class SubjectsService {
         throw new BadRequestException("Unsupported patch path");
     }
 
+    // If we are changing grades/attendance, allow auto recalc by clearing manual status
+    if (dto.path !== 'statusId') {
+      progress.statusId = null;
+    }
     await this.progressRepo.save(progress);
     // Forzar recálculo automático cuando cambian notas/asistencia
     if (dto.path !== 'statusId') {
@@ -1238,7 +1251,7 @@ export class SubjectsService {
       progress.statusId = null;
     }
     await manager.save(progress);
-    // Si el payload no trae statusId, autocalcular
+    // If no manual status was provided, recalc condition using new rules
     if (row.statusId === undefined) {
       await this.autoAssignCondition(progress, manager);
     }
@@ -1267,12 +1280,12 @@ export class SubjectsService {
     let condition = 'Inscripto';
     if (values.length > 0) {
       const avg = values.reduce((a, b) => a + b, 0) / values.length;
-      if (attendance >= 90 && avg >= 7) {
-        condition = 'Promocionado';
-      } else if (attendance >= 75 && attendance < 90 && avg >= 4) {
-        condition = 'Regular';
-      } else {
+      if (attendance < 75 || avg < 4) {
         condition = 'Libre';
+      } else if (attendance >= 90 && avg > 7) {
+        condition = 'Promocionado';
+      } else {
+        condition = 'Regular';
       }
     }
 
