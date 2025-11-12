@@ -154,6 +154,10 @@ export class SubjectsService {
     }
 
     await this.progressRepo.save(progress);
+    // Forzar recálculo automático cuando cambian notas/asistencia
+    if (dto.path !== 'statusId') {
+      await (async () => { progress.statusId = null; })();
+    }
     // Autocalcular condiciÃ³n salvo que el campo modificado sea el statusId manual
     if (dto.path !== 'statusId') {
       await this.autoAssignCondition(progress);
@@ -1229,6 +1233,10 @@ export class SubjectsService {
       }
     }
 
+    // Si no se recibe statusId, reiniciar para permitir recálculo automático
+    if (row.statusId === undefined) {
+      progress.statusId = null;
+    }
     await manager.save(progress);
     // Si el payload no trae statusId, autocalcular
     if (row.statusId === undefined) {
