@@ -1,7 +1,7 @@
-import { Injectable, inject } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs";
-import { environment } from "../../../../environments/environment";
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 interface LoginPayload {
   identity: string; // email, CUIL o Nombre Apellido
@@ -28,7 +28,7 @@ export interface VerifyResetCodeResponseDto {
   expiresInSeconds: number;
 }
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl;
@@ -39,31 +39,40 @@ export class AuthApiService {
       credentials,
       {
         withCredentials: true,
-      }
+      },
     );
   }
 
-  requestPasswordReset(identity: string): Observable<RequestPasswordResetResponseDto> {
+  requestPasswordReset(
+    identity: string,
+  ): Observable<RequestPasswordResetResponseDto> {
     return this.http.post<RequestPasswordResetResponseDto>(
       `${this.baseUrl}/auth/reset-password`,
       { identity },
-      { withCredentials: true }
+      { withCredentials: true },
     );
   }
 
-  confirmPasswordReset(payload: { token: string; password: string; currentPassword?: string }): Observable<{ success: boolean }> {
+  confirmPasswordReset(payload: {
+    token: string;
+    password: string;
+    currentPassword?: string;
+  }): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(
       `${this.baseUrl}/auth/reset-password/confirm`,
       payload,
-      { withCredentials: true }
+      { withCredentials: true },
     );
   }
 
-  verifyResetCode(identity: string, code: string): Observable<VerifyResetCodeResponseDto> {
+  verifyResetCode(
+    identity: string,
+    code: string,
+  ): Observable<VerifyResetCodeResponseDto> {
     return this.http.post<VerifyResetCodeResponseDto>(
       `${this.baseUrl}/auth/reset-password/verify-code`,
       { identity, code },
-      { withCredentials: true }
+      { withCredentials: true },
     );
   }
 
@@ -73,7 +82,7 @@ export class AuthApiService {
       {},
       {
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -83,35 +92,35 @@ export class AuthApiService {
       {},
       {
         withCredentials: true,
-      }
+      },
     );
   }
 
-    forcePasswordChange(password: string): Observable<{ success: boolean }> {
-      return this.http.post<{ success: boolean }>(
-        `${this.baseUrl}/auth/password/force-change`,
-        { password },
-        { withCredentials: true }
-      );
-    }
+  forcePasswordChange(password: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(
+      `${this.baseUrl}/auth/password/force-change`,
+      { password },
+      { withCredentials: true },
+    );
+  }
 
-    requestPasswordChangeCode(): Observable<{ message: string }> {
-      return this.http.post<{ message: string }>(
-        `${this.baseUrl}/auth/password/request-change-code`,
-        {},
-        { withCredentials: true }
-      );
-    }
+  requestPasswordChangeCode(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.baseUrl}/auth/password/request-change-code`,
+      {},
+      { withCredentials: true },
+    );
+  }
 
-    changePasswordWithCode(payload: {
-      code: string;
-      currentPassword: string;
-      newPassword: string;
-    }): Observable<{ success: boolean }> {
-      return this.http.post<{ success: boolean }>(
-        `${this.baseUrl}/auth/password/change-with-code`,
-        payload,
-        { withCredentials: true }
-      );
-    }
+  changePasswordWithCode(payload: {
+    code: string;
+    currentPassword: string;
+    newPassword: string;
+  }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(
+      `${this.baseUrl}/auth/password/change-with-code`,
+      payload,
+      { withCredentials: true },
+    );
+  }
 }

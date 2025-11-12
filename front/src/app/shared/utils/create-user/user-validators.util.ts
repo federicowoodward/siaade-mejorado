@@ -4,7 +4,7 @@ import { ROLE_REQUIREMENTS, UserRole } from './role-config';
 export function canCreateBase(
   role: UserRole | null,
   email: string,
-  cuil: string
+  cuil: string,
 ): boolean {
   return !!role && !!email && !!(cuil || 'pass1234');
 }

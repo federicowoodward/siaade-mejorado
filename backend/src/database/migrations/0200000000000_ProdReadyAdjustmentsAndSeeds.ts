@@ -364,14 +364,14 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
     if (missingTables.length > 0) {
       throw new Error(
         `Missing tables for initial data load (${missingTables.join(
-          ", "
-        )}). Run 0100000000000_InitSchema first to create the schema.`
+          ", ",
+        )}). Run 0100000000000_InitSchema first to create the schema.`,
       );
     }
 
     await queryRunner.query(`UPDATE roles SET name = lower(trim(name))`);
     await queryRunner.query(
-      `CREATE UNIQUE INDEX IF NOT EXISTS ux_roles_name ON roles(name)`
+      `CREATE UNIQUE INDEX IF NOT EXISTS ux_roles_name ON roles(name)`,
     );
 
     for (const role of ROLE_SEEDS) {
@@ -381,16 +381,16 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
           VALUES ($1, $2)
           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
         `,
-        [role.id, role.name]
+        [role.id, role.name],
       );
     }
 
     await queryRunner.query(
-      `DELETE FROM roles WHERE id NOT IN (${ROLE_ID_VALUES.join(", ")})`
+      `DELETE FROM roles WHERE id NOT IN (${ROLE_ID_VALUES.join(", ")})`,
     );
 
     await queryRunner.query(
-      `SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles))`
+      `SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles))`,
     );
 
     const roles = await roleRepository.find({
@@ -401,8 +401,8 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
     if (missingRoles.length > 0) {
       throw new Error(
         `Roles ${missingRoles.join(
-          ", "
-        )} were not created as expected. Check schema migration.`
+          ", ",
+        )} were not created as expected. Check schema migration.`,
       );
     }
 
@@ -423,7 +423,7 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
           password: "changeme",
           cuil: "20000000000",
           roleId: preceptorRoleId,
-        })
+        }),
       );
     }
 
@@ -441,7 +441,7 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
         Object.entries(DEFAULT_SUBJECT_STATUS_TYPE).map(([id, statusName]) => ({
           id: Number(id),
           statusName,
-        }))
+        })),
       )
       .orIgnore()
       .execute();
@@ -452,28 +452,30 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       },
     });
     const missingSubjectStatusTypes = Object.values(
-      DEFAULT_SUBJECT_STATUS_TYPE
+      DEFAULT_SUBJECT_STATUS_TYPE,
     ).filter(
       (status) =>
-        !subjectStatusTypes.some((persisted) => persisted.statusName === status)
+        !subjectStatusTypes.some(
+          (persisted) => persisted.statusName === status,
+        ),
     );
     if (missingSubjectStatusTypes.length > 0) {
       throw new Error(
         `Subject status types ${missingSubjectStatusTypes.join(
-          ", "
-        )} were not created as expected. Check schema migration.`
+          ", ",
+        )} were not created as expected. Check schema migration.`,
       );
     }
 
     const [subjectStatusTypeCounter] = await queryRunner.query(
-      `SELECT MAX(id) as max FROM subject_status_type`
+      `SELECT MAX(id) as max FROM subject_status_type`,
     );
     const normalizedMaxSubjectStatusTypeId = Number(
-      subjectStatusTypeCounter?.max ?? 0
+      subjectStatusTypeCounter?.max ?? 0,
     );
     await queryRunner.query(
       `SELECT setval(pg_get_serial_sequence('subject_status_type', 'id'), $1, true)`,
-      [normalizedMaxSubjectStatusTypeId]
+      [normalizedMaxSubjectStatusTypeId],
     );
 
     await academicPeriodRepository
@@ -483,7 +485,7 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
         ACADEMIC_PERIODS.map((period) => ({
           periodName: period.name,
           partialsScoreNeeded: period.partials,
-        }))
+        })),
       )
       .orIgnore()
       .execute();
@@ -495,24 +497,24 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       academicPeriods.map((period) => [
         period.periodName,
         period.academicPeriodId,
-      ])
+      ]),
     );
 
     const missingPeriods = ACADEMIC_PERIODS.filter(
-      (period) => !academicPeriodMap.has(period.name)
+      (period) => !academicPeriodMap.has(period.name),
     ).map((period) => period.name);
     if (missingPeriods.length > 0) {
       throw new Error(
         `Academic periods ${missingPeriods.join(
-          ", "
-        )} were not created as expected.`
+          ", ",
+        )} were not created as expected.`,
       );
     }
 
     const annual2026 = academicPeriodMap.get("Ciclo anual 2026");
     if (!annual2026) {
       throw new Error(
-        "Academic period 'Ciclo anual 2026' was not created as expected"
+        "Academic period 'Ciclo anual 2026' was not created as expected",
       );
     }
 
@@ -525,7 +527,7 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
           careerName: CAREER_NAME,
           academicPeriodId: annual2026,
           preceptorId: preceptorUser.id,
-        })
+        }),
       );
     }
     const careerId = career.id;
@@ -535,7 +537,7 @@ export class Initial0001ProdReady1761015167692 implements MigrationInterface {
       const academicPeriodId = academicPeriodMap.get(periodName);
       if (academicPeriodId === undefined) {
         throw new Error(
-          `Academic period id not found for ${periodName} while creating subject '${subject.name}'`
+          `Academic period id not found for ${periodName} while creating subject '${subject.name}'`,
         );
       }
       return {

@@ -7,7 +7,9 @@ const DEV_ROWS: Array<[number, number, number]> = [
   [DEV_CAREER_ID, 5, 3],
 ];
 
-export class DummyDevSeedCorrelatives1762800000001 implements MigrationInterface {
+export class DummyDevSeedCorrelatives1762800000001
+  implements MigrationInterface
+{
   name = "DummyDevSeedCorrelatives1762800000001";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

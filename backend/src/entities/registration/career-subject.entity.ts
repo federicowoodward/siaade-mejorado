@@ -1,35 +1,42 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { Career } from './career.entity';
-import { Subject } from '@/entities/subjects/subject.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
+import { Career } from "./career.entity";
+import { Subject } from "@/entities/subjects/subject.entity";
 
-@Entity('career_subjects')
-@Index(['careerId', 'subjectId'], { unique: true })
-@Index(['careerId', 'orderNo'], { unique: true })
-@Index(['subjectId'])
+@Entity("career_subjects")
+@Index(["careerId", "subjectId"], { unique: true })
+@Index(["careerId", "orderNo"], { unique: true })
+@Index(["subjectId"])
 export class CareerSubject {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'career_id', type: 'int' })
+  @Column({ name: "career_id", type: "int" })
   careerId: number;
 
-  @ManyToOne(() => Career, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'career_id' })
+  @ManyToOne(() => Career, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "career_id" })
   career: Career;
 
-  @Column({ name: 'subject_id', type: 'int' })
+  @Column({ name: "subject_id", type: "int" })
   subjectId: number;
 
-  @ManyToOne(() => Subject, { eager: false, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'subject_id' })
+  @ManyToOne(() => Subject, { eager: false, onDelete: "CASCADE" })
+  @JoinColumn({ name: "subject_id" })
   subject: Subject;
 
-  @Column({ name: 'year_no', type: 'smallint', nullable: true })
+  @Column({ name: "year_no", type: "smallint", nullable: true })
   yearNo: number | null;
 
-  @Column({ name: 'period_order', type: 'smallint', nullable: true })
+  @Column({ name: "period_order", type: "smallint", nullable: true })
   periodOrder: number | null;
 
-  @Column({ name: 'order_no', type: 'int' })
+  @Column({ name: "order_no", type: "int" })
   orderNo: number;
 }

@@ -28,9 +28,7 @@ import {
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PrerequisitesController {
-  constructor(
-    private readonly prerequisitesService: PrerequisitesService,
-  ) {}
+  constructor(private readonly prerequisitesService: PrerequisitesService) {}
 
   @Get("careers/:careerId/subjects/:orderNo")
   @AllowRoles(

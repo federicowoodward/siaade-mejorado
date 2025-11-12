@@ -74,15 +74,17 @@ export class FinalExamTableService {
     const row = await this.tableRepo.findOne({ where: { id } });
     if (!row) throw new NotFoundException("Exam table not found");
 
-    const nextStart = dto.start_date ? isoToDate(dto.start_date) : row.startDate;
+    const nextStart = dto.start_date
+      ? isoToDate(dto.start_date)
+      : row.startDate;
     const nextEnd = dto.end_date ? isoToDate(dto.end_date) : row.endDate;
     if (nextStart > nextEnd) {
       throw new BadRequestException("start_date must be <= end_date");
     }
 
     const finals = await this.finalRepo.find({ where: { examTableId: id } });
-    const outOfRange = finals.find((f) =>
-      !dateInRange(f.examDate, nextStart, nextEnd)
+    const outOfRange = finals.find(
+      (f) => !dateInRange(f.examDate, nextStart, nextEnd),
     );
     if (outOfRange) {
       throw new BadRequestException(
@@ -106,7 +108,10 @@ export class FinalExamTableService {
 
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-    if (row.endDate < twoMonthsAgo && !hasRankAtLeast(requesterRole, ROLE.SECRETARY)) {
+    if (
+      row.endDate < twoMonthsAgo &&
+      !hasRankAtLeast(requesterRole, ROLE.SECRETARY)
+    ) {
       throw new ForbiddenException(
         "Insufficient hierarchy to delete old exam tables",
       );
@@ -207,8 +212,14 @@ export class FinalExamTableService {
         ? {
             id: input.createdByUser.id,
             name: input.createdByUser.name ?? null,
-            last_name: input.createdByUser.last_name ?? input.createdByUser.lastName ?? null,
-            lastName: input.createdByUser.last_name ?? input.createdByUser.lastName ?? null,
+            last_name:
+              input.createdByUser.last_name ??
+              input.createdByUser.lastName ??
+              null,
+            lastName:
+              input.createdByUser.last_name ??
+              input.createdByUser.lastName ??
+              null,
             email: input.createdByUser.email ?? null,
           }
         : undefined,
@@ -240,4 +251,3 @@ export class FinalExamTableService {
     return "open";
   }
 }
-

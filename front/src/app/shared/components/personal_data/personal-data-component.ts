@@ -86,7 +86,7 @@ export class PersonalDataComponent implements OnInit {
   private async loadProfileFromApi(id: string): Promise<void> {
     try {
       const resp = await firstValueFrom(
-        this.api.request<any>('GET', `users/${id}`)
+        this.api.request<any>('GET', `users/${id}`),
       );
       const profile = this.unwrapData(resp);
 

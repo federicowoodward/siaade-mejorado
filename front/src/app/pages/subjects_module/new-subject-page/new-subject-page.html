@@ -1,17 +1,18 @@
 <!-- src/app/pages/subject-new/subject-new-page.html -->
 <div class="m-w-custom">
-        <div class="flex align-items-center justify-content-between mb-4">
-          <h1 class="text-xl font-bold text-gray-800 m-0">Crear Nueva Materia</h1>
-          <p-button 
-            icon="pi pi-refresh" 
-            severity="secondary" 
-            size="small"
-            (onClick)="loadData()" 
-            [loading]="loading"
-            pTooltip="Recargar datos"
-            tooltipPosition="left">
-          </p-button>
-        </div>
+  <div class="flex align-items-center justify-content-between mb-4">
+    <h1 class="text-xl font-bold text-gray-800 m-0">Crear Nueva Materia</h1>
+    <p-button
+      icon="pi pi-refresh"
+      severity="secondary"
+      size="small"
+      (onClick)="loadData()"
+      [loading]="loading"
+      pTooltip="Recargar datos"
+      tooltipPosition="left"
+    >
+    </p-button>
+  </div>
 
   <div class="grid form-grid">
     <!-- Nombre -->

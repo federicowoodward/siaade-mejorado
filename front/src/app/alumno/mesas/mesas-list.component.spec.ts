@@ -41,7 +41,10 @@ describe('MesasListComponent', () => {
         { provide: StudentInscriptionsService, useClass: InscriptionsStub },
         { provide: AuthService, useClass: AuthStub },
         { provide: MessageService, useValue: { add: () => undefined } },
-        { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
+        {
+          provide: Router,
+          useValue: { navigate: () => Promise.resolve(true) },
+        },
         { provide: ExamTableSyncService, useClass: SyncStub },
       ],
     }).compileComponents();

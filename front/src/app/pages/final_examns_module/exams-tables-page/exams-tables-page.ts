@@ -109,7 +109,8 @@ export class ExamsTablesPage implements OnInit {
         this.messages.add({
           severity: 'error',
           summary: 'Sesion requerida',
-          detail: 'No pudimos identificar al usuario actual para crear la mesa.',
+          detail:
+            'No pudimos identificar al usuario actual para crear la mesa.',
           life: 5000,
         });
         return;

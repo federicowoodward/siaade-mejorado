@@ -27,19 +27,19 @@ export class CatalogsController {
   @ApiOperation({ summary: "Listar carreras" })
   @ApiQuery({ name: "page", required: false })
   @ApiQuery({ name: "limit", required: false })
-    @ApiOkResponse({
-      description: "Lista paginada de carreras",
-      schema: {
+  @ApiOkResponse({
+    description: "Lista paginada de carreras",
+    schema: {
       type: "object",
       properties: {
         data: { type: "array", items: { type: "object" } },
         meta: { type: "object" },
       },
-      } as any,
+    } as any,
   })
   async findCareers(
     @Query("page") page?: number,
-    @Query("limit") limit?: number
+    @Query("limit") limit?: number,
   ) {
     const { page: p, limit: l, offset } = normalizePagination({ page, limit });
     const [rows, total] = await this.service.findCareers({
@@ -52,16 +52,16 @@ export class CatalogsController {
   @Get("career-full-data/:careerId")
   @ApiOperation({ summary: "Obtener datos completos de una carrera" })
   @ApiParam({ name: "careerId" })
-    @ApiOkResponse({
-      description: "Datos completos de la carrera",
-      schema: {
+  @ApiOkResponse({
+    description: "Datos completos de la carrera",
+    schema: {
       type: "object",
       properties: {
         career: { type: "object" },
         preceptor: { type: "object" },
         academicPeriods: { type: "array", items: { type: "object" } },
       },
-      } as any,
+    } as any,
   })
   async findCareerFullData(@Param("careerId", ParseIntPipe) careerId: number) {
     return this.service.findCareerFullData(careerId);
@@ -73,20 +73,20 @@ export class CatalogsController {
   })
   @ApiParam({ name: "careerId" })
   @ApiQuery({ name: "studentStartYear", required: false })
-    @ApiOkResponse({
-      description: "Detalle de alumnos agrupados por comisión",
-      schema: {
+  @ApiOkResponse({
+    description: "Detalle de alumnos agrupados por comisión",
+    schema: {
       type: "object",
       properties: {
         career: { type: "object" },
         filters: { type: "object" },
         commissions: { type: "array", items: { type: "object" } },
       },
-      } as any,
+    } as any,
   })
   async findCareerStudentsByCommission(
     @Param("careerId", ParseIntPipe) careerId: number,
-    @Query("studentStartYear") studentStartYear?: number
+    @Query("studentStartYear") studentStartYear?: number,
   ) {
     const parsedStartYear =
       studentStartYear !== undefined && studentStartYear !== null
@@ -109,19 +109,19 @@ export class CatalogsController {
   @ApiOperation({ summary: "Listar períodos académicos" })
   @ApiQuery({ name: "page", required: false })
   @ApiQuery({ name: "limit", required: false })
-    @ApiOkResponse({
-      description: "Lista paginada de períodos académicos",
-      schema: {
+  @ApiOkResponse({
+    description: "Lista paginada de períodos académicos",
+    schema: {
       type: "object",
       properties: {
         data: { type: "array", items: { type: "object" } },
         meta: { type: "object" },
       },
-      } as any,
+    } as any,
   })
   async findAcademicPeriods(
     @Query("page") page?: number,
-    @Query("limit") limit?: number
+    @Query("limit") limit?: number,
   ) {
     const { page: p, limit: l, offset } = normalizePagination({ page, limit });
     const [rows, total] = await this.service.findAcademicPeriods({
@@ -135,19 +135,19 @@ export class CatalogsController {
   @ApiOperation({ summary: "Listar comisiones" })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
-    @ApiOkResponse({
-      description: "Lista paginada de comisiones",
-      schema: {
+  @ApiOkResponse({
+    description: "Lista paginada de comisiones",
+    schema: {
       type: "object",
       properties: {
         data: { type: "array", items: { type: "object" } },
         meta: { type: "object" },
       },
-      } as any,
+    } as any,
   })
   async findCommissions(
     @Query("page") page?: number,
-    @Query("limit") limit?: number
+    @Query("limit") limit?: number,
   ) {
     const { page: p, limit: l, offset } = normalizePagination({ page, limit });
     const [rows, total] = await this.service.findCommissions({
@@ -160,18 +160,18 @@ export class CatalogsController {
   @Get("subject-commissions/:commissionId")
   @ApiOperation({ summary: "Detalle de materias y docentes de una comision" })
   @ApiParam({ name: "commissionId" })
-    @ApiOkResponse({
-      description: "Detalle de la comision con sus materias y docentes",
-      schema: {
+  @ApiOkResponse({
+    description: "Detalle de la comision con sus materias y docentes",
+    schema: {
       type: "object",
       properties: {
         commission: { type: "object" },
         subjects: { type: "array", items: { type: "object" } },
       },
-      } as any,
+    } as any,
   })
   async findCommissionSubjects(
-    @Param("commissionId", ParseIntPipe) commissionId: number
+    @Param("commissionId", ParseIntPipe) commissionId: number,
   ) {
     return this.service.findCommissionSubjects(commissionId);
   }
@@ -181,9 +181,11 @@ export class CatalogsController {
     summary: "Listar comisiones de una materia junto a los docentes asignados",
   })
   @ApiParam({ name: "subjectId" })
-    @ApiOkResponse({ description: "Comisiones y docentes asignados para la materia requerida" })
+  @ApiOkResponse({
+    description: "Comisiones y docentes asignados para la materia requerida",
+  })
   getSubjectCommissionTeachers(
-    @Param("subjectId", ParseIntPipe) subjectId: number
+    @Param("subjectId", ParseIntPipe) subjectId: number,
   ) {
     return this.service.getSubjectCommissionTeachers(subjectId);
   }
@@ -203,25 +205,28 @@ export class CatalogsController {
   @ApiOkResponse({
     description: "Materias y comisiones en las que el docente está asignado",
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        teacher: { type: 'object', nullable: true },
+        teacher: { type: "object", nullable: true },
         subjects: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
               subject: {
-                type: 'object',
-                properties: { id: { type: 'number' }, name: { type: 'string' } },
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  name: { type: "string" },
+                },
               },
               commissions: {
-                type: 'array',
+                type: "array",
                 items: {
-                  type: 'object',
+                  type: "object",
                   properties: {
-                    id: { type: 'number' },
-                    letter: { type: 'string', nullable: true },
+                    id: { type: "number" },
+                    letter: { type: "string", nullable: true },
                   },
                 },
               },
@@ -231,48 +236,49 @@ export class CatalogsController {
       },
     } as any,
   })
-  getTeacherSubjectAssignments(@Param('teacherId') teacherId: string) {
+  getTeacherSubjectAssignments(@Param("teacherId") teacherId: string) {
     return this.service.getTeacherSubjectAssignments(teacherId);
   }
 
-  @Get('student/:studentId/academic-subjects-minimal')
-  @ApiOperation({ summary: 'Materias por año para un estudiante (mínimo)' })
-  @ApiParam({ name: 'studentId' })
-    @ApiOkResponse({
-      description: 'Mapa de materias agrupadas por año',
-      schema: {
-      type: 'object',
+  @Get("student/:studentId/academic-subjects-minimal")
+  @ApiOperation({ summary: "Materias por año para un estudiante (mínimo)" })
+  @ApiParam({ name: "studentId" })
+  @ApiOkResponse({
+    description: "Mapa de materias agrupadas por año",
+    schema: {
+      type: "object",
       properties: {
         byYear: {
-          type: 'object',
+          type: "object",
           additionalProperties: {
-            type: 'array',
+            type: "array",
             items: {
-              type: 'object',
+              type: "object",
               properties: {
-                subjectName: { type: 'string' },
-                year: { type: 'number', nullable: true },
-                division: { type: 'string', nullable: true },
-                condition: { type: 'string' },
-                examInfo: { type: 'string' },
+                subjectName: { type: "string" },
+                year: { type: "number", nullable: true },
+                division: { type: "string", nullable: true },
+                condition: { type: "string" },
+                examInfo: { type: "string" },
               },
             },
           },
         },
       },
-      } as any,
+    } as any,
   })
-  getStudentAcademicSubjectsMinimal(@Param('studentId') studentId: string) {
+  getStudentAcademicSubjectsMinimal(@Param("studentId") studentId: string) {
     return this.service.getStudentAcademicSubjectsMinimal(studentId);
   }
 
-  @Get('student/:studentId/academic-status')
-  @ApiOperation({ summary: 'Situación académica real por estudiante' })
-  @ApiParam({ name: 'studentId' })
+  @Get("student/:studentId/academic-status")
+  @ApiOperation({ summary: "Situación académica real por estudiante" })
+  @ApiParam({ name: "studentId" })
   @ApiOkResponse({
-    description: 'Materias del estudiante agrupadas por año con notas, final y asistencia',
+    description:
+      "Materias del estudiante agrupadas por año con notas, final y asistencia",
   })
-  getStudentAcademicStatus(@Param('studentId') studentId: string) {
+  getStudentAcademicStatus(@Param("studentId") studentId: string) {
     return this.service.getStudentAcademicStatus(studentId);
   }
 }

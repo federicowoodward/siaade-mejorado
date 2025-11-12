@@ -7,11 +7,11 @@ Implementa correlatividades por `order_no` para cada carrera sin depender de `su
 
 ## Endpoints
 
-| Método | Ruta | Roles |
-| ------ | ---- | ----- |
-| `GET` | `/prerequisites/careers/:careerId/subjects/:orderNo` | SECRETARY, EXECUTIVE_SECRETARY, PRECEPTOR, TEACHER |
-| `GET` | `/prerequisites/careers/:careerId/students/:studentId/validate?targetOrderNo=` | Roles anteriores + STUDENT (solo para su propio `studentId` mediante `OwnerGuard`) |
-| `GET` | `/prerequisites/careers/:careerId/students/:studentId/overview` | Roles anteriores + STUDENT |
+| Método | Ruta                                                                           | Roles                                                                              |
+| ------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `GET`  | `/prerequisites/careers/:careerId/subjects/:orderNo`                           | SECRETARY, EXECUTIVE_SECRETARY, PRECEPTOR, TEACHER                                 |
+| `GET`  | `/prerequisites/careers/:careerId/students/:studentId/validate?targetOrderNo=` | Roles anteriores + STUDENT (solo para su propio `studentId` mediante `OwnerGuard`) |
+| `GET`  | `/prerequisites/careers/:careerId/students/:studentId/overview`                | Roles anteriores + STUDENT                                                         |
 
 ### Respuestas
 

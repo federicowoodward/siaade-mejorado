@@ -35,7 +35,7 @@ import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
           config.get<string>("JWT_SECRET");
         if (!secret) {
           throw new Error(
-            "Missing JWT access secret. Define JWT_ACCESS_SECRET or JWT_SECRET."
+            "Missing JWT access secret. Define JWT_ACCESS_SECRET or JWT_SECRET.",
           );
         }
         const expiresIn =
@@ -53,10 +53,13 @@ import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
     UserAuthValidatorModule,
     UserProfileReaderModule,
   ],
-  providers: [AuthService, JwtStrategy, RateLimitService, PasswordResetCleanupService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RateLimitService,
+    PasswordResetCleanupService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
-
-

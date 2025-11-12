@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
-import { Notice } from '@/entities/notices/notice.entity';
-import { Role } from '@/entities/roles/role.entity';
-import { CreateNoticeDto } from './dto/create-notice.dto';
-import { UpdateNoticeDto } from './dto/update-notice.dto';
-import { ROLE, ROLE_IDS } from '@/shared/rbac/roles.constants';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { IsNull, Repository } from "typeorm";
+import { Notice } from "@/entities/notices/notice.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { CreateNoticeDto } from "./dto/create-notice.dto";
+import { UpdateNoticeDto } from "./dto/update-notice.dto";
+import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 @Injectable()
 export class NoticesService {
@@ -18,8 +18,9 @@ export class NoticesService {
 
   async create(dto: CreateNoticeDto, createdByUserId?: string) {
     let visibleRoleId: number | null = null;
-    if (dto.visibleFor === 'teacher') visibleRoleId = ROLE_IDS[ROLE.TEACHER];
-    else if (dto.visibleFor === 'student') visibleRoleId = ROLE_IDS[ROLE.STUDENT];
+    if (dto.visibleFor === "teacher") visibleRoleId = ROLE_IDS[ROLE.TEACHER];
+    else if (dto.visibleFor === "student")
+      visibleRoleId = ROLE_IDS[ROLE.STUDENT];
 
     const notice = this.repo.create({
       title: dto.title,
@@ -30,15 +31,15 @@ export class NoticesService {
     const saved = await this.repo.save(notice);
     return {
       id: saved.id,
-  title: saved.title,
-  content: saved.content,
+      title: saved.title,
+      content: saved.content,
       visibleFor:
         saved.visibleRoleId === ROLE_IDS[ROLE.TEACHER]
-          ? 'teacher'
+          ? "teacher"
           : saved.visibleRoleId === ROLE_IDS[ROLE.STUDENT]
-          ? 'student'
-          : 'all',
-      createdBy: 'Secretaria',
+            ? "student"
+            : "all",
+      createdBy: "Secretaria",
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,
     } as any;
@@ -46,7 +47,7 @@ export class NoticesService {
 
   async update(id: number, dto: UpdateNoticeDto) {
     const existing = await this.repo.findOne({ where: { id } });
-    if (!existing) throw new NotFoundException('Notice not found');
+    if (!existing) throw new NotFoundException("Notice not found");
     Object.assign(existing, dto);
     return this.repo.save(existing);
   }
@@ -58,21 +59,32 @@ export class NoticesService {
     return { id, affected: 1 } as any;
   }
 
-  async findAllByAudience(audience?: 'student' | 'teacher' | 'all', opts?: { skip?: number; take?: number }) {
+  async findAllByAudience(
+    audience?: "student" | "teacher" | "all",
+    opts?: { skip?: number; take?: number },
+  ) {
     let rows: Notice[] = [];
     let total = 0;
-    if (!audience || audience === 'all') {
-      [rows, total] = await this.repo.findAndCount({ where: { visibleRoleId: IsNull() }, order: { createdAt: 'DESC' }, skip: opts?.skip, take: opts?.take });
+    if (!audience || audience === "all") {
+      [rows, total] = await this.repo.findAndCount({
+        where: { visibleRoleId: IsNull() },
+        order: { createdAt: "DESC" },
+        skip: opts?.skip,
+        take: opts?.take,
+      });
     } else {
       const roleId = await this.resolveRoleId(audience);
       const qb = this.repo
-        .createQueryBuilder('n')
-        .where('n.visible_role_id IS NULL OR n.visible_role_id = :roleId', { roleId })
-        .orderBy('n.created_at', 'DESC');
+        .createQueryBuilder("n")
+        .where("n.visible_role_id IS NULL OR n.visible_role_id = :roleId", {
+          roleId,
+        })
+        .orderBy("n.created_at", "DESC");
       if (opts?.skip !== undefined) qb.skip(opts.skip);
       if (opts?.take !== undefined) qb.take(opts.take);
       const [r, t] = await qb.getManyAndCount();
-      rows = r; total = t;
+      rows = r;
+      total = t;
     }
     const mapped = rows.map((r) => ({
       id: r.id,
@@ -80,19 +92,21 @@ export class NoticesService {
       content: r.content,
       visibleFor:
         r.visibleRoleId === ROLE_IDS[ROLE.TEACHER]
-          ? 'teacher'
+          ? "teacher"
           : r.visibleRoleId === ROLE_IDS[ROLE.STUDENT]
-          ? 'student'
-          : 'all',
-      createdBy: 'Secretaria',
+            ? "student"
+            : "all",
+      createdBy: "Secretaria",
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));
     return [mapped, total] as const;
   }
 
-  private async resolveRoleId(audience: 'student' | 'teacher'): Promise<number> {
-    const slug = audience === 'student' ? ROLE.STUDENT : ROLE.TEACHER;
+  private async resolveRoleId(
+    audience: "student" | "teacher",
+  ): Promise<number> {
+    const slug = audience === "student" ? ROLE.STUDENT : ROLE.TEACHER;
 
     const role = await this.rolesRepo.findOne({
       where: { name: slug },
@@ -103,5 +117,3 @@ export class NoticesService {
     return role.id;
   }
 }
-
-

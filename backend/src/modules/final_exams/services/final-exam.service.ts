@@ -13,14 +13,23 @@ import { ExamTable } from "@/entities/finals/exam-table.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 
-import { CreateFinalExamDto, FinalExamDto } from "@/modules/final_exams/dto/final-exam.dto";
+import {
+  CreateFinalExamDto,
+  FinalExamDto,
+} from "@/modules/final_exams/dto/final-exam.dto";
 import { isoToDate, dateInRange } from "@/modules/final_exams/utils/date-utils";
-import { RecordFinalDto, ApproveFinalDto } from "@/modules/final_exams/dto/final-exam-admin.dto";
+import {
+  RecordFinalDto,
+  ApproveFinalDto,
+} from "@/modules/final_exams/dto/final-exam-admin.dto";
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
 import { ToggleEnrollmentResponseDto } from "@/modules/shared/dto/toggle-enrollment.dto";
-import { EnrollmentAction, EnrollmentActor } from "@/modules/shared/dto/toggle-enrollment.dto";
+import {
+  EnrollmentAction,
+  EnrollmentActor,
+} from "@/modules/shared/dto/toggle-enrollment.dto";
 
 @Injectable()
 export class FinalExamService {
@@ -33,12 +42,16 @@ export class FinalExamService {
     @InjectRepository(Subject) private subjRepo: Repository<Subject>,
     @InjectRepository(SubjectStudent)
     private subjStudRepo: Repository<SubjectStudent>,
-    @InjectRepository(FinalExamStatus) private statusRepo: Repository<FinalExamStatus>,
+    @InjectRepository(FinalExamStatus)
+    private statusRepo: Repository<FinalExamStatus>,
     @InjectRepository(Teacher) private teacherRepo: Repository<Teacher>,
     @InjectRepository(Secretary) private secretaryRepo: Repository<Secretary>,
   ) {}
 
-  async listAllByTable(examTableId: number, opts?: { skip?: number; take?: number }) {
+  async listAllByTable(
+    examTableId: number,
+    opts?: { skip?: number; take?: number },
+  ) {
     const qb = this.finalRepo
       .createQueryBuilder("f")
       .leftJoin("f.subject", "s")
@@ -59,8 +72,8 @@ export class FinalExamService {
 
     const [rows, total] = await qb.getRawMany().then(async (r) => {
       const count = await this.finalRepo
-        .createQueryBuilder('f')
-        .where('f.exam_table_id = :id', { id: examTableId })
+        .createQueryBuilder("f")
+        .where("f.exam_table_id = :id", { id: examTableId })
         .getCount();
       return [r, count] as [any[], number];
     });
@@ -114,15 +127,21 @@ export class FinalExamService {
   }
 
   async create(dto: CreateFinalExamDto) {
-    const table = await this.tableRepo.findOne({ where: { id: dto.exam_table_id } });
+    const table = await this.tableRepo.findOne({
+      where: { id: dto.exam_table_id },
+    });
     if (!table) throw new NotFoundException("Exam table not found");
 
-    const subject = await this.subjRepo.findOne({ where: { id: dto.subject_id } });
+    const subject = await this.subjRepo.findOne({
+      where: { id: dto.subject_id },
+    });
     if (!subject) throw new NotFoundException("Subject not found");
 
     const examDate = isoToDate(dto.exam_date);
     if (!dateInRange(examDate, table.startDate, table.endDate)) {
-      throw new BadRequestException("exam_date must be within exam table range");
+      throw new BadRequestException(
+        "exam_date must be within exam table range",
+      );
     }
 
     const finalData: Partial<FinalExam> = {
@@ -135,7 +154,9 @@ export class FinalExamService {
     const entity = this.finalRepo.create(finalData);
     const saved = await this.finalRepo.save(entity);
 
-    const subjStudents = await this.subjStudRepo.find({ where: { subjectId: subject.id } });
+    const subjStudents = await this.subjStudRepo.find({
+      where: { subjectId: subject.id },
+    });
 
     if (subjStudents.length) {
       const links = subjStudents.map((ss) =>
@@ -161,12 +182,19 @@ export class FinalExamService {
   }
 
   async record(dto: RecordFinalDto) {
-    const link = await this.linkRepo.findOne({ where: { id: dto.final_exams_student_id } });
-    if (!link) throw new NotFoundException('Final exam student not found');
-    const teacher = await this.teacherRepo.findOne({ where: { userId: dto.recorded_by } });
-    if (!teacher) throw new NotFoundException('Teacher not found');
-    const status = await this.statusRepo.findOne({ where: { name: 'registrado' } });
-    if (!status) throw new NotFoundException('FinalExamStatus "registrado" not found');
+    const link = await this.linkRepo.findOne({
+      where: { id: dto.final_exams_student_id },
+    });
+    if (!link) throw new NotFoundException("Final exam student not found");
+    const teacher = await this.teacherRepo.findOne({
+      where: { userId: dto.recorded_by },
+    });
+    if (!teacher) throw new NotFoundException("Teacher not found");
+    const status = await this.statusRepo.findOne({
+      where: { name: "registrado" },
+    });
+    if (!status)
+      throw new NotFoundException('FinalExamStatus "registrado" not found');
     link.score = (dto.score ?? null) as any;
     link.notes = dto.notes ?? link.notes;
     (link as any).statusId = status.id;
@@ -177,12 +205,19 @@ export class FinalExamService {
   }
 
   async approve(dto: ApproveFinalDto) {
-    const link = await this.linkRepo.findOne({ where: { id: dto.final_exams_student_id } });
-    if (!link) throw new NotFoundException('Final exam student not found');
-    const sec = await this.secretaryRepo.findOne({ where: { userId: dto.approved_by } });
-    if (!sec) throw new NotFoundException('Secretary not found');
-    const status = await this.statusRepo.findOne({ where: { name: 'aprobado_admin' } });
-    if (!status) throw new NotFoundException('FinalExamStatus "aprobado_admin" not found');
+    const link = await this.linkRepo.findOne({
+      where: { id: dto.final_exams_student_id },
+    });
+    if (!link) throw new NotFoundException("Final exam student not found");
+    const sec = await this.secretaryRepo.findOne({
+      where: { userId: dto.approved_by },
+    });
+    if (!sec) throw new NotFoundException("Secretary not found");
+    const status = await this.statusRepo.findOne({
+      where: { name: "aprobado_admin" },
+    });
+    if (!status)
+      throw new NotFoundException('FinalExamStatus "aprobado_admin" not found');
     (link as any).statusId = status.id;
     (link as any).approvedById = sec.userId;
     (link as any).approvedAt = new Date();
@@ -194,7 +229,7 @@ export class FinalExamService {
     finalExamId: number,
     studentId: string,
     action: EnrollmentAction,
-    actor: EnrollmentActor
+    actor: EnrollmentActor,
   ): Promise<ToggleEnrollmentResponseDto> {
     if (!studentId) {
       throw new BadRequestException("studentId is required");
@@ -205,7 +240,9 @@ export class FinalExamService {
       throw new NotFoundException("Final exam not found");
     }
 
-    let link = await this.linkRepo.findOne({ where: { finalExamId, studentId } });
+    let link = await this.linkRepo.findOne({
+      where: { finalExamId, studentId },
+    });
 
     if (action === "enroll") {
       const now = new Date();
@@ -258,11 +295,13 @@ export class FinalExamService {
     finalExamId: number,
     studentId: string,
     action: EnrollmentAction,
-    actor: EnrollmentActor
+    actor: EnrollmentActor,
   ) {
-    return this.toggleFinalExamEnrollmentRich(finalExamId, studentId, action, actor);
+    return this.toggleFinalExamEnrollmentRich(
+      finalExamId,
+      studentId,
+      action,
+      actor,
+    );
   }
 }
-
-
-

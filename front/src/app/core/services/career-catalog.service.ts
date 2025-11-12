@@ -85,7 +85,7 @@ export class CareerCatalogService {
 
           this._basicSubjects.set(subjects);
         }),
-        map(() => void 0)
+        map(() => void 0),
       );
   }
 
@@ -104,7 +104,7 @@ export class CareerCatalogService {
   getSubjectCommissionTeachers(subjectId: number) {
     return this.api.request<SubjectCommissionTeachersDto>(
       'GET',
-      `catalogs/subject/${subjectId}/commission-teachers`
+      `catalogs/subject/${subjectId}/commission-teachers`,
     );
   }
 }

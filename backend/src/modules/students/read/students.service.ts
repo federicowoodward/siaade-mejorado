@@ -1,39 +1,46 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '@/entities/users/user.entity';
-import { Student } from '@/entities/users/student.entity';
-import { FinalExamsStudent } from '@/entities/finals/final-exams-student.entity';
-import { Notice } from '@/entities/notices/notice.entity';
-import { CatalogsService } from '@/modules/catalogs/catalogs.service';
-import { ROLE_IDS } from '@/shared/rbac/roles.constants';
-import { FinalExam } from '@/entities/finals/final-exam.entity';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "@/entities/users/user.entity";
+import { Student } from "@/entities/users/student.entity";
+import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
+import { Notice } from "@/entities/notices/notice.entity";
+import { CatalogsService } from "@/modules/catalogs/catalogs.service";
+import { ROLE_IDS } from "@/shared/rbac/roles.constants";
+import { FinalExam } from "@/entities/finals/final-exam.entity";
 
 @Injectable()
 export class StudentsReadService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
-    @InjectRepository(FinalExamsStudent) private readonly fesRepo: Repository<FinalExamsStudent>,
+    @InjectRepository(Student)
+    private readonly studentRepo: Repository<Student>,
+    @InjectRepository(FinalExamsStudent)
+    private readonly fesRepo: Repository<FinalExamsStudent>,
     @InjectRepository(Notice) private readonly noticeRepo: Repository<Notice>,
-    @InjectRepository(FinalExam) private readonly finalExamRepo: Repository<FinalExam>,
+    @InjectRepository(FinalExam)
+    private readonly finalExamRepo: Repository<FinalExam>,
     private readonly catalogsService: CatalogsService,
   ) {}
 
   async getStudentFullData(studentId: string) {
-    const student = await this.studentRepo.findOne({ where: { userId: studentId }, relations: ['user', 'commission'] });
-    if (!student) throw new NotFoundException('Estudiante no encontrado');
+    const student = await this.studentRepo.findOne({
+      where: { userId: studentId },
+      relations: ["user", "commission"],
+    });
+    if (!student) throw new NotFoundException("Estudiante no encontrado");
 
     const { user } = student;
 
     // Situación académica completa (por año)
-    const academicStatus = await this.catalogsService.getStudentAcademicStatus(studentId);
+    const academicStatus =
+      await this.catalogsService.getStudentAcademicStatus(studentId);
 
     // Finales del alumno (con detalle básico)
     const finals = await this.fesRepo.find({
       where: { studentId },
-      relations: ['finalExam', 'finalExam.subject', 'status'],
-      order: { id: 'DESC' },
+      relations: ["finalExam", "finalExam.subject", "status"],
+      order: { id: "DESC" },
     });
     const finalsData = finals.map((row) => ({
       id: row.id,
@@ -52,9 +59,11 @@ export class StudentsReadService {
     const roleId = user.roleId;
     // build query manual para permitir visibleRoleId IS NULL OR = roleId
     const notices = await this.noticeRepo
-      .createQueryBuilder('n')
-      .where('n.visible_role_id IS NULL OR n.visible_role_id = :rid', { rid: roleId })
-      .orderBy('n.created_at', 'DESC')
+      .createQueryBuilder("n")
+      .where("n.visible_role_id IS NULL OR n.visible_role_id = :rid", {
+        rid: roleId,
+      })
+      .orderBy("n.created_at", "DESC")
       .limit(10)
       .getMany();
     const noticesData = notices.map((n) => ({
@@ -80,7 +89,7 @@ export class StudentsReadService {
         userId: student.userId,
         legajo: student.legajo,
         commissionId: student.commissionId,
-  commissionLetter: student.commission?.commissionLetter ?? null,
+        commissionLetter: student.commission?.commissionLetter ?? null,
         canLogin: student.canLogin,
         isActive: student.isActive,
         studentStartYear: student.studentStartYear,
@@ -91,16 +100,26 @@ export class StudentsReadService {
     };
   }
 
-  async getSubjectsStatusFlat(studentId: string): Promise<Array<{
-    subjectId: number;
-    subjectName: string;
-    year: number | null;
-    commissionId: number;
-    commissionLetter: string | null;
-    condition: string | null;
-  }>> {
-    const status = await this.catalogsService.getStudentAcademicStatus(studentId);
-    const flat: Array<{ subjectId: number; subjectName: string; year: number | null; commissionId: number; commissionLetter: string | null; condition: string | null; }> = [];
+  async getSubjectsStatusFlat(studentId: string): Promise<
+    Array<{
+      subjectId: number;
+      subjectName: string;
+      year: number | null;
+      commissionId: number;
+      commissionLetter: string | null;
+      condition: string | null;
+    }>
+  > {
+    const status =
+      await this.catalogsService.getStudentAcademicStatus(studentId);
+    const flat: Array<{
+      subjectId: number;
+      subjectName: string;
+      year: number | null;
+      commissionId: number;
+      commissionLetter: string | null;
+      condition: string | null;
+    }> = [];
     for (const arr of Object.values(status.byYear)) {
       for (const s of arr) {
         flat.push({

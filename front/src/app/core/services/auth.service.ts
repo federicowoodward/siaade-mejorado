@@ -1,19 +1,14 @@
-import { Injectable, inject } from "@angular/core";
-import { Router } from "@angular/router";
-import { Observable, firstValueFrom, of } from "rxjs";
-import { catchError } from "rxjs/operators";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { PermissionService } from "../auth/permission.service";
-import { RbacService } from "../rbac/rbac.service";
-import {
-  ROLE,
-  ROLE_BY_ID,
-  ROLE_IDS,
-  normalizeRole,
-} from "../auth/roles";
-import { ApiService } from "./api.service";
-import { AuthApiService } from "./auth/auth-api.service";
-import { AuthStateService } from "./auth/auth-state.service";
+import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { Observable, firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PermissionService } from '../auth/permission.service';
+import { RbacService } from '../rbac/rbac.service';
+import { ROLE, ROLE_BY_ID, ROLE_IDS, normalizeRole } from '../auth/roles';
+import { ApiService } from './api.service';
+import { AuthApiService } from './auth/auth-api.service';
+import { AuthStateService } from './auth/auth-state.service';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -28,11 +23,11 @@ export interface LocalUser {
   role: ROLE | null;
   roleId?: number;
   isExecutive?: boolean;
-    requiresPasswordChange?: boolean;
+  requiresPasswordChange?: boolean;
   [key: string]: unknown;
 }
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
@@ -49,19 +44,18 @@ export class AuthService {
       .pipe(takeUntilDestroyed())
       .subscribe((user) => this.applyRolesFromUser(user));
 
-    this.authState.refreshFailed$
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (!this.router.url.startsWith("/auth")) {
-          void this.router.navigate(["/auth"], { replaceUrl: true });
-        }
-      });
+    this.authState.refreshFailed$.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (!this.router.url.startsWith('/auth')) {
+        void this.router.navigate(['/auth'], { replaceUrl: true });
+      }
+    });
   }
 
-  async login(credentials: { identity: string; password: string }): Promise<boolean> {
-    const response = await firstValueFrom(
-      this.authApi.login(credentials)
-    );
+  async login(credentials: {
+    identity: string;
+    password: string;
+  }): Promise<boolean> {
+    const response = await firstValueFrom(this.authApi.login(credentials));
 
     if (!response?.accessToken || !response?.user) {
       return false;
@@ -91,17 +85,31 @@ export class AuthService {
     }
   }
 
-  async loginWithReason(credentials: { identity: string; password: string }): Promise<{ ok: boolean; blocked?: boolean; blockedReason?: string | null; inactive?: boolean; message?: string }> {
+  async loginWithReason(credentials: {
+    identity: string;
+    password: string;
+  }): Promise<{
+    ok: boolean;
+    blocked?: boolean;
+    blockedReason?: string | null;
+    inactive?: boolean;
+    message?: string;
+  }> {
     try {
       const ok = await this.login(credentials);
       return { ok };
     } catch (error: any) {
-      const msg: string = (error?.error?.message || error?.message || '').toLowerCase();
+      const msg: string = (
+        error?.error?.message ||
+        error?.message ||
+        ''
+      ).toLowerCase();
       const raw = error?.error?.message || error?.message || '';
       let blocked = false;
       let inactive = false;
       let blockedReason: string | null = null;
-      if (msg.includes('inactivo') || msg.includes('eliminado')) inactive = true;
+      if (msg.includes('inactivo') || msg.includes('eliminado'))
+        inactive = true;
       if (msg.includes('bloqueado')) {
         blocked = true;
         // Extraer motivo después de ':' si existe
@@ -118,51 +126,73 @@ export class AuthService {
     return this.authApi.requestPasswordReset(identity);
   }
 
-  confirmPasswordReset(token: string, password: string, currentPassword?: string) {
-    return this.authApi.confirmPasswordReset({ token, password, currentPassword });
+  confirmPasswordReset(
+    token: string,
+    password: string,
+    currentPassword?: string,
+  ) {
+    return this.authApi.confirmPasswordReset({
+      token,
+      password,
+      currentPassword,
+    });
   }
 
   verifyResetCode(identity: string, code: string) {
     return this.authApi.verifyResetCode(identity, code);
   }
 
-    async forcePasswordChange(password: string): Promise<boolean> {
-      const result = await firstValueFrom(this.authApi.forcePasswordChange(password));
-      if (result?.success) {
-        // Actualizar el usuario local para que deje de pedir cambio de contraseña
-        const current = (this.authState.getCurrentUserSnapshot() as LocalUser | null);
-        if (current) {
-          const updated: LocalUser = { ...current, requiresPasswordChange: false };
-          this.authState.setCurrentUser(updated, { persist: true });
-        }
+  async forcePasswordChange(password: string): Promise<boolean> {
+    const result = await firstValueFrom(
+      this.authApi.forcePasswordChange(password),
+    );
+    if (result?.success) {
+      // Actualizar el usuario local para que deje de pedir cambio de contraseña
+      const current =
+        this.authState.getCurrentUserSnapshot() as LocalUser | null;
+      if (current) {
+        const updated: LocalUser = {
+          ...current,
+          requiresPasswordChange: false,
+        };
+        this.authState.setCurrentUser(updated, { persist: true });
       }
-      return !!result?.success;
     }
+    return !!result?.success;
+  }
 
-    requestPasswordChangeCode() {
-      const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
-      const email = user?.email || '';
-      return this.authApi.requestPasswordChangeCode().pipe(
-        catchError((err) => {
-          // Compatibilidad: si el backend no tiene /password/request-change-code aún, caer al flujo de reset-password
-          if ((err?.status === 404 || err?.status === 405) && email) {
-            return this.authApi.requestPasswordReset(email);
-          }
-          throw err;
-        })
-      );
-    }
+  requestPasswordChangeCode() {
+    const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
+    const email = user?.email || '';
+    return this.authApi.requestPasswordChangeCode().pipe(
+      catchError((err) => {
+        // Compatibilidad: si el backend no tiene /password/request-change-code aún, caer al flujo de reset-password
+        if ((err?.status === 404 || err?.status === 405) && email) {
+          return this.authApi.requestPasswordReset(email);
+        }
+        throw err;
+      }),
+    );
+  }
 
-    changePasswordWithCode(code: string, currentPassword: string, newPassword: string) {
-      return this.authApi.changePasswordWithCode({ code, currentPassword, newPassword });
-    }
+  changePasswordWithCode(
+    code: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    return this.authApi.changePasswordWithCode({
+      code,
+      currentPassword,
+      newPassword,
+    });
+  }
 
-    needsPasswordChange(): boolean {
-      const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
-      if (!user) return false;
-      // Verificar si el usuario tiene una propiedad que indique que necesita cambiar contraseña
-      return (user as any).requiresPasswordChange === true;
-    }
+  needsPasswordChange(): boolean {
+    const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
+    if (!user) return false;
+    // Verificar si el usuario tiene una propiedad que indique que necesita cambiar contraseña
+    return (user as any).requiresPasswordChange === true;
+  }
 
   async ensureSessionLoaded(options?: { force?: boolean }): Promise<void> {
     const force = options?.force === true;
@@ -224,9 +254,7 @@ export class AuthService {
 
   async logout(options?: { redirect?: boolean }): Promise<void> {
     await firstValueFrom(
-      this.authApi.logout().pipe(
-        catchError(() => of(void 0))
-      )
+      this.authApi.logout().pipe(catchError(() => of(void 0))),
     );
 
     this.authState.clearSession();
@@ -236,8 +264,8 @@ export class AuthService {
       return;
     }
 
-    if (!this.router.url.startsWith("/auth")) {
-      await this.router.navigate(["/auth"], { replaceUrl: true });
+    if (!this.router.url.startsWith('/auth')) {
+      await this.router.navigate(['/auth'], { replaceUrl: true });
     }
   }
 
@@ -261,24 +289,33 @@ export class AuthService {
       return [];
     }
 
-    this.rbac.markLoading("loadUserRoles");
+    this.rbac.markLoading('loadUserRoles');
 
     try {
-      const profile = await firstValueFrom(this.api.getById<any>("users", userId));
+      const profile = await firstValueFrom(
+        this.api.getById<any>('users', userId),
+      );
       let normalized = this.buildLocalUser(profile);
       // Si el perfil leído no trae el flag de cambio obligatorio, conservar el que ya teníamos
-      const current = (this.authState.getCurrentUserSnapshot() as LocalUser | null);
+      const current =
+        this.authState.getCurrentUserSnapshot() as LocalUser | null;
       const incomingFlag = (normalized as any)?.requiresPasswordChange;
       const existingFlag = (current as any)?.requiresPasswordChange;
       if (incomingFlag === undefined && existingFlag !== undefined) {
-        normalized = { ...normalized, requiresPasswordChange: existingFlag } as LocalUser;
+        normalized = {
+          ...normalized,
+          requiresPasswordChange: existingFlag,
+        } as LocalUser;
       }
       this.authState.setCurrentUser(normalized as LocalUser, { persist: true });
       const resolved = this.resolveRole(normalized);
       this.applyResolvedRole(resolved);
       return resolved.role ? [resolved.role] : [];
     } catch (error) {
-      console.error("[AuthService] No se pudieron cargar los roles del usuario", error);
+      console.error(
+        '[AuthService] No se pudieron cargar los roles del usuario',
+        error,
+      );
       // No derribar la sesión si falla este fetch: conservar estado previo
       const prev = this.rbac.getSnapshot();
       return Array.isArray(prev) ? (prev as ROLE[]) : [];
@@ -286,9 +323,8 @@ export class AuthService {
   }
 
   getUserId(): string | null {
-    const snapshot = this.authState.getCurrentUserSnapshot() as
-      | LocalUser
-      | null;
+    const snapshot =
+      this.authState.getCurrentUserSnapshot() as LocalUser | null;
     return snapshot?.id ?? null;
   }
 
@@ -296,44 +332,43 @@ export class AuthService {
     const extracted = this.resolveRole(user);
 
     return {
-      id: String(user?.["id"] ?? ""),
-      username: (user?.["email"] as string) ?? null,
-      email: (user?.["email"] as string) ?? null,
-      name: (user?.["name"] as string) ?? null,
-      lastName: (user?.["lastName"] as string) ?? null,
-      isBlocked: Boolean(user?.["isBlocked"] ?? false),
-      blockedReason: (user?.["blockedReason"] as string) ?? null,
+      id: String(user?.['id'] ?? ''),
+      username: (user?.['email'] as string) ?? null,
+      email: (user?.['email'] as string) ?? null,
+      name: (user?.['name'] as string) ?? null,
+      lastName: (user?.['lastName'] as string) ?? null,
+      isBlocked: Boolean(user?.['isBlocked'] ?? false),
+      blockedReason: (user?.['blockedReason'] as string) ?? null,
       role: extracted.role,
       roleId: extracted.roleId ?? undefined,
       isExecutive: extracted.role === ROLE.EXECUTIVE_SECRETARY,
-        requiresPasswordChange: Boolean(user?.["requiresPasswordChange"] ?? false),
+      requiresPasswordChange: Boolean(
+        user?.['requiresPasswordChange'] ?? false,
+      ),
     };
   }
 
-  private resolveRole(
-    userOrRole: AnyRecord | ROLE | null
-  ): { role: ROLE | null; roleId: number | null } {
+  private resolveRole(userOrRole: AnyRecord | ROLE | null): {
+    role: ROLE | null;
+    roleId: number | null;
+  } {
     if (!userOrRole) {
       return { role: null, roleId: null };
     }
 
-    if (typeof userOrRole === "string") {
+    if (typeof userOrRole === 'string') {
       const normalized = normalizeRole(userOrRole);
       return {
         role: normalized,
-        roleId: normalized ? ROLE_IDS[normalized] ?? null : null,
+        roleId: normalized ? (ROLE_IDS[normalized] ?? null) : null,
       };
     }
 
-    if (typeof userOrRole === "object") {
+    if (typeof userOrRole === 'object') {
       const candidateUser = userOrRole as AnyRecord;
-      const rawRole = candidateUser["role"] as unknown;
+      const rawRole = candidateUser['role'] as unknown;
 
-      if (
-        rawRole &&
-        typeof rawRole === "object" &&
-        rawRole !== null
-      ) {
+      if (rawRole && typeof rawRole === 'object' && rawRole !== null) {
         const candidate = rawRole as { name?: unknown; id?: unknown };
         const normalized = normalizeRole(candidate.name);
         const explicitId = Number(candidate.id ?? NaN);
@@ -342,15 +377,15 @@ export class AuthService {
           roleId: Number.isFinite(explicitId)
             ? explicitId
             : normalized
-            ? ROLE_IDS[normalized]
-            : null,
+              ? ROLE_IDS[normalized]
+              : null,
         };
       }
 
       const normalized = normalizeRole(rawRole);
       const fallbackRole =
         normalized ??
-        ROLE_BY_ID[Number(candidateUser["roleId"] ?? NaN)] ??
+        ROLE_BY_ID[Number(candidateUser['roleId'] ?? NaN)] ??
         null;
 
       return {
@@ -373,7 +408,10 @@ export class AuthService {
     this.applyResolvedRole(resolved);
   }
 
-  private applyResolvedRole(resolved: { role: ROLE | null; roleId: number | null }): void {
+  private applyResolvedRole(resolved: {
+    role: ROLE | null;
+    roleId: number | null;
+  }): void {
     if (resolved.role) {
       this.permissions.setRole(resolved.role, resolved.roleId ?? null);
       this.rbac.setRoles([resolved.role]);

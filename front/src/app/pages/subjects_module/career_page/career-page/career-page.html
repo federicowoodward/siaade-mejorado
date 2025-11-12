@@ -34,7 +34,12 @@
       *ngFor="let period of data()!.academicPeriods; let i = index"
       class="period-block py-2"
     >
-      <p-divider *ngIf="[0,3,6,9].includes(i)" align="center" type="dotted" class="bg-custom">
+      <p-divider
+        *ngIf="[0,3,6,9].includes(i)"
+        align="center"
+        type="dotted"
+        class="bg-custom"
+      >
         <b>{{ period.academicPeriod.name.replace('anual', '').trim() }}</b>
       </p-divider>
       <h4 class="mb-2">{{ period.academicPeriod.name }}</h4>
@@ -64,7 +69,9 @@
             <td>{{ s.metadata.subjectFormat }}</td>
             <td>{{ s.metadata.weeklyWorkload }}</td>
             <td>{{ s.metadata.annualWorkload }}</td>
-            <td>{{ s.prerequisites.length ? s.prerequisites.join(', ') : '-' }}</td>
+            <td>
+              {{ s.prerequisites.length ? s.prerequisites.join(', ') : '-' }}
+            </td>
           </tr>
         </ng-template>
       </p-table>

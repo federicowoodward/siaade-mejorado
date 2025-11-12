@@ -15,7 +15,10 @@
     <p class="block-message__title font-semibold text-lg m-0">
       {{ title }}
     </p>
-    <p *ngIf="reasonCode" class="block-message__code m-0 text-sm text-color-secondary">
+    <p
+      *ngIf="reasonCode"
+      class="block-message__code m-0 text-sm text-color-secondary"
+    >
       Código institucional: {{ reasonCode }}
     </p>
 

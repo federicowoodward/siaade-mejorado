@@ -13,5 +13,5 @@ export const expandCollapse: AnimationTriggerMetadata = trigger(
     state('open', style({ height: '*', opacity: 1 })),
     state('closed', style({ height: '0px', opacity: 0 })),
     transition('open <=> closed', animate('300ms ease-in-out')),
-  ]
+  ],
 );

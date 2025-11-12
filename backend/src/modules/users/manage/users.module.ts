@@ -22,5 +22,3 @@ import { UsersPatchModule } from "@/shared/services/users-patch/users-path.modul
   exports: [UsersService],
 })
 export class UsersModule {}
-
-

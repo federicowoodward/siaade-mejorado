@@ -1,5 +1,4 @@
 export interface Secretary {
-    userId: number;
-    isDirective: boolean;
-  }
-  
+  userId: number;
+  isDirective: boolean;
+}

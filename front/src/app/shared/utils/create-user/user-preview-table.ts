@@ -29,7 +29,11 @@ function toDisplayValue(v: unknown): string {
 }
 
 /** Aplana objetos anidados en filas {field, value}, ej: "common_data.address.street" */
-function flattenPreview(obj: any, prefix = '', out: PreviewRow[] = []): PreviewRow[] {
+function flattenPreview(
+  obj: any,
+  prefix = '',
+  out: PreviewRow[] = [],
+): PreviewRow[] {
   if (!obj || typeof obj !== 'object') return out;
 
   for (const [k, v] of Object.entries(obj)) {
@@ -60,13 +64,16 @@ export function buildPreviewRows(
     common_data?: any;
     [k: string]: any;
   },
-  opts: BuildPreviewRowsOptions = {}
+  opts: BuildPreviewRowsOptions = {},
 ): PreviewRow[] {
   const rows: PreviewRow[] = [];
 
-  const order =
-    opts.sectionOrder ??
-    ['user', 'roleExtras', 'user_info', 'common_data'];
+  const order = opts.sectionOrder ?? [
+    'user',
+    'roleExtras',
+    'user_info',
+    'common_data',
+  ];
 
   for (const section of order) {
     if (preview?.[section]) {

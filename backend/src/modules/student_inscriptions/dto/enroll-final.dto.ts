@@ -6,12 +6,17 @@ export class EnrollFinalDto {
   @IsInt()
   callId!: number;
 
-  @ApiPropertyOptional({ description: "Permite especificar un alumno objetivo (solo para usos administrativos)" })
+  @ApiPropertyOptional({
+    description:
+      "Permite especificar un alumno objetivo (solo para usos administrativos)",
+  })
   @IsOptional()
   @IsUUID()
   studentId?: string;
 
-  @ApiPropertyOptional({ description: "Codigo de razon informado por el front" })
+  @ApiPropertyOptional({
+    description: "Codigo de razon informado por el front",
+  })
   @IsOptional()
   @IsString()
   reasonCode?: string | null;

@@ -54,7 +54,11 @@ export class DisableIfUnauthorizedDirective {
       this.applied = true;
     }
     this.renderer.setProperty(this.element.nativeElement, 'disabled', true);
-    this.renderer.setAttribute(this.element.nativeElement, 'title', 'Sin permisos');
+    this.renderer.setAttribute(
+      this.element.nativeElement,
+      'title',
+      'Sin permisos',
+    );
   }
 
   private restoreInteractiveState(): void {
@@ -67,7 +71,11 @@ export class DisableIfUnauthorizedDirective {
         this.renderer.removeAttribute(this.element.nativeElement, 'title');
       }
     } else {
-      this.renderer.setAttribute(this.element.nativeElement, 'title', this.previousTitle);
+      this.renderer.setAttribute(
+        this.element.nativeElement,
+        'title',
+        this.previousTitle,
+      );
     }
     this.applied = false;
   }

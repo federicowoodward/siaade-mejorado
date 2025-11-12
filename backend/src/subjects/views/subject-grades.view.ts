@@ -47,4 +47,3 @@ export class SubjectGradesView {
   @ViewColumn({ name: "condition" })
   condition: string | null;
 }
-

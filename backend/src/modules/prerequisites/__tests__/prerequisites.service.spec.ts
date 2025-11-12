@@ -24,13 +24,14 @@ vi.mock("@/entities/catalogs/subject-status-type.entity", () => ({
   SubjectStatusType: class SubjectStatusType {},
 }));
 
-type PrerequisitesServiceCtor = typeof import("../prerequisites.service").PrerequisitesService;
+type PrerequisitesServiceCtor =
+  typeof import("../prerequisites.service").PrerequisitesService;
 let PrerequisitesServiceClass: PrerequisitesServiceCtor;
 
 beforeAll(async () => {
-  ({
-    PrerequisitesService: PrerequisitesServiceClass,
-  } = await import("../prerequisites.service"));
+  ({ PrerequisitesService: PrerequisitesServiceClass } = await import(
+    "../prerequisites.service"
+  ));
 });
 
 type PrereqRow = {

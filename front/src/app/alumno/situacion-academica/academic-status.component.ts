@@ -1,10 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  computed,
-  inject,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +31,8 @@ const ACTION_REASON_COPY: Record<
   },
   MISSING_REQUIREMENTS: {
     title: 'Falta cumplir requisitos',
-    message: 'Todavia no se cumplen los requisitos academicos para habilitar la accion.',
+    message:
+      'Todavia no se cumplen los requisitos academicos para habilitar la accion.',
     variant: 'official',
   },
   DUPLICATE: {
@@ -145,7 +140,9 @@ export class AcademicStatusComponent implements OnInit {
     return resolved;
   }
 
-  stateSeverity(condition: string | null): 'success' | 'info' | 'danger' | 'warning' {
+  stateSeverity(
+    condition: string | null,
+  ): 'success' | 'info' | 'danger' | 'warning' {
     if (!condition) return 'warning';
     const value = condition.toLowerCase();
     if (value.includes('promo') || value.includes('apro')) return 'success';

@@ -4,7 +4,10 @@ import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
-import { CareerCatalogService, SubjectCommissionTeachersDto } from '../../../core/services/career-catalog.service';
+import {
+  CareerCatalogService,
+  SubjectCommissionTeachersDto,
+} from '../../../core/services/career-catalog.service';
 import { ApiService } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
@@ -13,7 +16,15 @@ import { CardModule } from 'primeng/card';
 @Component({
   selector: 'app-subjects-table',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, DialogModule, FormsModule, BlockedActionDirective, CardModule],
+  imports: [
+    CommonModule,
+    TableModule,
+    ButtonModule,
+    DialogModule,
+    FormsModule,
+    BlockedActionDirective,
+    CardModule,
+  ],
   templateUrl: './subjects-table.html',
   styleUrls: ['./subjects-table.scss'],
 })
@@ -52,9 +63,12 @@ export class SubjectTableComponent implements OnInit {
   dialogData = signal<SubjectCommissionTeachersDto | null>(null);
 
   // Cambio docente
-  changeTeacherDialog = signal<{ visible: boolean; loading: boolean; subjectId: number | null; commissionId: number | null }>(
-    { visible: false, loading: false, subjectId: null, commissionId: null }
-  );
+  changeTeacherDialog = signal<{
+    visible: boolean;
+    loading: boolean;
+    subjectId: number | null;
+    commissionId: number | null;
+  }>({ visible: false, loading: false, subjectId: null, commissionId: null });
   teacherOptions = signal<{ label: string; value: string }[]>([]);
   selectedNewTeacher: string | null = null;
 
@@ -73,7 +87,7 @@ export class SubjectTableComponent implements OnInit {
       error: (err) => {
         console.error(err);
         this.dialogError.set(
-          'No se pudieron cargar las comisiones y docentes.'
+          'No se pudieron cargar las comisiones y docentes.',
         );
         this.dialogLoading.set(false);
       },
@@ -97,30 +111,55 @@ export class SubjectTableComponent implements OnInit {
     this.router.navigate(['/subjects', id, 'academic-situation']);
   }
 
-  startChangeTeacher(subjectId: number, commissionId: number, currentTeacherId: string) {
+  startChangeTeacher(
+    subjectId: number,
+    commissionId: number,
+    currentTeacherId: string,
+  ) {
     this.selectedNewTeacher = null;
-    this.changeTeacherDialog.set({ visible: true, loading: true, subjectId, commissionId });
-    // Cargar lista completa de docentes desde el backend
-    this.api.request<Array<{ teacherId: string; name: string }>>('GET', 'catalogs/teachers').subscribe({
-      next: (rows) => {
-        const opts = rows.map(r => ({ label: r.name || r.teacherId, value: r.teacherId }));
-        this.teacherOptions.set(opts);
-        this.changeTeacherDialog.update(v => ({ ...v, loading: false }));
-      },
-      error: (err) => {
-        console.error('No se pudieron cargar los docentes', err);
-        // Fallback a docentes visibles en la materia si falla el endpoint nuevo
-        const data = this.dialogData();
-        const teachersRaw = data?.commissions?.flatMap(c => c.teachers) ?? [];
-        const opts = teachersRaw.map(t => ({ label: t.name, value: t.teacherId }));
-        this.teacherOptions.set(opts);
-        this.changeTeacherDialog.update(v => ({ ...v, loading: false }));
-      }
+    this.changeTeacherDialog.set({
+      visible: true,
+      loading: true,
+      subjectId,
+      commissionId,
     });
+    // Cargar lista completa de docentes desde el backend
+    this.api
+      .request<
+        Array<{ teacherId: string; name: string }>
+      >('GET', 'catalogs/teachers')
+      .subscribe({
+        next: (rows) => {
+          const opts = rows.map((r) => ({
+            label: r.name || r.teacherId,
+            value: r.teacherId,
+          }));
+          this.teacherOptions.set(opts);
+          this.changeTeacherDialog.update((v) => ({ ...v, loading: false }));
+        },
+        error: (err) => {
+          console.error('No se pudieron cargar los docentes', err);
+          // Fallback a docentes visibles en la materia si falla el endpoint nuevo
+          const data = this.dialogData();
+          const teachersRaw =
+            data?.commissions?.flatMap((c) => c.teachers) ?? [];
+          const opts = teachersRaw.map((t) => ({
+            label: t.name,
+            value: t.teacherId,
+          }));
+          this.teacherOptions.set(opts);
+          this.changeTeacherDialog.update((v) => ({ ...v, loading: false }));
+        },
+      });
   }
 
   closeChangeTeacherDialog() {
-    this.changeTeacherDialog.set({ visible: false, loading: false, subjectId: null, commissionId: null });
+    this.changeTeacherDialog.set({
+      visible: false,
+      loading: false,
+      subjectId: null,
+      commissionId: null,
+    });
     this.teacherOptions.set([]);
     this.selectedNewTeacher = null;
   }
@@ -128,18 +167,22 @@ export class SubjectTableComponent implements OnInit {
   confirmChangeTeacher() {
     const dialog = this.changeTeacherDialog();
     if (!dialog.commissionId || !this.selectedNewTeacher) return;
-    this.api.request('PATCH', `subject-commissions/${dialog.commissionId}/teacher`, { teacherId: this.selectedNewTeacher }).subscribe({
-      next: () => {
-        // Refrescar listado de comisiones/docentes
-        if (dialog.subjectId) {
-          this.viewComissions(dialog.subjectId);
-        }
-        this.closeChangeTeacherDialog();
-      },
-      error: (err: unknown) => {
-        console.error('Error cambiando docente', err);
-        this.closeChangeTeacherDialog();
-      }
-    });
+    this.api
+      .request('PATCH', `subject-commissions/${dialog.commissionId}/teacher`, {
+        teacherId: this.selectedNewTeacher,
+      })
+      .subscribe({
+        next: () => {
+          // Refrescar listado de comisiones/docentes
+          if (dialog.subjectId) {
+            this.viewComissions(dialog.subjectId);
+          }
+          this.closeChangeTeacherDialog();
+        },
+        error: (err: unknown) => {
+          console.error('Error cambiando docente', err);
+          this.closeChangeTeacherDialog();
+        },
+      });
   }
 }

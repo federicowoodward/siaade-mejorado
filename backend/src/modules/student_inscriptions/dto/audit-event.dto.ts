@@ -13,7 +13,10 @@ export class AuditEventDto {
   @IsInt()
   mesaId!: number;
 
-  @ApiPropertyOptional({ description: "Identificador del llamado asociado", nullable: true })
+  @ApiPropertyOptional({
+    description: "Identificador del llamado asociado",
+    nullable: true,
+  })
   @IsOptional()
   @IsInt()
   callId?: number;

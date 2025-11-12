@@ -33,16 +33,20 @@ export class RequestPasswordChangePage {
 
   async requestCode() {
     if (this.submitting()) return;
-    
+
     this.submitting.set(true);
-    
+
     try {
       const resp: any = await this.auth.requestPasswordChangeCode().toPromise();
       // Guardar identidad y modo inmediatamente y navegar sin mostrar toast
-      try { sessionStorage.setItem('resetMode', 'change'); } catch {}
-      try { sessionStorage.setItem('resetIdentity', this.userEmail()); } catch {}
+      try {
+        sessionStorage.setItem('resetMode', 'change');
+      } catch {}
+      try {
+        sessionStorage.setItem('resetIdentity', this.userEmail());
+      } catch {}
       this.router.navigate(['/account/password/change-code'], {
-        state: { mode: 'change', identity: this.userEmail() }
+        state: { mode: 'change', identity: this.userEmail() },
       });
     } catch (error: any) {
       const msg = error?.error?.message || 'Error al enviar el código';

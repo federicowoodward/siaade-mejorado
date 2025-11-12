@@ -90,11 +90,7 @@ export class PrerequisitesService {
         "careerSubject.subject_id = commission.subject_id AND careerSubject.career_id = :careerId",
         { careerId },
       )
-      .innerJoin(
-        SubjectStatusType,
-        "status",
-        "status.id = progress.status_id",
-      )
+      .innerJoin(SubjectStatusType, "status", "status.id = progress.status_id")
       .where("progress.student_id = :studentId", { studentId })
       .andWhere("progress.status_id IS NOT NULL")
       .andWhere("LOWER(status.status_name) IN (:...approvedStatuses)", {

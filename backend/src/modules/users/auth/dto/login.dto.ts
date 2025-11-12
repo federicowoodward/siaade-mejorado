@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString } from "class-validator";
 
 export class LoginDto {
   // acepta email, cuil o "Nombre Apellido"

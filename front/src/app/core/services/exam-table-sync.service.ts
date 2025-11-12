@@ -96,7 +96,9 @@ export class ExamTableSyncService {
       return null;
     }
     const ctor =
-      ((this.win as any)?.BroadcastChannel as typeof BroadcastChannel | undefined) ??
+      ((this.win as any)?.BroadcastChannel as
+        | typeof BroadcastChannel
+        | undefined) ??
       (typeof BroadcastChannel !== 'undefined' ? BroadcastChannel : undefined);
     if (!ctor) {
       return null;

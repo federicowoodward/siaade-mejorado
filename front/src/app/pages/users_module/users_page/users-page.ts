@@ -1,23 +1,23 @@
-import { Component, effect, inject, signal } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { UsersTableComponent } from "../../../shared/components/users-table/users-table.component";
-import { Button } from "primeng/button";
-import { DialogModule } from "primeng/dialog";
-import { Router } from "@angular/router";
-import { ApiService } from "../../../core/services/api.service";
-import { PermissionService } from "../../../core/auth/permission.service";
-import { ROLE, ROLE_BY_ID } from "../../../core/auth/roles";
-import { UserRow } from "../../../core/models/users-table.models";
-import { mapApiUserToRow } from "../../../shared/adapters/users.adapter";
-import { ApiCacheService } from "../../../core/cache/api-cache.service";
-import { environment as env } from "environments/environment";
+import { Component, effect, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { UsersTableComponent } from '../../../shared/components/users-table/users-table.component';
+import { Button } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { Router } from '@angular/router';
+import { ApiService } from '../../../core/services/api.service';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE, ROLE_BY_ID } from '../../../core/auth/roles';
+import { UserRow } from '../../../core/models/users-table.models';
+import { mapApiUserToRow } from '../../../shared/adapters/users.adapter';
+import { ApiCacheService } from '../../../core/cache/api-cache.service';
+import { environment as env } from 'environments/environment';
 
 @Component({
-  selector: "app-users-page",
+  selector: 'app-users-page',
   standalone: true,
   imports: [CommonModule, UsersTableComponent, Button, DialogModule],
-  templateUrl: "./users-page.html",
-  styleUrl: "./users-page.scss",
+  templateUrl: './users-page.html',
+  styleUrl: './users-page.scss',
 })
 export class UsersPage {
   private router = inject(Router);
@@ -37,20 +37,22 @@ export class UsersPage {
   });
   dialogLoading = signal(false);
   dialogError = signal<string | null>(null);
-  dialogData = signal<
-    | {
-        teacher: { id: string; name: string; email: string; cuil: string | null } | null;
-        subjects: Array<{
-          subject: { id: number; name: string };
-          commissions: Array<{ id: number; letter: string | null }>;
-        }>;
-      }
-    | null
-  >(null);
+  dialogData = signal<{
+    teacher: {
+      id: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    } | null;
+    subjects: Array<{
+      subject: { id: number; name: string };
+      commissions: Array<{ id: number; letter: string | null }>;
+    }>;
+  } | null>(null);
 
   constructor() {
     this.init();
-    
+
     effect(() => {
       this.viewerRole = this.permissions.currentRole();
     });
@@ -58,12 +60,15 @@ export class UsersPage {
 
   // Solo SECRETARIO o DIRECTIVO pueden crear usuarios
   canCreateUser(): boolean {
-    return this.permissions.hasAnyRole([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]);
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
   }
 
   private async init() {
     // Invalidar cache del endpoint de usuarios para evitar resultados viejos (TTL 30m)
-    const base = (env.apiBaseUrl || "").replace(/\/$/, "");
+    const base = (env.apiBaseUrl || '').replace(/\/$/, '');
     try {
       if (base) {
         await this.cache.invalidateByPrefix(`GET:${base}/users`);
@@ -72,9 +77,9 @@ export class UsersPage {
       }
     } catch {}
 
-    this.api.getAll("users").subscribe((users) => {
+    this.api.getAll('users').subscribe((users) => {
       const mapped = users.map((u) =>
-        mapApiUserToRow(u, (id: number) => ROLE_BY_ID[id] ?? null)
+        mapApiUserToRow(u, (id: number) => ROLE_BY_ID[id] ?? null),
       );
       this.rows.set(mapped);
     });
@@ -82,22 +87,22 @@ export class UsersPage {
 
   goToNewUser() {
     // Navegación absoluta para evitar /users/users/create
-    this.router.navigate(["/users/create"]);
+    this.router.navigate(['/users/create']);
   }
 
   onRowAction(e: { actionId: string; row: UserRow }) {
     const { actionId, row } = e;
 
-    if (actionId === "view") {
-      this.router.navigate(["/users/user_detail", row.id]);
+    if (actionId === 'view') {
+      this.router.navigate(['/users/user_detail', row.id]);
     }
-    if (actionId === "cert") {
-      this.router.navigate(["/users/certificates", row.id]);
+    if (actionId === 'cert') {
+      this.router.navigate(['/users/certificates', row.id]);
     }
-    if (actionId === "academic") {
-      this.router.navigate(["/users/student_academic_status", row.id]);
+    if (actionId === 'academic') {
+      this.router.navigate(['/users/student_academic_status', row.id]);
     }
-    if (actionId === "teacher-subjects") {
+    if (actionId === 'teacher-subjects') {
       this.openTeacherAssignments(row.id);
     }
   }
@@ -113,12 +118,17 @@ export class UsersPage {
 
     this.api
       .request<{
-        teacher: { id: string; name: string; email: string; cuil: string | null } | null;
+        teacher: {
+          id: string;
+          name: string;
+          email: string;
+          cuil: string | null;
+        } | null;
         subjects: Array<{
           subject: { id: number; name: string };
           commissions: Array<{ id: number; letter: string | null }>;
         }>;
-      }>("GET", `catalogs/teacher/${teacherId}/subject-commissions`)
+      }>('GET', `catalogs/teacher/${teacherId}/subject-commissions`)
       .subscribe({
         next: (data) => {
           this.dialogData.set(data);
@@ -126,7 +136,7 @@ export class UsersPage {
         },
         error: (err) => {
           console.error(err);
-          this.dialogError.set("No se pudieron cargar las materias a cargo.");
+          this.dialogError.set('No se pudieron cargar las materias a cargo.');
           this.dialogLoading.set(false);
         },
       });
@@ -139,4 +149,3 @@ export class UsersPage {
     this.dialogData.set(null);
   }
 }
-

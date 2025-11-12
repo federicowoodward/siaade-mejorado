@@ -45,27 +45,27 @@ export class ExamTablesService {
     }
     return this.api.request<any>('GET', `${this.base}/list`).pipe(
       map((resp) =>
-        Array.isArray(resp) ? resp : resp?.data ?? resp?.items ?? []
+        Array.isArray(resp) ? resp : (resp?.data ?? resp?.items ?? []),
       ),
       map((arr: any[]) => arr.map(this.toExamTable)),
       tap((rows) => {
         this.cache = rows;
         this.cacheTimestamp = Date.now();
-      })
+      }),
     );
   }
 
   getOne(id: number): Observable<ExamTable> {
     return this.api.request<any>('GET', `${this.base}/list/${id}`).pipe(
       map((resp) => ('data' in resp ? resp.data : resp)),
-      map(this.toExamTable)
+      map(this.toExamTable),
     );
   }
 
   create(
     dto: Pick<ExamTable, 'name' | 'start_date' | 'end_date'> & {
       created_by?: string;
-    }
+    },
   ): Observable<ExamTable> {
     const payload = {
       name: dto.name,
@@ -76,13 +76,13 @@ export class ExamTablesService {
     return this.api.request<any>('POST', `${this.base}/init`, payload).pipe(
       map((resp) => ('data' in resp ? resp.data : resp)),
       map(this.toExamTable),
-      tap(() => this.invalidateCache())
+      tap(() => this.invalidateCache()),
     );
   }
 
   update(
     id: number,
-    dto: Partial<Pick<ExamTable, 'name' | 'start_date' | 'end_date'>>
+    dto: Partial<Pick<ExamTable, 'name' | 'start_date' | 'end_date'>>,
   ): Observable<ExamTable> {
     const payload: any = {};
     if (dto.name !== undefined) payload.name = dto.name;
@@ -96,7 +96,7 @@ export class ExamTablesService {
       .pipe(
         map((resp) => ('data' in resp ? resp.data : resp)),
         map(this.toExamTable),
-        tap(() => this.invalidateCache())
+        tap(() => this.invalidateCache()),
       );
   }
 

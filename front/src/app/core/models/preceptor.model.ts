@@ -1,4 +1,3 @@
 export interface Preceptor {
-    userId: number;
-  }
-  
+  userId: number;
+}

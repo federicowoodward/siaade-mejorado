@@ -46,7 +46,7 @@ describe('StudentInscriptionsService', () => {
             ],
           },
         ],
-      })
+      }),
     );
 
     service.listExamTables().subscribe((tables) => {
@@ -54,7 +54,7 @@ describe('StudentInscriptionsService', () => {
         'GET',
         'students/inscriptions/exam-tables',
         undefined,
-        {}
+        {},
       );
       expect(tables.length).toBe(1);
       expect(tables[0].availableCalls[0].label).toBe('Primer llamado');
@@ -75,7 +75,7 @@ describe('StudentInscriptionsService', () => {
           callId: 3,
           studentId: 'student-1',
           reasonCode: null,
-        }
+        },
       );
       expect(response.ok).toBeTrue();
       done();
@@ -84,7 +84,7 @@ describe('StudentInscriptionsService', () => {
 
   it('should map backend errors into blocked enrollment responses', (done) => {
     api.request.and.returnValue(
-      throwError(() => ({ error: { ok: false, reasonCode: 'quota_full' } }))
+      throwError(() => ({ error: { ok: false, reasonCode: 'quota_full' } })),
     );
 
     service.enroll({ mesaId: 1, callId: 2 }).subscribe((response) => {

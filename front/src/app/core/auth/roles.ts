@@ -24,7 +24,7 @@ export const ROLE_BY_ID: Record<number, ROLE> = Object.entries(ROLE_IDS).reduce(
     acc[value] = key as ROLE;
     return acc;
   },
-  {} as Record<number, ROLE>
+  {} as Record<number, ROLE>,
 );
 
 export const ROLE_LABELS: Record<ROLE, string> = {

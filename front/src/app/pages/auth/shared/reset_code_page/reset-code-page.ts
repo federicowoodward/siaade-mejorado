@@ -11,7 +11,13 @@ import { AuthService } from '../../../../core/services/auth.service';
 @Component({
   selector: 'app-reset-code-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule, ToastModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InputTextModule,
+    ButtonModule,
+    ToastModule,
+  ],
   providers: [MessageService],
   templateUrl: './reset-code-page.html',
   styleUrl: './reset-code-page.scss',
@@ -40,11 +46,16 @@ export class ResetCodePage implements OnDestroy {
   constructor() {
     // Recuperar identidad del state o sessionStorage
     const nav = this.router.getCurrentNavigation();
-    const navState = (nav?.extras?.state as any) ?? (history?.state as any) ?? {};
+    const navState =
+      (nav?.extras?.state as any) ?? (history?.state as any) ?? {};
     const identityFromNav = navState?.identity;
-    const modeFromNav = (navState?.mode === 'change') ? 'change' : 'recovery';
+    const modeFromNav = navState?.mode === 'change' ? 'change' : 'recovery';
     const identityFromStorage = (() => {
-      try { return sessionStorage.getItem('resetIdentity'); } catch { return null; }
+      try {
+        return sessionStorage.getItem('resetIdentity');
+      } catch {
+        return null;
+      }
     })();
     const identity = identityFromNav || identityFromStorage || '';
     if (identity) {
@@ -52,10 +63,14 @@ export class ResetCodePage implements OnDestroy {
     }
     // Persistir identidad y modo para continuidad
     this.updateMaskedIdentity();
-  try { sessionStorage.setItem('resetMode', modeFromNav); } catch {}
-  this.mode = modeFromNav;
+    try {
+      sessionStorage.setItem('resetMode', modeFromNav);
+    } catch {}
+    this.mode = modeFromNav;
     // actualizar cuando cambie la identidad (fallback/manual)
-    this.form.get('identity')?.valueChanges.subscribe(() => this.updateMaskedIdentity());
+    this.form
+      .get('identity')
+      ?.valueChanges.subscribe(() => this.updateMaskedIdentity());
     // Iniciar cooldown automático
     this.startCooldown();
   }
@@ -75,26 +90,52 @@ export class ResetCodePage implements OnDestroy {
       next: (resp) => {
         const token = resp?.token;
         if (!token) {
-          this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No se pudo verificar el código.' });
+          this.message.add({
+            severity: 'warn',
+            summary: 'Atención',
+            detail: 'No se pudo verificar el código.',
+          });
           this.submitting = false;
           return;
         }
         // No mostrar toast en modo cambio voluntario para hacer la transición más directa
-        const modeParam = (() => { try { return sessionStorage.getItem('resetMode'); } catch { return null; } })();
+        const modeParam = (() => {
+          try {
+            return sessionStorage.getItem('resetMode');
+          } catch {
+            return null;
+          }
+        })();
         if (modeParam !== 'change') {
-          this.message.add({ severity: 'success', summary: 'Código verificado', detail: 'Continuá para crear tu nueva contraseña.' });
+          this.message.add({
+            severity: 'success',
+            summary: 'Código verificado',
+            detail: 'Continuá para crear tu nueva contraseña.',
+          });
         }
         let modeParamResolved = 'recovery';
         try {
-          modeParamResolved = sessionStorage.getItem('resetMode') === 'change' ? 'change' : 'recovery';
+          modeParamResolved =
+            sessionStorage.getItem('resetMode') === 'change'
+              ? 'change'
+              : 'recovery';
         } catch {}
         // Si es cambio voluntario (mode=change), redirigir a /account/password/reset
         // Si es recovery, redirigir a /auth/reset-password
-        const targetPath = modeParamResolved === 'change' ? '/account/password/reset' : '/auth/reset-password';
-        this.router.navigate([targetPath], { queryParams: { token, mode: modeParamResolved } });
+        const targetPath =
+          modeParamResolved === 'change'
+            ? '/account/password/reset'
+            : '/auth/reset-password';
+        this.router.navigate([targetPath], {
+          queryParams: { token, mode: modeParamResolved },
+        });
       },
       error: () => {
-        this.message.add({ severity: 'error', summary: 'Código inválido', detail: 'El código es incorrecto o venció.' });
+        this.message.add({
+          severity: 'error',
+          summary: 'Código inválido',
+          detail: 'El código es incorrecto o venció.',
+        });
         this.submitting = false;
       },
     });
@@ -109,25 +150,41 @@ export class ResetCodePage implements OnDestroy {
     if (this.mode === 'change') {
       this.auth.requestPasswordChangeCode().subscribe({
         next: () => {
-          this.message.add({ severity: 'success', summary: 'Código reenviado', detail: 'Revisá tu correo.' });
+          this.message.add({
+            severity: 'success',
+            summary: 'Código reenviado',
+            detail: 'Revisá tu correo.',
+          });
           this.startCooldown();
         },
         error: () => {
-          this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No pudimos reenviar el código aún.' });
+          this.message.add({
+            severity: 'warn',
+            summary: 'Atención',
+            detail: 'No pudimos reenviar el código aún.',
+          });
           this.startCooldown();
-        }
+        },
       });
     } else {
       this.auth.requestPasswordRecovery(identity!).subscribe({
         next: () => {
-          this.message.add({ severity: 'success', summary: 'Código reenviado', detail: 'Revisá tu correo.' });
+          this.message.add({
+            severity: 'success',
+            summary: 'Código reenviado',
+            detail: 'Revisá tu correo.',
+          });
           this.startCooldown();
         },
         error: () => {
-          this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No pudimos reenviar el código aún.' });
+          this.message.add({
+            severity: 'warn',
+            summary: 'Atención',
+            detail: 'No pudimos reenviar el código aún.',
+          });
           // aun así reactivar cooldown para evitar spam
           this.startCooldown();
-        }
+        },
       });
     }
   }

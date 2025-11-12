@@ -6,17 +6,25 @@
       <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
     </div>
   </div>
-  <div class="ml-auto text-right">
-  </div>
+  <div class="ml-auto text-right"></div>
 </div>
 
 <!-- Aviso de bloqueo (persistente mientras isBlocked=true) -->
-<div *ngIf="authService.isLoggedIn() && (blockedUser$ | async)?.isBlocked" class="p-3 m-3 border-round bg-red-100 text-red-800">
+<div
+  *ngIf="authService.isLoggedIn() && (blockedUser$ | async)?.isBlocked"
+  class="p-3 m-3 border-round bg-red-100 text-red-800"
+>
   <div class="flex align-items-start gap-2">
     <span class="font-bold">Cuenta bloqueada</span>
-    <span class="text-sm">{{ (blockedUser$ | async)?.blockedReason || 'Contactá a administración para más información.' }}</span>
+    <span class="text-sm"
+      >{{ (blockedUser$ | async)?.blockedReason || 'Contactá a administración
+      para más información.' }}</span
+    >
   </div>
-  <p class="mt-2 text-xs opacity-70">Mientras la cuenta esté bloqueada no podrás realizar inscripciones ni modificaciones académicas.</p>
+  <p class="mt-2 text-xs opacity-70">
+    Mientras la cuenta esté bloqueada no podrás realizar inscripciones ni
+    modificaciones académicas.
+  </p>
 </div>
 
 <!-- Quick Access -->
@@ -29,4 +37,6 @@
 </div>
 
 <!-- Modal de cambio de contraseña obligatorio -->
-<app-first-password-change-modal *ngIf="showPasswordChangeModal()"></app-first-password-change-modal>
+<app-first-password-change-modal
+  *ngIf="showPasswordChangeModal()"
+></app-first-password-change-modal>

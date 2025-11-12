@@ -53,7 +53,13 @@ type RawContextResponse = {
     course?: any;
     exam?: any;
   };
-  correlatives?: Array<{ subjectId?: number; subject_id?: number; ok?: boolean; met?: boolean; satisfied?: boolean }>;
+  correlatives?: Array<{
+    subjectId?: number;
+    subject_id?: number;
+    ok?: boolean;
+    met?: boolean;
+    satisfied?: boolean;
+  }>;
   duplicates?: Array<string | number>;
   duplicateSubjects?: Array<string | number>;
   quotaFull?: Array<string | number>;
@@ -88,7 +94,7 @@ export class StudentStatusService {
       context: this.fetchContext(effectiveStudentId),
     }).pipe(
       map(({ subjects, context }) =>
-        this.mapCards(subjects, context, effectiveStudentId)
+        this.mapCards(subjects, context, effectiveStudentId),
       ),
       tap((cards) => this.statusSignal.set(cards)),
       catchError((error) => {
@@ -96,18 +102,20 @@ export class StudentStatusService {
         this.statusSignal.set([]);
         return of([]);
       }),
-      finalize(() => this.loadingSignal.set(false))
+      finalize(() => this.loadingSignal.set(false)),
     );
   }
 
-  private fetchStatus(studentId?: string | null): Observable<RawStatusResponse> {
+  private fetchStatus(
+    studentId?: string | null,
+  ): Observable<RawStatusResponse> {
     const params = studentId ? { studentId } : undefined;
     return this.api
       .request<RawStatusResponse>(
         'GET',
         'students/status/subjects',
         undefined,
-        params
+        params,
       )
       .pipe(
         catchError((error) => {
@@ -116,15 +124,15 @@ export class StudentStatusService {
           }
           console.warn(
             '[StudentStatus] Falling back to catalogs endpoint',
-            error
+            error,
           );
           return this.api
             .request<any>(
               'GET',
-              `catalogs/student/${studentId}/academic-status`
+              `catalogs/student/${studentId}/academic-status`,
             )
             .pipe(map((legacy) => this.legacyToNew(legacy, studentId)));
-        })
+        }),
       );
   }
 
@@ -135,25 +143,29 @@ export class StudentStatusService {
         'GET',
         'students/status/action-context',
         undefined,
-        params
+        params,
       )
       .pipe(
         map((payload) => this.mapContext(payload)),
         catchError((error) => {
           console.warn('[StudentStatus] context endpoint unavailable', error);
           return of(this.buildFallbackContext());
-        })
+        }),
       );
   }
 
   private mapCards(
     raw: RawStatusResponse,
     context: ActionContext,
-    studentId?: string | null
+    studentId?: string | null,
   ): StudentSubjectCard[] {
     const subjects = raw?.subjects ?? [];
     if (!subjects.length && raw?.byYear) {
-      return this.mapCards(this.legacyToNew(raw, studentId), context, studentId);
+      return this.mapCards(
+        this.legacyToNew(raw, studentId),
+        context,
+        studentId,
+      );
     }
     return subjects
       .map((row: any) => this.mapCard(row, context))
@@ -167,7 +179,8 @@ export class StudentStatusService {
   private mapCard(row: any, context: ActionContext): StudentSubjectCard {
     const partials = this.resolvePartials(row.partials);
     const notes = this.buildNotes(row, partials);
-    const attendance = this.toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
+    const attendance =
+      this.toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
     const finalScore = this.toNumber(row.final ?? row.finalScore);
     return {
       subjectId: Number(row.subjectId ?? row.id ?? 0),
@@ -214,7 +227,7 @@ export class StudentStatusService {
   private buildFinalExplanation(
     partials: 2 | 4,
     notes: StudentSubjectNote[],
-    attendance: number
+    attendance: number,
   ): string {
     const validNotes = notes
       .map((n) => n.value)
@@ -242,7 +255,10 @@ export class StudentStatusService {
     return 'En curso';
   }
 
-  private buildActions(row: any, context: ActionContext): SubjectActionAvailability {
+  private buildActions(
+    row: any,
+    context: ActionContext,
+  ): SubjectActionAvailability {
     const subjectId = Number(row.subjectId ?? row.id ?? 0);
     const correlativesMet =
       context.correlatives[subjectId] ?? context.correlatives[0] ?? true;
@@ -268,7 +284,8 @@ export class StudentStatusService {
     const examReady = this.isExamReady(row);
     let examReason: StudentExamBlockReason | null = null;
     if (!examWindowOpen) examReason = 'WINDOW_CLOSED';
-    else if (!examReady || !correlativesMet) examReason = 'MISSING_REQUIREMENTS';
+    else if (!examReady || !correlativesMet)
+      examReason = 'MISSING_REQUIREMENTS';
     else if (duplicate) examReason = 'DUPLICATE';
     else if (quotaFull) examReason = 'QUOTA_FULL';
 
@@ -286,7 +303,8 @@ export class StudentStatusService {
 
   private isExamReady(row: any): boolean {
     const condition = String(row.condition ?? '').toLowerCase();
-    if (condition.includes('promo') || condition.includes('regular')) return true;
+    if (condition.includes('promo') || condition.includes('regular'))
+      return true;
     if (condition.includes('aprob')) return true;
     const finalScore = this.toNumber(row.final ?? row.finalScore);
     return typeof finalScore === 'number' && finalScore >= 4;
@@ -311,18 +329,18 @@ export class StudentStatusService {
     (payload?.correlatives ?? []).forEach((row) => {
       const subjectId = Number(row.subjectId ?? row.subject_id ?? 0);
       correlatives[subjectId] = Boolean(
-        row.ok ?? row.met ?? row.satisfied ?? false
+        row.ok ?? row.met ?? row.satisfied ?? false,
       );
     });
     const duplicates = new Set<number>(
       (payload?.duplicates ?? payload?.duplicateSubjects ?? []).map((value) =>
-        Number(value)
-      )
+        Number(value),
+      ),
     );
     const quotaFull = new Set<number>(
       (payload?.quotaFull ?? payload?.quotaBlockedSubjects ?? []).map((value) =>
-        Number(value)
-      )
+        Number(value),
+      ),
     );
     return {
       courseWindow: courseWindow ? this.normalizeWindow(courseWindow) : null,
@@ -334,8 +352,12 @@ export class StudentStatusService {
   }
 
   private normalizeWindow(window: any): StudentActionWindow {
-    const opensAt = this.normalizeDate(window?.opensAt ?? window?.start ?? window?.from);
-    const closesAt = this.normalizeDate(window?.closesAt ?? window?.end ?? window?.to);
+    const opensAt = this.normalizeDate(
+      window?.opensAt ?? window?.start ?? window?.from,
+    );
+    const closesAt = this.normalizeDate(
+      window?.closesAt ?? window?.end ?? window?.to,
+    );
     return {
       id: window?.id ?? window?.windowId,
       label: window?.label ?? window?.name ?? 'Ventana',
@@ -343,11 +365,16 @@ export class StudentStatusService {
       closesAt,
       state: this.resolveWindowState(opensAt, closesAt),
       message: window?.message ?? null,
-      isAdditional: Boolean(window?.isAdditional ?? window?.additional ?? false),
+      isAdditional: Boolean(
+        window?.isAdditional ?? window?.additional ?? false,
+      ),
     };
   }
 
-  private resolveWindowState(opensAt?: string | null, closesAt?: string | null): StudentWindowState {
+  private resolveWindowState(
+    opensAt?: string | null,
+    closesAt?: string | null,
+  ): StudentWindowState {
     if (!opensAt || !closesAt) return 'closed';
     const now = Date.now();
     const start = Date.parse(opensAt);
@@ -375,7 +402,10 @@ export class StudentStatusService {
     };
   }
 
-  private legacyToNew(input: any, studentId?: string | null): RawStatusResponse {
+  private legacyToNew(
+    input: any,
+    studentId?: string | null,
+  ): RawStatusResponse {
     const subjects: any[] = [];
     const byYear = input?.byYear ?? {};
     Object.entries(byYear).forEach(([yearLabel, rows]) => {

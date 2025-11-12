@@ -78,12 +78,12 @@ export class FinalExamCreateDialogComponent {
     this.loadingSubjects.set(true);
     this.api.getAll<Subject>('subjects/read').subscribe({
       next: (subjects) => {
-        const opts =
-          (subjects ?? [])
-            .filter((s) => s?.id != null && !!s.subjectName)
-            .map(
-              (s) => ({ label: s.subjectName, value: Number(s.id) }) as SubjectOption,
-            );
+        const opts = (subjects ?? [])
+          .filter((s) => s?.id != null && !!s.subjectName)
+          .map(
+            (s) =>
+              ({ label: s.subjectName, value: Number(s.id) }) as SubjectOption,
+          );
 
         this.allSubjects.set(opts);
         this.subjectsLoaded = true;

@@ -37,7 +37,9 @@ export class EnrollmentsPage implements OnInit {
   enrolledFake = false;
 
   // Estado de bloqueo del usuario actual
-  blocked$: Observable<boolean> = this.auth.getUser().pipe(map(u => !!u?.isBlocked));
+  blocked$: Observable<boolean> = this.auth
+    .getUser()
+    .pipe(map((u) => !!u?.isBlocked));
 
   ngOnInit(): void {
     this.auth.getUser().subscribe((user) => {
@@ -45,9 +47,9 @@ export class EnrollmentsPage implements OnInit {
 
       this.api.getAll('final_exams_students').subscribe((allFinals) => {
         const studentFinals = allFinals.filter(
-          (f) => f.studentId === user.id && !f.enrolled
+          (f) => f.studentId === user.id && !f.enrolled,
         );
-        
+
         if (studentFinals.length === 0) {
           this.finals.set([]);
           this.loading.set(false);

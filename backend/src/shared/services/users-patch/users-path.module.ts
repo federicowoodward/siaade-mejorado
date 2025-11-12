@@ -30,5 +30,3 @@ import { UsersPatchService } from "./users-patch.service";
   exports: [UsersPatchService],
 })
 export class UsersPatchModule {}
-
-

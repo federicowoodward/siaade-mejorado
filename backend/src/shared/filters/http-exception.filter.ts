@@ -1,7 +1,12 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+} from "@nestjs/common";
+import { Response } from "express";
 
-@Catch()  // Este decorador captura cualquier tipo de excepción
+@Catch() // Este decorador captura cualquier tipo de excepción
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse<Response>();
@@ -12,7 +17,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const body = exception.getResponse?.();
       if (body) {
         // body puede ser string u objeto
-        if (typeof body === 'string') {
+        if (typeof body === "string") {
           return res.status(status).json({ statusCode: status, message: body });
         }
         return res.status(status).json(body);
@@ -22,8 +27,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Fallback genérico
     res.status(status).json({
       statusCode: status,
-      message: exception?.message || 'Internal Server Error',
-      error: 'UnhandledException',
+      message: exception?.message || "Internal Server Error",
+      error: "UnhandledException",
     });
   }
 }

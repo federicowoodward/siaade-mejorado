@@ -51,7 +51,7 @@ export class CatalogsService {
 
   getCareerStudentsByCommission(
     careerId: number,
-    opts?: { studentStartYear?: number }
+    opts?: { studentStartYear?: number },
   ): Observable<CareerStudentsByCommissionResponse> {
     const params: Record<string, any> = {};
     if (opts?.studentStartYear) {
@@ -61,7 +61,7 @@ export class CatalogsService {
       'GET',
       `catalogs/career-students-by-commission/${careerId}`,
       undefined,
-      params
+      params,
     );
   }
 }

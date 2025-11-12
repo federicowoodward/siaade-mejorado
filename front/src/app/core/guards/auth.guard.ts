@@ -7,10 +7,12 @@ import { AuthService } from '../services/auth.service';
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
-  constructor(private router: Router, private auth: AuthService) {}
+  constructor(
+    private router: Router,
+    private auth: AuthService,
+  ) {}
 
-  async canActivate():
-    Promise<boolean | UrlTree> {
+  async canActivate(): Promise<boolean | UrlTree> {
     await this.auth.ensureSessionLoaded();
     if (this.auth.isLoggedIn()) {
       return true;

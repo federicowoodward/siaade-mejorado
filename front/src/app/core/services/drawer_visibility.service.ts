@@ -11,6 +11,6 @@ export class DrawerVisibility {
     this.sidebarVisible.set(false);
   }
   toggleSidebar() {
-    this.sidebarVisible.update(v => !v);
+    this.sidebarVisible.update((v) => !v);
   }
 }

@@ -22,7 +22,10 @@
         [ngClass]="(canLogin() ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
         ariaLabel="Cambiar acceso"
       ></p-togglebutton>
-      <div class="mt-1 text-xs text-color-secondary" *ngIf="isActive() === false">
+      <div
+        class="mt-1 text-xs text-color-secondary"
+        *ngIf="isActive() === false"
+      >
         Inactivo: acceso bloqueado
       </div>
     </div>
@@ -57,7 +60,8 @@
   >
     <div class="flex flex-column gap-2">
       <span class="text-sm text-color-secondary">
-        Podés ingresar un motivo para el bloqueo (opcional). Si lo dejás vacío, se bloqueará igual.
+        Podés ingresar un motivo para el bloqueo (opcional). Si lo dejás vacío,
+        se bloqueará igual.
       </span>
       <textarea
         class="p-inputtext w-full"
@@ -67,8 +71,18 @@
         placeholder="Motivo del bloqueo (opcional)..."
       ></textarea>
       <div class="flex justify-content-end gap-2 mt-2">
-        <p-button label="Cancelar" class="p-button-text" (onClick)="cancelBlockAccess()" [disabled]="saving()"></p-button>
-        <p-button label="Bloquear" icon="pi pi-lock" (onClick)="confirmBlockAccessWithReason()" [disabled]="saving()"></p-button>
+        <p-button
+          label="Cancelar"
+          class="p-button-text"
+          (onClick)="cancelBlockAccess()"
+          [disabled]="saving()"
+        ></p-button>
+        <p-button
+          label="Bloquear"
+          icon="pi pi-lock"
+          (onClick)="confirmBlockAccessWithReason()"
+          [disabled]="saving()"
+        ></p-button>
       </div>
     </div>
   </p-dialog>

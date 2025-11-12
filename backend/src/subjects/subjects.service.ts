@@ -51,18 +51,18 @@ export class SubjectsService {
     private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
   ) {}
 
   private deriveConditionFromValues(
     notes: Array<number | null | undefined>,
-    attendancePercentage: number | null | undefined
+    attendancePercentage: number | null | undefined,
   ): string {
     const attendance = Number(attendancePercentage ?? 0);
     const validNotes = (notes || []).filter(
-      (n): n is number => typeof n === 'number' && !Number.isNaN(n)
+      (n): n is number => typeof n === "number" && !Number.isNaN(n),
     );
-    if (validNotes.length === 0) return 'Inscripto';
+    if (validNotes.length === 0) return "Inscripto";
 
     const avg = validNotes.reduce((a, b) => a + b, 0) / validNotes.length;
 
@@ -70,9 +70,9 @@ export class SubjectsService {
     // - attendance < 75 OR avg < 4 => Libre
     // - attendance >= 90 AND avg > 7 => Promocionado
     // - otherwise => Regular
-    if (attendance < 75 || avg < 4) return 'Libre';
-    if (attendance >= 90 && avg >= 7) return 'Promocionado';
-    return 'Regular';
+    if (attendance < 75 || avg < 4) return "Libre";
+    if (attendance >= 90 && avg >= 7) return "Promocionado";
+    return "Regular";
   }
 
   async getGrades(subjectCommissionId: number): Promise<GradeRowDto[]> {
@@ -85,7 +85,7 @@ export class SubjectsService {
     subjectCommissionId: number,
     studentId: string,
     dto: PatchCellDto,
-    user?: AuthenticatedUser
+    user?: AuthenticatedUser,
   ): Promise<GradeRowDto> {
     const { commission } = await this.ensureAccess(subjectCommissionId, user, {
       allowStudent: false,
@@ -116,11 +116,11 @@ export class SubjectsService {
       case "partial2":
       case "final": {
         const expected = await this.getExpectedPartialsForSubject(
-          commission.subjectId
+          commission.subjectId,
         );
         const { notes } = this.mapAliasToNotes(
           { [dto.path]: dto.value },
-          expected
+          expected,
         );
         const scores = { ...(progress.partialScores ?? {}) };
         (["1", "2", "3", "4"] as const).forEach((key) => {
@@ -163,16 +163,18 @@ export class SubjectsService {
     }
 
     // If we are changing grades/attendance, allow auto recalc by clearing manual status
-    if (dto.path !== 'statusId') {
+    if (dto.path !== "statusId") {
       progress.statusId = null;
     }
     await this.progressRepo.save(progress);
     // Forzar recálculo automático cuando cambian notas/asistencia
-    if (dto.path !== 'statusId') {
-      await (async () => { progress.statusId = null; })();
+    if (dto.path !== "statusId") {
+      await (async () => {
+        progress.statusId = null;
+      })();
     }
     // Autocalcular condiciÃ³n salvo que el campo modificado sea el statusId manual
-    if (dto.path !== 'statusId') {
+    if (dto.path !== "statusId") {
       await this.autoAssignCondition(progress);
     }
     const [row] = await this.fetchGradeRows(subjectCommissionId, [studentId]);
@@ -185,7 +187,7 @@ export class SubjectsService {
   async upsertGrades(
     subjectCommissionId: number,
     dto: UpsertGradeDto,
-    user?: AuthenticatedUser
+    user?: AuthenticatedUser,
   ): Promise<{ updated: number }> {
     const { commission } = await this.ensureAccess(subjectCommissionId, user, {
       allowStudent: false,
@@ -198,7 +200,7 @@ export class SubjectsService {
           manager,
           commission,
           subjectCommissionId,
-          row
+          row,
         );
         count += 1;
       }
@@ -280,7 +282,7 @@ export class SubjectsService {
           };
         }
         const fallbackPartials = this.normalizePartials(
-          commission.subject?.academicPeriod?.partialsScoreNeeded ?? null
+          commission.subject?.academicPeriod?.partialsScoreNeeded ?? null,
         );
         return {
           commission: {
@@ -296,7 +298,7 @@ export class SubjectsService {
 
   async getSubjectAcademicSituation(
     subjectId: number,
-    filters?: { q?: string; commissionId?: number }
+    filters?: { q?: string; commissionId?: number },
   ): Promise<{
     subject: { id: number; name: string; partials: 2 | 4 };
     commissions: Array<{ id: number; letter: string | null }>;
@@ -327,7 +329,11 @@ export class SubjectsService {
     const qb = this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .leftJoin(User, "user", "user.id = vg.student_id")
-      .leftJoin(StudentSubjectProgress, 'prog', 'prog.student_id = vg.student_id AND prog.subject_commission_id = vg.commission_id')
+      .leftJoin(
+        StudentSubjectProgress,
+        "prog",
+        "prog.student_id = vg.student_id AND prog.subject_commission_id = vg.commission_id",
+      )
       .where("vg.subject_id = :subjectId", { subjectId })
       .orderBy("vg.commission_letter", "ASC", "NULLS LAST")
       .addOrderBy("vg.commission_id", "ASC")
@@ -346,15 +352,14 @@ export class SubjectsService {
       });
       // Cuando se filtra por comisiÃ³n, mostrar SOLO los alumnos que tienen progreso en esa comisiÃ³n
       // (si no, la vista v_subject_grades conserva la cartesian de alumnos x comisiones).
-      qb.andWhere('prog.id IS NOT NULL');
+      qb.andWhere("prog.id IS NOT NULL");
     }
 
     const search = filters?.q?.trim();
     if (search) {
-      qb.andWhere(
-        "(vg.full_name ILIKE :search OR user.cuil ILIKE :search)",
-        { search: `%${search}%` }
-      );
+      qb.andWhere("(vg.full_name ILIKE :search OR user.cuil ILIKE :search)", {
+        search: `%${search}%`,
+      });
     }
 
     const { entities, raw } = await qb.getRawAndEntities();
@@ -362,7 +367,10 @@ export class SubjectsService {
     // Agrupar por alumno y elegir la comisiÃ³n a mostrar por alumno:
     // - Si tiene progreso en alguna comisiÃ³n: esa.
     // - Si no, la comisiÃ³n de menor id.
-    const grouped = new Map<string, Array<{ ent: SubjectGradesView; r: Record<string, any> }>>();
+    const grouped = new Map<
+      string,
+      Array<{ ent: SubjectGradesView; r: Record<string, any> }>
+    >();
     for (let i = 0; i < entities.length; i++) {
       const ent = entities[i];
       const r = raw[i] as Record<string, any>;
@@ -375,11 +383,15 @@ export class SubjectsService {
     if (studentIds.length) {
       const enrollmentRows = await this.subjectStudentRepo.query(
         `SELECT student_id, commission_id FROM subject_students WHERE subject_id = $1 AND student_id = ANY($2::uuid[])`,
-        [subjectId, studentIds]
+        [subjectId, studentIds],
       );
-      for (const row of enrollmentRows as Array<{ student_id: string; commission_id: number | null }>) {
+      for (const row of enrollmentRows as Array<{
+        student_id: string;
+        commission_id: number | null;
+      }>) {
         enrollmentMap.set(row.student_id, {
-          commissionId: row.commission_id != null ? Number(row.commission_id) : null,
+          commissionId:
+            row.commission_id != null ? Number(row.commission_id) : null,
         });
       }
     }
@@ -391,25 +403,38 @@ export class SubjectsService {
         desiredCommissionByStudent.set(studentId, enrollment.commissionId);
         continue;
       }
-      const withProgress = list.find((e) => e.r?.academicSituation_hasProgress != null);
+      const withProgress = list.find(
+        (e) => e.r?.academicSituation_hasProgress != null,
+      );
       if (withProgress) {
-        desiredCommissionByStudent.set(studentId, withProgress.ent.commissionId);
+        desiredCommissionByStudent.set(
+          studentId,
+          withProgress.ent.commissionId,
+        );
       } else {
-        const min = list.reduce((a, b) => (b.ent.commissionId < a.ent.commissionId ? b : a));
+        const min = list.reduce((a, b) =>
+          b.ent.commissionId < a.ent.commissionId ? b : a,
+        );
         desiredCommissionByStudent.set(studentId, min.ent.commissionId);
       }
     }
 
     // Pre-cache de flags de estudiantes para minimizar awaits dentro del map
-    const studentFlagsMap = new Map<string, { canLogin: boolean | null; isActive: boolean | null }>();
+    const studentFlagsMap = new Map<
+      string,
+      { canLogin: boolean | null; isActive: boolean | null }
+    >();
     if (studentIds.length) {
       // Batch query para performance
       const flagsRows = await this.subjectStudentRepo.query(
         `SELECT user_id, can_login, is_active FROM students WHERE user_id = ANY($1)`,
-        [studentIds]
+        [studentIds],
       );
       for (const r of flagsRows) {
-        studentFlagsMap.set(r.user_id, { canLogin: r.can_login ?? null, isActive: r.is_active ?? null });
+        studentFlagsMap.set(r.user_id, {
+          canLogin: r.can_login ?? null,
+          isActive: r.is_active ?? null,
+        });
       }
     }
 
@@ -424,16 +449,14 @@ export class SubjectsService {
       const cuil =
         (rawRow?.academicSituation_cuil as string | null | undefined) ?? "";
 
-      
-
       const enrollment = enrollmentMap.get(mapped.studentId);
       const isEnrolled =
         enrollment?.commissionId != null &&
         enrollment.commissionId === entity.commissionId;
-// Determinar condiciÃ³n override para bloqueados
+      // Determinar condiciÃ³n override para bloqueados
       let conditionOverride: string | null = null;
       if (!isEnrolled) {
-        conditionOverride = 'No inscripto';
+        conditionOverride = "No inscripto";
       }
       // Obtenemos flags de la entidad user (si estuvo eager en StudentSubjectProgress serÃ­a otra forma)
       // AquÃ­ preferimos buscar el student directamente para evitar otra query masiva: cache simple en mapa.
@@ -446,34 +469,40 @@ export class SubjectsService {
       // conditionOverride = null;
       // Usamos el repo de estudiantes para revisar flags con un pequeÃ±o cache.
       // Cache local estÃ¡tico por ejecuciÃ³n de este mÃ©todo:
-      const flags = studentFlagsMap.get(mapped.studentId) ?? { canLogin: null, isActive: null };
+      const flags = studentFlagsMap.get(mapped.studentId) ?? {
+        canLogin: null,
+        isActive: null,
+      };
       if (flags && (flags.canLogin === false || flags.isActive === false)) {
-        conditionOverride = 'No inscripto';
+        conditionOverride = "No inscripto";
       }
 
-      const computedCondition = conditionOverride ?? mapped.condition ?? this.deriveConditionFromValues([
-        mapped.note1,
-        mapped.note2,
-        mapped.note3,
-        mapped.note4,
-      ], mapped.attendancePercentage);
+      const computedCondition =
+        conditionOverride ??
+        mapped.condition ??
+        this.deriveConditionFromValues(
+          [mapped.note1, mapped.note2, mapped.note3, mapped.note4],
+          mapped.attendancePercentage,
+        );
 
-      return [{
-        studentId: mapped.studentId,
-        fullName: mapped.fullName,
-        legajo: mapped.legajo,
-        dni: cuil,
-        commissionId: entity.commissionId,
-        commissionLetter: entity.commissionLetter ?? null,
-        note1: mapped.note1,
-        note2: mapped.note2,
-        note3: mapped.note3,
-        note4: mapped.note4,
-        final: mapped.final,
-        attendancePercentage: mapped.attendancePercentage,
-        condition: computedCondition,
-        enrolled: isEnrolled,
-      }];
+      return [
+        {
+          studentId: mapped.studentId,
+          fullName: mapped.fullName,
+          legajo: mapped.legajo,
+          dni: cuil,
+          commissionId: entity.commissionId,
+          commissionLetter: entity.commissionLetter ?? null,
+          note1: mapped.note1,
+          note2: mapped.note2,
+          note3: mapped.note3,
+          note4: mapped.note4,
+          final: mapped.final,
+          attendancePercentage: mapped.attendancePercentage,
+          condition: computedCondition,
+          enrolled: isEnrolled,
+        },
+      ];
     });
 
     const commissions = await this.subjectCommissionRepo
@@ -504,7 +533,7 @@ export class SubjectsService {
     subjectId: number,
     studentId: string,
     dto: UpdateSubjectGradeDto,
-    user?: AuthenticatedUser
+    user?: AuthenticatedUser,
   ): Promise<GradeRowDto> {
     const entries = this.collectGradePatchEntries(dto);
     if (entries.length === 0) {
@@ -512,7 +541,7 @@ export class SubjectsService {
     }
     if (entries.length > 1) {
       throw new BadRequestException(
-        "Only one grade field can be updated per request"
+        "Only one grade field can be updated per request",
       );
     }
 
@@ -528,7 +557,7 @@ export class SubjectsService {
     const [path, value] = entries[0];
     const commissionId = await this.resolveSubjectCommissionId(
       subjectId,
-      studentId
+      studentId,
     );
 
     return this.patchCell(commissionId, studentId, { path, value }, user);
@@ -539,7 +568,7 @@ export class SubjectsService {
     user: AuthenticatedUser | undefined,
     options: { allowStudent: boolean; targetStudentId?: string } = {
       allowStudent: false,
-    }
+    },
   ): Promise<CommissionWithRole> {
     const commission = await this.subjectCommissionRepo.findOne({
       where: { id: subjectCommissionId },
@@ -548,7 +577,7 @@ export class SubjectsService {
 
     if (!commission) {
       throw new NotFoundException(
-        `Subject commission ${subjectCommissionId} was not found`
+        `Subject commission ${subjectCommissionId} was not found`,
       );
     }
 
@@ -560,7 +589,7 @@ export class SubjectsService {
 
     if (role === ROLE.TEACHER && commission.teacherId !== user.id) {
       throw new ForbiddenException(
-        "You are not assigned to this subject commission"
+        "You are not assigned to this subject commission",
       );
     }
 
@@ -579,7 +608,7 @@ export class SubjectsService {
 
   private async fetchGradeRows(
     subjectCommissionId: number,
-    studentIds?: string[]
+    studentIds?: string[],
   ): Promise<GradeRowDto[]> {
     const qb = this.subjectGradesViewRepo
       .createQueryBuilder("vg")
@@ -596,20 +625,20 @@ export class SubjectsService {
   }
 
   private async ensureCommissionExists(
-    subjectCommissionId: number
+    subjectCommissionId: number,
   ): Promise<void> {
     const exists = await this.subjectCommissionRepo.exist({
       where: { id: subjectCommissionId },
     });
     if (!exists) {
       throw new NotFoundException(
-        `Subject commission ${subjectCommissionId} was not found`
+        `Subject commission ${subjectCommissionId} was not found`,
       );
     }
   }
 
   private async getExpectedPartialsForSubject(
-    subjectId: number
+    subjectId: number,
   ): Promise<2 | 4> {
     const row = await this.subjectRepo
       .createQueryBuilder("s")
@@ -623,7 +652,7 @@ export class SubjectsService {
   }
 
   private async getExpectedPartialsForCommission(
-    commissionId: number
+    commissionId: number,
   ): Promise<2 | 4> {
     const row = await this.subjectCommissionRepo
       .createQueryBuilder("sc")
@@ -653,7 +682,7 @@ export class SubjectsService {
   }
 
   private collectGradePatchEntries(
-    dto: UpdateSubjectGradeDto
+    dto: UpdateSubjectGradeDto,
   ): Array<[PatchCellDto["path"], number | null]> {
     const keys: Array<PatchCellDto["path"]> = [
       "note1",
@@ -677,7 +706,7 @@ export class SubjectsService {
 
   private async resolveSubjectCommissionId(
     subjectId: number,
-    studentId: string
+    studentId: string,
   ): Promise<number> {
     const subjectStudent = await this.subjectStudentRepo.findOne({
       where: { subjectId, studentId },
@@ -688,11 +717,15 @@ export class SubjectsService {
     // 1) Si existe progreso en alguna comisiÃ³n de esta materia, priorizar esa
     const progressRow = await this.dataSource
       .createQueryBuilder()
-      .select('ssp.subject_commission_id', 'commissionId')
-      .from('student_subject_progress', 'ssp')
-      .innerJoin('subject_commissions', 'sc', 'sc.id = ssp.subject_commission_id')
-      .where('sc.subject_id = :subjectId', { subjectId })
-      .andWhere('ssp.student_id = :studentId', { studentId })
+      .select("ssp.subject_commission_id", "commissionId")
+      .from("student_subject_progress", "ssp")
+      .innerJoin(
+        "subject_commissions",
+        "sc",
+        "sc.id = ssp.subject_commission_id",
+      )
+      .where("sc.subject_id = :subjectId", { subjectId })
+      .andWhere("ssp.student_id = :studentId", { studentId })
       .limit(1)
       .getRawOne<{ commissionId: number }>();
 
@@ -720,7 +753,7 @@ export class SubjectsService {
 
     if (!commission) {
       throw new NotFoundException(
-        `No subject commissions found for subject ${subjectId}`
+        `No subject commissions found for subject ${subjectId}`,
       );
     }
 
@@ -733,18 +766,23 @@ export class SubjectsService {
   async updateSubjectCommissionTeacher(
     subjectCommissionId: number,
     teacherId: string,
-    user?: AuthenticatedUser
-  ): Promise<{ id: number; teacherId: string }>{
+    user?: AuthenticatedUser,
+  ): Promise<{ id: number; teacherId: string }> {
     // Validaciones bÃ¡sicas de existencia
-    const commission = await this.subjectCommissionRepo.findOne({ where: { id: subjectCommissionId } });
-    if (!commission) throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
+    const commission = await this.subjectCommissionRepo.findOne({
+      where: { id: subjectCommissionId },
+    });
+    if (!commission)
+      throw new NotFoundException(
+        `Subject commission ${subjectCommissionId} was not found`,
+      );
 
     // Verificar que el teacher exista
     const existsTeacher = await this.dataSource
       .createQueryBuilder()
-      .select('1')
-      .from('teachers', 't')
-      .where('t.user_id = :id', { id: teacherId })
+      .select("1")
+      .from("teachers", "t")
+      .where("t.user_id = :id", { id: teacherId })
       .getExists();
     if (!existsTeacher) {
       throw new NotFoundException(`Teacher ${teacherId} was not found`);
@@ -762,53 +800,72 @@ export class SubjectsService {
     subjectId: number,
     studentId: string,
     toCommissionId: number,
-    user?: AuthenticatedUser
+    user?: AuthenticatedUser,
   ): Promise<GradeRowDto> {
     // Bloqueo transversal: impedir mover si el usuario estÃ¡ bloqueado
     await this.assertNotBlocked(studentId);
     // Verificar que la comisiÃ³n destino pertenezca a la materia
-    const toCommission = await this.subjectCommissionRepo.findOne({ where: { id: toCommissionId } });
-    if (!toCommission) throw new NotFoundException(`Subject commission ${toCommissionId} was not found`);
+    const toCommission = await this.subjectCommissionRepo.findOne({
+      where: { id: toCommissionId },
+    });
+    if (!toCommission)
+      throw new NotFoundException(
+        `Subject commission ${toCommissionId} was not found`,
+      );
     if (toCommission.subjectId !== subjectId) {
-      throw new BadRequestException('La comisiÃ³n destino no pertenece a la materia indicada');
+      throw new BadRequestException(
+        "La comisiÃ³n destino no pertenece a la materia indicada",
+      );
     }
 
     // Permisos: si es docente, debe ser el asignado a la comisiÃ³n destino
     if (user?.role === ROLE.TEACHER && toCommission.teacherId !== user.id) {
-      throw new ForbiddenException('No estÃ¡ asignado a la comisiÃ³n destino');
+      throw new ForbiddenException("No estÃ¡ asignado a la comisiÃ³n destino");
     }
 
     // Asegurar que el alumno estÃ© inscripto a la materia
     await this.ensureStudentEnrollment(subjectId, studentId);
 
     // Descubrir comisiÃ³n origen (si tuviera progreso en otra comisiÃ³n)
-    const fromCommissionId = await this.resolveSubjectCommissionId(subjectId, studentId);
+    const fromCommissionId = await this.resolveSubjectCommissionId(
+      subjectId,
+      studentId,
+    );
 
     if (fromCommissionId === toCommissionId) {
       // No hay nada que mover, devolver fila actual
       const [row] = await this.fetchGradeRows(toCommissionId, [studentId]);
-      if (!row) throw new NotFoundException('No se encontrÃ³ la fila de notas del alumno');
+      if (!row)
+        throw new NotFoundException(
+          "No se encontrÃ³ la fila de notas del alumno",
+        );
       return row;
     }
 
     await this.dataSource.transaction(async (manager) => {
       const progressRepo = manager.getRepository(StudentSubjectProgress);
       // progreso origen
-      const source = await progressRepo.findOne({ where: { subjectCommissionId: fromCommissionId, studentId } });
+      const source = await progressRepo.findOne({
+        where: { subjectCommissionId: fromCommissionId, studentId },
+      });
       // progreso destino
-      let target = await progressRepo.findOne({ where: { subjectCommissionId: toCommissionId, studentId } });
+      let target = await progressRepo.findOne({
+        where: { subjectCommissionId: toCommissionId, studentId },
+      });
 
       if (source) {
-        const payload: Partial<StudentSubjectProgress> & Pick<StudentSubjectProgress, 'subjectCommissionId' | 'studentId'> = {
+        const payload: Partial<StudentSubjectProgress> &
+          Pick<StudentSubjectProgress, "subjectCommissionId" | "studentId"> = {
           subjectCommissionId: toCommissionId,
           studentId,
           partialScores: source.partialScores ?? null,
-          attendancePercentage: source.attendancePercentage ?? '0',
+          attendancePercentage: source.attendancePercentage ?? "0",
           statusId: source.statusId ?? null,
         };
         if (target) {
           target.partialScores = payload.partialScores ?? null;
-          target.attendancePercentage = payload.attendancePercentage ?? target.attendancePercentage;
+          target.attendancePercentage =
+            payload.attendancePercentage ?? target.attendancePercentage;
           target.statusId = payload.statusId ?? target.statusId ?? null;
         } else {
           target = progressRepo.create(payload);
@@ -824,7 +881,7 @@ export class SubjectsService {
             subjectCommissionId: toCommissionId,
             studentId,
             partialScores: null,
-            attendancePercentage: '0',
+            attendancePercentage: "0",
             statusId: null,
           });
           await progressRepo.save(target);
@@ -843,66 +900,51 @@ export class SubjectsService {
 
     // Devolver fila desde la comisiÃ³n destino
     const [row] = await this.fetchGradeRows(toCommissionId, [studentId]);
-    if (!row) throw new NotFoundException('No se encontrÃ³ la fila de notas del alumno en la comisiÃ³n destino');
+    if (!row)
+      throw new NotFoundException(
+        "No se encontrÃ³ la fila de notas del alumno en la comisiÃ³n destino",
+      );
     return row;
   }
 
-    async toggleSubjectEnrollmentRich(
-
+  async toggleSubjectEnrollmentRich(
     subjectCommissionId: number,
 
     studentId: string,
 
     action: EnrollmentAction,
 
-    actor: EnrollmentActor
-
+    actor: EnrollmentActor,
   ): Promise<ToggleEnrollmentResponseDto> {
-
     if (!studentId) {
-
       throw new BadRequestException("studentId is required");
-
     }
 
     const commission = await this.subjectCommissionRepo.findOne({
-
       where: { id: subjectCommissionId },
 
-      relations: ['subject'],
-
+      relations: ["subject"],
     });
 
     if (!commission || !commission.subject?.id) {
-
-      throw new NotFoundException(`Subject commission ${subjectCommissionId} was not found`);
-
+      throw new NotFoundException(
+        `Subject commission ${subjectCommissionId} was not found`,
+      );
     }
 
-
-
     await this.assertNotBlocked(studentId);
-
-
 
     const subjectId = commission.subject.id;
 
     let record = await this.subjectStudentRepo.findOne({
-
       where: { subjectId, studentId },
-
     });
 
-
-
-    if (action === 'enroll') {
-
+    if (action === "enroll") {
       const now = new Date();
 
       if (!record) {
-
         record = this.subjectStudentRepo.create({ subjectId, studentId });
-
       }
 
       record.commissionId = subjectCommissionId;
@@ -912,11 +954,8 @@ export class SubjectsService {
       record.enrolledBy = actor;
 
       await this.subjectStudentRepo.save(record);
-
-    } else if (action === 'unenroll') {
-
+    } else if (action === "unenroll") {
       if (record) {
-
         record.commissionId = null;
 
         record.enrollmentDate = null;
@@ -924,40 +963,30 @@ export class SubjectsService {
         record.enrolledBy = null;
 
         await this.subjectStudentRepo.save(record);
-
       }
-
     } else {
-
-      throw new BadRequestException('Unsupported enrollment action');
-
+      throw new BadRequestException("Unsupported enrollment action");
     }
 
-
-
     const finalRow = await this.subjectStudentRepo.findOne({
-
       where: { subjectId, studentId },
-
     });
 
-    const enrolled = !!finalRow?.commissionId && finalRow.commissionId === subjectCommissionId && action === 'enroll';
+    const enrolled =
+      !!finalRow?.commissionId &&
+      finalRow.commissionId === subjectCommissionId &&
+      action === "enroll";
 
     const enrolledAt = finalRow?.enrollmentDate
-
       ? new Date(finalRow.enrollmentDate).toISOString()
-
       : null;
 
     const enrolledBy = (finalRow as any)?.enrolledBy ?? null;
 
-    const condition = enrolled ? null : 'No inscripto';
-
-
+    const condition = enrolled ? null : "No inscripto";
 
     return {
-
-      entity: 'subject',
+      entity: "subject",
 
       action,
 
@@ -976,40 +1005,28 @@ export class SubjectsService {
       commission_id: finalRow?.commissionId ?? null,
 
       condition,
-
     };
-
   }
 
-
-
   async toggleSubjectEnrollment(
-
     subjectCommissionId: number,
 
     studentId: string,
 
     action: EnrollmentAction,
 
-    actor: EnrollmentActor
-
+    actor: EnrollmentActor,
   ) {
-
     return this.toggleSubjectEnrollmentRich(
-
       subjectCommissionId,
 
       studentId,
 
       action,
 
-      actor
-
+      actor,
     );
-
   }
-
-
 
   private normalizePartials(value: number | null | undefined): 2 | 4 {
     return value === 4 ? 4 : 2;
@@ -1043,7 +1060,7 @@ export class SubjectsService {
       percentage?: any;
       attendance?: any;
     },
-    expected: 2 | 4
+    expected: 2 | 4,
   ): {
     notes: Record<"1" | "2" | "3" | "4", number | null | undefined>;
     percentage: number | null | undefined;
@@ -1145,7 +1162,7 @@ export class SubjectsService {
   private async ensureStudentEnrollment(
     subjectId: number,
     studentId: string,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<void> {
     // Chequeo de bloqueo: si estÃ¡ bloqueado, no permitir validar inscripciÃ³n futura
     await this.assertNotBlocked(studentId);
@@ -1156,7 +1173,7 @@ export class SubjectsService {
     });
     if (!record || record.commissionId == null) {
       throw new BadRequestException(
-        "Student is not enrolled in the subject commission"
+        "Student is not enrolled in the subject commission",
       );
     }
   }
@@ -1166,7 +1183,7 @@ export class SubjectsService {
     if (!user) return; // si no existe, otra validaciÃ³n fallarÃ¡ despuÃ©s
     // Si estÃ¡ bloqueado, impedir acciones acadÃ©micas (inscripciones, movimientos, etc.)
     if ((user as any).isBlocked === true) {
-      const reason = (user as any).blockedReason || 'La cuenta estÃ¡ bloqueada';
+      const reason = (user as any).blockedReason || "La cuenta estÃ¡ bloqueada";
       throw new ForbiddenException(reason);
     }
   }
@@ -1175,7 +1192,7 @@ export class SubjectsService {
     manager: EntityManager,
     commission: Pick<SubjectCommission, "subjectId">,
     subjectCommissionId: number,
-    row: UpsertGradeDto["rows"][number]
+    row: UpsertGradeDto["rows"][number],
   ): Promise<void> {
     if (!row) return;
     const studentId = row.studentId;
@@ -1191,7 +1208,7 @@ export class SubjectsService {
       await this.ensureStudentEnrollment(
         commission.subjectId,
         studentId,
-        manager
+        manager,
       );
       progress = manager.create(StudentSubjectProgress, {
         subjectCommissionId,
@@ -1203,7 +1220,7 @@ export class SubjectsService {
     }
 
     const expected = await this.getExpectedPartialsForSubject(
-      commission.subjectId
+      commission.subjectId,
     );
     const { notes, percentage } = this.mapAliasToNotes(row, expected);
 
@@ -1267,32 +1284,33 @@ export class SubjectsService {
    */
   private async autoAssignCondition(
     progress: StudentSubjectProgress,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<void> {
     if (progress.statusId) return; // no tocar si estÃ¡ seteado manualmente
 
-    const attendance = Number(progress.attendancePercentage || '0');
+    const attendance = Number(progress.attendancePercentage || "0");
     const scores = progress.partialScores ?? {};
     const values = Object.values(scores).filter(
-      (v): v is number => typeof v === 'number' && !Number.isNaN(v)
+      (v): v is number => typeof v === "number" && !Number.isNaN(v),
     );
 
-    let condition = 'Inscripto';
+    let condition = "Inscripto";
     if (values.length > 0) {
       const avg = values.reduce((a, b) => a + b, 0) / values.length;
       if (attendance < 75 || avg < 4) {
-        condition = 'Libre';
+        condition = "Libre";
       } else if (attendance >= 90 && avg >= 7) {
-        condition = 'Promocionado';
+        condition = "Promocionado";
       } else {
-        condition = 'Regular';
+        condition = "Regular";
       }
     }
 
     const repo = manager?.getRepository(SubjectStatusType) ?? this.statusRepo;
     const status = await repo.findOne({ where: { statusName: condition } });
     if (status) {
-      const progressRepo = manager?.getRepository(StudentSubjectProgress) ?? this.progressRepo;
+      const progressRepo =
+        manager?.getRepository(StudentSubjectProgress) ?? this.progressRepo;
       await progressRepo.update({ id: progress.id }, { statusId: status.id });
       progress.statusId = status.id;
     }
@@ -1304,25 +1322,33 @@ export class SubjectsService {
   async updateAllSubjectCommissionsTeacher(
     subjectId: number,
     teacherId: string,
-    user?: AuthenticatedUser
+    user?: AuthenticatedUser,
   ): Promise<{ updated: number }> {
     // Permisos: docente no puede realizar esta acciÃ³n
     if (user?.role === ROLE.TEACHER) {
-      throw new ForbiddenException('Los docentes no pueden reasignar otros docentes');
+      throw new ForbiddenException(
+        "Los docentes no pueden reasignar otros docentes",
+      );
     }
-    const subject = await this.subjectRepo.findOne({ where: { id: subjectId } });
-    if (!subject) throw new NotFoundException(`Subject ${subjectId} was not found`);
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId },
+    });
+    if (!subject)
+      throw new NotFoundException(`Subject ${subjectId} was not found`);
 
-    const commissions = await this.subjectCommissionRepo.find({ where: { subjectId } });
+    const commissions = await this.subjectCommissionRepo.find({
+      where: { subjectId },
+    });
     if (!commissions.length) return { updated: 0 };
 
     const existsTeacher = await this.dataSource
       .createQueryBuilder()
-      .select('1')
-      .from('teachers', 't')
-      .where('t.user_id = :id', { id: teacherId })
+      .select("1")
+      .from("teachers", "t")
+      .where("t.user_id = :id", { id: teacherId })
       .getExists();
-    if (!existsTeacher) throw new NotFoundException(`Teacher ${teacherId} was not found`);
+    if (!existsTeacher)
+      throw new NotFoundException(`Teacher ${teacherId} was not found`);
 
     for (const sc of commissions) {
       sc.teacherId = teacherId;

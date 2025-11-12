@@ -84,7 +84,7 @@ export class CanAnyRoleDirective implements OnDestroy {
       if (!this.loadingViewRef) {
         this.viewContainer.clear();
         this.loadingViewRef = this.viewContainer.createEmbeddedView(
-          this.loadingTemplate
+          this.loadingTemplate,
         );
         this.mainViewRef = null;
       }

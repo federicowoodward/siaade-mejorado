@@ -3,12 +3,12 @@
     "**/backend": false,
     "/database": true, // solo database folder porq hay una dentro de backend con migracion NO TOCAR.
     "**/docs": false,
-    "**/front": false,
+    "**/front": false
   },
   "search.exclude": {
     "**/backend": false,
     "/database": true,
     "**/docs": true,
-    "**/front": false,
+    "**/front": false
   }
 }

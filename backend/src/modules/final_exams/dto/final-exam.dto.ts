@@ -1,5 +1,11 @@
 // dto/final-exam.dto.ts
-import { IsInt, Min, IsDateString, IsOptional, IsString } from "class-validator";
+import {
+  IsInt,
+  Min,
+  IsDateString,
+  IsOptional,
+  IsString,
+} from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateFinalExamDto {

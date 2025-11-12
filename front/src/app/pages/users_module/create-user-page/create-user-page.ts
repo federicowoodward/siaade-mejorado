@@ -168,7 +168,10 @@ export class CreateUserPage {
       birthDate: this.birthDate,
       birthPlace: this.birthPlace,
       nationality: this.nationality,
-      legajo: this.role === 'student' ? (this.studentLegajo || this.cuil || this.documentValue) : undefined,
+      legajo:
+        this.role === 'student'
+          ? this.studentLegajo || this.cuil || this.documentValue
+          : undefined,
     });
   }
 
@@ -207,8 +210,14 @@ export class CreateUserPage {
             ? this.addressObj()
             : undefined,
         // extras para student
-        studentLegajo: this.role === 'student' ? (this.studentLegajo || this.cuil || this.documentValue) : undefined,
-        studentStartYear: this.role === 'student' && this.studentStartYear ? this.studentStartYear : undefined,
+        studentLegajo:
+          this.role === 'student'
+            ? this.studentLegajo || this.cuil || this.documentValue
+            : undefined,
+        studentStartYear:
+          this.role === 'student' && this.studentStartYear
+            ? this.studentStartYear
+            : undefined,
         canLogin: this.role === 'student' ? this.canLogin : undefined,
         isActive: this.role === 'student' ? this.isActive : undefined,
       });
@@ -244,8 +253,8 @@ export class CreateUserPage {
               isActive: this.isActive,
             }
           : this.role === 'secretary'
-          ? { isDirective: true }
-          : undefined,
+            ? { isDirective: true }
+            : undefined,
       user_info: this.req?.needsUserInfo
         ? {
             documentType: this.documentType || undefined,

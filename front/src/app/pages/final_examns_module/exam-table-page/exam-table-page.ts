@@ -103,7 +103,10 @@ export class ExamTablePage implements OnInit {
           // Optimista: insertar el nuevo examen en el listado inmediatamente
           try {
             const current = this.finals();
-            this.finals.set([created, ...current.filter((x) => x.id !== created.id)]);
+            this.finals.set([
+              created,
+              ...current.filter((x) => x.id !== created.id),
+            ]);
           } catch {}
           // Sincronizar con backend por si cambia el orden/formato
           this.refreshFinals();
@@ -118,7 +121,7 @@ export class ExamTablePage implements OnInit {
           const raw = e?.error?.message;
           const detail = Array.isArray(raw)
             ? raw.join(' • ')
-            : raw ?? 'Ver consola';
+            : (raw ?? 'Ver consola');
           this.messages.add({
             severity: 'error',
             summary: 'Error al crear',

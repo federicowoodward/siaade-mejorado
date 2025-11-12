@@ -166,7 +166,9 @@ export class MesasListComponent implements OnInit {
   private lastActionTrigger: HTMLElement | null = null;
   // Marca local optimista para evitar re-inscripciones mientras llega el refresh
   private enrolledLocal = new Set<number>();
-  private get enrolledStorageKey() { return 'mesas_enrolled_calls'; }
+  private get enrolledStorageKey() {
+    return 'mesas_enrolled_calls';
+  }
   isStudent = false;
   readonly blockAlert = signal<{
     title: string;
@@ -190,21 +192,25 @@ export class MesasListComponent implements OnInit {
 
   ngOnInit(): void {
     const subjectId = Number(
-      this.route.snapshot.queryParamMap.get('subjectId') ?? NaN
+      this.route.snapshot.queryParamMap.get('subjectId') ?? NaN,
     );
     if (Number.isFinite(subjectId)) {
       this.filters.subjectId = subjectId;
     }
     // Rol actual
-    this.auth.getUser().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((u) => {
-      this.isStudent = (u?.role ?? null) === ROLE.STUDENT;
-    });
+    this.auth
+      .getUser()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((u) => {
+        this.isStudent = (u?.role ?? null) === ROLE.STUDENT;
+      });
     // Cargar estado optimista persistido para esta sesión
     try {
       const raw = sessionStorage.getItem(this.enrolledStorageKey);
       if (raw) {
         const arr = JSON.parse(raw) as number[];
-        if (Array.isArray(arr)) arr.forEach((id) => this.enrolledLocal.add(Number(id)));
+        if (Array.isArray(arr))
+          arr.forEach((id) => this.enrolledLocal.add(Number(id)));
       }
     } catch {}
     const needsForce = this.sync.consumePendingFlag();
@@ -282,7 +288,9 @@ export class MesasListComponent implements OnInit {
             life: 4000,
           });
           // Optimista: marcar la materia como inscripta para esta mesa
-          try { (row.table as any).duplicateEnrollment = true; } catch {}
+          try {
+            (row.table as any).duplicateEnrollment = true;
+          } catch {}
           this.enrolledLocal.add(row.call.id);
           this.persistEnrolledLocal();
           this.blockAlert.set(null);
@@ -318,15 +326,15 @@ export class MesasListComponent implements OnInit {
         const windowRange =
           opens && closes
             ? `${formatter.format(new Date(opens))} - ${formatter.format(
-                new Date(closes)
+                new Date(closes),
               )}`
             : 'Sin rango publicado';
         const quotaText =
           call.quotaTotal && call.quotaUsed !== null
             ? `${call.quotaUsed}/${call.quotaTotal}`
             : call.quotaTotal
-            ? `Hasta ${call.quotaTotal}`
-            : 'Sin cupo publicado';
+              ? `Hasta ${call.quotaTotal}`
+              : 'Sin cupo publicado';
         return {
           mesaId: table.mesaId,
           callId: call.id,
@@ -339,13 +347,15 @@ export class MesasListComponent implements OnInit {
           quotaText,
           table,
         };
-      })
+      }),
     );
   }
 
   private validateRow(
-    row: ExamCallRow
-  ): { blocked: false } | { blocked: true; reason: StudentExamBlockReason; message: string } {
+    row: ExamCallRow,
+  ):
+    | { blocked: false }
+    | { blocked: true; reason: StudentExamBlockReason; message: string } {
     const block = this.resolveBlock(row);
     if (!block) {
       return { blocked: false };
@@ -371,7 +381,7 @@ export class MesasListComponent implements OnInit {
   private showBlock(
     reason: StudentExamBlockReason | null,
     customMessage?: string,
-    row?: ExamCallRow
+    row?: ExamCallRow,
   ): void {
     const template = BLOCK_COPY[reason ?? 'DEFAULT'] ?? BLOCK_COPY.DEFAULT;
 
@@ -379,7 +389,9 @@ export class MesasListComponent implements OnInit {
     const msg: string | string[] =
       reason === 'MISSING_REQUIREMENTS'
         ? this.composeCorrelativeMessage(row, customMessage)
-        : (customMessage?.trim()?.length ? customMessage : template.message);
+        : customMessage?.trim()?.length
+          ? customMessage
+          : template.message;
 
     this.blockAlert.set({
       title: template.title,
@@ -391,7 +403,7 @@ export class MesasListComponent implements OnInit {
 
   private composeCorrelativeMessage(
     row: ExamCallRow | null | undefined,
-    backendMessage?: string | null
+    backendMessage?: string | null,
   ): string[] {
     const lines: string[] = [];
     lines.push('Correlativas faltantes para inscribirte:');
@@ -409,14 +421,16 @@ export class MesasListComponent implements OnInit {
     // Fallback with subject context to keep it clear
     const code = row?.table.subjectCode ? `(${row?.table.subjectCode}) ` : '';
     const name = row?.table.subjectName ?? 'la materia seleccionada';
-    lines.push(`${code}${name}: Debes tener Regularizada o Aprobada la(s) correlativa(s) establecida(s).`);
+    lines.push(
+      `${code}${name}: Debes tener Regularizada o Aprobada la(s) correlativa(s) establecida(s).`,
+    );
     return lines;
   }
 
   private audit(
     row: ExamCallRow,
     outcome: 'success' | 'blocked' | 'error',
-    reasonCode?: StudentExamBlockReason
+    reasonCode?: StudentExamBlockReason,
   ): void {
     const basePayload: any = {
       context: 'enroll-exam',
@@ -430,7 +444,10 @@ export class MesasListComponent implements OnInit {
       timestamp: new Date().toISOString(),
     };
     if (reasonCode === 'MISSING_REQUIREMENTS') {
-      basePayload.missingCorrelativesText = this.composeCorrelativeMessage(row, row.table.academicRequirement);
+      basePayload.missingCorrelativesText = this.composeCorrelativeMessage(
+        row,
+        row.table.academicRequirement,
+      );
     }
     this.inscriptions
       .logAudit(basePayload)
@@ -451,7 +468,10 @@ export class MesasListComponent implements OnInit {
   }
 
   isEnrolled(row: ExamCallRow): boolean {
-    return Boolean(row.table?.duplicateEnrollment) || this.enrolledLocal.has(row.call.id);
+    return (
+      Boolean(row.table?.duplicateEnrollment) ||
+      this.enrolledLocal.has(row.call.id)
+    );
   }
 
   isActionBlocked(row: ExamCallRow): boolean {
@@ -462,24 +482,44 @@ export class MesasListComponent implements OnInit {
 
   private persistEnrolledLocal(): void {
     try {
-      sessionStorage.setItem(this.enrolledStorageKey, JSON.stringify(Array.from(this.enrolledLocal.values())));
+      sessionStorage.setItem(
+        this.enrolledStorageKey,
+        JSON.stringify(Array.from(this.enrolledLocal.values())),
+      );
     } catch {}
   }
 
   onUnenroll(row: ExamCallRow): void {
     const studentId = this.auth.getUserId();
     if (!studentId) return;
-    this.api.toggleFinalEnrollment({ finalExamId: row.call.id, studentId, action: 'unenroll' })
+    this.api
+      .toggleFinalEnrollment({
+        finalExamId: row.call.id,
+        studentId,
+        action: 'unenroll',
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.messages.add({ severity: 'success', summary: 'Inscripción anulada', detail: `${row.subjectName} - ${row.call.label}`, life: 3000 });
-          try { (row.table as any).duplicateEnrollment = false; } catch {}
+          this.messages.add({
+            severity: 'success',
+            summary: 'Inscripción anulada',
+            detail: `${row.subjectName} - ${row.call.label}`,
+            life: 3000,
+          });
+          try {
+            (row.table as any).duplicateEnrollment = false;
+          } catch {}
           this.enrolledLocal.delete(row.call.id);
           this.persistEnrolledLocal();
           this.refreshData();
         },
-        error: () => this.messages.add({ severity: 'error', summary: 'No se pudo anular', life: 3000 }),
+        error: () =>
+          this.messages.add({
+            severity: 'error',
+            summary: 'No se pudo anular',
+            life: 3000,
+          }),
       });
   }
 
@@ -508,7 +548,7 @@ export class MesasListComponent implements OnInit {
   }
 
   private resolveBlock(
-    row: ExamCallRow
+    row: ExamCallRow,
   ): { reason: StudentExamBlockReason; message: string } | null {
     const call = row.call;
     const table = row.table;
@@ -532,11 +572,7 @@ export class MesasListComponent implements OnInit {
     }
     const quotaTotal = call.quotaTotal ?? null;
     const quotaUsed = call.quotaUsed ?? null;
-    if (
-      quotaTotal !== null &&
-      quotaUsed !== null &&
-      quotaUsed >= quotaTotal
-    ) {
+    if (quotaTotal !== null && quotaUsed !== null && quotaUsed >= quotaTotal) {
       return {
         reason: 'QUOTA_FULL',
         message: 'El cupo informado fue alcanzado.',
@@ -566,7 +602,7 @@ export class MesasListComponent implements OnInit {
     };
     doc.addEventListener('visibilitychange', handler);
     this.destroyRef.onDestroy(() =>
-      doc.removeEventListener('visibilitychange', handler)
+      doc.removeEventListener('visibilitychange', handler),
     );
   }
 }

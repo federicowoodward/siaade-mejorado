@@ -3,7 +3,7 @@ import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import * as path from "path";
 
 export function createTypeOrmConfig(
-  config: ConfigService
+  config: ConfigService,
 ): TypeOrmModuleOptions {
   const dbUrl = config.get<string>("DATABASE_URL");
   const useSsl = config.get<string>("DB_SSL") === "true";
@@ -16,7 +16,7 @@ export function createTypeOrmConfig(
     ],
     synchronize: shouldSync,
     logging: true,
-    ssl: useSsl ? { rejectUnauthorized: false } as any : undefined,
+    ssl: useSsl ? ({ rejectUnauthorized: false } as any) : undefined,
   };
 
   if (dbUrl) {

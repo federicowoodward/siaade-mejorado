@@ -1,4 +1,4 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, signal } from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
@@ -8,18 +8,15 @@ import {
   firstValueFrom,
   from,
   timer,
-} from "rxjs";
-import { map } from "rxjs/operators";
-import {
-  AuthApiService,
-  RefreshResponseDto,
-} from "./auth-api.service";
+} from 'rxjs';
+import { map } from 'rxjs/operators';
+import { AuthApiService, RefreshResponseDto } from './auth-api.service';
 
 type AuthUser = Record<string, unknown>;
 
-const STORAGE_KEY_TOKEN = "siaade.auth.token.v1";
-const STORAGE_KEY_USER = "siaade.auth.user.v1";
-const STORAGE_SECRET = "siaade-client-v1";
+const STORAGE_KEY_TOKEN = 'siaade.auth.token.v1';
+const STORAGE_KEY_USER = 'siaade.auth.user.v1';
+const STORAGE_SECRET = 'siaade-client-v1';
 const SILENT_REFRESH_LEEWAY_MS = 60_000;
 const PROACTIVE_REFRESH_MARGIN_MS = 90_000;
 
@@ -34,17 +31,19 @@ interface StoredUserPayload {
   checksum: string;
 }
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class AuthStateService {
   private readonly authApi: AuthApiService;
 
   private readonly currentUserSignal = signal<AuthUser | null>(null);
   private readonly accessTokenSignal = signal<string | null>(null);
 
-  private readonly currentUserSubject =
-    new BehaviorSubject<AuthUser | null>(null);
-  private readonly accessTokenSubject =
-    new BehaviorSubject<string | null>(null);
+  private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(
+    null,
+  );
+  private readonly accessTokenSubject = new BehaviorSubject<string | null>(
+    null,
+  );
   private readonly refreshFailureSubject = new Subject<void>();
 
   readonly currentUser = this.currentUserSignal.asReadonly();
@@ -107,12 +106,12 @@ export class AuthStateService {
 
   setAccessToken(
     token: string | null,
-    options?: { persist?: boolean; schedule?: boolean; exp?: number | null }
+    options?: { persist?: boolean; schedule?: boolean; exp?: number | null },
   ): void {
     this.accessTokenSignal.set(token);
     this.accessTokenSubject.next(token);
 
-    const exp = token ? options?.exp ?? this.decodeJwtExp(token) : null;
+    const exp = token ? (options?.exp ?? this.decodeJwtExp(token)) : null;
     this.lastKnownExp = exp;
 
     if (options?.persist) {
@@ -190,8 +189,8 @@ export class AuthStateService {
                 exp,
               });
               return accessToken;
-            })
-          )
+            }),
+          ),
         )
           .then((token) => {
             this.refreshPromise = null;
@@ -215,7 +214,7 @@ export class AuthStateService {
   }
 
   private decodeJwtExp(token: string): number | null {
-    const parts = token.split(".");
+    const parts = token.split('.');
     if (parts.length < 2) {
       return null;
     }
@@ -267,9 +266,7 @@ export class AuthStateService {
     }
   }
 
-  private readPersistedToken():
-    | { token: string; exp: number | null }
-    | null {
+  private readPersistedToken(): { token: string; exp: number | null } | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_TOKEN);
       if (!raw) {
@@ -278,8 +275,8 @@ export class AuthStateService {
 
       const parsed = JSON.parse(raw) as StoredTokenPayload;
       if (
-        typeof parsed?.token !== "string" ||
-        typeof parsed?.checksum !== "string"
+        typeof parsed?.token !== 'string' ||
+        typeof parsed?.checksum !== 'string'
       ) {
         this.persistAccessToken(null, null);
         return null;
@@ -292,7 +289,7 @@ export class AuthStateService {
       }
 
       const exp =
-        typeof parsed.exp === "number" && Number.isFinite(parsed.exp)
+        typeof parsed.exp === 'number' && Number.isFinite(parsed.exp)
           ? parsed.exp
           : null;
 
@@ -312,8 +309,8 @@ export class AuthStateService {
 
       const parsed = JSON.parse(raw) as StoredUserPayload;
       if (
-        typeof parsed?.value !== "string" ||
-        typeof parsed?.checksum !== "string"
+        typeof parsed?.value !== 'string' ||
+        typeof parsed?.checksum !== 'string'
       ) {
         this.persistUser(null);
         return null;
@@ -334,10 +331,10 @@ export class AuthStateService {
 
   private removeLegacyStorage() {
     try {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("mock_user");
-      localStorage.removeItem("user_profile");
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('mock_user');
+      localStorage.removeItem('user_profile');
     } catch {
       /* ignore removal failures */
     }
@@ -360,9 +357,8 @@ export class AuthStateService {
   }
 
   private decodeBase64Url(value: string): string {
-    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-    const padded =
-      normalized + "===".slice((normalized.length + 3) % 4);
+    const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '==='.slice((normalized.length + 3) % 4);
     return this.decodeValue(padded);
   }
 

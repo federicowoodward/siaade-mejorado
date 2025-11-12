@@ -2,12 +2,19 @@
 
 <div class="mesas-wrapper flex flex-column gap-4">
   <div class="surface-card shadow-2 border-round p-4">
-    <div class="flex flex-column gap-2 sm:flex-row sm:align-items-center sm:justify-content-between">
+    <div
+      class="flex flex-column gap-2 sm:flex-row sm:align-items-center sm:justify-content-between"
+    >
       <div>
-        <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">Alumno / Inscripciones</p>
+        <p
+          class="text-sm text-color-secondary m-0 text-uppercase tracking-wide"
+        >
+          Alumno / Inscripciones
+        </p>
         <h2 class="m-0 text-2xl font-semibold">Inscribirme a Mesas</h2>
         <p class="text-color-secondary mt-1 mb-0">
-          Filtra por materia, fecha de mesa y estado de ventana. El listado se actualiza con datos oficiales.
+          Filtra por materia, fecha de mesa y estado de ventana. El listado se
+          actualiza con datos oficiales.
         </p>
       </div>
       <div class="flex gap-2 flex-wrap mt-2 sm:mt-0">
@@ -44,7 +51,9 @@
       </div>
 
       <div class="col-12 md:col-4 flex flex-column gap-1">
-        <label class="text-sm font-semibold" for="dateRange">Fecha de mesa</label>
+        <label class="text-sm font-semibold" for="dateRange"
+          >Fecha de mesa</label
+        >
         <p-datepicker
           inputId="dateRange"
           selectionMode="range"
@@ -66,7 +75,7 @@
             { label: 'Proximas', value: 'upcoming' },
             { label: 'Cerradas', value: 'closed' },
             { label: 'Finalizadas', value: 'past' },
-            { label: 'Todas', value: 'all' }
+            { label: 'Todas', value: 'all' },
           ]"
           optionLabel="label"
           optionValue="value"
@@ -79,10 +88,14 @@
   </div>
 
   <div class="surface-card shadow-2 border-round p-0 overflow-hidden">
-    <div class="flex align-items-center justify-content-between px-4 py-3 border-bottom surface-border-light">
+    <div
+      class="flex align-items-center justify-content-between px-4 py-3 border-bottom surface-border-light"
+    >
       <div>
         <h3 class="m-0 text-lg font-semibold">Mesas disponibles</h3>
-        <small class="text-color-secondary">{{ rows().length }} llamados publicados</small>
+        <small class="text-color-secondary"
+          >{{ rows().length }} llamados publicados</small
+        >
       </div>
       <p-button
         type="button"
@@ -94,13 +107,23 @@
       />
     </div>
 
-    <div *ngIf="loading(); else mesasTable" class="flex justify-content-center py-5">
-      <p-progressSpinner styleClass="mesas-spinner" strokeWidth="3"></p-progressSpinner>
+    <div
+      *ngIf="loading(); else mesasTable"
+      class="flex justify-content-center py-5"
+    >
+      <p-progressSpinner
+        styleClass="mesas-spinner"
+        strokeWidth="3"
+      ></p-progressSpinner>
     </div>
 
     <ng-template #mesasTable>
-      <div *ngIf="rows().length === 0" class="text-center py-5 px-4 text-color-secondary">
-        No hay mesas disponibles con los filtros seleccionados. Proba ajustarlos o consulta mas tarde.
+      <div
+        *ngIf="rows().length === 0"
+        class="text-center py-5 px-4 text-color-secondary"
+      >
+        No hay mesas disponibles con los filtros seleccionados. Proba ajustarlos
+        o consulta mas tarde.
       </div>
 
       <p-table
@@ -129,7 +152,11 @@
                   Comision {{ row.commissionLabel }}
                 </small>
                 <div class="mt-1" *ngIf="isEnrolled(row)">
-                  <p-tag severity="success" value="Inscripto" styleClass="text-xs"></p-tag>
+                  <p-tag
+                    severity="success"
+                    value="Inscripto"
+                    styleClass="text-xs"
+                  ></p-tag>
                 </div>
               </div>
             </td>
@@ -145,7 +172,7 @@
               </div>
             </td>
             <td>
-              {{ row.call.examDate | date: 'dd/MM/yyyy' }}
+              {{ row.call.examDate | date: "dd/MM/yyyy" }}
             </td>
             <td>
               <div class="flex flex-column gap-1">
@@ -153,7 +180,9 @@
                   [severity]="stateSeverity(row.windowState)"
                   [value]="stateLabel(row.windowState)"
                 />
-                <small class="text-color-secondary">{{ row.windowRange }}</small>
+                <small class="text-color-secondary">{{
+                  row.windowRange
+                }}</small>
               </div>
             </td>
             <td>
@@ -175,7 +204,9 @@
                   [pTooltip]="blockTooltip(row) || ''"
                   tooltipPosition="top"
                   (onClick)="onEnroll(row, $event)"
-                  ariaLabel="Inscribirme a {{ row.subjectName }} - {{ row.call.label }}"
+                  ariaLabel="Inscribirme a {{ row.subjectName }} - {{
+                    row.call.label
+                  }}"
                 />
               </ng-container>
               <ng-template #enrolledTag>
@@ -187,7 +218,9 @@
                     size="small"
                     severity="danger"
                     (onClick)="onUnenroll(row)"
-                    ariaLabel="Desinscribirme de {{ row.subjectName }} - {{ row.call.label }}"
+                    ariaLabel="Desinscribirme de {{ row.subjectName }} - {{
+                      row.call.label
+                    }}"
                   />
                 </ng-container>
                 <ng-template #enrolledBadge>
@@ -225,11 +258,16 @@
   (onHide)="cancelDialog()"
 >
   <p class="mb-3">
-    Confirmas la inscripcion a <strong>{{ selectedRow?.subjectName }}</strong>
-    en el <strong>{{ selectedRow?.call?.label }}</strong>?
+    Confirmas la inscripcion a
+    <strong>{{ selectedRow?.subjectName }}</strong> en el
+    <strong>{{ selectedRow?.call?.label }}</strong
+    >?
   </p>
   <ul class="confirmation-list">
-    <li><strong>Fecha:</strong> {{ selectedRow?.call?.examDate | date: 'dd/MM/yyyy' }}</li>
+    <li>
+      <strong>Fecha:</strong>
+      {{ selectedRow?.call?.examDate | date: "dd/MM/yyyy" }}
+    </li>
     <li><strong>Ventana:</strong> {{ selectedRow?.windowRange }}</li>
   </ul>
   <ng-template pTemplate="footer">

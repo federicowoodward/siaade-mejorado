@@ -16,7 +16,7 @@ function isBcryptHash(value: string | null | undefined): boolean {
 @Injectable()
 export class UserAuthValidatorService {
   constructor(
-    @InjectRepository(User) private readonly usersRepo: Repository<User>
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
   ) {}
 
   /**
@@ -25,11 +25,11 @@ export class UserAuthValidatorService {
    */
   async validateUser(
     identity: string,
-    password: string
+    password: string,
   ): Promise<User["id"] | null> {
     try {
       const id = (identity || "").trim();
-      let user: Pick<User, "id" | "password"> & { role?: any } | null = null;
+      let user: (Pick<User, "id" | "password"> & { role?: any }) | null = null;
 
       // Heurística simple para resolver identidad
       const isEmail = id.includes("@");
@@ -62,7 +62,7 @@ export class UserAuthValidatorService {
             .leftJoinAndSelect("u.role", "r")
             .where(
               "LOWER(CONCAT(TRIM(u.name), ' ', TRIM(u.last_name))) = :full",
-              { full }
+              { full },
             )
             .getOne();
         }
@@ -87,7 +87,7 @@ export class UserAuthValidatorService {
       return ok ? user.id : null;
     } catch (error: any) {
       throw new BadRequestException(
-        "Error al validar usuario: " + error.message
+        "Error al validar usuario: " + error.message,
       );
     }
   }

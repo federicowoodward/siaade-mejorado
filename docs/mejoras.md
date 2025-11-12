@@ -1,4 +1,3 @@
-
 #MEJORARFUTURO
 
 Validar fechas (no permitir end_date < start_date) y normalizar formato ISO.
@@ -9,8 +8,7 @@ Generar tipos desde Swagger/OpenAPI para evitar desincronización de interfaces.
 
 Soporte de paginación/filtrado server-side si crecen las mesas.
 
-------------------
-
+---
 
 #MEJORARFUTURO
 

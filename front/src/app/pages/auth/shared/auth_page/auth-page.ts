@@ -30,7 +30,7 @@ export class AuthPage {
   // Estado: true = login, false = recover
   loginMode = signal(true);
   modeTitle = computed(() =>
-    this.loginMode() ? 'Iniciar sesión' : 'Recuperar contraseña'
+    this.loginMode() ? 'Iniciar sesión' : 'Recuperar contraseña',
   );
   // (Simplificado) Solo modo; se eliminan señales de barrido para transición fluida
   transitioning = signal(false);
@@ -52,9 +52,9 @@ export class AuthPage {
   constructor(
     private auth: AuthService,
     private router: Router,
-    private message: MessageService
+    private message: MessageService,
   ) {}
-  
+
   changeMode() {
     if (this.transitioning()) return;
     // En móvil (layout compacto) hacemos toggle instantáneo sin animación wipe
@@ -106,23 +106,51 @@ export class AuthPage {
         const detail = result.blockedReason
           ? `Tu cuenta está bloqueada. Motivo: ${result.blockedReason}`
           : 'Tu cuenta está bloqueada.';
-        this.message.add({ severity: 'warn', summary: 'Acceso bloqueado', detail });
+        this.message.add({
+          severity: 'warn',
+          summary: 'Acceso bloqueado',
+          detail,
+        });
       } else if (result.inactive) {
-        this.message.add({ severity: 'warn', summary: 'Cuenta inactiva', detail: 'Esta cuenta fue desactivada/eliminada.' });
+        this.message.add({
+          severity: 'warn',
+          summary: 'Cuenta inactiva',
+          detail: 'Esta cuenta fue desactivada/eliminada.',
+        });
       } else {
-        this.message.add({ severity: 'error', summary: 'Error', detail: 'Usuario o contraseña incorrectos' });
+        this.message.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Usuario o contraseña incorrectos',
+        });
       }
     } catch (error: any) {
       const status = error?.status;
       const reason = error?.error?.reason ?? null;
       if (status === 403 && reason) {
-        this.message.add({ severity: 'warn', summary: 'Acceso bloqueado', detail: `Tu cuenta está bloqueada. Motivo: ${reason}` });
+        this.message.add({
+          severity: 'warn',
+          summary: 'Acceso bloqueado',
+          detail: `Tu cuenta está bloqueada. Motivo: ${reason}`,
+        });
       } else if (status === 403) {
-        this.message.add({ severity: 'warn', summary: 'Acceso bloqueado', detail: 'Tu cuenta está bloqueada.' });
+        this.message.add({
+          severity: 'warn',
+          summary: 'Acceso bloqueado',
+          detail: 'Tu cuenta está bloqueada.',
+        });
       } else if (status === 401) {
-        this.message.add({ severity: 'warn', summary: 'Cuenta inactiva', detail: 'Esta cuenta está inactiva o eliminada.' });
+        this.message.add({
+          severity: 'warn',
+          summary: 'Cuenta inactiva',
+          detail: 'Esta cuenta está inactiva o eliminada.',
+        });
       } else {
-        this.message.add({ severity: 'error', summary: 'Error', detail: 'No se pudo iniciar sesión' });
+        this.message.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo iniciar sesión',
+        });
       }
     } finally {
       this.submittingLogin.set(false);
@@ -135,8 +163,13 @@ export class AuthPage {
     this.submittingRecover.set(true);
     this.auth.requestPasswordRecovery(identity!).subscribe({
       next: (resp: any) => {
-        const msg = 'Te enviamos un código a tu correo. Ingresalo para continuar';
-        this.message.add({ severity: 'success', summary: 'Código enviado', detail: msg });
+        const msg =
+          'Te enviamos un código a tu correo. Ingresalo para continuar';
+        this.message.add({
+          severity: 'success',
+          summary: 'Código enviado',
+          detail: msg,
+        });
         // Persistimos la identidad para no volver a pedirla en la pantalla de código
         try {
           sessionStorage.setItem('resetIdentity', identity!);

@@ -97,10 +97,10 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     Record<string, AcademicSituationRow>
   >({});
   private readonly pendingSignal = signal<Record<string, PendingRowChanges>>(
-    {}
+    {},
   );
   readonly hasPendingChanges = computed(
-    () => Object.keys(this.pendingSignal()).length > 0
+    () => Object.keys(this.pendingSignal()).length > 0,
   );
   readonly saving = signal(false);
   readonly enrollmentLoading = signal<string | null>(null);
@@ -117,7 +117,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
   readonly ROLE = ROLE;
   canMoveStudents = computed(() =>
-    this.rbac.hasAny([ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY])
+    this.rbac.hasAny([
+      ROLE.PRECEPTOR,
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]),
   );
 
   conditionSeverity(condition: string | null | undefined): string {
@@ -176,7 +180,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.commissionOptions().map((option) => ({
       label: option.letter ?? `Comision ${option.id}`,
       value: option.id,
-    }))
+    })),
   );
 
   private readonly filtersEffect = effect(() => {
@@ -266,7 +270,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     const requests = payloads.map(({ commissionId, body, studentIds }) =>
       this.subjectsSvc
         .bulkUpsertCommissionGrades(commissionId, body)
-        .pipe(map(() => studentIds))
+        .pipe(map(() => studentIds)),
     );
 
     this.currentPersist = forkJoin(requests).subscribe({
@@ -286,7 +290,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         this.currentPersist = null;
         this.showError(
           'Error al guardar',
-          'No se pudieron guardar los cambios. Intenta nuevamente.'
+          'No se pudieron guardar los cambios. Intenta nuevamente.',
         );
       },
     });
@@ -319,7 +323,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         }
         this.showError(
           'Valores invalidos',
-          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacÃƒÂ­as.'
+          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacÃƒÂ­as.',
         );
         return;
       }
@@ -335,7 +339,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           ? parseAttendanceValue(row[field])
           : parseGradeValue(row[field]);
       const normalized =
-        field === 'attendancePercentage' ? parsed ?? 0 : parsed ?? null;
+        field === 'attendancePercentage' ? (parsed ?? 0) : (parsed ?? null);
       if (field === 'attendancePercentage') {
         row.attendancePercentage = normalized as number;
       } else {
@@ -344,20 +348,20 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       const baselineValue = base
         ? field === 'attendancePercentage'
           ? (base.attendancePercentage as number)
-          : base[field] ?? null
+          : (base[field] ?? null)
         : field === 'attendancePercentage'
-        ? 0
-        : null;
+          ? 0
+          : null;
       this.updatePendingChanges(
         row.studentId,
         field,
         normalized,
-        baselineValue
+        baselineValue,
       );
     }
 
     const newFinal = computeFinalForRowUtil(row, this.partials());
-    const baselineFinal = base ? base.final ?? null : null;
+    const baselineFinal = base ? (base.final ?? null) : null;
     row.final = newFinal;
     this.updatePendingChanges(row.studentId, 'final', newFinal, baselineFinal);
 
@@ -380,7 +384,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       const updatedRows = [...list];
       updatedRows[index] = { ...original };
       this.data.update((snapshot) =>
-        snapshot ? { ...snapshot, rows: updatedRows } : snapshot
+        snapshot ? { ...snapshot, rows: updatedRows } : snapshot,
       );
     } else {
       this.syncRow(original);
@@ -438,7 +442,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.data.update((snapshot) => {
       if (!snapshot) return snapshot;
       const nextRows = snapshot.rows.map((row) =>
-        row.studentId === normalized.studentId ? { ...row, ...normalized } : row
+        row.studentId === normalized.studentId
+          ? { ...row, ...normalized }
+          : row,
       );
       return { ...snapshot, rows: nextRows };
     });
@@ -550,7 +556,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     studentId: string,
     field: EditableField,
     value: number | null,
-    baselineValue: number | null
+    baselineValue: number | null,
   ): void {
     const normalizedValue = value ?? null;
     const normalizedBaseline = baselineValue ?? null;
@@ -585,23 +591,23 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     const fields = this.getEditableFields();
     for (const field of fields) {
       const currentValue = row[field] ?? null;
-      const baselineValue = base ? base[field] ?? null : null;
+      const baselineValue = base ? (base[field] ?? null) : null;
       this.updatePendingChanges(
         row.studentId,
         field,
         currentValue,
-        baselineValue
+        baselineValue,
       );
     }
 
     const currentFinal = computeFinalForRowUtil(row, this.partials());
-    const baselineFinal = base ? base.final ?? null : null;
+    const baselineFinal = base ? (base.final ?? null) : null;
     row.final = currentFinal;
     this.updatePendingChanges(
       row.studentId,
       'final',
       currentFinal,
-      baselineFinal
+      baselineFinal,
     );
   }
 
@@ -622,70 +628,97 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     });
   }
 
-  onToggleSubjectEnrollment(
-    row: AcademicSituationRow,
-    action: 'enroll' | 'unenroll'
-  ) {
-    if (!row?.commissionId) {
-      this.showError('Error', 'La fila no tiene una comisión asociada.');
-      return;
-    }
-
-    const prev = { ...row };
-    const optimisticEnrolled = action === 'enroll';
-    const optimisticRow: AcademicSituationRow = {
-      ...row,
-      enrolled: optimisticEnrolled,
-    };
-
-    this.enrollmentLoading.set(row.studentId);
-    row.enrolled = optimisticEnrolled;
-    this.replaceRowInTable(optimisticRow);
-
-    this.api
-      .toggleSubjectEnrollment({
-        subjectCommissionId: row.commissionId,
-        studentId: row.studentId,
-        action,
-      })
-      .subscribe({
-        next: (res: ToggleEnrollmentResponse) => {
-          const serverEnrolled = !!res?.enrolled;
-          const confirmedRow: AcademicSituationRow = {
-            ...optimisticRow,
-            enrolled: serverEnrolled,
-            condition:
-              res?.condition ??
-              optimisticRow.condition ??
-              (serverEnrolled ? optimisticRow.condition ?? null : 'No inscripto'),
-          };
-
-          row.enrolled = serverEnrolled;
-          this.replaceRowInTable(confirmedRow);
-
-          const actorLabel = res?.enrolled_by ?? '—';
-          const dateLabel = res?.enrolled_at
-            ? new Date(res.enrolled_at).toLocaleString()
-            : '';
-          const detail = serverEnrolled
-            ? `Por ${actorLabel}${dateLabel ? ` el ${dateLabel}` : ''}`
-            : 'Se removió la inscripción en la comisión.';
-
-          this.messages.add({
-            severity: 'success',
-            summary: serverEnrolled ? 'Alumno inscripto' : 'Alumno desinscripto',
-            detail,
-          });
-        },
-        error: () => {
-          Object.assign(row, prev);
-          this.replaceRowInTable(prev);
-          this.showError('Error', 'No se pudo actualizar la inscripción.');
-        },
-        complete: () => this.enrollmentLoading.set(null),
-      });
-  }
-
+  onToggleSubjectEnrollment(
+    row: AcademicSituationRow,
+
+    action: 'enroll' | 'unenroll',
+  ) {
+    if (!row?.commissionId) {
+      this.showError('Error', 'La fila no tiene una comisiï¿½n asociada.');
+
+      return;
+    }
+
+    const prev = { ...row };
+
+    const optimisticEnrolled = action === 'enroll';
+
+    const optimisticRow: AcademicSituationRow = {
+      ...row,
+
+      enrolled: optimisticEnrolled,
+    };
+
+    this.enrollmentLoading.set(row.studentId);
+
+    row.enrolled = optimisticEnrolled;
+
+    this.replaceRowInTable(optimisticRow);
+
+    this.api
+
+      .toggleSubjectEnrollment({
+        subjectCommissionId: row.commissionId,
+
+        studentId: row.studentId,
+
+        action,
+      })
+
+      .subscribe({
+        next: (res: ToggleEnrollmentResponse) => {
+          const serverEnrolled = !!res?.enrolled;
+
+          const confirmedRow: AcademicSituationRow = {
+            ...optimisticRow,
+
+            enrolled: serverEnrolled,
+
+            condition:
+              res?.condition ??
+              optimisticRow.condition ??
+              (serverEnrolled
+                ? (optimisticRow.condition ?? null)
+                : 'No inscripto'),
+          };
+
+          row.enrolled = serverEnrolled;
+
+          this.replaceRowInTable(confirmedRow);
+
+          const actorLabel = res?.enrolled_by ?? 'ï¿½';
+
+          const dateLabel = res?.enrolled_at
+            ? new Date(res.enrolled_at).toLocaleString()
+            : '';
+
+          const detail = serverEnrolled
+            ? `Por ${actorLabel}${dateLabel ? ` el ${dateLabel}` : ''}`
+            : 'Se removiï¿½ la inscripciï¿½n en la comisiï¿½n.';
+
+          this.messages.add({
+            severity: 'success',
+
+            summary: serverEnrolled
+              ? 'Alumno inscripto'
+              : 'Alumno desinscripto',
+
+            detail,
+          });
+        },
+
+        error: () => {
+          Object.assign(row, prev);
+
+          this.replaceRowInTable(prev);
+
+          this.showError('Error', 'No se pudo actualizar la inscripciï¿½n.');
+        },
+
+        complete: () => this.enrollmentLoading.set(null),
+      });
+  }
+
   openMoveCommission(row: AcademicSituationRow) {
     if (!this.canMoveStudents()) return;
     this.moveDialog.set({

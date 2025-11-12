@@ -11,7 +11,10 @@ import {
   StudentExamWindowDto,
   StudentWindowState,
 } from "./dto/student-exam.dto";
-import { ExamTableFiltersDto, WindowFilter } from "./dto/exam-table-filters.dto";
+import {
+  ExamTableFiltersDto,
+  WindowFilter,
+} from "./dto/exam-table-filters.dto";
 import { AuditEventDto } from "./dto/audit-event.dto";
 
 type NormalizedFilters = {
@@ -27,12 +30,12 @@ export class StudentInscriptionsService {
     @InjectRepository(FinalExam)
     private readonly finalRepo: Repository<FinalExam>,
     @InjectRepository(FinalExamsStudent)
-    private readonly linkRepo: Repository<FinalExamsStudent>
+    private readonly linkRepo: Repository<FinalExamsStudent>,
   ) {}
 
   async listExamTables(
     studentId: string,
-    filters: ExamTableFiltersDto
+    filters: ExamTableFiltersDto,
   ): Promise<StudentExamTableDto[]> {
     const normalized = this.normalizeFilters(filters);
     const finals = await this.buildFinalsQuery(normalized).getMany();
@@ -72,14 +75,14 @@ export class StudentInscriptionsService {
           key,
           table.id,
           subject.id,
-          subject.subjectName
+          subject.subjectName,
         );
 
       const call = this.buildCall(
         finalExam,
         table.name ?? "Llamado",
         window,
-        quotaMap.get(finalExam.id) ?? null
+        quotaMap.get(finalExam.id) ?? null,
       );
 
       const enrollment = enrollmentLinks.get(finalExam.id);
@@ -94,7 +97,7 @@ export class StudentInscriptionsService {
       .map((tableDto) => ({
         ...tableDto,
         availableCalls: tableDto.availableCalls.sort((a, b) =>
-          a.examDate.localeCompare(b.examDate)
+          a.examDate.localeCompare(b.examDate),
         ),
       }))
       .filter((tableDto) => tableDto.availableCalls.length > 0);
@@ -103,7 +106,7 @@ export class StudentInscriptionsService {
   async enroll(
     studentId: string,
     mesaId: number,
-    finalExamId: number
+    finalExamId: number,
   ): Promise<StudentEnrollmentResponseDto> {
     let link = await this.linkRepo.findOne({
       where: { studentId, finalExamId },
@@ -120,13 +123,13 @@ export class StudentInscriptionsService {
       if (!finalExam || !finalExam.examTable) {
         return this.blocked(
           "UNKNOWN",
-          "No encontramos la mesa solicitada. Verifica la informacion e intenta nuevamente."
+          "No encontramos la mesa solicitada. Verifica la informacion e intenta nuevamente.",
         );
       }
       if (finalExam.examTableId !== mesaId) {
         return this.blocked(
           "UNKNOWN",
-          "La mesa seleccionada no coincide con el llamado solicitado."
+          "La mesa seleccionada no coincide con el llamado solicitado.",
         );
       }
       link = this.linkRepo.create({
@@ -142,23 +145,23 @@ export class StudentInscriptionsService {
     if (!link.finalExam || !link.finalExam.examTable) {
       return this.blocked(
         "UNKNOWN",
-        "No encontramos la mesa solicitada. Verifica la informacion e intenta nuevamente."
+        "No encontramos la mesa solicitada. Verifica la informacion e intenta nuevamente.",
       );
     }
 
     if (link.finalExam.examTableId !== mesaId) {
       return this.blocked(
         "UNKNOWN",
-        "La mesa seleccionada no coincide con el llamado solicitado."
+        "La mesa seleccionada no coincide con el llamado solicitado.",
       );
     }
 
     const window = this.buildWindow(link.finalExam.examTable);
     if (window.state !== "open") {
       const detail = window.closesAt
-        ? `El periodo estuvo disponible hasta ${this.formatDisplayDate(
-            window.closesAt
-          ) ?? window.closesAt}.`
+        ? `El periodo estuvo disponible hasta ${
+            this.formatDisplayDate(window.closesAt) ?? window.closesAt
+          }.`
         : "La mesa no tiene una ventana de inscripcion activa.";
       return this.blocked("WINDOW_CLOSED", detail);
     }
@@ -166,7 +169,7 @@ export class StudentInscriptionsService {
     if (link.enrolledAt) {
       return this.blocked(
         "DUPLICATE",
-        "Ya contas con una inscripcion vigente para este llamado."
+        "Ya contas con una inscripcion vigente para este llamado.",
       );
     }
 
@@ -194,7 +197,7 @@ export class StudentInscriptionsService {
   }
 
   private buildFinalsQuery(
-    filters: NormalizedFilters
+    filters: NormalizedFilters,
   ): SelectQueryBuilder<FinalExam> {
     const qb = this.finalRepo
       .createQueryBuilder("fe")
@@ -251,7 +254,7 @@ export class StudentInscriptionsService {
   }
 
   private async buildQuotaMap(
-    finalExamIds: number[]
+    finalExamIds: number[],
   ): Promise<Map<number, number | null>> {
     const unique = Array.from(new Set(finalExamIds));
     if (!unique.length) {
@@ -263,7 +266,7 @@ export class StudentInscriptionsService {
       .select("fes.finalExamId", "finalExamId")
       .addSelect(
         "SUM(CASE WHEN fes.enrolledAt IS NOT NULL THEN 1 ELSE 0 END)",
-        "enrolled"
+        "enrolled",
       )
       .where("fes.finalExamId IN (:...ids)", { ids: unique })
       .groupBy("fes.finalExamId")
@@ -278,7 +281,7 @@ export class StudentInscriptionsService {
 
   private async fetchEnrollments(
     studentId: string,
-    finalExamIds: number[]
+    finalExamIds: number[],
   ): Promise<Map<number, FinalExamsStudent>> {
     if (!finalExamIds.length) {
       return new Map();
@@ -297,7 +300,7 @@ export class StudentInscriptionsService {
     key: string,
     tableId: number,
     subjectId: number,
-    subjectName: string
+    subjectName: string,
   ): StudentExamTableDto {
     const entry: StudentExamTableDto = {
       mesaId: tableId,
@@ -319,7 +322,7 @@ export class StudentInscriptionsService {
     finalExam: FinalExam,
     tableName: string,
     window: StudentExamWindowDto,
-    quotaUsed: number | null
+    quotaUsed: number | null,
   ): StudentExamCallDto {
     const examDate = this.formatDate(finalExam.examDate);
     return {
@@ -383,7 +386,7 @@ export class StudentInscriptionsService {
 
   private resolveWindowState(
     opensAt?: string | null,
-    closesAt?: string | null
+    closesAt?: string | null,
   ): StudentWindowState {
     if (!opensAt || !closesAt) {
       return "closed";
@@ -405,7 +408,7 @@ export class StudentInscriptionsService {
 
   private blocked(
     reasonCode: string,
-    message: string
+    message: string,
   ): StudentEnrollmentResponseDto {
     return {
       ok: false,

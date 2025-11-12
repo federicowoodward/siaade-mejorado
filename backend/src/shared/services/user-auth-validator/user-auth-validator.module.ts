@@ -8,7 +8,6 @@ import { UserAuthValidatorService } from "./user-auth-validator.service";
 @Module({
   imports: [TypeOrmModule.forFeature([User, Role])],
   providers: [UserAuthValidatorService],
-  exports: [UserAuthValidatorService], 
+  exports: [UserAuthValidatorService],
 })
 export class UserAuthValidatorModule {}
-

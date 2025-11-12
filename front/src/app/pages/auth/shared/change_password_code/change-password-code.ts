@@ -11,7 +11,13 @@ import { AuthService } from '../../../../core/services/auth.service';
 @Component({
   selector: 'app-change-password-code',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule, ToastModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InputTextModule,
+    ButtonModule,
+    ToastModule,
+  ],
   providers: [MessageService],
   templateUrl: './change-password-code.html',
   styleUrl: './change-password-code.scss',
@@ -39,7 +45,7 @@ export class ChangePasswordCodePage implements OnDestroy {
         this.userEmail.set(user.email);
       }
     });
-    
+
     this.startCooldown();
   }
 
@@ -58,8 +64,10 @@ export class ChangePasswordCodePage implements OnDestroy {
 
     try {
       // Para cambio voluntario, usamos el email del usuario actual
-      const response = await this.auth.verifyResetCode(this.userEmail(), code!).toPromise();
-      
+      const response = await this.auth
+        .verifyResetCode(this.userEmail(), code!)
+        .toPromise();
+
       if (!response?.token) {
         this.message.add({
           severity: 'warn',
@@ -78,7 +86,7 @@ export class ChangePasswordCodePage implements OnDestroy {
 
       // Navegar al reset-password con mode=change
       this.router.navigate(['/auth/reset-password'], {
-        queryParams: { token: response.token, mode: 'change' }
+        queryParams: { token: response.token, mode: 'change' },
       });
     } catch (error) {
       this.message.add({

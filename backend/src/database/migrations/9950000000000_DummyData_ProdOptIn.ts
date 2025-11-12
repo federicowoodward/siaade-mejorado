@@ -19,7 +19,7 @@ export class DummyDataProdOptIn1761015167700 implements MigrationInterface {
       return;
     }
     console.log(
-      "[DummyData/ProdOptIn] delegating to DummyData.up() (ALLOW_DUMMY_SEED=true)"
+      "[DummyData/ProdOptIn] delegating to DummyData.up() (ALLOW_DUMMY_SEED=true)",
     );
     const delegate = new DummyData();
     await delegate.up(queryRunner);
@@ -29,13 +29,13 @@ export class DummyDataProdOptIn1761015167700 implements MigrationInterface {
     // Solo intentamos revertir si explícitamente se pide y la bandera está activa.
     if (this.ALLOW_DUMMY_SEED === "true") {
       console.log(
-        "[DummyData/ProdOptIn] delegating to DummyData.down() (ALLOW_DUMMY_SEED=true)"
+        "[DummyData/ProdOptIn] delegating to DummyData.down() (ALLOW_DUMMY_SEED=true)",
       );
       const delegate = new DummyData();
       await delegate.down(queryRunner);
     } else {
       console.log(
-        "[DummyData/ProdOptIn] down skipped (ALLOW_DUMMY_SEED != true)"
+        "[DummyData/ProdOptIn] down skipped (ALLOW_DUMMY_SEED != true)",
       );
     }
   }

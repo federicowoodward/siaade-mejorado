@@ -8,7 +8,7 @@ async function resolveRolesGuard(
   allowed: ROLE[],
   router: Router,
   auth: AuthService,
-  rbac: RbacService
+  rbac: RbacService,
 ): Promise<boolean | UrlTree> {
   if (!allowed.length) {
     return true;

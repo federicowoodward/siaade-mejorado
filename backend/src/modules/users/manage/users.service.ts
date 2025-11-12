@@ -33,7 +33,7 @@ export class UsersService {
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
     private readonly provisioning: UserProvisioningService,
-    private readonly userReader: UserProfileReaderService
+    private readonly userReader: UserProfileReaderService,
   ) {}
 
   private async buildUserData(input: {
@@ -73,10 +73,10 @@ export class UsersService {
     // Validación mínima de user_info: sólo documentValue requerido; documentType por defecto 'DNI'
     if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para preceptor"
+        "userInfo.documentValue (DNI) es requerido para preceptor",
       );
     }
-    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
+    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     return this.provisioning.createPreceptor({
       userData: {
         ...userData,
@@ -94,10 +94,10 @@ export class UsersService {
     // Validaciones mínimas: sólo documentValue requerido; documentType por defecto 'DNI'
     if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para teacher"
+        "userInfo.documentValue (DNI) es requerido para teacher",
       );
     }
-    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
+    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     if (
       !dto.commonData?.sex ||
       !dto.commonData?.birthDate ||
@@ -105,7 +105,7 @@ export class UsersService {
       !dto.commonData?.nationality
     ) {
       throw new BadRequestException(
-        "commonData.sex, birthDate, birthPlace y nationality son requeridos para teacher"
+        "commonData.sex, birthDate, birthPlace y nationality son requeridos para teacher",
       );
     }
     return this.provisioning.createTeacher({
@@ -125,10 +125,10 @@ export class UsersService {
 
     if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para student"
+        "userInfo.documentValue (DNI) es requerido para student",
       );
     }
-    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
+    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     if (
       !dto.commonData?.sex ||
       !dto.commonData?.birthDate ||
@@ -136,7 +136,7 @@ export class UsersService {
       !dto.commonData?.nationality
     ) {
       throw new BadRequestException(
-        "commonData.sex, birthDate, birthPlace y nationality son requeridos para student"
+        "commonData.sex, birthDate, birthPlace y nationality son requeridos para student",
       );
     }
 
@@ -153,7 +153,7 @@ export class UsersService {
 
     if (startYear < 1990 || startYear > 2100) {
       throw new BadRequestException(
-        "studentStartYear must be between 1990 and 2100"
+        "studentStartYear must be between 1990 and 2100",
       );
     }
 
@@ -190,7 +190,7 @@ export class UsersService {
 
   async update(
     id: string,
-    updateUserDto: Partial<UpdateUserDto>
+    updateUserDto: Partial<UpdateUserDto>,
   ): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { id },
@@ -239,13 +239,21 @@ export class UsersService {
 
   // Soft activate/inactivate
   async setUserActiveState(userId: string, active: boolean) {
-    const user = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
-    if (!user) throw new NotFoundException('User not found');
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
+    if (!user) throw new NotFoundException("User not found");
     if ((user as any).isActive === active) {
       return this.mapToResponseDto(user, user.role);
     }
-    await this.usersRepository.update({ id: userId }, { isActive: active } as any);
-    const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    await this.usersRepository.update({ id: userId }, {
+      isActive: active,
+    } as any);
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
     return this.mapToResponseDto(updated!, updated?.role);
   }
 
@@ -286,7 +294,10 @@ export class UsersService {
             message:
               "No se puede borrar el docente: existe al menos una comision vinculada a una materia.",
             subject: commission.subject
-              ? { id: commission.subject.id, subjectName: commission.subject.subjectName }
+              ? {
+                  id: commission.subject.id,
+                  subjectName: commission.subject.subjectName,
+                }
               : undefined,
           });
         }
@@ -302,7 +313,6 @@ export class UsersService {
             career: { id: career.id, careerName: career.careerName },
           });
         }
-      
       }
       // Borrar específico por rol
       switch (roleName) {
@@ -421,32 +431,47 @@ export class UsersService {
   // ---------------- BLOQUEO / DESBLOQUEO -----------------
   async blockUser(userId: string, reason?: string) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    const final = (reason ?? '').trim();
+    if (!user) throw new NotFoundException("User not found");
+    const final = (reason ?? "").trim();
     const dbReason: string | null = final.length ? final : null;
-    if ((user as any).isBlocked && ((user as any).blockedReason ?? null) === dbReason) {
+    if (
+      (user as any).isBlocked &&
+      ((user as any).blockedReason ?? null) === dbReason
+    ) {
       return this.mapToResponseDto(user, undefined as any);
     }
-    await this.usersRepository.update({ id: userId }, { isBlocked: true, blockedReason: dbReason } as any);
-    const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    await this.usersRepository.update({ id: userId }, {
+      isBlocked: true,
+      blockedReason: dbReason,
+    } as any);
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
     return this.mapToResponseDto(updated!, updated?.role);
   }
 
   async unblockUser(userId: string) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     if (!(user as any).isBlocked && !(user as any).blockedReason) {
       return this.mapToResponseDto(user, undefined as any);
     }
-    await this.usersRepository.update({ id: userId }, { isBlocked: false, blockedReason: null } as any);
-    const updated = await this.usersRepository.findOne({ where: { id: userId }, relations: ['role'] });
+    await this.usersRepository.update({ id: userId }, {
+      isBlocked: false,
+      blockedReason: null,
+    } as any);
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
     return this.mapToResponseDto(updated!, updated?.role);
   }
 
   // Método para validar usuario por email y contraseña (usado por Auth)
   async validateUser(
     email: string,
-    password: string
+    password: string,
   ): Promise<User["id"] | null> {
     try {
       const user = await this.usersRepository.findOne({
@@ -460,7 +485,7 @@ export class UsersService {
       return null;
     } catch (error: any) {
       throw new BadRequestException(
-        "Error al validar usuario: " + error.message
+        "Error al validar usuario: " + error.message,
       );
     }
   }
@@ -474,12 +499,3 @@ export class UsersService {
     return this.findAll();
   }
 }
-
-
-
-
-
-
-
-
-

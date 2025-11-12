@@ -25,7 +25,7 @@ import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
       ></p-button>
 
       <h2>Situación Académica del Estudiante</h2>
-      
+
       @if (loading()) {
         <p>Cargando información del usuario...</p>
       } @else if (errorMessage()) {
@@ -34,9 +34,7 @@ import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
           <p>{{ errorMessage() }}</p>
         </div>
       } @else if (student()) {
-        <app-academic-status
-          [student]="student()"
-        ></app-academic-status>
+        <app-academic-status [student]="student()"></app-academic-status>
       }
     </div>
   `,
@@ -52,7 +50,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   errorMessage = signal<string>('');
   private redirectTimer: number | null = null;
 
-  constructor(private router: Router) { }
+  constructor(private router: Router) {}
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -73,12 +71,16 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
         }
 
         // Validar que el usuario sea estudiante
-        const isStudent = u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
+        const isStudent =
+          u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
 
         if (!isStudent) {
-          console.error('[StudentAcademicStatus] El usuario no es un estudiante:', u);
+          console.error(
+            '[StudentAcademicStatus] El usuario no es un estudiante:',
+            u,
+          );
           this.errorMessage.set(
-            `El usuario "${u.name} ${u.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`
+            `El usuario "${u.name} ${u.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`,
           );
           this.loading.set(false);
 
@@ -105,7 +107,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
         this.loading.set(false);
 
         this.redirectTimer = window.setTimeout(() => this.back(), 3000);
-      }
+      },
     });
   }
 
@@ -114,7 +116,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
       clearTimeout(this.redirectTimer);
       this.redirectTimer = null;
     }
-    this.router.navigate(["/users"]);
+    this.router.navigate(['/users']);
   }
 
   ngOnDestroy(): void {

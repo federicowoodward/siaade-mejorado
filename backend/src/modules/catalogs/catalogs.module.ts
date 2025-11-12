@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { CatalogsController } from "./catalogs.controller";
 import { CatalogsService } from "./catalogs.service";
 import { AcademicPeriod } from "@/entities/catalogs/academic-period.entity";
@@ -30,7 +30,7 @@ import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequi
       Student,
       FinalExamStatus,
       SubjectStatusType,
-      SubjectPrerequisiteByOrder
+      SubjectPrerequisiteByOrder,
     ]),
   ],
   controllers: [CatalogsController],
@@ -38,4 +38,3 @@ import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequi
   exports: [CatalogsService],
 })
 export class CatalogsModule {}
-

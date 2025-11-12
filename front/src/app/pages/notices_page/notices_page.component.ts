@@ -36,7 +36,7 @@ export class NoticesPageComponent implements OnInit {
       ROLE.SECRETARY,
       ROLE.PRECEPTOR,
       ROLE.EXECUTIVE_SECRETARY,
-    ])
+    ]),
   );
 
   newNotice: Partial<Notice> = {

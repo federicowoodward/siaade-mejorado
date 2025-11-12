@@ -12,15 +12,15 @@ export interface FinalExamStudentDto {
 
 export interface FinalExamDetailDto {
   id: number;
-  exam_date: string;            // 'YYYY-MM-DD'
-  exam_time: string;            // 'HH:mm'
+  exam_date: string; // 'YYYY-MM-DD'
+  exam_time: string; // 'HH:mm'
   aula: string | null;
   subject_id: number;
   subject_name: string;
   table_id: number;
   table_name: string;
-  table_start_date: string;     // 'YYYY-MM-DD'
-  table_end_date: string;       // 'YYYY-MM-DD'
+  table_start_date: string; // 'YYYY-MM-DD'
+  table_end_date: string; // 'YYYY-MM-DD'
   students: FinalExamStudentDto[];
 }
 
@@ -29,6 +29,9 @@ export class FinalExamStudentsService {
   private api = inject(ApiService); // ajusta el path si tu estructura difiere
 
   getExamDetail(finalExamId: number): Observable<FinalExamDetailDto> {
-    return this.api.request<FinalExamDetailDto>('GET', `finals/exam/list/${finalExamId}`);
+    return this.api.request<FinalExamDetailDto>(
+      'GET',
+      `finals/exam/list/${finalExamId}`,
+    );
   }
 }

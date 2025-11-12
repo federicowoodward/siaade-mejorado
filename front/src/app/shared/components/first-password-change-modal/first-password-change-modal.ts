@@ -72,8 +72,7 @@ export class FirstPasswordChangeModalComponent {
 
   get mismatch(): boolean {
     return (
-      this.confirmValue.length > 0 &&
-      this.passwordValue !== this.confirmValue
+      this.confirmValue.length > 0 && this.passwordValue !== this.confirmValue
     );
   }
 

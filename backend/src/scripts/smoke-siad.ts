@@ -25,17 +25,20 @@ async function main() {
   const nowTag = Date.now();
 
   try {
-    // 1) Insertar catálogos simples
+    // 1) Insertar catï¿½logos simples
     const apRepo = qr.manager.getRepository(AcademicPeriod);
     const fesRepo = qr.manager.getRepository(FinalExamStatus);
     const sstRepo = qr.manager.getRepository(SubjectStatusType);
     const comRepo = qr.manager.getRepository(Commission);
 
-    const ap = apRepo.create({ periodName: `2025 - Período de Prueba ${nowTag}`, partialsScoreNeeded: 2 });
+    const ap = apRepo.create({
+      periodName: `2025 - Perï¿½odo de Prueba ${nowTag}`,
+      partialsScoreNeeded: 2,
+    });
     await apRepo.save(ap);
     log("academic_period OK", ap.academicPeriodId);
 
-    // Crear un status de final único para poder borrarlo sin afectar otros
+    // Crear un status de final ï¿½nico para poder borrarlo sin afectar otros
     const fes = fesRepo.create({ name: `APROBADO (SMOKE) ${nowTag}` });
     await fesRepo.save(fes);
     log("final_exam_status OK", fes.id);
@@ -48,7 +51,7 @@ async function main() {
     await comRepo.save(com);
     log("commission OK", com.id);
 
-    // 2) Si hay un subject + teacher válido, intentar crear subject_commission
+    // 2) Si hay un subject + teacher vï¿½lido, intentar crear subject_commission
     const subject = await qr.manager
       .getRepository(Subject)
       .createQueryBuilder("s")
@@ -62,8 +65,10 @@ async function main() {
       const teacherId: string | undefined = teacherRow?.[0]?.user_id;
       if (teacherId) {
         const scRepo = qr.manager.getRepository(SubjectCommission);
-        // Primero intentamos obtener existente para evitar violaciones de unicidad dentro de la transacción
-        let existing = await scRepo.findOne({ where: { subjectId: subject.id, commissionId: com.id } });
+        // Primero intentamos obtener existente para evitar violaciones de unicidad dentro de la transacciï¿½n
+        let existing = await scRepo.findOne({
+          where: { subjectId: subject.id, commissionId: com.id },
+        });
         if (existing) {
           sc = existing;
           log("subject_commission existente reutilizado", sc.id);
@@ -104,7 +109,7 @@ async function main() {
         await sspRepo.save(ssp);
         log("student_subject_progress OK", ssp.id);
       } catch {
-        log("student_subject_progress ya existente (índice único)");
+        log("student_subject_progress ya existente (ï¿½ndice ï¿½nico)");
       }
     } else {
       log("SKIP student_subject_progress: falta subject_commission o student");
@@ -129,16 +134,28 @@ async function main() {
     // 5) CareerSubjects y SubjectPrerequisiteByOrder
     if (career?.id && subject?.id) {
       const csRepo = qr.manager.getRepository(CareerSubject);
-      const cso1 = csRepo.create({ careerId: career.id, subjectId: subject.id, orderNo: 1, yearNo: 1, periodOrder: 1 });
+      const cso1 = csRepo.create({
+        careerId: career.id,
+        subjectId: subject.id,
+        orderNo: 1,
+        yearNo: 1,
+        periodOrder: 1,
+      });
       await csRepo.save(cso1);
       log("career_subjects OK", cso1.id);
-      // Intento duplicado esperado (mismo careerId, orderNo) usando savepoint para no abortar la transacción
+      // Intento duplicado esperado (mismo careerId, orderNo) usando savepoint para no abortar la transacciï¿½n
       const sp1 = `sp_cs_${nowTag}`;
       await qr.query(`SAVEPOINT ${sp1}`);
       try {
-        const dup = csRepo.create({ careerId: career.id, subjectId: subject.id, orderNo: 1 });
+        const dup = csRepo.create({
+          careerId: career.id,
+          subjectId: subject.id,
+          orderNo: 1,
+        });
         await csRepo.save(dup);
-        log("WARN: career_subjects duplicate no lanzó error (revisar índice único)");
+        log(
+          "WARN: career_subjects duplicate no lanzï¿½ error (revisar ï¿½ndice ï¿½nico)",
+        );
       } catch {
         log("career_subjects UNIQUE (careerId, orderNo) OK (fallo esperado)");
       } finally {
@@ -162,7 +179,7 @@ async function main() {
           prereq_order_no: 1,
         });
         await spRepo.save(sproDup);
-        log("WARN: subject_prerequisites_by_order duplicate no lanzó error");
+        log("WARN: subject_prerequisites_by_order duplicate no lanzï¿½ error");
       } catch {
         log("subject_prerequisites_by_order UNIQUE OK (fallo esperado)");
       } finally {
@@ -181,7 +198,11 @@ async function main() {
       .getOne();
     if (career?.id && studentForCareer?.userId) {
       const cstRepo = qr.manager.getRepository(CareerStudent);
-      const cst = cstRepo.create({ careerId: career.id, studentId: studentForCareer.userId, enrolledAt: new Date() });
+      const cst = cstRepo.create({
+        careerId: career.id,
+        studentId: studentForCareer.userId,
+        enrolledAt: new Date(),
+      });
       await cstRepo.save(cst);
       log("career_students OK", cst.id);
     } else {
@@ -191,7 +212,11 @@ async function main() {
     // 7) ExamTable + FinalExam + FinalExamsStudent + cascadas y SET NULL
     if (subject?.id && student?.userId) {
       const etRepo = qr.manager.getRepository(ExamTable);
-      const et = etRepo.create({ name: "Mesa SMOKE", startDate: new Date(), endDate: new Date() });
+      const et = etRepo.create({
+        name: "Mesa SMOKE",
+        startDate: new Date(),
+        endDate: new Date(),
+      });
       await etRepo.save(et);
       log("exam_table OK", et.id);
 
@@ -217,8 +242,14 @@ async function main() {
 
       // Probar ON DELETE SET NULL en status
       await qr.manager.getRepository(FinalExamStatus).delete({ id: fes.id });
-      const afterStatus = await qr.query(`select status_id from final_exams_students where id = $1`, [fesRow.id]);
-      log("final_exams_students.status_id tras borrar status:", afterStatus?.[0]?.status_id);
+      const afterStatus = await qr.query(
+        `select status_id from final_exams_students where id = $1`,
+        [fesRow.id],
+      );
+      log(
+        "final_exams_students.status_id tras borrar status:",
+        afterStatus?.[0]?.status_id,
+      );
 
       // Probar CASCADE: borrar exam_table -> borra finals
       await etRepo.delete({ id: et.id });
@@ -237,11 +268,14 @@ async function main() {
     const enrolledAtType = await qr.query(
       `SELECT data_type FROM information_schema.columns WHERE table_name='final_exams_students' AND column_name='enrolled_at'`,
     );
-    log("final_exams_students.enrolled_at data_type:", enrolledAtType?.[0]?.data_type);
+    log(
+      "final_exams_students.enrolled_at data_type:",
+      enrolledAtType?.[0]?.data_type,
+    );
 
     // Rollback para no dejar datos de prueba
     await qr.rollbackTransaction();
-    log("Transacción revertida (DB limpia)");
+    log("Transacciï¿½n revertida (DB limpia)");
   } catch (err) {
     await qr.rollbackTransaction();
     console.error("[SMOKE] Error:", err);
@@ -253,4 +287,3 @@ async function main() {
 }
 
 main();
-

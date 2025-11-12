@@ -96,4 +96,3 @@ export class BlockMessageComponent implements AfterViewInit {
     return action?.label ?? String(index);
   }
 }
-

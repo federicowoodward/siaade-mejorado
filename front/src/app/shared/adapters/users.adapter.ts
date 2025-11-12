@@ -1,9 +1,9 @@
-﻿import { UserRow, Role } from "../../core/models/users-table.models";
-import { ROLE, ROLE_BY_ID } from "../../core/auth/roles";
+﻿import { UserRow, Role } from '../../core/models/users-table.models';
+import { ROLE, ROLE_BY_ID } from '../../core/auth/roles';
 
 export function mapApiUserToRow(
   u: any,
-  getRoleNameById?: (id: number) => Role | null
+  getRoleNameById?: (id: number) => Role | null,
 ): UserRow {
   const resolvedRole = resolveRole(u.roleId, getRoleNameById);
   return {
@@ -18,7 +18,7 @@ export function mapApiUserToRow(
 
 function resolveRole(
   roleId: number | undefined,
-  getRoleNameById?: (id: number) => Role | null
+  getRoleNameById?: (id: number) => Role | null,
 ): Role {
   if (getRoleNameById) {
     const mapped = getRoleNameById(roleId ?? 0);

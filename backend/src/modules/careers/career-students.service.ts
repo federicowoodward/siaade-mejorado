@@ -19,12 +19,12 @@ export class CareerStudentsService {
     @InjectRepository(Career)
     private readonly careerRepo: Repository<Career>,
     @InjectRepository(CareerStudent)
-    private readonly careerStudentRepo: Repository<CareerStudent>
+    private readonly careerStudentRepo: Repository<CareerStudent>,
   ) {}
 
   async listCareerStudents(
     careerId: number,
-    query: CareerStudentsQuery
+    query: CareerStudentsQuery,
   ): Promise<{
     data: Array<{
       studentId: string;
@@ -98,7 +98,7 @@ export class CareerStudentsService {
     const like = `%${term.trim().toLowerCase()}%`;
     qb.andWhere(
       "(LOWER(user.name) LIKE :like OR LOWER(user.lastName) LIKE :like OR LOWER(user.email) LIKE :like OR LOWER(student.legajo) LIKE :like)",
-      { like }
+      { like },
     );
   }
 

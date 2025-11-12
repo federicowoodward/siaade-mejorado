@@ -19,7 +19,7 @@ export const ROLE_BY_ID: Record<number, ROLE> = Object.entries(ROLE_IDS).reduce(
     acc[id] = role as ROLE;
     return acc;
   },
-  {} as Record<number, ROLE>
+  {} as Record<number, ROLE>,
 );
 
 export const ROLE_VALUES: ROLE[] = Object.values(ROLE);
@@ -49,4 +49,3 @@ export function getRoleById(roleId: number | null | undefined): ROLE | null {
   if (roleId == null) return null;
   return ROLE_BY_ID[roleId] ?? null;
 }
-

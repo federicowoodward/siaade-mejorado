@@ -1,7 +1,11 @@
 <div class="flex flex-column gap-3 m-w-custom">
   <h2>Inscripción a Finales</h2>
 
-  <p-message *ngIf="blocked$ | async" severity="warn" text="Tu cuenta está bloqueada. Las inscripciones están deshabilitadas."></p-message>
+  <p-message
+    *ngIf="blocked$ | async"
+    severity="warn"
+    text="Tu cuenta está bloqueada. Las inscripciones están deshabilitadas."
+  ></p-message>
 
   <p *ngIf="!loading() && finals().length === 0" class="text-gray-600">
     No tenés materias disponibles para inscribirte a exámenes finales.

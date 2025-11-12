@@ -23,10 +23,9 @@ import { StudentsReadModule } from "./modules/students/read/students.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
 
-
 @Module({
   imports: [
-        ConfigModule,
+    ConfigModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [TYPEORM_OPTIONS],
@@ -64,4 +63,4 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
