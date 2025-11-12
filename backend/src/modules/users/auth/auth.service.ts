@@ -3,7 +3,9 @@ import {
   Injectable,
   UnauthorizedException,
   Logger,
-  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -66,13 +68,35 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    const identity = (loginDto.identity || "").trim();
+    if (!identity) {
+      throw this.buildInvalidCredentialsException();
+    }
+
+    const user = await this.resolveUserByIdentity(identity);
+    if (!user) {
+      throw new NotFoundException({
+        code: "USER_NOT_FOUND",
+        message: "Usuario no existe",
+      });
+    }
+
+    if ((user as any).isActive === false) {
+      throw this.buildInvalidCredentialsException();
+    }
+
+    if ((user as any).isBlocked === true) {
+      const reason = (user as any).blockedReason ?? null;
+      throw this.buildUserBlockedException(reason);
+    }
+
     const userId = await this.userAuthValidator.validateUser(
-      loginDto.identity,
+      identity,
       loginDto.password,
     );
 
     if (!userId) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw this.buildInvalidCredentialsException();
     }
 
     const { profile, payload } = await this.resolveProfileAndPayload(userId);
@@ -344,14 +368,11 @@ export class AuthService {
     // Gating de acceso global: si el usuario está INACTIVO o BLOQUEADO, no puede loguear.
     // INACTIVO se trata como eliminado (401 genérico); BLOQUEADO devuelve 403 con motivo (si existe).
     if ((userEntity as any).isActive === false) {
-      throw new UnauthorizedException("Usuario inactivo o eliminado");
+      throw this.buildInvalidCredentialsException();
     }
     if ((userEntity as any).isBlocked === true) {
       const reason = (userEntity as any).blockedReason ?? null;
-      const message = reason
-        ? `Tu usuario está bloqueado: ${reason}`
-        : "Tu usuario está bloqueado";
-      throw new ForbiddenException({ error: "USER_BLOCKED", message, reason });
+      throw this.buildUserBlockedException(reason);
     }
 
     // Gating adicional para alumnos: isActive=false bloquea siempre; si isActive=true pero canLogin=false, también bloquea login.
@@ -361,16 +382,15 @@ export class AuthService {
         where: { userId },
       });
       if (!student) {
-        throw new UnauthorizedException("Student record not found");
+        throw this.buildInvalidCredentialsException();
       }
       if (student.isActive === false) {
-        throw new UnauthorizedException("Usuario inactivo o eliminado");
+        throw this.buildInvalidCredentialsException();
       }
       if (student.canLogin === false) {
-        throw new ForbiddenException({
-          error: "STUDENT_LOGIN_DISABLED",
-          message: "El acceso está deshabilitado para este alumno",
-        });
+        throw this.buildUserBlockedException(
+          "El acceso está deshabilitado para este alumno",
+        );
       }
     }
 
@@ -511,6 +531,24 @@ export class AuthService {
       }
     }
     return user;
+  }
+
+  private buildInvalidCredentialsException(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: "INVALID_CREDENTIALS",
+      message: "Credenciales incorrectas",
+    });
+  }
+
+  private buildUserBlockedException(reason?: string | null): HttpException {
+    return new HttpException(
+      {
+        code: "USER_BLOCKED",
+        message: "Usuario bloqueado",
+        reason: reason ?? null,
+      },
+      HttpStatus.LOCKED,
+    );
   }
 
   async verifyResetCode(

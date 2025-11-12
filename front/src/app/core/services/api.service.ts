@@ -52,9 +52,15 @@ export class ApiService {
     const finalHeaders =
       headers ?? new HttpHeaders({ 'Content-Type': 'application/json' });
 
-    const options: { headers: HttpHeaders; params: HttpParams; body?: any } = {
+    const options: {
+      headers: HttpHeaders;
+      params: HttpParams;
+      body?: any;
+      withCredentials: boolean;
+    } = {
       headers: finalHeaders,
       params: new HttpParams({ fromObject: params ?? {} }),
+      withCredentials: true,
     };
     if (data !== undefined) options.body = data;
 

@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { AuthService } from '../../../../core/services/auth.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-reset-code-page',
@@ -82,110 +83,107 @@ export class ResetCodePage implements OnDestroy {
     }
   }
 
-  submit() {
+  async submit() {
     if (this.form.invalid || this.submitting) return;
     const { identity, code } = this.form.value;
     this.submitting = true;
-    this.auth.verifyResetCode(identity!, code!).subscribe({
-      next: (resp) => {
-        const token = resp?.token;
-        if (!token) {
-          this.message.add({
-            severity: 'warn',
-            summary: 'Atención',
-            detail: 'No se pudo verificar el código.',
-          });
-          this.submitting = false;
-          return;
-        }
-        // No mostrar toast en modo cambio voluntario para hacer la transición más directa
-        const modeParam = (() => {
-          try {
-            return sessionStorage.getItem('resetMode');
-          } catch {
-            return null;
-          }
-        })();
-        if (modeParam !== 'change') {
-          this.message.add({
-            severity: 'success',
-            summary: 'Código verificado',
-            detail: 'Continuá para crear tu nueva contraseña.',
-          });
-        }
-        let modeParamResolved = 'recovery';
-        try {
-          modeParamResolved =
-            sessionStorage.getItem('resetMode') === 'change'
-              ? 'change'
-              : 'recovery';
-        } catch {}
-        // Si es cambio voluntario (mode=change), redirigir a /account/password/reset
-        // Si es recovery, redirigir a /auth/reset-password
-        const targetPath =
-          modeParamResolved === 'change'
-            ? '/account/password/reset'
-            : '/auth/reset-password';
-        this.router.navigate([targetPath], {
-          queryParams: { token, mode: modeParamResolved },
-        });
-      },
-      error: () => {
+    try {
+      const result = await firstValueFrom(
+        this.auth.verifyResetCode(identity!, code!),
+      );
+
+      if (!result.ok) {
+        const summary =
+          result.kind === 'network'
+            ? 'Sin conexión'
+            : result.kind === 'server'
+              ? 'Error de servidor'
+              : 'Código inválido';
         this.message.add({
-          severity: 'error',
-          summary: 'Código inválido',
-          detail: 'El código es incorrecto o venció.',
+          severity: result.kind === 'network' ? 'error' : 'warn',
+          summary,
+          detail: result.message || 'El código es incorrecto o venció.',
         });
         this.submitting = false;
-      },
-    });
+        return;
+      }
+
+      const modeParam = (() => {
+        try {
+          return sessionStorage.getItem('resetMode');
+        } catch {
+          return null;
+        }
+      })();
+      if (modeParam !== 'change') {
+        this.message.add({
+          severity: 'success',
+          summary: 'Código verificado',
+          detail: 'Continuá para crear tu nueva contraseña.',
+        });
+      }
+
+      let modeParamResolved = 'recovery';
+      try {
+        modeParamResolved =
+          sessionStorage.getItem('resetMode') === 'change'
+            ? 'change'
+            : 'recovery';
+      } catch {}
+
+      const targetPath =
+        modeParamResolved === 'change'
+          ? '/account/password/reset'
+          : '/auth/reset-password';
+
+      this.submitting = false;
+      this.router.navigate([targetPath], {
+        queryParams: { token: result.token, mode: modeParamResolved },
+      });
+    } catch (error) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Código inválido',
+        detail: 'El código es incorrecto o venció.',
+      });
+      this.submitting = false;
+    }
   }
 
-  resendCode() {
+  async resendCode() {
     const identity = this.form.value.identity;
     if (!identity || !this.canResend) return;
     this.canResend = false;
     this.resendIn = 30;
-    // En modo 'change' usamos el endpoint autenticado del backend; en 'recovery', el clásico por identidad
-    if (this.mode === 'change') {
-      this.auth.requestPasswordChangeCode().subscribe({
-        next: () => {
-          this.message.add({
-            severity: 'success',
-            summary: 'Código reenviado',
-            detail: 'Revisá tu correo.',
-          });
-          this.startCooldown();
-        },
-        error: () => {
-          this.message.add({
-            severity: 'warn',
-            summary: 'Atención',
-            detail: 'No pudimos reenviar el código aún.',
-          });
-          this.startCooldown();
-        },
-      });
-    } else {
-      this.auth.requestPasswordRecovery(identity!).subscribe({
-        next: () => {
-          this.message.add({
-            severity: 'success',
-            summary: 'Código reenviado',
-            detail: 'Revisá tu correo.',
-          });
-          this.startCooldown();
-        },
-        error: () => {
-          this.message.add({
-            severity: 'warn',
-            summary: 'Atención',
-            detail: 'No pudimos reenviar el código aún.',
-          });
-          // aun así reactivar cooldown para evitar spam
-          this.startCooldown();
-        },
-      });
+    try {
+      const result =
+        this.mode === 'change'
+          ? await firstValueFrom(this.auth.requestPasswordChangeCode())
+          : await firstValueFrom(
+              this.auth.requestPasswordRecovery(identity!),
+            );
+
+      if (result.ok) {
+        this.message.add({
+          severity: 'success',
+          summary: 'Código reenviado',
+          detail: 'Revisá tu correo.',
+        });
+      } else {
+        const summary =
+          result.kind === 'network'
+            ? 'Sin conexión'
+            : result.kind === 'server'
+              ? 'Error de servidor'
+              : 'Atención';
+        this.message.add({
+          severity: result.kind === 'network' ? 'error' : 'warn',
+          summary,
+          detail: result.message || 'No pudimos reenviar el código aún.',
+        });
+      }
+    } finally {
+      this.startCooldown();
     }
   }
 

@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
@@ -8,7 +7,11 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { AuthService } from '../../../../core/services/auth.service';
+import {
+  AuthService,
+  ConfirmPasswordResetResult,
+} from '../../../../core/services/auth.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-reset-password-page',
@@ -157,104 +160,67 @@ export class ResetPasswordPage {
     // Solo enviar current si es modo 'change'
     const currentToSend =
       this.mode === 'change' ? current || undefined : undefined;
-    this.auth
-      .confirmPasswordReset(this.token, password, currentToSend)
-      .subscribe({
-        next: () => {
-          this.serverError = null;
-          this.currentError = null;
-          this.message.add({
-            severity: 'success',
-            summary: 'Listo',
-            detail: 'Tu contraseña fue actualizada.',
-          });
-          this.router.navigate(['/auth']);
-        },
-        error: (err) => {
-          const detail = this.resolveErrorMessage(err);
-          const curDetail =
-            this.resolveCurrentFieldError(err) ??
-            (/(contraseña\s+actual|current\s*password)/i.test(detail)
-              ? detail
-              : null);
-          if (curDetail) {
-            this.currentError = curDetail;
-          } else {
-            this.serverError = detail;
-            this.message.add({ severity: 'error', summary: 'Error', detail });
-          }
-          this.submitting = false;
-        },
-        complete: () => (this.submitting = false),
+    try {
+      const result = await firstValueFrom(
+        this.auth.confirmPasswordReset(this.token, password, currentToSend),
+      );
+
+      if (result.ok) {
+        this.serverError = null;
+        this.currentError = null;
+        this.message.add({
+          severity: 'success',
+          summary: 'Listo',
+          detail: 'Tu contraseña fue actualizada.',
+        });
+        await this.router.navigate(['/auth']);
+      } else {
+        this.handleResetError(result);
+      }
+    } catch (error) {
+      this.handleResetError();
+    } finally {
+      this.submitting = false;
+    }
+  }
+
+  private handleResetError(
+    failure?: ConfirmPasswordResetResult,
+  ): void {
+    if (!failure || failure.ok) {
+      this.serverError = 'No se pudo actualizar la contraseña.';
+      this.message.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: this.serverError,
       });
-  }
-
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const payload = error.error as any;
-      const message =
-        this.normalizeErrorPayload(payload?.message) ??
-        this.normalizeErrorPayload(payload?.error) ??
-        this.normalizeErrorPayload(payload);
-
-      if (message) {
-        return message;
-      }
-
-      if (error.status === 0) {
-        return 'No pudimos contactar al servidor. Intentá nuevamente.';
-      }
-      if (error.status === 401) {
-        return 'No pudimos validar tu contraseña actual.';
-      }
-      if (error.status === 400) {
-        return 'Hay detalles pendientes en el formulario.';
-      }
+      return;
     }
 
-    const fallback = this.normalizeErrorPayload((error as any)?.message);
-    if (fallback) {
-      return fallback;
+    const detail =
+      failure.message || 'No se pudo actualizar la contraseña.';
+
+    if (failure.kind === 'invalid_credentials') {
+      this.currentError = detail;
+      this.message.add({
+        severity: 'warn',
+        summary: 'Contraseña actual',
+        detail,
+      });
+      return;
     }
 
-    return 'No se pudo actualizar la contraseña.';
-  }
-
-  private normalizeErrorPayload(source: unknown): string | null {
-    if (typeof source === 'string') {
-      const trimmed = source.trim();
-      return trimmed.length > 0 ? trimmed : null;
-    }
-    if (Array.isArray(source)) {
-      const joined = source
-        .map((item) => (typeof item === 'string' ? item.trim() : ''))
-        .filter((item) => item.length > 0)
-        .join(' · ');
-      return joined.length > 0 ? joined : null;
-    }
-    return null;
-  }
-
-  private resolveCurrentFieldError(error: unknown): string | null {
-    // Dedicado a errores del campo "Contraseña actual"
-    const status = (error as any)?.status as number | undefined;
-    const payload = (error as any)?.error ?? undefined;
-    const raw =
-      this.normalizeErrorPayload((payload as any)?.message) ||
-      this.normalizeErrorPayload((payload as any)?.error) ||
-      this.normalizeErrorPayload(payload) ||
-      this.normalizeErrorPayload((error as any)?.message);
-
-    // 401 suele indicar contraseña actual inválida en este flujo
-    if (status === 401) {
-      if (raw) return raw;
-      return 'Contraseña actual incorrecta';
-    }
-
-    // Mensajes que mencionan explícitamente la contraseña actual
-    if (raw && /(contraseña\s+actual|current\s*password)/i.test(raw)) {
-      return raw;
-    }
-    return null;
+    this.serverError = detail;
+    const summary =
+      failure.kind === 'network'
+        ? 'Sin conexión'
+        : failure.kind === 'server'
+          ? 'Error de servidor'
+          : 'Error';
+    this.message.add({
+      severity: failure.kind === 'network' ? 'error' : 'warn',
+      summary,
+      detail,
+    });
   }
 }

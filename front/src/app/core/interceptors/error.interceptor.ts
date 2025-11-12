@@ -30,7 +30,7 @@ export class ErrorInterceptor implements HttpInterceptor {
 
         // En desarrollo, mostrar detalles completos del error
         if (!environment.production) {
-          console.group('🚨 [Error Interceptor] HTTP Error Details');
+          console.groupCollapsed('🚨 [Error Interceptor] HTTP Error Details');
           console.error('Request URL:', request.url);
           console.error('Request Method:', request.method);
           console.error('Error Status:', error.status);

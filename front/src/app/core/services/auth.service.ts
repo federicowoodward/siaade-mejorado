@@ -1,14 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, firstValueFrom, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PermissionService } from '../auth/permission.service';
 import { RbacService } from '../rbac/rbac.service';
 import { ROLE, ROLE_BY_ID, ROLE_IDS, normalizeRole } from '../auth/roles';
 import { ApiService } from './api.service';
-import { AuthApiService } from './auth/auth-api.service';
 import { AuthStateService } from './auth/auth-state.service';
+import {
+  NormalizedApiError,
+  normalizeApiError,
+} from '../http/error-normalizer';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -27,12 +30,65 @@ export interface LocalUser {
   [key: string]: unknown;
 }
 
+type LoginDto = { identity: string; password: string };
+type LoginResponseDto = { accessToken: string; user: AnyRecord };
+type PasswordResetResponse = {
+  message?: string;
+  token?: string | null;
+  expiresInSeconds?: number | null;
+  code?: string | null;
+  devIdentity?: string | null;
+};
+type VerifyCodeResponse = { token: string; expiresInSeconds?: number | null };
+
+type ApiFailureResult = {
+  ok: false;
+  kind: NormalizedApiError['kind'];
+  status: number | 0;
+  message: string;
+  code?: string | null;
+  reason?: string | null;
+};
+
+export type LoginResult =
+  | { ok: true; token: string; user?: AnyRecord }
+  | ApiFailureResult;
+
+export type PasswordRecoveryResult =
+  | {
+      ok: true;
+      message?: string | null;
+      token?: string | null;
+      expiresInSeconds?: number | null;
+      code?: string | null;
+    }
+  | ApiFailureResult;
+
+export type VerifyResetCodeResult =
+  | {
+      ok: true;
+      token: string;
+      expiresInSeconds?: number | null;
+    }
+  | ApiFailureResult;
+
+export type PasswordChangeCodeResult =
+  | {
+      ok: true;
+      message?: string | null;
+      code?: string | null;
+      devIdentity?: string | null;
+      expiresInSeconds?: number | null;
+    }
+  | ApiFailureResult;
+
+export type ConfirmPasswordResetResult = { ok: true } | ApiFailureResult;
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
   private readonly rbac = inject(RbacService);
-  private readonly authApi = inject(AuthApiService);
   private readonly authState = inject(AuthStateService);
   private readonly api = inject(ApiService);
 
@@ -51,22 +107,9 @@ export class AuthService {
     });
   }
 
-  async login(credentials: {
-    identity: string;
-    password: string;
-  }): Promise<boolean> {
-    const response = await firstValueFrom(this.authApi.login(credentials));
-
-    if (!response?.accessToken || !response?.user) {
-      return false;
-    }
-
-    const userLocal = this.buildLocalUser(response.user);
-    this.authState.setCurrentUser(userLocal, { persist: true });
-    this.authState.setAccessToken(response.accessToken, { persist: true });
-    const resolved = this.resolveRole(userLocal);
-    this.applyResolvedRole(resolved);
-
+  async login(credentials: LoginDto): Promise<boolean> {
+    const response = await firstValueFrom(this.loginRequest(credentials));
+    this.applyLoginResponse(response);
     return true;
   }
 
@@ -85,66 +128,78 @@ export class AuthService {
     }
   }
 
-  async loginWithReason(credentials: {
-    identity: string;
-    password: string;
-  }): Promise<{
-    ok: boolean;
-    blocked?: boolean;
-    blockedReason?: string | null;
-    inactive?: boolean;
-    message?: string;
-  }> {
-    try {
-      const ok = await this.login(credentials);
-      return { ok };
-    } catch (error: any) {
-      const msg: string = (
-        error?.error?.message ||
-        error?.message ||
-        ''
-      ).toLowerCase();
-      const raw = error?.error?.message || error?.message || '';
-      let blocked = false;
-      let inactive = false;
-      let blockedReason: string | null = null;
-      if (msg.includes('inactivo') || msg.includes('eliminado'))
-        inactive = true;
-      if (msg.includes('bloqueado')) {
-        blocked = true;
-        // Extraer motivo después de ':' si existe
-        const colonIdx = raw.indexOf(':');
-        if (colonIdx >= 0) {
-          blockedReason = raw.slice(colonIdx + 1).trim() || null;
-        }
-      }
-      return { ok: false, blocked, blockedReason, inactive, message: raw };
-    }
+  loginWithReason(payload: LoginDto): Observable<LoginResult> {
+    return this.loginRequest(payload).pipe(
+      map((resp) => {
+        const { token, user } = this.applyLoginResponse(resp);
+        return { ok: true as const, token, user };
+      }),
+      catchError((err) => of(this.asFailure(err))),
+    );
   }
 
-  requestPasswordRecovery(identity: string) {
-    return this.authApi.requestPasswordReset(identity);
+  requestPasswordRecovery(
+    identity: string,
+  ): Observable<PasswordRecoveryResult> {
+    return this.api
+      .request<PasswordResetResponse>('POST', 'auth/reset-password', {
+        identity,
+      })
+      .pipe(
+        map((resp) => ({
+          ok: true as const,
+          message: resp?.message ?? null,
+          token: resp?.token ?? null,
+          expiresInSeconds: resp?.expiresInSeconds ?? null,
+          code: resp?.code ?? null,
+        })),
+        catchError((err) => of(this.asFailure(err))),
+      );
   }
 
   confirmPasswordReset(
     token: string,
     password: string,
     currentPassword?: string,
-  ) {
-    return this.authApi.confirmPasswordReset({
-      token,
-      password,
-      currentPassword,
-    });
+  ): Observable<ConfirmPasswordResetResult> {
+    return this.api
+      .request<{ success: boolean }>('POST', 'auth/reset-password/confirm', {
+        token,
+        password,
+        currentPassword,
+      })
+      .pipe(
+        map(() => ({ ok: true as const })),
+        catchError((err) => of(this.asFailure(err))),
+      );
   }
 
-  verifyResetCode(identity: string, code: string) {
-    return this.authApi.verifyResetCode(identity, code);
+  verifyResetCode(
+    identity: string,
+    code: string,
+  ): Observable<VerifyResetCodeResult> {
+    return this.api
+      .request<VerifyCodeResponse>('POST', 'auth/reset-password/verify-code', {
+        identity,
+        code,
+      })
+      .pipe(
+        map((resp) => ({
+          ok: true as const,
+          token: resp.token,
+          expiresInSeconds: resp?.expiresInSeconds ?? null,
+        })),
+        catchError((err) => of(this.asFailure(err))),
+      );
   }
 
   async forcePasswordChange(password: string): Promise<boolean> {
     const result = await firstValueFrom(
-      this.authApi.forcePasswordChange(password),
+      this.api.request<{ success: boolean }>(
+        'POST',
+        'auth/password/force-change',
+        { password },
+      ),
     );
     if (result?.success) {
       // Actualizar el usuario local para que deje de pedir cambio de contraseña
@@ -161,18 +216,48 @@ export class AuthService {
     return !!result?.success;
   }
 
-  requestPasswordChangeCode() {
+  requestPasswordChangeCode(): Observable<PasswordChangeCodeResult> {
     const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
     const email = user?.email || '';
-    return this.authApi.requestPasswordChangeCode().pipe(
-      catchError((err) => {
-        // Compatibilidad: si el backend no tiene /password/request-change-code aún, caer al flujo de reset-password
-        if ((err?.status === 404 || err?.status === 405) && email) {
-          return this.authApi.requestPasswordReset(email);
-        }
-        throw err;
-      }),
-    );
+    return this.api
+      .request<PasswordResetResponse>(
+        'POST',
+        'auth/password/request-change-code',
+        {},
+      )
+      .pipe(
+        map((resp) => ({
+          ok: true as const,
+          message: resp?.message ?? null,
+          code: resp?.code ?? null,
+          devIdentity: resp?.devIdentity ?? null,
+          expiresInSeconds: resp?.expiresInSeconds ?? null,
+        })),
+        catchError((err) => {
+          const normalized = normalizeApiError(err);
+          if (
+            (normalized.status === 404 || normalized.status === 405) &&
+            email
+          ) {
+            return this.requestPasswordRecovery(email).pipe(
+              map((fallback) =>
+                fallback.ok
+                  ? {
+                      ok: true as const,
+                      message:
+                        fallback.message ??
+                        'Te enviamos un código a tu correo.',
+                      code: fallback.code ?? null,
+                      devIdentity: email,
+                      expiresInSeconds: fallback.expiresInSeconds ?? null,
+                    }
+                  : fallback,
+              ),
+            );
+          }
+          return of(this.fromNormalized(normalized));
+        }),
+      );
   }
 
   changePasswordWithCode(
@@ -180,11 +265,57 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ) {
-    return this.authApi.changePasswordWithCode({
-      code,
-      currentPassword,
-      newPassword,
-    });
+    return this.api.request<{ success: boolean }>(
+      'POST',
+      'auth/password/change-with-code',
+      {
+        code,
+        currentPassword,
+        newPassword,
+      },
+    );
+  }
+
+  private loginRequest(payload: LoginDto) {
+    const response = this.api.request<LoginResponseDto>(
+      'POST',
+      'auth/login',
+      payload,
+    );
+    return response;
+  }
+
+  private applyLoginResponse(response: LoginResponseDto): {
+    token: string;
+    user: AnyRecord;
+  } {
+    if (!response?.accessToken || !response?.user) {
+      throw new Error('Respuesta de login inválida');
+    }
+
+    const userLocal = this.buildLocalUser(response.user);
+    this.authState.setCurrentUser(userLocal, { persist: true });
+    this.authState.setAccessToken(response.accessToken, { persist: true });
+    const resolved = this.resolveRole(userLocal);
+    this.applyResolvedRole(resolved);
+
+    return { token: response.accessToken, user: response.user };
+  }
+
+  private asFailure(err: unknown): ApiFailureResult {
+    console.log('AuthService.asFailure error:', err);
+    return this.fromNormalized(normalizeApiError(err));
+  }
+
+  private fromNormalized(err: NormalizedApiError): ApiFailureResult {
+    return {
+      ok: false as const,
+      kind: err.kind,
+      status: err.status,
+      message: err.message,
+      code: err.code ?? null,
+      reason: err.reason ?? null,
+    };
   }
 
   needsPasswordChange(): boolean {
@@ -254,7 +385,9 @@ export class AuthService {
 
   async logout(options?: { redirect?: boolean }): Promise<void> {
     await firstValueFrom(
-      this.authApi.logout().pipe(catchError(() => of(void 0))),
+      this.api
+        .request<void>('POST', 'auth/logout', {})
+        .pipe(catchError(() => of(void 0))),
     );
 
     this.authState.clearSession();
