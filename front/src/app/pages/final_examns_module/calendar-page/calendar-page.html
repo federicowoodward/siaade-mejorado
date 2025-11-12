@@ -23,7 +23,7 @@
     </ng-template>
     <ng-template pTemplate="body" let-row>
       <tr>
-        <td class="font-medium">{{ row.exam_date }}</td>
+        <td class="font-medium">{{ row.exam_date | date:'dd/MM/yyyy' }}</td>
         <td>{{ row.subject_name }}</td>
         <td>{{ row.aula || '—' }}</td>
       </tr>

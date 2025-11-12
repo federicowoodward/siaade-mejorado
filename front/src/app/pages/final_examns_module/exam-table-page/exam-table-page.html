@@ -3,7 +3,7 @@
     <h2 class="m-0">
       {{ table()?.name || 'Mesa' }}
       <small class="text-color-secondary block">
-        {{ table()?.start_date }} → {{ table()?.end_date }}
+        {{ table()?.start_date | date:'dd/MM/yyyy' }} → {{ table()?.end_date | date:'dd/MM/yyyy' }}
       </small>
     </h2>
 
@@ -41,7 +41,7 @@
     <ng-template pTemplate="body" let-row>
       <tr>
         <td class="font-medium">{{ row.subject_name }}</td>
-        <td>{{ row.exam_date }}</td>
+        <td>{{ row.exam_date | date:'dd/MM/yyyy' }}</td>
         <td>{{ row.exam_time || '—' }}</td>
         <td>{{ row.aula || '—' }}</td>
         <td class="flex gap-2 flex-wrap">
@@ -86,3 +86,4 @@
   [maxDate]="maxDate"
   (submit)="handleCreate($event)"
 ></app-final-exam-create-dialog>
+

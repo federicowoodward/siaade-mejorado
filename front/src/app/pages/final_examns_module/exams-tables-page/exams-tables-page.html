@@ -28,7 +28,7 @@
     <ng-template pTemplate="body" let-row>
       <tr>
         <td class="font-medium">{{ row.name }}</td>
-        <td>{{ row.start_date }} → {{ row.end_date }}</td>
+        <td>{{ row.start_date | date:'dd/MM/yyyy' }} → {{ row.end_date | date:'dd/MM/yyyy' }}</td>
         <td>
           <ng-container *ngIf="row.created_by_user as u; else createdById">
             {{ u.name }} {{ u.last_name || '' }}
@@ -117,3 +117,4 @@
     ></p-button>
   </ng-template>
 </p-dialog>
+

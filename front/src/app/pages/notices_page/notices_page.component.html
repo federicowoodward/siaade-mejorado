@@ -1,13 +1,10 @@
-﻿<div class="notices-page">
+<div class="notices-page">
   <h2 class="page-title">
     <i class="pi pi-bell text-primary mr-2"></i>
     Avisos (Administración)
   </h2>
 
-  <div
-    class="new-notice-form"
-    *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]"
-  >
+  <div class="new-notice-form" *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]">
     <input
       type="text"
       placeholder="Título"
@@ -18,8 +15,8 @@
 
     <p-editor
       [(ngModel)]="newNotice.content"
-      [style]="{ height: '200px' }"
-      placeholder="Escribí el contenido del aviso…"
+      [style]="{height: '200px'}"
+      placeholder="Escribí el contenido del aviso."
       blockedAction
     ></p-editor>
 
@@ -30,14 +27,7 @@
       <option value="teacher">Profesores</option>
     </select>
 
-    <button
-      pButton
-      type="button"
-      label="Publicar"
-      (click)="addNotice()"
-      class="mt-2"
-      blockedAction
-    ></button>
+    <button pButton type="button" label="Publicar" (click)="addNotice()" class="mt-2" blockedAction></button>
   </div>
 
   <!-- Lista de avisos (admin ve todos) -->
@@ -47,24 +37,11 @@
         <h3>{{ n.title }}</h3>
         <div class="content" [innerHTML]="n.content"></div>
         <small class="meta">
-          Destinatarios:
-          {{ n.visibleFor === "student" ? "Alumnos" : "Profesores" }} Â·
-          {{ n.createdBy }} Â· {{ n.createdAt | date: "short" }}
+          Destinatarios: {{ n.visibleFor === 'student' ? 'Alumnos' : 'Profesores' }} •
+          {{ n.createdBy }} • {{ n.createdAt | date:'dd/MM/yyyy' }}
         </small>
 
-        <button
-          *appCanAnyRole="[
-            ROLE.SECRETARY,
-            ROLE.PRECEPTOR,
-            ROLE.EXECUTIVE_SECRETARY,
-          ]"
-          pButton
-          type="button"
-          label="Eliminar"
-          class="p-button-danger mt-2"
-          (click)="deleteNotice(n.id)"
-          blockedAction
-        ></button>
+        <button *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]" pButton type="button" label="Eliminar" class="p-button-danger mt-2" (click)="deleteNotice(n.id)" blockedAction></button>
       </div>
     </li>
   </ul>
