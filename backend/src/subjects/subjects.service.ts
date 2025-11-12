@@ -71,7 +71,7 @@ export class SubjectsService {
     // - attendance >= 90 AND avg > 7 => Promocionado
     // - otherwise => Regular
     if (attendance < 75 || avg < 4) return 'Libre';
-    if (attendance >= 90 && avg > 7) return 'Promocionado';
+    if (attendance >= 90 && avg >= 7) return 'Promocionado';
     return 'Regular';
   }
 
@@ -1282,7 +1282,7 @@ export class SubjectsService {
       const avg = values.reduce((a, b) => a + b, 0) / values.length;
       if (attendance < 75 || avg < 4) {
         condition = 'Libre';
-      } else if (attendance >= 90 && avg > 7) {
+      } else if (attendance >= 90 && avg >= 7) {
         condition = 'Promocionado';
       } else {
         condition = 'Regular';
