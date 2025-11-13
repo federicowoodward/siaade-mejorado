@@ -149,7 +149,7 @@ export class StudentInscriptionsController {
   @Get("exam-tables")
   @ApiOperation({
     summary:
-      "Listado de mesas publicadas para el alumno (con validaciones básicas)",
+      "Listado de mesas disponibles para el alumno (incluye inscritos sin filtros)",
   })
   @ApiQuery({ name: "subjectId", required: false, type: Number })
   @ApiQuery({ name: "from", required: false, type: String })
@@ -171,6 +171,8 @@ export class StudentInscriptionsController {
     @Query("windowState") windowState: WindowState | "all" = "open",
   ) {
     const studentId = (req.user as any)?.id as string | undefined;
+    
+    // PASO 1: Obtener TODOS los exámenes disponibles (con filtros opcionales)
     const qb = this.finalRepo
       .createQueryBuilder("f")
       .leftJoin("f.examTable", "t")
@@ -242,9 +244,92 @@ export class StudentInscriptionsController {
       });
     }
 
-    const result = Array.from(groups.values());
+    let result = Array.from(groups.values());
 
-    // Resolve duplicate enrollment per subject within the same table
+    // PASO 2: Si hay student, agregar TODOS sus exámenes inscritos (sin filtros de ventana/estado)
+    if (studentId) {
+      const enrolledLinks = await this.linkRepo.find({
+        where: { studentId, enrolledAt: Not(IsNull()) },
+        relations: {
+          finalExam: {
+            examTable: true,
+            subject: true,
+          },
+        },
+      });
+
+      // Crear grupos para los inscritos
+      const enrolledGroups = new Map<string, any>();
+      for (const link of enrolledLinks) {
+        const fe = link.finalExam;
+        if (!fe || !fe.examTable || !fe.subject) continue;
+
+        const key = `${fe.examTableId}:${fe.subjectId}`;
+        if (!enrolledGroups.has(key)) {
+          enrolledGroups.set(key, {
+            mesaId: fe.examTableId,
+            subjectId: fe.subjectId,
+            subjectName: fe.subject.subjectName,
+            subjectCode: null,
+            commissionLabel: null,
+            availableCalls: [],
+            duplicateEnrollment: false,
+            blockedReason: null,
+            blockedMessage: null,
+            academicRequirement: null,
+            window: {
+              opensAt: fe.examTable.startDate
+                ?.toISOString?.()
+                .split("T")[0] ?? null,
+              closesAt: fe.examTable.endDate
+                ?.toISOString?.()
+                .split("T")[0] ?? null,
+              label: fe.examTable.name ?? "Examen",
+              id: fe.examTableId,
+            },
+            subjectOrderNo: fe.subject?.orderNo ?? null,
+          });
+        }
+
+        const group = enrolledGroups.get(key);
+        group.availableCalls.push({
+          id: fe.id,
+          label: "Llamado",
+          examDate: fe.examDate.toISOString().split("T")[0],
+          aula: fe.aula ?? null,
+          quotaTotal: null,
+          quotaUsed: null,
+          enrollmentWindow: {
+            id: fe.examTableId,
+            label: fe.examTable.name ?? "Examen",
+            opensAt: fe.examTable.startDate?.toISOString?.().split("T")[0] ?? null,
+            closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
+          },
+          additional: false,
+        });
+      }
+
+      // Mezclar: los inscritos tienen prioridad (no filtrados por ventana)
+      // pero mantenemos los disponibles también
+      const merged = new Map<string, any>();
+      
+      // Primero agrega los inscritos (SIN filtro de ventana)
+      for (const [key, group] of enrolledGroups) {
+        merged.set(key, group);
+      }
+      
+      // Luego agrega los disponibles que no están en inscritos
+      for (const group of result) {
+        const key = `${group.mesaId}:${group.subjectId}`;
+        if (!merged.has(key)) {
+          merged.set(key, group);
+        }
+      }
+
+      result = Array.from(merged.values());
+    }
+
+    // PASO 3: Marcar enrolled y duplicates
     if (studentId) {
       const allFinalIds = result.flatMap((g) =>
         g.availableCalls.map((c: any) => c.id),
@@ -268,7 +353,7 @@ export class StudentInscriptionsController {
       }
     }
 
-    // Academic requirement message via prerequisites, when possible
+    // PASO 4: Academic requirement message via prerequisites
     if (studentId) {
       const cs = await this.careerStudentRepo.findOne({ where: { studentId } });
       if (cs) {
@@ -285,7 +370,6 @@ export class StudentInscriptionsController {
                 Array.isArray(validation.unmet) &&
                 validation.unmet.length > 0
               ) {
-                // Map unmet orderNos to subject names
                 const unmet = await this.careerSubjectRepo.find({
                   where: {
                     careerId: cs.careerId,
@@ -309,7 +393,7 @@ export class StudentInscriptionsController {
       }
     }
 
-    // Filter by window state if requested
+    // PASO 5: Filter by window state SOLO si no está inscripto
     const now = new Date();
     const inState = (opens?: string, closes?: string): WindowState => {
       if (!opens || !closes) return "closed";
@@ -320,14 +404,20 @@ export class StudentInscriptionsController {
       if (now.getTime() > end) return "past";
       return "open";
     };
+    
     const filtered =
       windowState && windowState !== "all"
-        ? result.filter(
-            (g) => inState(g.window.opensAt, g.window.closesAt) === windowState,
-          )
+        ? result.filter((g) => {
+            // Si está inscripto, siempre mostrar sin importar ventana
+            if (g.availableCalls.some((c: any) => c.enrolled)) {
+              return true;
+            }
+            // Si no está inscripto, aplicar filtro de ventana
+            return inState(g.window.opensAt, g.window.closesAt) === windowState;
+          })
         : result;
 
-    // Shape response as { data: [...] } for front mapper compatibility
+    // Shape response
     return {
       data: filtered.map(({ window, subjectOrderNo, ...rest }) => rest),
     };

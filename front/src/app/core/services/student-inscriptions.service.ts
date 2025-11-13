@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, finalize, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, finalize, map, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import {
@@ -102,57 +102,9 @@ export class StudentInscriptionsService {
         params,
       )
       .pipe(
-        // También obtener los exámenes en los que está inscripto (already formatted)
-        switchMap((availableTables) =>
-          this.api
-            .request<{ data: StudentExamTable[] }>(
-              'GET',
-              'students/inscriptions/exam-tables/enrolled',
-            )
-            .pipe(
-              map((enrolled) => ({ availableTables, enrolled: enrolled.data || [] })),
-              catchError((error) => {
-                console.warn('[StudentInscriptions] enrolled endpoint failed:', error);
-                return of({ availableTables, enrolled: [] });
-              }),
-            ),
-        ),
-        // Fusionar los datos: enrolled (ya formateado) + available (requiere mapeo)
-        map(({ availableTables, enrolled }) => {
-          console.log('[StudentInscriptions] availableTables:', availableTables);
-          console.log('[StudentInscriptions] enrolled:', enrolled);
-          
-          const payload = this.mapExamTables(availableTables);
-          const enrolledPayload = enrolled as StudentExamTable[]; // Ya está formateado del backend
-
-          console.log('[StudentInscriptions] mapped payload:', payload.length, 'items');
-          console.log('[StudentInscriptions] enrolled payload:', enrolledPayload.length, 'items');
-
-          // Crear un mapa para de-duplicar por mesa:materia
-          const enrolledMap = new Map<string, StudentExamTable>();
-          for (const e of enrolledPayload) {
-            const key = `${e.mesaId}:${e.subjectId}`;
-            enrolledMap.set(key, e);
-          }
-
-          // Mezclar: primero enrolled (tienen prioridad), luego available (evita duplicados)
-          const merged: StudentExamTable[] = [];
-          
-          // Agregar todos los enrolled
-          for (const enrolled of enrolledPayload) {
-            merged.push(enrolled);
-          }
-          
-          // Agregar los available que no están ya en enrolled
-          for (const avail of payload) {
-            const key = `${avail.mesaId}:${avail.subjectId}`;
-            if (!enrolledMap.has(key)) {
-              merged.push(avail);
-            }
-          }
-
-          console.log('[StudentInscriptions] final merged:', merged.length, 'items');
-          return merged;
+        map((payload) => {
+          console.log('[StudentInscriptions] Raw payload:', payload);
+          return this.mapExamTables(payload);
         }),
         tap((tables) => {
           this.tablesSignal.set(tables);
