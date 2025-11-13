@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, finalize, map, tap } from 'rxjs/operators';
+import { catchError, finalize, map, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import {
@@ -102,7 +102,43 @@ export class StudentInscriptionsService {
         params,
       )
       .pipe(
-        map((payload) => this.mapExamTables(payload)),
+        // También obtener los exámenes en los que está inscripto
+        switchMap((availableTables) =>
+          this.api
+            .request<{ data: any[] }>(
+              'GET',
+              'students/inscriptions/exam-tables/enrolled',
+            )
+            .pipe(
+              map((enrolled) => ({ availableTables, enrolled: enrolled.data })),
+              catchError(() => of({ availableTables, enrolled: [] })), // Si falla, continúa con lo disponible
+            ),
+        ),
+        // Fusionar los datos: usar enrolled si existen, sino usar available
+        map(({ availableTables, enrolled }) => {
+          const payload = this.mapExamTables(availableTables);
+          const enrolledPayload = this.mapExamTables({ data: enrolled || [] });
+
+          // Crear un mapa para de-duplicar
+          const enrolledMap = new Map<string, StudentExamTable>();
+          for (const e of enrolledPayload) {
+            const key = `${e.mesaId}:${e.subjectId}`;
+            enrolledMap.set(key, e);
+          }
+
+          // Mezclar: primero agrega los inscritos, luego los disponibles (evita duplicados)
+          const merged = [...payload];
+          for (const [key, enrolled] of enrolledMap) {
+            const found = merged.find(
+              (t) => `${t.mesaId}:${t.subjectId}` === key,
+            );
+            if (!found) {
+              merged.push(enrolled);
+            }
+          }
+
+          return merged;
+        }),
         tap((tables) => {
           this.tablesSignal.set(tables);
           this.cacheEntry = { key: cacheKey, data: tables, ts: Date.now() };
