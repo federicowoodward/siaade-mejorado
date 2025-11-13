@@ -17,7 +17,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, In } from "typeorm";
+import { Repository, In, Not, IsNull } from "typeorm";
 import { Request } from "express";
 
 import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
@@ -250,6 +250,80 @@ export class StudentInscriptionsController {
     return {
       data: filtered.map(({ window, subjectOrderNo, ...rest }) => rest),
     };
+  }
+
+  @Get("exam-tables/enrolled")
+  @ApiOperation({
+    summary: "Listado de exámenes en los que el estudiante SÍ está inscripto",
+  })
+  @ApiOkResponse({
+    description: "Exámenes donde hay inscripción activa (enrolledAt != null)",
+  })
+  async listEnrolledExamTables(@Req() req: Request) {
+    const studentId = (req.user as any)?.id as string | undefined;
+    if (!studentId) {
+      return { data: [] };
+    }
+
+    // Obtener TODOS los exámenes donde el estudiante está inscripto (enrolledAt != null)
+    const links = await this.linkRepo.find({
+      where: { studentId, enrolledAt: Not(IsNull()) },
+      relations: {
+        finalExam: {
+          examTable: true,
+          subject: true,
+        },
+      },
+    });
+
+    if (!links.length) {
+      return { data: [] };
+    }
+
+    // Agrupar por mesa + materia como en el endpoint anterior
+    const groups = new Map<string, any>();
+    for (const link of links) {
+      const fe = link.finalExam;
+      if (!fe || !fe.examTable || !fe.subject) {
+        continue;
+      }
+
+      const key = `${fe.examTableId}:${fe.subjectId}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          mesaId: fe.examTableId,
+          subjectId: fe.subjectId,
+          subjectName: fe.subject.subjectName,
+          subjectCode: null,
+          commissionLabel: null,
+          availableCalls: [],
+          duplicateEnrollment: false,
+          blockedReason: null,
+          blockedMessage: null,
+          academicRequirement: null,
+        });
+      }
+
+      const group = groups.get(key);
+      group.availableCalls.push({
+        id: fe.id,
+        label: "Llamado",
+        examDate: fe.examDate.toISOString().split("T")[0],
+        aula: fe.aula ?? null,
+        quotaTotal: null,
+        quotaUsed: null,
+        enrollmentWindow: {
+          id: fe.examTableId,
+          label: fe.examTable.name ?? "Examen",
+          opensAt: fe.examTable.startDate?.toISOString?.().split("T")[0] ?? null,
+          closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
+        },
+        additional: false,
+        enrolled: !!link.enrolledAt,
+      });
+    }
+
+    return { data: Array.from(groups.values()) };
   }
 
   @Post("exam-tables/:mesaId/enroll")
