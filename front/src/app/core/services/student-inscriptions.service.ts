@@ -102,7 +102,10 @@ export class StudentInscriptionsService {
         params,
       )
       .pipe(
-        map((payload) => this.mapExamTables(payload)),
+        map((payload) => {
+          console.log('[StudentInscriptions] Raw payload:', payload);
+          return this.mapExamTables(payload);
+        }),
         tap((tables) => {
           this.tablesSignal.set(tables);
           this.cacheEntry = { key: cacheKey, data: tables, ts: Date.now() };
@@ -267,6 +270,7 @@ export class StudentInscriptionsService {
       quotaUsed: this.toNumber(input.quotaUsed ?? input.enrolled),
       enrollmentWindow: window,
       additional: Boolean(input.additional ?? input.isAdditional ?? false),
+      enrolled: Boolean(input.enrolled ?? input.alreadyEnrolled ?? false),
     };
   }
 
