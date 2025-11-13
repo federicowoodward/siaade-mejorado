@@ -102,38 +102,46 @@ export class StudentInscriptionsService {
         params,
       )
       .pipe(
-        // También obtener los exámenes en los que está inscripto
+        // También obtener los exámenes en los que está inscripto (already formatted)
         switchMap((availableTables) =>
           this.api
-            .request<{ data: any[] }>(
+            .request<{ data: StudentExamTable[] }>(
               'GET',
               'students/inscriptions/exam-tables/enrolled',
             )
             .pipe(
-              map((enrolled) => ({ availableTables, enrolled: enrolled.data })),
-              catchError(() => of({ availableTables, enrolled: [] })), // Si falla, continúa con lo disponible
+              map((enrolled) => ({ availableTables, enrolled: enrolled.data || [] })),
+              catchError((error) => {
+                console.warn('[StudentInscriptions] enrolled endpoint failed:', error);
+                return of({ availableTables, enrolled: [] });
+              }),
             ),
         ),
-        // Fusionar los datos: usar enrolled si existen, sino usar available
+        // Fusionar los datos: enrolled (ya formateado) + available (requiere mapeo)
         map(({ availableTables, enrolled }) => {
           const payload = this.mapExamTables(availableTables);
-          const enrolledPayload = this.mapExamTables({ data: enrolled || [] });
+          const enrolledPayload = enrolled as StudentExamTable[]; // Ya está formateado del backend
 
-          // Crear un mapa para de-duplicar
+          // Crear un mapa para de-duplicar por mesa:materia
           const enrolledMap = new Map<string, StudentExamTable>();
           for (const e of enrolledPayload) {
             const key = `${e.mesaId}:${e.subjectId}`;
             enrolledMap.set(key, e);
           }
 
-          // Mezclar: primero agrega los inscritos, luego los disponibles (evita duplicados)
-          const merged = [...payload];
-          for (const [key, enrolled] of enrolledMap) {
-            const found = merged.find(
-              (t) => `${t.mesaId}:${t.subjectId}` === key,
-            );
-            if (!found) {
-              merged.push(enrolled);
+          // Mezclar: primero enrolled (tienen prioridad), luego available (evita duplicados)
+          const merged: StudentExamTable[] = [];
+          
+          // Agregar todos los enrolled
+          for (const enrolled of enrolledPayload) {
+            merged.push(enrolled);
+          }
+          
+          // Agregar los available que no están ya en enrolled
+          for (const avail of payload) {
+            const key = `${avail.mesaId}:${avail.subjectId}`;
+            if (!enrolledMap.has(key)) {
+              merged.push(avail);
             }
           }
 
