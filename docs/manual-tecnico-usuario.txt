@@ -1,0 +1,261 @@
+﻿0. Portada
+Nombre del sistema: SIAADE (Sistema Integral de Administracion Academica y Examenes).
+Descripcion breve: Plataforma full stack que centraliza la administracion de usuarios, materias, correlativas, mesas finales y el portal del alumno, alineada con los modulos del backend NestJS y el frontend Angular.
+Tecnologias principales: Backend NestJS 11 + TypeORM + PostgreSQL 15; Frontend Angular 20 + PrimeNG + Angular Signals; Infraestructura Docker Compose, Node.js 20.19 y servidor estatico Express o Nginx.
+Fecha y version de la documentacion: 12/11/2025 - v1.0.
+
+1. Documentacion tecnica
+1.1 Manual de instalacion
+1.1.1 Requisitos del sistema
+Hardware minimo: CPU 2 nucleos, 8 GB RAM, 10 GB de almacenamiento libre y soporte para virtualizacion ligera (Docker Desktop o equivalente). Hardware recomendado: CPU 4 nucleos, 16 GB RAM, SSD con al menos 25 GB libres para imagenes, dependencias y respaldos de base de datos. El servidor de produccion debe disponer de copias redundantes de la base PostgreSQL.
+Sistemas operativos: Windows 10/11, macOS 13+, distribuciones Linux tipo Ubuntu 20.04+ o Debian 12; cualquier entorno capaz de ejecutar Node.js 20 y Docker 24+ cumple.
+1.1.2 Dependencias de software
+Git 2.40+, Node.js 20.19.0 (ver archivos .nvmrc), npm 10+, Angular CLI 20 (instalable con npm install -g @angular/cli), Nest CLI opcional (npm install -g @nestjs/cli), Docker Engine y Docker Compose plugin 2.20+ para despliegues contenedorizados, PostgreSQL 15 si se instala fuera de Docker. Herramientas opcionales: nvm para cambiar versiones de Node, pgAdmin para inspeccionar la base y jq/curl para pruebas de API.
+1.1.3 Pasos de instalacion sin Docker
+1) Clonar el repositorio: git clone <repo> && cd siaade-mejorado.
+2) Seleccionar la version de Node indicada: nvm use 20.19.0 (o instalarla manualmente).
+3) Instalar dependencias del backend: cd backend && npm install.
+4) Configurar variables de entorno: duplicar backend/.env hacia backend/.env.local (opcional) y ajustar DB_HOST, puertos y secretos JWT; por defecto la base local se llama SIAD con usuario siad_admin.
+5) Preparar PostgreSQL: crear base SIAD, usuario siad_admin y otorgar permisos, o reutilizar docker-compose para levantar solo la base.
+6) Ejecutar migraciones iniciales: npm run db:migration:run. Para poblar datos de prueba usar npm run seed:dummy (ver docs/seeds-and-migrations.md).
+7) Iniciar el backend NestJS en desarrollo: npm run start:dev (usa ts-node con hot reload) o npm run start:watch.
+8) Instalar dependencias del frontend: desde la raiz cd front && npm install.
+9) Ajustar ambientes de Angular si es necesario: revisar src/environments/environment.ts, environment.qa.ts y environment.prod.ts para fijar apiBaseUrl.
+10) Levantar el frontend en modo desarrollo: npm start (alias de ng serve, expone http://localhost:4200) con proxy configurado en proxy.conf.json hacia http://localhost:3000/api.
+11) Abrir http://localhost:4200 y verificar acceso; Swagger estara disponible en http://localhost:3000/api/docs.
+1.1.4 Pasos de instalacion con Docker Compose
+1) Confirmar que Docker Desktop este activo y que los puertos 3000, 4000 y 5432 esten libres.
+2) Revisar backend/.env.qa y actualizar secretos/JWT/hosts si corresponde (docker compose monta este archivo dentro del contenedor api).
+3) Ejecutar docker compose build para compilar las imagenes de backend y frontend (usa los Dockerfile de cada carpeta e instala dependencias via npm ci).
+4) Iniciar la pila: docker compose up -d. El servicio postgres expone 5432, la API se publica en http://localhost:3000 y el frontend compilado en http://localhost:4000.
+5) El entrypoint del backend ejecuta migrations automaticamente antes de iniciar. Para rehacer la base, correr docker compose down -v y volver a subir.
+1.1.5 Verificacion post instalacion
+Backend: ingresar a http://localhost:3000/api/docs para revisar Swagger y hacer ping a algun endpoint publico (por ejemplo GET /api/catalogs/careers). Ejecutar npm run smoke:endpoints o npm run smoke:siad en backend/src/scripts para validar escenarios criticos.
+Frontend: acceder a http://localhost:4200 (modo dev) o http://localhost:4000 (Docker) y comprobar el flujo de login, panel de bienvenida y listado de materias. Revisar la consola del navegador para confirmar que no haya errores del interceptor.
+Base de datos: listar tablas en PostgreSQL para asegurar que las migraciones de database/migrations hayan corrido (pg_tables o herramientas GUI).
+1.1.6 Configuracion inicial
+Roles y permisos: el bootstrap shared/boot/ensure-roles.bootstrap.ts crea roles (student, teacher, preceptor, secretary, executive_secretary) al iniciar la aplicacion; verificar registros en tabla roles tras el primer arranque.
+Usuarios iniciales: usar los scripts de docs/test-crear-usuarios.md o los endpoints de modules/users/manage para crear cuentas administrativas; por seguridad asignar contrasenas temporales y forzar cambio la primera vez.
+Datos semilla: ejecutar npm run db:reset:dev para recrear el esquema y poblar correlativas dummy; referenciar docs/seeds-and-migrations.md para estrategias en QA/produccion (seed:prod aplica solo datos oficiales, seed:dummy agrega fixtures).
+Licencias: No aplica en la version actual del sistema; no se gestionan claves ni activaciones de terceros.
+1.2 Manual de configuracion
+1.2.1 Archivos de configuracion
+backend/.env y backend/.env.qa: variables de runtime (puerto, host de base, credenciales, secretos JWT, CORS, logging).
+backend/nodemon.json y nest-cli.json: parametros de desarrollo y resolucion de paths.
+backend/src/config/*.ts: modulos de configuracion (cors, logger, typeorm) reutilizados por AppModule.
+docker-compose.yml y backend/Dockerfile, front/Dockerfile: definen servicios, puertos, argumentos de build y entrada para despliegues contenedorizados.
+front/src/environments/environment*.ts: URLs de API y flags de depuracion para development, qa y produccion.
+front/proxy.conf.json y nginx.conf: reglas para redirigir llamadas a la API en desarrollo y configuraciones de servidor estatico.
+docs/set-up-basico.md, docs/seeds-and-migrations.md y docs/roles-visibility.md: referencias rapidas complementarias.
+1.2.2 Parametros clave
+Entorno backend: NODE_ENV, PORT, LOG_DIR, ENABLE_FILE_LOGGER, DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD, DB_SSL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_TTL, CORS_ORIGINS.
+Entorno frontend: apiBaseUrl, debugApi, debugRbac (booleanos para habilitar logs), ANGULAR_CONFIGURATION (argumento de build) y variables de Railway (ver railway.json).
+Docker Compose: service postgres usa POSTGRES_DB, POSTGRES_USER y POSTGRES_PASSWORD; los servicios api y front comparten la red back-db.
+1.2.3 Configuracion por entorno
+Desarrollo: usar backend/.env (DB_HOST=localhost), front/src/environments/environment.ts (apiBaseUrl http://localhost:3000/api) y npm run start:dev / ng serve. CORS puede incluir http://localhost:4200 y tuneles temporales (ver docs set-up-basico).
+QA: preferir docker compose con backend/.env.qa, front environment.qa.ts y builds Angular con ANGULAR_CONFIGURATION=qa; la API suele apuntar a http://localhost:3000/api desde la red interna del compose.
+Produccion: environment.prod.ts ya apunta a https://siaade-backend-production.up.railway.app/api; actualizar secretos JWT y parametrizar DB_HOST hacia el servicio gestionado (Railway, RDS, etc.). Servir el frontend con npm run build:prod seguido de server.js o Nginx/CloudFront; exponer la API atras de un reverse proxy con TLS (Supuesto: TLS provisto por la plataforma IaaS).
+1.2.4 Integraciones externas
+La version actual no consume APIs de terceros (correo, SMS, pagos); los avisos y resets funcionan dentro del dominio. Supuesto: si se requiere correo transaccional se agregara un provider (SendGrid, SES) en AuthService y se expondran variables SMTP_*. No hay integraciones de pasarela de pago ni servicios legados; toda la informacion reside en PostgreSQL (ver database.dbml).
+1.2.5 Seguridad
+Autenticacion: backend usa JWT (accesos firmados y refresh token por cookie rt). AuthModule emplea bcryptjs para contrasenas, password-history y password-reset-token para auditoria y reseteos. Guardias: JwtAuthGuard, RolesGuard, hierarchy.guard y owner.guard aseguran jerarquia y propiedad de recursos.
+Autorizacion: roles definidos en shared/rbac/roles.constants (student, teacher, preceptor, secretary, executive_secretary). Decoradores AllowRoles y Action documentan permisos. En frontend, AuthGuard, roleCanActivate y directivas (can-role, disable-if-unauthorized) ocultan acciones no permitidas.
+Seguridad web: buildCorsOptions limita origenes segun CORS_ORIGINS. LoggingInterceptor y HttpExceptionFilter centralizan errores. No hay TLS ni WAF incluidos; se recomienda publicar atras de Nginx/Ingress con certificados administrados. Forzar HTTPS via proxy y asegurar cookies HttpOnly/SameSite si se habilitan refresh cookies.
+Proteccion de datos: TypeORM puede loguear a archivos (LOG_DIR=/app/logs). Se recomienda rotar logs y restringir acceso a la carpeta. El frontend almacena tokens cifrados con checksum en localStorage (AuthStateService) e invalida caches ante cambios.
+1.2.6 Redes, despliegues y scripts
+docker-compose.yml crea la red back-db para aislar Postgres y API. backend/src/scripts incluyen smoke-siad.ts, smoke-endpoints.ts y test-finals-admin.ts para sanidad rapida. Runbooks: npm run migrate:prod y npm run revert:prod operan sobre dist/ para despliegues empaquetados. proxy.conf.json habilita /api/* en desarrollo sin CORS extra.
+1.3 Manual de mantenimiento
+1.3.1 Tareas periodicas
+Backups: programar pg_dump diarios de SIAD y conservar al menos 7 dias; guardar en almacenamiento cifrado. Limpieza: rotar LOG_DIR y LOG_FILE (typeorm.log.txt) segun MAX_LOG_BYTES. Repasar seeds y correlativas despues de cada cuatrimestre (migraciones 020* cubren correlativos). Actualizaciones: ejecutar npm outdated y npm audit --production mensualmente, revisar docs/mejoras.md para pendientes.
+1.3.2 Monitoreo
+Indicadores minimos: uso de CPU/RAM en los contenedores, conexiones activas a PostgreSQL, tamano de disco, tiempos de respuesta en endpoints criticos (auth, student inscriptions, final exams), cantidad de errores 4xx/5xx registrados por HttpExceptionFilter y el ErrorInterceptor del frontend. Herramientas sugeridas: Docker logs, pgAdmin/psql, Prometheus+Grafana o servicios equivalentes. Los scripts smoke pueden ejecutarse tras cada despliegue como monitoreo sintetico.
+1.3.3 Gestion de errores
+Ubicacion de logs: backend escribe en consola y (opcionalmente) en LOG_DIR/LOG_FILE; TypeORM file logger se habilita via ENABLE_FILE_LOGGER. El frontend registra errores normalizados en consola via core/interceptors/error.interceptor.ts. Procedimiento: 1) Reproducir el error via Swagger o UI. 2) Revisar logs del servicio implicado. 3) Confirmar estado de la base (pg_isready). 4) Si el error incluye codigos como WINDOW_CLOSED, correlativos o falta de permisos, revisar modules/student_inscriptions y modules/prerequisites. 5) Escalar al equipo de desarrollo si hay corrupcion de datos o migraciones fallidas.
+1.3.4 Actualizaciones
+Proceso sugerido: (a) git pull en una rama limpia; (b) npm install en backend y front; (c) npm run build en backend para generar dist; (d) ejecutar pruebas relevantes (npm run test:prerequisites y scripts smoke); (e) aplicar migraciones con npm run migrate:prod; (f) compilar frontend con ng build --configuration production; (g) reconstruir imagenes Docker o reiniciar servicios. Validar con smoke tests (login, listado de materias, creacion de aviso, inscripcion a final). Si ocurre un fallo en la base, usar npm run revert:prod y restaurar el ultimo backup.
+
+2. Guia de usuario final
+2.1 Introduccion
+SIAADE permite a secretarias, preceptores, docentes y alumnos gestionar catalogos academicos, usuarios, correlativas, mesas de examen, avisos y el seguimiento de situacion academica desde un portal web responsive. Objetivo: concentrar operaciones frecuentes (altas, consultas, inscripciones y comunicacion) en un unico flujo basado en roles.
+2.2 Requisitos previos
+Navegador: Chrome, Edge o Firefox modernos (versiones LTS). Resolucion recomendada 1366x768 o superior. Conexion estable a internet (10 Mbps) o red corporativa. Credenciales emitidas por secretaria (correo institucional o CUIL + contrasena temporal). Para alumnos se requiere tener usuario activo y no bloqueado.
+2.3 Instalacion o acceso
+Personal administrativo: ingresar a la URL oficial (Supuesto: https://siaade.institucion.edu) y usar el boton Iniciar sesion. El primer acceso puede exigir cambiar la contrasena mediante el modal de primer uso. Alumnos: usar el enlace Portal del alumno o /alumno para ver mesas y situacion academica; el mismo login sirve para ambos portales. Si se habilitan tuneles temporales (devtunnels) el enlace se publica en docs/set-up-basico.md. No se instala software adicional.
+2.4 Navegacion general
+La aplicacion presenta un menu lateral con modulos (Welcome, Subjects, Users, Students, Final examns, Notices, Account) y un encabezado con buscador, selector de rol (role-switcher) y accesos rapidos. Los iconos indican estado: candado para usuarios bloqueados, campana para avisos, reloj para ventanas de inscripcion. El panel Welcome ofrece tarjetas de atajos configurables. Para estudiantes existe una ruta dedicada /alumno con dos opciones: Mesas y Situacion academica.
+2.5 Funciones principales
+2.5.1 Autenticacion y recuperacion
+Desde /auth el usuario puede iniciar sesion, solicitar recuperacion (request-password-change) o validar un codigo enviado (reset-code). Pasos: ingresar email/CUIL, password, pulsar Entrar. Si la cuenta exige cambio, el sistema redirige a /welcome y despliega el modal de primer password. Para resetear: seleccionar "Olvide mi contrasena", introducir identidad, recibir codigo (Supuesto: provisto por mesa de ayuda), validar y definir nueva clave.
+2.5.2 Panel de bienvenida y accesos rapidos
+La pagina Welcome muestra atajos configurables (quick-access-component), resumen de avisos y enlaces a modulos frecuentes. Secretarias pueden fijar accesos a crear usuarios, ver carreras o emitir reportes. El componente drawer_visibility.service recuerda si el panel lateral esta abierto.
+2.5.3 Gestion de usuarios
+Modulo Users (pages/users_module) habilita listados paginados (users-page), busqueda por nombre, filtros por rol y acceso al detalle de cada persona (user-detail-page). Acciones segun rol:
+- Secretaria o ejecutiva: crear usuarios (create-user-page) utilizando formularios dinamicos que capturan datos comunes, direcciones y roles asociados (docentes, preceptores, alumnos). Puede bloquear o desbloquear cuentas y asignar comisiones.
+- Docentes o preceptores: consultar datos, ver condicion academica del alumno (student-academic-status-page) y leer flags (user-flags-cache).
+Flujo para alta: ir a Users > Create, seleccionar tipo de usuario, completar datos obligatorios (ver shared/utils/create-user), guardar y compartir credenciales temporales. Tras guardado, el sistema sugiere forzar password change.
+2.5.4 Catalogos, materias y correlativas
+Modulo Subjects (pages/subjects_module) ofrece varias vistas: listado general con filtros (subjects-page), detalle de estudiantes por materia (students-page), situacion academica puntual (subject-academic-situation), creacion de materia (new-subject-page) y vistas de carrera (career_page, career_students_page). Secretarias/preceptores pueden:
+- Consultar alumnos inscriptos, condicionalidades y docentes asignados.
+- Editar notas parciales y asistencia directamente en la tabla (subjects-table) gracias al backend SubjectsService (patchCell y upsertGrades).
+- Actualizar correlativas mediante el modulo Prerequisites (Supuesto: interfaz a completar).
+2.5.5 Mesas y examenes finales
+Modulo Final examns (pages/final_examns_module) permite administrar mesas, examenes y calendarios. Las rutas incluyen tabla general (exams-tables-page), detalle de mesa (exam-table-page), detalle de final (final-exam-page) y calendario (calendar-page). Funciones:
+- Crear y editar mesas con cupos, aulas y periodos (final-exam-create-dialog).
+- Ver alumnos inscriptos y registrar o aprobar notas (exams-mock.service y final-exams.service).
+- Sincronizar cambios entre pestanas mediante ExamTableSyncService.
+Esta seccion solo esta habilitada para secretary, executive_secretary, preceptor y teacher.
+2.5.6 Avisos y comunicados
+La pagina Notices muestra cards filtradas por rol. Secretarias y preceptores pueden publicar mensajes usando el editor basado en Quill (notices_page.component). Pasos: pulsar "Nuevo aviso", escribir titulo/contenido, elegir audiencia (student/teacher/all) y guardar. El backend NoticesService devuelve la lista paginada y permite actualizar o eliminar posts.
+2.5.7 Portal del alumno
+Ruta /alumno incluye Mesas (alumno/mesas/mesas-list.component) y Situacion academica (alumno/situacion-academica). El alumno puede:
+- Consultar las mesas disponibles, ventanas ("Abierta", "Proxima", "Cerrada") y cupos.
+- Inscribirse o anular inscripciones usando los botones activos solo cuando StudentInscriptionsService lo permite.
+- Revisar su situacion academica consolidada, notas parciales y condicion (Regular, Libre, Promocionado).
+2.5.8 Datos personales y cuenta
+Secciones Personal Data (/personal-data) y Account (rutas account/password, account/security) permiten actualizar datos de contacto (segun permisos) y cambiar la contrasena. El guard forcePasswordChange obliga a completar este paso cuando el backend marca requiresPasswordChange.
+2.6 Ejemplos de uso
+Como secretaria: (1) Ingresar, confirmar que Welcome muestre la carrera deseada. (2) Navegar a Subjects > career-students para revisar distribucion por comision. (3) Abrir Final examns > exams-tables, crear una nueva mesa especificando rango de fechas. (4) Publicar un aviso "Abierta la inscripcion" y (5) En Users > Create dar de alta un docente si corresponde.
+Como docente: (1) Entrar a Subjects, seleccionar la materia a cargo. (2) Editar notas parciales directamente desde la tabla (la UI recalcula condicion). (3) Revisar Notices para enterarse de cambios institucionales. (4) Ver Final examns > table/:id para confirmar inscriptos y registrar calificaciones al cierre.
+Como alumno: (1) Abrir /alumno/mesas para ver llamadas disponibles; si la ventana esta abierta, inscribirse. (2) Revisar /alumno/situacion-academica para confirmar parciales y asistencia. (3) Consultar la seccion Notices para nuevos comunicados. Buenas practicas: verificar datos antes de guardar, no compartir credenciales, cerrar sesion en equipos compartidos y descargar comprobantes de inscripcion (Supuesto: en desarrollo).
+2.7 Solucion de problemas
+Sintomas frecuentes y resolucion:
+- Mensaje "Credenciales invalidas" o 401: revisar mayusculas/minusculas y que la cuenta no este bloqueada (secretaria puede verificar en Users). Forzar cambio de password si fue compartida.
+- Mensaje WINDOW_CLOSED o WINDOW en inscripciones: la ventana definida en el backend esta cerrada; contactar a la catedra o esperar apertura (consultar exam-table-page para fechas exactas).
+- Mensaje MISSING_REQUIREMENTS o CORRELATIVE: falta cumplir correlativas; verificar pestana Academica o hablar con Secretaria para actualizar equivalencias.
+- Errores 403 o botones deshabilitados: revisar que el rol actual (role-switcher) corresponda; solo secretarias pueden crear usuarios o materias nuevas.
+- Pagina en blanco o error "No se puede conectar con el servidor": comprobar conexion, reintentar luego de refrescar (Ctrl+F5). Si persiste, compartir captura y hora exacta al equipo de soporte.
+Al escalar un incidente incluir usuario afectado, modulo, URL, hora, mensaje exacto y, si aplica, ID de materia o mesa.
+2.8 Soporte y contacto
+Canal sugerido: Mesa de ayuda SIAADE (placeholder) - correo soporte@siaade.local y telefono +54 11 5555-0000, horario lunes a viernes 09:00-18:00 (configurable segun institucion). Para incidentes criticos escalar al equipo de Desarrollo mediante ticket interno o el repositorio. Documentacion adicional disponible en docs/README.md, docs/auth-auth-page-flow.md y docs/roles-visibility.md.
+2.9 Actualizaciones
+Las nuevas funcionalidades se comunican via avisos internos y actualizacion de docs/manual-tecnico-usuario.txt. Supuesto: se publicara un changelog resumido en Notices y se enviara correo institucional antes de cada release. Se recomienda a los usuarios revisar el panel Welcome despues de cada despliegue para identificar cambios de menu o nuevos accesos.
+
+3. Anexo C - Funcionalidades por modulo
+3.1 Backend
+3.1.1 Config y bootstrap (src/app.module.ts, src/config/*, shared/boot)
+Responsabilidad: orquestar la aplicacion NestJS, inyectar ConfigModule, TypeORM, interceptores y filtros globales, y asegurar que los roles base existan mediante ensure-roles.bootstrap.
+Entidades/tablas: no persiste datos, pero prepara conexiones a todas las entidades registradas en TypeORM.
+Endpoints/servicios: expone Swagger (main.ts) y aplica prefijo /api. No tiene rutas propias.
+Dependencias: NestFactory, TYPEORM_OPTIONS provider, LoggingInterceptor, HttpExceptionFilter.
+3.1.2 Autenticacion (src/modules/users/auth)
+Responsabilidad: login, refresh, logout, limpieza de tokens, recuperacion y cambio de contrasena, control de obligacion de cambio (requiresPasswordChange).
+Entidades: User, Role, PasswordHistory, PasswordResetToken.
+Endpoints principales: POST /api/auth/login, POST /api/auth/logout, POST /api/auth/refresh, POST /api/auth/reset-password, POST /api/auth/reset-password/verify-code, POST /api/auth/reset-password/confirm, POST /api/auth/password/force-change, POST /api/auth/password/request-change-code, POST /api/auth/password/change-with-code.
+Dependencias: JwtService, bcryptjs, shared/rbac para roles, PasswordResetCleanupService, guards JwtAuthGuard y JwtStrategy.
+3.1.3 Gestion de usuarios (src/modules/users/manage)
+Responsabilidad: CRUD de usuarios, perfiles y relaciones con student/teacher/preceptor/secretary, bloqueo/desbloqueo y sincronizacion de datos comunes.
+Entidades: User, UserInfo, CommonData, AddressData, Student, Teacher, Preceptor, Secretary.
+Endpoints: rutas REST bajo /api/users (listar, crear, actualizar, obtener detalle, gestionar flags de login).
+Dependencias: TypeORM repositories, shared/services/user-provisioning y users-patch para actualizaciones masivas, RolesGuard y OwnerGuard para restricciones.
+3.1.4 Lectura de usuarios (src/modules/users/read)
+Responsabilidad: proveer endpoints de solo lectura optimizados para tablas y paneles.
+Entidades: User, Role, Student, Teacher.
+Endpoints: /api/users/read, /api/users/read/:id, endpoints self segun necesidades del frontend.
+Dependencias: reutiliza JwtAuthGuard y RolesGuard.
+3.1.5 Roles (src/modules/roles)
+Responsabilidad: listar y administrar roles y jerarquias.
+Entidades: Role.
+Endpoints: GET /api/roles (paginado) y POST de creacion.
+Dependencias: TypeORM Role repository, shared/rbac policy.
+3.1.6 Catalogos (src/modules/catalogs)
+Responsabilidad: exponer datos maestros (carreras, periodos, comisiones, docentes por materia, estados).
+Entidades: Career, AcademicPeriod, Commission, SubjectCommission, Teacher, SubjectStatusType.
+Endpoints: GET /api/catalogs/careers, /career-full-data/:id, /career-students-by-commission/:id, /academic-periods, /commissions, /subject-commissions/:id, /subject/:id/commission-teachers, /teachers, /final-exam-status, /subject-status-types.
+Dependencias: shared/utils/pagination, TypeORM query builders, enlaces con modules/careers.
+3.1.7 Carreras (src/modules/careers)
+Responsabilidad: listar alumnos por carrera y comision con filtros y paginacion.
+Entidades: Student, SubjectCommission, Career.
+Endpoints: GET /api/careers/:careerId/students con filtros q, page, pageSize, sort.
+Dependencias: JwtAuthGuard, RolesGuard, CareerStudentsService.
+3.1.8 Subjects y SubjectsRead (src/subjects y src/modules/subjects/read)
+Responsabilidad: gestionar inscripciones en materias, notas parciales/finales, asistencia y vistas consolidadas.
+Entidades: Subject, SubjectStudent, StudentSubjectProgress, SubjectCommission, SubjectGradesView.
+Endpoints: GET /api/subjects/read, POST /api/subjects/enrollments/toggle y rutas de patch de calificaciones.
+Dependencias: TypeORM, dataSource transactions, ROLE-based access, shared/dto toggle-enrollment.
+3.1.9 Students Read (src/modules/students/read)
+Responsabilidad: exponer datos completos de alumnos y su situacion academica para secretarias y para el propio estudiante (endpoints /me).
+Entidades: Student, User, SubjectStudent, FinalExamsStudent, Notice.
+Endpoints: GET /api/students/read/:id/full, /:id/subjects/status, /me/full, /me/subjects/status.
+Dependencias: RolesGuard con decorator Action, JwtAuthGuard.
+3.1.10 Student inscriptions (src/modules/student_inscriptions)
+Responsabilidad: manejar ventanas de inscripcion a examenes finales, listar mesas disponibles, registrar altas/bajas y auditar eventos.
+Entidades: FinalExam, FinalExamsStudent, ExamTable.
+Endpoints: GET /api/students/inscriptions/exam-tables con filtros, POST /api/students/inscriptions/enroll y audit logs.
+Dependencias: TypeORM repositories, normalizacion de filtros, AuditEventDto, integracion con toggle-enrollment.
+3.1.11 Final exams (src/modules/final_exams)
+Responsabilidad: crear examenes asociados a mesas, listar y gestionar estudiantes por mesa, registrar y aprobar notas, cancelar examenes.
+Entidades: FinalExam, FinalExamsStudent, ExamTable, FinalExamStatus, Subject, SubjectStudent, Teacher, Secretary.
+Endpoints: GET /api/finals/exam-table/:id, GET /api/finals/exam/:id, POST /api/finals/exam, DELETE /api/finals/exam/:id, POST /api/finals/exam/record, POST /api/finals/exam/approve.
+Dependencias: services/final-exam.service y final-exam-table.service, utils/date-utils y rbac-utils, RolesGuard.
+3.1.12 Prerequisites (src/modules/prerequisites)
+Responsabilidad: validar correlativas y reglas de inscripcion para materias y examenes; provee servicios reutilizables que el frontend consume via StudentStatusService.
+Entidades: correlativas definidas en migraciones (subject prerequisites o vistas).
+Endpoints: GET /api/prerequisites/subject/:id, POST /api/prerequisites/validate-enrollment.
+Dependencias: DTOs (get-subject-prereqs, validate-enrollment) y pruebas unitarias con Vitest.
+3.1.13 Notices (src/modules/notices)
+Responsabilidad: CRUD de avisos y filtrado por audiencia.
+Entidades: Notice.
+Endpoints: GET /api/notices?audience=student|teacher|all&page&limit, POST /api/notices, PATCH /api/notices/:id, DELETE /api/notices/:id.
+Dependencias: pagination utils, CreateNoticeDto, UpdateNoticeDto.
+3.1.14 Shared servicios y scripts (src/shared, src/modules/shared)
+Responsabilidad: interceptores, filtros, logging, RBAC, servicios de aprovisionamiento de usuarios, DTOs de inscripcion (toggle-enrollment), guardias jerarquicos y scripts de humo.
+Entidades: no propias; interactuan con las anteriores.
+Endpoints: no exponen rutas, pero afectan comportamiento transversal (LoggingInterceptor, HttpExceptionFilter).
+Dependencias: Nest providers globales, TypeORM FileLogger, bootstrap ensure-roles.
+
+3.2 Frontend
+3.2.1 Core (src/app/core)
+Responsabilidad: servicios compartidos (ApiService, AuthService, AuthStateService, StudentStatusService, StudentInscriptionsService, FinalExamTablesService), interceptores (auth, refresh, error), caches (IndexedDB ApiCacheService) y guards (AuthGuard, UnAuthGuard, roleCanActivate, forcePasswordChange).
+Rutas/servicios: no define rutas propias pero abastece a todo el router.
+APIs consumidas: todos los endpoints de backend bajo /api.
+Componentes clave: no aplica (servicios singleton).
+3.2.2 Shared (src/app/shared)
+Responsabilidad: componentes reutilizables (subjects-table, users-table, menu, navbar, role-switcher, quick-access, block-message, search-bar, personal-data forms), directivas de permisos y pipes (role-label, date-ddmmyyyy, field-label).
+Rutas: integradas via composicion en cada pagina.
+Dependencias: PrimeNG, PrimeFlex, animaciones de Angular, lodash-es.
+3.2.3 Autenticacion (src/app/pages/auth)
+Responsabilidad: flujo completo de login, solicitud de codigo, validacion de codigo, reset de password y cambio forzado.
+Rutas principales: /auth/login, /auth/reset-code, /auth/change-password.
+Servicios consumidos: AuthService/AuthApiService, ApiService para /auth.
+Componentes: auth-page, request-password-change, reset-code-page, change-password-code, reset-password-page.
+3.2.4 Welcome y navegacion (src/app/app.ts, app.routes.ts, shared/components/menu y navbar)
+Responsabilidad: layout general, enrutamiento y accesos rapidos.
+Rutas: /welcome, /personal-data, /notices, /account.
+Servicios: DrawerVisibilityService, GoBackService.
+3.2.5 Users module (src/app/pages/users_module)
+Responsabilidad: administrar usuarios, ver detalle y estado academico.
+Rutas: /users, /users/user_detail/:id, /users/student_academic_status/:id, /users/create.
+APIs consumidas: /api/users, /api/users/read, /api/catalogs, /api/students/read.
+Componentes reutilizados: users-table, role-switcher, block-message.
+3.2.6 Subjects module (src/app/pages/subjects_module y src/app/alumno)
+Responsabilidad: operar materias y visualizar situacion academica desde perspectivas administrativa y de alumno.
+Rutas: /subjects, /subjects/students/:subjectId, /subjects/:subjectId/academic-situation, /subjects/new, /subjects/career-data, /subjects/career-students.
+APIs: /api/subjects, /api/catalogs, /api/prerequisites, /api/students/read.
+Componentes: subjects-table, subjets-filter, academic-status, adapters de usuarios.
+3.2.7 Final examns module (src/app/pages/final_examns_module)
+Responsabilidad: gestion de mesas y examenes, calendario y sincronizacion de eventos.
+Rutas: /final_examns, /final_examns/table/:id, /final_examns/final/:id, /final_examns/calendar/:id.
+APIs: /api/finals/exam-table, /api/finals/exam, /api/students/inscriptions, /api/catalogs/final-exam-status.
+Componentes: exam-table-page, exams-tables-page, final-exam-page, calendar-page, final-exam-create-dialog, exam-range-calendar.
+3.2.8 Notices (src/app/pages/notices_page)
+Responsabilidad: tablero de comunicados segmentados por rol.
+Rutas: /notices.
+APIs: /api/notices (audience student/teacher/all).
+Componentes: notices_page.component con editor Quill, block-message para errores.
+3.2.9 Students module (src/app/pages/students_module)
+Responsabilidad: vistas especificas para alumnos autenticados (inscripciones en materias regulares, turnos y documentos).
+Rutas: /students/enrollments, /students/appointments-documents, /students/academic-status (guard roleCanActivate estudiante).
+APIs: /api/students/read/me, /api/subjects/enrollments, /api/documents (Supuesto: pendiente).
+Componentes: enrollments-page, appointments-documents, academic-status-page.
+3.2.10 Portal del alumno (src/app/alumno)
+Responsabilidad: version simplificada para alumnos con listado de mesas (mesas-list.component) y resumen academico (academic-status.component).
+Rutas: /alumno/mesas, /alumno/situacion-academica.
+APIs: /api/students/inscriptions/exam-tables, /api/students/read/me/subjects/status.
+Componentes: reutiliza StudentInscriptionsService y StudentStatusService.
+3.2.11 Datos personales y cuenta (src/app/pages/personal_data_page y account routes)
+Responsabilidad: permitir al usuario revisar datos comunes y gestionar seguridad.
+Rutas: /personal-data, /account/password, /account/security.
+APIs: /api/users/me, /api/auth/password/*.
+Componentes: personal-data-page, first-password-change-modal, account forms.
+
+Supuestos especificos: (a) la institucion comunicara las URLs finales de front y API en canales oficiales; (b) la emision de codigos para reset actualmente se realiza por soporte manual (no hay integracion SMTP); (c) el modulo de documentos/turnos esta en desarrollo y puede requerir endpoints adicionales; (d) TLS y firewall se delegan a la infraestructura donde se despliega (Railway, Kubernetes o servidores propios).
