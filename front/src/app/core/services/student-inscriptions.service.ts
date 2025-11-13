@@ -119,8 +119,14 @@ export class StudentInscriptionsService {
         ),
         // Fusionar los datos: enrolled (ya formateado) + available (requiere mapeo)
         map(({ availableTables, enrolled }) => {
+          console.log('[StudentInscriptions] availableTables:', availableTables);
+          console.log('[StudentInscriptions] enrolled:', enrolled);
+          
           const payload = this.mapExamTables(availableTables);
           const enrolledPayload = enrolled as StudentExamTable[]; // Ya está formateado del backend
+
+          console.log('[StudentInscriptions] mapped payload:', payload.length, 'items');
+          console.log('[StudentInscriptions] enrolled payload:', enrolledPayload.length, 'items');
 
           // Crear un mapa para de-duplicar por mesa:materia
           const enrolledMap = new Map<string, StudentExamTable>();
@@ -145,6 +151,7 @@ export class StudentInscriptionsService {
             }
           }
 
+          console.log('[StudentInscriptions] final merged:', merged.length, 'items');
           return merged;
         }),
         tap((tables) => {

@@ -74,7 +74,9 @@ export class StudentInscriptionsController {
   })
   async listEnrolledExamTables(@Req() req: Request) {
     const studentId = (req.user as any)?.id as string | undefined;
+    console.log("[ENROLLED] studentId:", studentId);
     if (!studentId) {
+      console.log("[ENROLLED] No studentId, returning empty");
       return { data: [] };
     }
 
@@ -89,7 +91,9 @@ export class StudentInscriptionsController {
       },
     });
 
+    console.log("[ENROLLED] Found links:", links.length);
     if (!links.length) {
+      console.log("[ENROLLED] No links found, returning empty");
       return { data: [] };
     }
 
@@ -98,6 +102,7 @@ export class StudentInscriptionsController {
     for (const link of links) {
       const fe = link.finalExam;
       if (!fe || !fe.examTable || !fe.subject) {
+        console.log("[ENROLLED] Skipping link, missing relations");
         continue;
       }
 
@@ -136,7 +141,9 @@ export class StudentInscriptionsController {
       });
     }
 
-    return { data: Array.from(groups.values()) };
+    const result = { data: Array.from(groups.values()) };
+    console.log("[ENROLLED] Returning:", result.data.length, "groups");
+    return result;
   }
 
   @Get("exam-tables")
