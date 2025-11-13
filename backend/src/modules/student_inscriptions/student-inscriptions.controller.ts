@@ -341,10 +341,24 @@ export class StudentInscriptionsController {
         for (const g of result) {
           let any = false;
           g.availableCalls = g.availableCalls.map((c: any) => {
-            const enrolled = enrolledByFinal.has(Number(c.id));
-            if (enrolled) any = true;
-            return { ...c, enrolled };
-          });
+              const enrolled = enrolledByFinal.has(Number(c.id));
+              if (enrolled) any = true;
+              // If student is enrolled and the call/window doesn't have a closesAt,
+              // assume the window lasts the exam day and closes the next day.
+              const examDateStr = c.examDate ?? null;
+              const enrollmentWindow = c.enrollmentWindow ? { ...c.enrollmentWindow } : { id: null, label: null, opensAt: null, closesAt: null };
+              if (enrolled) {
+                if (!enrollmentWindow.opensAt && examDateStr) {
+                  enrollmentWindow.opensAt = examDateStr;
+                }
+                if (!enrollmentWindow.closesAt && examDateStr) {
+                  const dt = new Date(examDateStr);
+                  dt.setDate(dt.getDate() + 1);
+                  enrollmentWindow.closesAt = dt.toISOString().split("T")[0];
+                }
+              }
+              return { ...c, enrolled, enrollmentWindow };
+            });
           g.duplicateEnrollment = any;
         }
       }
