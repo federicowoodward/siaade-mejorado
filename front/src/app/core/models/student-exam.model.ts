@@ -27,6 +27,7 @@ export interface StudentExamCall {
   quotaUsed?: number | null;
   enrollmentWindow: StudentActionWindow;
   additional?: boolean;
+  enrolled?: boolean;
 }
 
 export interface StudentExamTable {

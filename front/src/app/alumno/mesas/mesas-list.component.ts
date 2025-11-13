@@ -468,10 +468,9 @@ export class MesasListComponent implements OnInit {
   }
 
   isEnrolled(row: ExamCallRow): boolean {
-    return (
-      Boolean(row.table?.duplicateEnrollment) ||
-      this.enrolledLocal.has(row.call.id)
-    );
+    // Preferir estado por llamado (proporcionado por backend).
+    // Fallback a marca local optimista en esta sesión.
+    return Boolean(row.call?.enrolled) || this.enrolledLocal.has(row.call.id);
   }
 
   isActionBlocked(row: ExamCallRow): boolean {

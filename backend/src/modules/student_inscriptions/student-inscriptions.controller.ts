@@ -176,9 +176,13 @@ export class StudentInscriptionsController {
           links.filter((l) => (l as any).enrolledAt).map((l) => l.finalExamId),
         );
         for (const g of result) {
-          g.duplicateEnrollment = g.availableCalls.some((c: any) =>
-            enrolledByFinal.has(c.id),
-          );
+          let any = false;
+          g.availableCalls = g.availableCalls.map((c: any) => {
+            const enrolled = enrolledByFinal.has(c.id);
+            if (enrolled) any = true;
+            return { ...c, enrolled };
+          });
+          g.duplicateEnrollment = any;
         }
       }
     }

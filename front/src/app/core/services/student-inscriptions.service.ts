@@ -267,6 +267,7 @@ export class StudentInscriptionsService {
       quotaUsed: this.toNumber(input.quotaUsed ?? input.enrolled),
       enrollmentWindow: window,
       additional: Boolean(input.additional ?? input.isAdditional ?? false),
+      enrolled: Boolean(input.enrolled ?? input.alreadyEnrolled ?? false),
     };
   }
 
