@@ -12,6 +12,7 @@ import { TableModule } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ButtonModule } from 'primeng/button';
+import type { ButtonSeverity } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -36,6 +37,10 @@ import {
 import { AuthService } from '../../core/services/auth.service';
 import { ROLE } from '../../core/auth/roles';
 import { ExamTableSyncService } from '../../core/services/exam-table-sync.service';
+import {
+  StudentStatusService,
+  StudentSubjectCard,
+} from '../../core/services/student-status.service';
 
 interface ExamCallRow {
   mesaId: number;
@@ -51,6 +56,22 @@ interface ExamCallRow {
 }
 
 type WindowFilter = StudentWindowState | 'all';
+
+interface CourseCardViewModel {
+  subjectId: number;
+  subjectName: string;
+  commissionLabel: string | null;
+  notes: { label: string; value: number | null }[];
+  attendancePct: number;
+  finalScore: number | null;
+  accreditation: string;
+  condition: string | null;
+  statusLabel: string;
+  statusSeverity: ButtonSeverity;
+  showEnrollCta: boolean;
+  isEnrolled: boolean;
+  raw: StudentSubjectCard;
+}
 
 const BLOCK_COPY: Record<
   StudentExamBlockReason | 'DEFAULT',
@@ -131,9 +152,28 @@ export class MesasListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly sync = inject(ExamTableSyncService);
   private readonly documentRef = inject(DOCUMENT, { optional: true });
+  private readonly studentStatus = inject(StudentStatusService);
 
   readonly tables = this.inscriptions.tables;
   readonly loading = this.inscriptions.loading;
+  readonly courseLoading = this.studentStatus.loading;
+
+  private readonly studentSubjects = this.studentStatus.status;
+  private readonly courseEnrollmentsOptimistic = signal<Set<number>>(new Set());
+
+  readonly courseCardsVm = computed<CourseCardViewModel[]>(() => {
+    const optimistic = this.courseEnrollmentsOptimistic();
+    const tables = this.tables();
+    const subjectIds = new Set<number>(tables.map((table) => table.subjectId));
+    const subjects = this.studentSubjects();
+    const source =
+      subjectIds.size > 0
+        ? subjects.filter((card) => subjectIds.has(card.subjectId))
+        : subjects;
+    return source
+      .map((card) => this.mapCourseCard(card, optimistic))
+      .sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+  });
 
   readonly subjectOptions = computed(() => {
     const seen = new Map<number, string>();
@@ -220,6 +260,7 @@ export class MesasListComponent implements OnInit {
     // Forzar refresh inicial para asegurar consistencia después de reload
     // Esto evita mostrar datos stale cuando el preceptor inscribió desde otra pestaña
     this.loadTables(true);
+    this.loadStudentSubjects();
     this.observeSyncEvents();
     this.setupVisibilityRefresh();
   }
@@ -254,6 +295,37 @@ export class MesasListComponent implements OnInit {
 
   onWindowFilterChange(value: WindowFilter): void {
     this.filters.windowState = value;
+  }
+
+  reloadCourseStatus(): void {
+    this.loadStudentSubjects(true);
+  }
+
+  onCourseEnroll(card: CourseCardViewModel): void {
+    // TODO: Reemplazar mock por integracion con el endpoint oficial de inscripcion a cursado.
+    this.courseEnrollmentsOptimistic.update((current) => {
+      const next = new Set(current);
+      next.add(card.subjectId);
+      return next;
+    });
+    this.messages.add({
+      severity: 'info',
+      summary: 'Gestion pendiente',
+      detail: `${card.subjectName}: la confirmacion final se realizara cuando se conecte el endpoint oficial.`,
+      life: 4000,
+    });
+  }
+
+  onViewCourseTables(card: CourseCardViewModel): void {
+    if (this.filters.subjectId !== card.subjectId) {
+      this.filters.subjectId = card.subjectId;
+      this.applyFilters();
+    }
+    this.scrollToTables();
+  }
+
+  trackCourseCard(_: number, card: CourseCardViewModel): number {
+    return card.subjectId;
   }
 
   onEnroll(row: ExamCallRow, event?: MouseEvent): void {
@@ -312,6 +384,16 @@ export class MesasListComponent implements OnInit {
   private refreshData(force = false): void {
     this.inscriptions
       .refresh({ refresh: force })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
+
+  private loadStudentSubjects(force = false): void {
+    if (force) {
+      this.courseEnrollmentsOptimistic.set(new Set());
+    }
+    this.studentStatus
+      .loadStatus()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
@@ -546,6 +628,61 @@ export class MesasListComponent implements OnInit {
       default:
         return 'danger';
     }
+  }
+
+  private mapCourseCard(
+    card: StudentSubjectCard,
+    optimistic: Set<number>,
+  ): CourseCardViewModel {
+    const alreadyEnrolled =
+      this.hasOngoingEnrollment(card) || optimistic.has(card.subjectId);
+    return {
+      subjectId: card.subjectId,
+      subjectName: card.subjectName,
+      commissionLabel: card.commissionLabel,
+      notes: card.notes,
+      attendancePct: card.attendancePct,
+      finalScore: card.finalScore,
+      accreditation: card.accreditation,
+      condition: card.condition,
+      statusLabel: this.buildCourseStatus(card),
+      statusSeverity: this.resolveCourseSeverity(card),
+      showEnrollCta: !alreadyEnrolled && card.actions.canEnrollCourse,
+      isEnrolled: alreadyEnrolled,
+      raw: card,
+    };
+  }
+
+  private buildCourseStatus(card: StudentSubjectCard): string {
+    const base = card.accreditation || card.condition || 'Sin estado';
+    return base.toUpperCase();
+  }
+
+  private resolveCourseSeverity(card: StudentSubjectCard): ButtonSeverity {
+    const value = (card.accreditation || card.condition || '').toLowerCase();
+    if (value.includes('promo') || value.includes('apro')) return 'success';
+    if (value.includes('regular') || value.includes('curso')) return 'info';
+    if (value.includes('pend') || value.includes('libre')) return 'warn';
+    return 'secondary';
+  }
+
+  private hasOngoingEnrollment(card: StudentSubjectCard): boolean {
+    const keywords = ['curso', 'regular', 'promo', 'apro'];
+    const normalized = (card.condition || '').toLowerCase();
+    const accreditation = (card.accreditation || '').toLowerCase();
+    return keywords.some(
+      (keyword) =>
+        normalized.includes(keyword) || accreditation.includes(keyword),
+    );
+  }
+
+  private scrollToTables(): void {
+    const doc = this.documentRef;
+    if (!doc) return;
+    const anchor =
+      doc.getElementById('mesas-disponibles') ??
+      doc.querySelector('.mesas-disponibles');
+    anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   private resolveBlock(

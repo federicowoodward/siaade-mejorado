@@ -3,91 +3,90 @@
 <div class="mesas-wrapper flex flex-column gap-4">
   <div class="surface-card shadow-2 border-round p-4">
     <div
-      class="flex flex-column gap-2 sm:flex-row sm:align-items-center sm:justify-content-between"
+      class="flex flex-column gap-2 md:flex-row md:align-items-center md:justify-content-between"
     >
       <div>
-        <p
-          class="text-sm text-color-secondary m-0 text-uppercase tracking-wide"
-        >
-          Alumno / Inscripciones
+        <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
+          Materias con mesas abiertas
         </p>
-        <h2 class="m-0 text-2xl font-semibold">Inscribirme a Mesas</h2>
+        <h2 class="m-0 text-2xl font-semibold">Inscripciones disponibles</h2>
         <p class="text-color-secondary mt-1 mb-0">
-          Filtra por materia, fecha de mesa y estado de ventana. El listado se
-          actualiza con datos oficiales.
+          Selecciona la materia para revisar su estado o inscribirte.
         </p>
       </div>
-      <div class="flex gap-2 flex-wrap mt-2 sm:mt-0">
+      <div class="flex gap-2 flex-wrap mt-2 md:mt-0">
         <p-button
           type="button"
-          label="Limpiar"
-          icon="pi pi-undo"
+          label="Actualizar materias"
+          icon="pi pi-refresh"
           severity="secondary"
-          (onClick)="clearFilters()"
-        />
-        <p-button
-          type="button"
-          label="Aplicar filtros"
-          icon="pi pi-filter"
-          (onClick)="applyFilters()"
+          (onClick)="reloadCourseStatus()"
         />
       </div>
     </div>
 
-    <div class="grid mt-3 gap-3">
-      <div class="col-12 md:col-4 flex flex-column gap-1">
-        <label class="text-sm font-semibold" for="subjectFilter">Materia</label>
-        <p-select
-          id="subjectFilter"
-          [options]="subjectOptions()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todas"
-          showClear="true"
-          [style]="{ width: '100%' }"
-          [ngModel]="filters.subjectId"
-          (ngModelChange)="onSubjectFilterChange($event)"
-        ></p-select>
+    <div *ngIf="courseLoading(); else courseCards" class="flex justify-content-center py-5">
+      <p-progressSpinner strokeWidth="3"></p-progressSpinner>
+    </div>
+
+    <ng-template #courseCards>
+      <div
+        *ngIf="!courseCardsVm().length"
+        class="text-center py-4 text-color-secondary"
+      >
+        No encontramos materias con mesas publicadas para tu usuario.
       </div>
 
-      <div class="col-12 md:col-4 flex flex-column gap-1">
-        <label class="text-sm font-semibold" for="dateRange"
-          >Fecha de mesa</label
+      <div *ngIf="courseCardsVm().length" class="flex flex-column gap-3 mt-3">
+        <div
+          class="course-card border-1 surface-border border-round px-3 py-3 flex flex-column gap-3 md:flex-row md:align-items-center"
+          *ngFor="let card of courseCardsVm(); trackBy: trackCourseCard"
         >
-        <p-datepicker
-          inputId="dateRange"
-          selectionMode="range"
-          [touchUI]="true"
-          showIcon="true"
-          dateFormat="dd/mm/yy"
-          [style]="{ width: '100%' }"
-          [ngModel]="filters.dateRange"
-          (ngModelChange)="onDateFilterChange($event)"
-        ></p-datepicker>
+          <div class="flex flex-column gap-1 flex-1">
+            <span class="course-label">Nombre</span>
+            <div class="course-name-field border-1 surface-border border-round px-3 py-2">
+              <p class="m-0 text-lg font-semibold">
+                {{ card.subjectName }}
+              </p>
+              <small class="text-color-secondary" *ngIf="card.commissionLabel">
+                Comision {{ card.commissionLabel }}
+              </small>
+            </div>
+          </div>
+          <div class="course-actions flex gap-2 flex-wrap md:justify-content-end">
+            <p-button
+              type="button"
+              size="small"
+              [label]="card.statusLabel"
+              [severity]="card.statusSeverity"
+              styleClass="text-sm text-uppercase font-semibold"
+            />
+            <p-button
+              type="button"
+              size="small"
+              label="Ver mesas"
+              icon="pi pi-calendar"
+              severity="secondary"
+              (onClick)="onViewCourseTables(card)"
+            />
+            <p-button
+              *ngIf="card.showEnrollCta"
+              type="button"
+              size="small"
+              label="Inscribirme al curso"
+              icon="pi pi-check"
+              (onClick)="onCourseEnroll(card)"
+            />
+          </div>
+        </div>
       </div>
-
-      <div class="col-12 md:col-4 flex flex-column gap-1">
-        <label class="text-sm font-semibold" for="windowFilter">Ventana</label>
-        <p-select
-          id="windowFilter"
-          [options]="[
-            { label: 'Abiertas', value: 'open' },
-            { label: 'Proximas', value: 'upcoming' },
-            { label: 'Cerradas', value: 'closed' },
-            { label: 'Finalizadas', value: 'past' },
-            { label: 'Todas', value: 'all' },
-          ]"
-          optionLabel="label"
-          optionValue="value"
-          [style]="{ width: '100%' }"
-          [ngModel]="filters.windowState"
-          (ngModelChange)="onWindowFilterChange($event)"
-        ></p-select>
-      </div>
-    </div>
+    </ng-template>
   </div>
 
-  <div class="surface-card shadow-2 border-round p-0 overflow-hidden">
+  <div
+    id="mesas-disponibles"
+    class="surface-card shadow-2 border-round p-0 overflow-hidden mesas-disponibles"
+  >
     <div
       class="flex align-items-center justify-content-between px-4 py-3 border-bottom surface-border-light"
     >
