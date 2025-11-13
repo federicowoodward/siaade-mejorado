@@ -34,6 +34,7 @@ type AuthPayload = {
   role: ROLE;
   roleId: number;
   isDirective: boolean;
+  requiresPasswordChange?: boolean;
 };
 
 type AuthProfile = Awaited<ReturnType<UserProfileReaderService["findById"]>>;
@@ -90,16 +91,26 @@ export class AuthService {
       throw this.buildUserBlockedException(reason);
     }
 
-    const userId = await this.userAuthValidator.validateUser(
+    const validationResult = await this.userAuthValidator.validateUser(
       identity,
       loginDto.password,
     );
 
-    if (!userId) {
+    if (!validationResult) {
       throw this.buildInvalidCredentialsException();
     }
 
+    const userId = validationResult.id;
+    const isPlainTextPassword = validationResult.isPlainText;
+
     const { profile, payload } = await this.resolveProfileAndPayload(userId);
+    
+    // Si la contraseña es texto plano, forzar cambio de contraseña
+    if (isPlainTextPassword) {
+      payload.requiresPasswordChange = true;
+      (profile as any).requiresPasswordChange = true;
+    }
+    
     const { accessToken, refreshToken } = this.issueTokens(payload);
 
     return {
