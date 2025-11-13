@@ -405,8 +405,16 @@ export class MesasListComponent implements OnInit {
     });
     return tables.flatMap((table) =>
       table.availableCalls.map((call) => {
-        const opens = call.enrollmentWindow.opensAt;
-        const closes = call.enrollmentWindow.closesAt;
+        let opens = call.enrollmentWindow.opensAt;
+        let closes = call.enrollmentWindow.closesAt;
+        // Si el alumno está inscripto y la ventana no tiene rango publicado,
+        // asumir que la ventana corresponde al día del examen y cierra al día siguiente.
+        if (call.enrolled && (!opens || !closes) && call.examDate) {
+          opens = call.examDate;
+          const dt = new Date(call.examDate);
+          dt.setDate(dt.getDate() + 1);
+          closes = dt.toISOString().slice(0, 10);
+        }
         const windowRange =
           opens && closes
             ? `${formatter.format(new Date(opens))} - ${formatter.format(
@@ -419,6 +427,13 @@ export class MesasListComponent implements OnInit {
             : call.quotaTotal
               ? `Hasta ${call.quotaTotal}`
               : 'Sin cupo publicado';
+        // Determine effective window state: prefer call.enrollmentWindow.state but
+        // if we forced opens/closes above for an enrolled call, treat it as 'open'.
+        const effectiveState =
+          call.enrollmentWindow.state === 'open' || (call.enrolled && opens && closes)
+            ? 'open'
+            : call.enrollmentWindow.state;
+
         return {
           mesaId: table.mesaId,
           callId: call.id,
@@ -426,7 +441,7 @@ export class MesasListComponent implements OnInit {
           subjectName: table.subjectName,
           commissionLabel: table.commissionLabel ?? null,
           call,
-          windowState: call.enrollmentWindow.state,
+          windowState: effectiveState as StudentWindowState,
           windowRange,
           quotaText,
           table,
