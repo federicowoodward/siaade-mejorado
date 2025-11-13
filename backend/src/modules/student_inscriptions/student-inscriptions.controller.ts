@@ -118,18 +118,28 @@ export class StudentInscriptionsController {
       }
 
       const group = groups.get(key);
+      // Calculate default opens/closes using examDate when table dates are missing
+      const examDay = fe.examDate?.toISOString?.().split("T")[0] ?? null;
+      const defaultOpens = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay;
+      let defaultCloses = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+      if (!defaultCloses && examDay) {
+        const tmp = new Date(examDay);
+        tmp.setDate(tmp.getDate() + 1);
+        defaultCloses = tmp.toISOString().split("T")[0];
+      }
+
       group.availableCalls.push({
         id: fe.id,
         label: "Llamado",
-        examDate: fe.examDate.toISOString().split("T")[0],
+        examDate: examDay,
         aula: fe.aula ?? null,
         quotaTotal: null,
         quotaUsed: null,
         enrollmentWindow: {
           id: fe.examTableId,
           label: fe.examTable.name ?? "Examen",
-          opensAt: fe.examTable.startDate?.toISOString?.().split("T")[0] ?? null,
-          closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
+          opensAt: defaultOpens ?? null,
+          closesAt: defaultCloses ?? null,
         },
         additional: false,
         enrolled: !!link.enrolledAt,
@@ -260,6 +270,15 @@ export class StudentInscriptionsController {
 
         const key = `${fe.examTableId}:${fe.subjectId}`;
         if (!enrolledGroups.has(key)) {
+          // Use examDate as fallback for table dates; ensure closesAt defaults to next day
+          const tableOpens = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? fe.examDate?.toISOString?.().split("T")[0] ?? null;
+          let tableCloses = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+          if (!tableCloses && fe.examDate) {
+            const tmp = new Date(fe.examDate.toISOString().split("T")[0]);
+            tmp.setDate(tmp.getDate() + 1);
+            tableCloses = tmp.toISOString().split("T")[0];
+          }
+
           enrolledGroups.set(key, {
             mesaId: fe.examTableId,
             subjectId: fe.subjectId,
@@ -272,12 +291,8 @@ export class StudentInscriptionsController {
             blockedMessage: null,
             academicRequirement: null,
             window: {
-              opensAt: fe.examTable.startDate
-                ?.toISOString?.()
-                .split("T")[0] ?? null,
-              closesAt: fe.examTable.endDate
-                ?.toISOString?.()
-                .split("T")[0] ?? null,
+              opensAt: tableOpens,
+              closesAt: tableCloses,
               label: fe.examTable.name ?? "Examen",
               id: fe.examTableId,
             },
@@ -286,18 +301,28 @@ export class StudentInscriptionsController {
         }
 
         const group = enrolledGroups.get(key);
+        // Ensure each available call also inherits the table defaults with examDate fallback
+        const examDay2 = fe.examDate?.toISOString?.().split("T")[0] ?? null;
+        const opens2 = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay2;
+        let closes2 = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+        if (!closes2 && examDay2) {
+          const tmp2 = new Date(examDay2);
+          tmp2.setDate(tmp2.getDate() + 1);
+          closes2 = tmp2.toISOString().split("T")[0];
+        }
+
         group.availableCalls.push({
           id: fe.id,
           label: "Llamado",
-          examDate: fe.examDate.toISOString().split("T")[0],
+          examDate: examDay2,
           aula: fe.aula ?? null,
           quotaTotal: null,
           quotaUsed: null,
           enrollmentWindow: {
             id: fe.examTableId,
             label: fe.examTable.name ?? "Examen",
-            opensAt: fe.examTable.startDate?.toISOString?.().split("T")[0] ?? null,
-            closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
+            opensAt: opens2 ?? null,
+            closesAt: closes2 ?? null,
           },
           additional: false,
           enrolled: !!link.enrolledAt,
