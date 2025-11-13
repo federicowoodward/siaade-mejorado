@@ -73,10 +73,8 @@ export class StudentInscriptionsController {
     description: "Exámenes donde hay inscripción activa (enrolledAt != null)",
   })
   async listEnrolledExamTables(@Req() req: Request) {
-    const studentId = (req.user as any)?.id as string | undefined;
-    console.log("[ENROLLED] studentId:", studentId);
+    const studentId = ((req.user as any)?.id ?? (req.user as any)?.sub ?? (req.user as any)?.userId) as string | undefined;
     if (!studentId) {
-      console.log("[ENROLLED] No studentId, returning empty");
       return { data: [] };
     }
 
@@ -91,9 +89,7 @@ export class StudentInscriptionsController {
       },
     });
 
-    console.log("[ENROLLED] Found links:", links.length);
     if (!links.length) {
-      console.log("[ENROLLED] No links found, returning empty");
       return { data: [] };
     }
 
@@ -102,7 +98,6 @@ export class StudentInscriptionsController {
     for (const link of links) {
       const fe = link.finalExam;
       if (!fe || !fe.examTable || !fe.subject) {
-        console.log("[ENROLLED] Skipping link, missing relations");
         continue;
       }
 
@@ -142,7 +137,6 @@ export class StudentInscriptionsController {
     }
 
     const result = { data: Array.from(groups.values()) };
-    console.log("[ENROLLED] Returning:", result.data.length, "groups");
     return result;
   }
 
@@ -170,7 +164,7 @@ export class StudentInscriptionsController {
     @Query("to") to?: string,
     @Query("windowState") windowState: WindowState | "all" = "open",
   ) {
-    const studentId = (req.user as any)?.id as string | undefined;
+    const studentId = ((req.user as any)?.id ?? (req.user as any)?.sub ?? (req.user as any)?.userId) as string | undefined;
     
     // PASO 1: Obtener TODOS los exámenes disponibles (con filtros opcionales)
     const qb = this.finalRepo
@@ -306,6 +300,7 @@ export class StudentInscriptionsController {
             closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
           },
           additional: false,
+          enrolled: !!link.enrolledAt,
         });
       }
 
@@ -332,19 +327,21 @@ export class StudentInscriptionsController {
     // PASO 3: Marcar enrolled y duplicates
     if (studentId) {
       const allFinalIds = result.flatMap((g) =>
-        g.availableCalls.map((c: any) => c.id),
+        g.availableCalls.map((c: any) => Number(c.id)),
       );
       if (allFinalIds.length > 0) {
         const links = await this.linkRepo.find({
           where: { finalExamId: In(allFinalIds), studentId } as any,
         });
         const enrolledByFinal = new Set<number>(
-          links.filter((l) => (l as any).enrolledAt).map((l) => l.finalExamId),
+          links
+            .filter((l) => (l as any).enrolledAt)
+            .map((l) => Number((l as any).finalExamId)),
         );
         for (const g of result) {
           let any = false;
           g.availableCalls = g.availableCalls.map((c: any) => {
-            const enrolled = enrolledByFinal.has(c.id);
+            const enrolled = enrolledByFinal.has(Number(c.id));
             if (enrolled) any = true;
             return { ...c, enrolled };
           });
