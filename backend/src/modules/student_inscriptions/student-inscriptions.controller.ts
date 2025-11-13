@@ -351,7 +351,10 @@ export class StudentInscriptionsController {
         });
       }
       (link as any).enrolledAt = new Date();
-      (link as any).enrolledBy = "student";
+      // Detectar si es preceptor o estudiante
+      const currentUser = req.user as any;
+      const userRole = currentUser?.role;
+      (link as any).enrolledBy = userRole === ROLE.PRECEPTOR ? "preceptor" : "student";
       await this.linkRepo.save(link as any);
 
       await this.auditSafeSave({
