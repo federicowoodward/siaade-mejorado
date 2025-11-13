@@ -217,7 +217,9 @@ export class MesasListComponent implements OnInit {
     if (needsForce) {
       this.inscriptions.invalidateCache();
     }
-    this.loadTables(needsForce);
+    // Forzar refresh inicial para asegurar consistencia después de reload
+    // Esto evita mostrar datos stale cuando el preceptor inscribió desde otra pestaña
+    this.loadTables(true);
     this.observeSyncEvents();
     this.setupVisibilityRefresh();
   }
