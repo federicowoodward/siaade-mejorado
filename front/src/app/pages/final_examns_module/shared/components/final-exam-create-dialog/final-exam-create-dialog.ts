@@ -80,12 +80,15 @@ export class FinalExamCreateDialogComponent implements OnChanges {
   private fetchAllSubjectsOnce(updateOptions = false) {
     if (this.subjectsLoaded) {
       if (updateOptions) {
-        this.subjectOptions.set(this.allSubjects());
+        const subjects = this.allSubjects();
+        this.subjectOptions.set([...subjects]);
       }
       return;
     }
-    // Evitar múltiples llamadas simultáneas
     if (this.loadingInProgress) {
+      if (updateOptions) {
+        this.dropdownOpen = true;
+      }
       return;
     }
     this.loadingInProgress = true;
@@ -103,9 +106,8 @@ export class FinalExamCreateDialogComponent implements OnChanges {
         this.subjectsLoaded = true;
         this.loadingSubjects.set(false);
         this.loadingInProgress = false;
-        // Si se solicitó actualizar opciones o el dropdown está abierto, actualizar
         if (updateOptions || this.dropdownOpen) {
-          this.subjectOptions.set(opts);
+          this.subjectOptions.set([...opts]);
         }
       },
       error: (err) => {
@@ -114,7 +116,6 @@ export class FinalExamCreateDialogComponent implements OnChanges {
         this.loadingSubjects.set(false);
         this.loadingInProgress = false;
         this.subjectsLoaded = true;
-        // Mostrar mensaje de error
         this.messages.add({
           severity: 'error',
           summary: 'Error',
@@ -125,15 +126,19 @@ export class FinalExamCreateDialogComponent implements OnChanges {
   }
 
   onSubjectsComplete(e: AutoCompleteCompleteEvent) {
-    // Cargar una sola vez
-    if (!this.subjectsLoaded) this.fetchAllSubjectsOnce();
+    if (!this.subjectsLoaded && !this.loadingInProgress) {
+      this.fetchAllSubjectsOnce();
+    }
 
     const q = (e.query ?? '').trim().toLowerCase();
     const source = this.allSubjects();
 
     if (!q) {
-      // si no hay query, no devolvemos todo salvo que lo pida el dropdown
-      this.subjectOptions.set([]);
+      if (this.dropdownOpen && source.length > 0) {
+        this.subjectOptions.set(source);
+      } else {
+        this.subjectOptions.set([]);
+      }
       return;
     }
 
@@ -142,38 +147,34 @@ export class FinalExamCreateDialogComponent implements OnChanges {
   }
 
   showAllSubjects() {
-    // Marcar que el dropdown está abierto
     this.dropdownOpen = true;
-    // Asegura datos y muestra todo al abrir el dropdown
     if (this.subjectsLoaded) {
-      // Si ya están cargadas, mostrarlas inmediatamente
+      this.loadingSubjects.set(false);
+      this.loadingInProgress = false;
       const subjects = this.allSubjects();
       if (subjects.length > 0) {
-        this.subjectOptions.set(subjects);
+        this.subjectOptions.set([...subjects]);
       }
     } else {
-      // Si no están cargadas, cargarlas y actualizar cuando terminen
-      // El flag dropdownOpen asegurará que se actualicen cuando se carguen
       if (!this.loadingInProgress) {
         this.fetchAllSubjectsOnce(true);
       }
-      // Si ya se está cargando, el flag dropdownOpen hará que se actualicen cuando terminen
     }
   }
 
+  onDropdownClose() {
+    this.dropdownOpen = false;
+  }
+
   ngOnChanges(changes: SimpleChanges) {
-    // Cuando el modal se abre, precargar las materias
     if (changes['visible'] && changes['visible'].currentValue) {
-      // Precargar las materias cuando se abre el modal
       if (!this.subjectsLoaded && !this.loadingInProgress) {
         this.fetchAllSubjectsOnce();
       }
     }
-    // Resetear el flag cuando el modal se cierra
     if (changes['visible'] && !changes['visible'].currentValue) {
       this.dropdownOpen = false;
       this.subjectOptions.set([]);
-      // Resetear el formulario
       this.selectedSubject = null;
       this.dateTime = null;
       this.aula = '';
