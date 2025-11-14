@@ -629,18 +629,24 @@ export class MesasListComponent implements OnInit {
   }
 
   windowLabel(row: ExamCallRow): string {
+    const base = this.windowStateLabel(row);
+    const status = this.isEnrolled(row) ? 'Inscripto' : 'No inscripto';
+    return `${base} · ${status}`;
+  }
+
+  private windowStateLabel(row: ExamCallRow): string {
     if (this.isEnrollmentClosed(row)) {
-      return 'Inscripciones cerradas';
+      return 'Ventana cerrada';
     }
     switch (row.windowState) {
       case 'open':
-        return 'Abierta';
+        return 'Ventana abierta';
       case 'upcoming':
-        return 'Proxima';
+        return 'Ventana proxima';
       case 'past':
-        return 'Finalizada';
+        return 'Ventana finalizada';
       default:
-        return 'Cerrada';
+        return 'Ventana cerrada';
     }
   }
 

@@ -155,15 +155,12 @@
               {{ row.enrollmentClosesLabel }}
             </td>
             <td class="text-center">
-              <div class="status-wrapper">
-                <p-button
-                  type="button"
-                  size="small"
-                  [label]="windowLabel(row)"
-                  [severity]="windowSeverity(row)"
-                  styleClass="window-status-btn cta-button"
-                ></p-button>
-              </div>
+              <span
+                class="window-label"
+                [ngClass]="'window-label--' + windowSeverity(row)"
+              >
+                {{ windowLabel(row) }}
+              </span>
             </td>
             <td class="text-center">
               <div class="action-wrapper">
