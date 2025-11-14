@@ -27,6 +27,7 @@ export interface StudentSubjectCard {
   subjectId: number;
   subjectName: string;
   yearLabel: string;
+  yearNumber: number | null;
   commissionLabel: string | null;
   partialsExpected: 2 | 4;
   notes: StudentSubjectNote[];
@@ -35,6 +36,8 @@ export interface StudentSubjectCard {
   attendancePct: number;
   condition: string | null;
   accreditation: string;
+  studyPlan: string | null;
+  pedagogicalMessage: string | null;
   actions: SubjectActionAvailability;
 }
 
@@ -182,11 +185,14 @@ export class StudentStatusService {
     const attendance =
       this.toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
     const finalScore = this.toNumber(row.final ?? row.finalScore);
+    const yearNumber = this.resolveYearNumber(row);
+    const yearLabel = this.resolveYearLabel(row, yearNumber);
     return {
       subjectId: Number(row.subjectId ?? row.id ?? 0),
       subjectName:
         row.subjectName ?? row.subject_name ?? row.name ?? 'Materia sin nombre',
-      yearLabel: this.resolveYearLabel(row),
+      yearLabel,
+      yearNumber,
       commissionLabel:
         row.commissionLetter ??
         row.commission_label ??
@@ -200,6 +206,8 @@ export class StudentStatusService {
       attendancePct: attendance,
       condition: row.condition ?? row.status ?? null,
       accreditation: this.deriveAccreditation(row),
+      studyPlan: this.resolveStudyPlan(row),
+      pedagogicalMessage: this.resolvePedagogicalMessage(row),
       actions: this.buildActions(row, context),
     };
   }
@@ -310,11 +318,58 @@ export class StudentStatusService {
     return typeof finalScore === 'number' && finalScore >= 4;
   }
 
-  private resolveYearLabel(row: any): string {
-    if (row.yearLabel) return row.yearLabel;
-    const year = row.year ?? row.yearNo ?? row.year_no ?? null;
-    if (!year) return 'Sin ano';
-    return `${year} Ano`;
+  private resolveYearNumber(row: any): number | null {
+    const explicit = this.toNumber(
+      row.year ?? row.yearNo ?? row.year_no ?? row.yearNumber,
+    );
+    if (typeof explicit === 'number') {
+      return explicit;
+    }
+    return this.extractYearFromLabel(row.yearLabel ?? row.year_name);
+  }
+
+  private resolveYearLabel(row: any, yearNumber?: number | null): string {
+    if (typeof row.yearLabel === 'string' && row.yearLabel.trim().length) {
+      return row.yearLabel;
+    }
+    if (typeof yearNumber === 'number' && Number.isFinite(yearNumber)) {
+      return `${yearNumber}º Año`;
+    }
+    return 'Sin ano';
+  }
+
+  private extractYearFromLabel(label: unknown): number | null {
+    if (typeof label !== 'string') return null;
+    const match = label.match(/\d+/);
+    if (!match) return null;
+    const numeric = Number(match[0]);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  private resolveStudyPlan(row: any): string | null {
+    const plan =
+      row.studyPlan ??
+      row.plan ??
+      row.planName ??
+      row.plan_label ??
+      row.planLabel ??
+      null;
+    if (plan === null || plan === undefined) return null;
+    const text = String(plan).trim();
+    return text.length ? text : null;
+  }
+
+  private resolvePedagogicalMessage(row: any): string | null {
+    const message =
+      row.pedagogicalMessage ??
+      row.pedagogicalFileMessage ??
+      row.pedagogicalNote ??
+      row.pedagogical_file ??
+      row.pedagogica ??
+      null;
+    if (typeof message !== 'string') return null;
+    const trimmed = message.trim();
+    return trimmed.length ? trimmed : null;
   }
 
   private mapContext(payload: RawContextResponse): ActionContext {

@@ -1,0 +1,146 @@
+<p-dialog
+  [(visible)]="visible"
+  (onHide)="handleHide()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '640px' }"
+  [breakpoints]="{ '960px': '90vw', '600px': '96vw' }"
+  [closeOnEscape]="true"
+  [dismissableMask]="true"
+  [header]="subject?.subjectName || 'Detalle de materia'"
+>
+  <ng-container *ngIf="subject; else emptyDetail">
+    <div class="detail-meta">
+      <div>
+        <span class="meta-label">Estudiante</span>
+        <p class="meta-value">{{ studentName || 'No disponible' }}</p>
+      </div>
+      <div>
+        <span class="meta-label">Año</span>
+        <p class="meta-value">{{ subject.yearLabel }}</p>
+      </div>
+      <div>
+        <span class="meta-label">Plan</span>
+        <p class="meta-value">{{ subject.studyPlan || 'Sin asignar' }}</p>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4 class="section-title">Estado actual</h4>
+      <div class="status-badges">
+        <p-tag
+          [value]="subject.accreditation || subject.condition || 'Sin estado'"
+          [severity]="stateSeverity(subject.condition)"
+        ></p-tag>
+        <p-tag
+          *ngIf="subject.actions.examWindow as window"
+          severity="info"
+          [value]="windowLabel(window.state)"
+        ></p-tag>
+      </div>
+      <p class="text-color-secondary m-0">
+        {{ subject.finalExplanation }}
+      </p>
+    </div>
+
+    <div class="detail-section">
+      <h4 class="section-title">Parciales y examenes</h4>
+      <div class="detail-grid">
+        <div>
+          <span class="meta-label">Parciales</span>
+          <div class="partial-list">
+            <span
+              class="partial-chip"
+              *ngFor="let note of subject.notes; trackBy: trackNote"
+            >
+              {{ note.label }}: {{ note.value ?? "-" }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <span class="meta-label">Nota final</span>
+          <p class="metric-value">{{ subject.finalScore ?? "-" }}</p>
+        </div>
+        <div>
+          <span class="meta-label">Asistencia</span>
+          <p class="metric-value">
+            {{ subject.attendancePct | number: "1.0-0" }}%
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="pedagogic-alert"
+      *ngIf="subject.pedagogicalMessage as pedagogicalMessage"
+    >
+      <i class="pi pi-info-circle"></i>
+      <span>{{ pedagogicalMessage }}</span>
+    </div>
+
+    <div class="detail-section">
+      <h4 class="section-title">Acciones disponibles</h4>
+      <div class="action-grid">
+        <div class="action-card">
+          <div class="action-card__header">
+            <span>Curso</span>
+            <small class="text-color-secondary">
+              {{ windowLabel(subject.actions.courseWindow?.state) }}
+            </small>
+          </div>
+          <p-button
+            type="button"
+            label="Inscribirme al curso"
+            icon="pi pi-pencil"
+            severity="secondary"
+            [disabled]="!subject.actions.canEnrollCourse"
+            (onClick)="onCourseEnroll()"
+          ></p-button>
+          <app-block-message
+            *ngIf="
+              subject.actions.courseReason && !subject.actions.canEnrollCourse
+            "
+            class="mt-3"
+            [title]="blockInfo(subject.actions.courseReason)?.title || ''"
+            [message]="blockInfo(subject.actions.courseReason)?.message || ''"
+            [variant]="
+              blockInfo(subject.actions.courseReason)?.variant || 'info'
+            "
+            [reasonCode]="subject.actions.courseReason || 'UNKNOWN'"
+          ></app-block-message>
+        </div>
+        <div class="action-card">
+          <div class="action-card__header">
+            <span>Mesa final</span>
+            <small class="text-color-secondary">
+              {{ windowLabel(subject.actions.examWindow?.state) }}
+            </small>
+          </div>
+          <p-button
+            type="button"
+            label="Inscribirme a mesa"
+            icon="pi pi-check"
+            [disabled]="!subject.actions.canEnrollExam"
+            (onClick)="onExamEnroll()"
+          ></p-button>
+          <app-block-message
+            *ngIf="subject.actions.examReason && !subject.actions.canEnrollExam"
+            class="mt-3"
+            [title]="blockInfo(subject.actions.examReason)?.title || ''"
+            [message]="blockInfo(subject.actions.examReason)?.message || ''"
+            [variant]="blockInfo(subject.actions.examReason)?.variant || 'info'"
+            [reasonCode]="subject.actions.examReason || 'UNKNOWN'"
+            [actions]="examBlockActions"
+          ></app-block-message>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyDetail>
+    <p class="text-color-secondary m-0">
+      Selecciona una materia para ver su detalle.
+    </p>
+  </ng-template>
+</p-dialog>
