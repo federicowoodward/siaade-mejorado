@@ -10,16 +10,13 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import {
   StudentStatusService,
   StudentSubjectCard,
 } from '../../core/services/student-status.service';
-import { BlockMessageAction } from '../../shared/block-message/block-message.component';
 import { AuthService } from '../../core/services/auth.service';
 import { SubjectStatusDetailComponent } from './subject-status-detail/subject-status-detail.component';
 
@@ -32,19 +29,16 @@ type YearGroup = { label: string; order: number; subjects: StudentSubjectCard[] 
     CommonModule,
     ButtonModule,
     TagModule,
-    ToastModule,
     ProgressSpinnerModule,
     TableModule,
     SubjectStatusDetailComponent,
   ],
   templateUrl: './academic-status.component.html',
   styleUrl: './academic-status.component.scss',
-  providers: [MessageService],
 })
 export class AcademicStatusComponent implements OnInit {
   private readonly statusService = inject(StudentStatusService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly messages = inject(MessageService);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
@@ -69,7 +63,6 @@ export class AcademicStatusComponent implements OnInit {
   readonly studentName = signal<string | null>(null);
   selectedSubject: StudentSubjectCard | null = null;
   detailVisible = false;
-  detailExamActions: BlockMessageAction[] = [];
 
   ngOnInit(): void {
     this.reload();
@@ -100,19 +93,6 @@ export class AcademicStatusComponent implements OnInit {
       .subscribe();
   }
 
-  onCourseEnroll(card: StudentSubjectCard): void {
-    this.messages.add({
-      severity: 'info',
-      summary: 'Gestion presencial',
-      detail: `Coordina la inscripcion de cursado de ${card.subjectName} con Secretaria.`,
-      life: 5000,
-    });
-  }
-
-  onExamEnroll(card: StudentSubjectCard): void {
-    this.goToMesas(card.subjectId);
-  }
-
   stateSeverity(
     condition: string | null,
   ): 'success' | 'info' | 'danger' | 'warning' {
@@ -132,23 +112,11 @@ export class AcademicStatusComponent implements OnInit {
   openSubjectDetail(card: StudentSubjectCard): void {
     this.selectedSubject = card;
     this.detailVisible = true;
-    this.detailExamActions = this.blockActions(card);
   }
 
   onDetailClosed(): void {
     this.detailVisible = false;
     this.selectedSubject = null;
-    this.detailExamActions = [];
-  }
-
-  blockActions(card: StudentSubjectCard): BlockMessageAction[] {
-    return [
-      {
-        label: 'Ver mesas',
-        icon: 'pi pi-calendar',
-        command: () => this.goToMesas(card.subjectId),
-      },
-    ];
   }
 
   private getYearOrder(card: StudentSubjectCard): number {

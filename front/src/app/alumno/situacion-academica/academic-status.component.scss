@@ -33,31 +33,9 @@
   font-weight: 600;
 }
 
-.exam-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
 .final-score {
   font-size: 1.35rem;
   font-weight: 600;
-}
-
-.notes-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--text-color-secondary);
-}
-
-.note-chip {
-  display: inline-flex;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: var(--surface-200);
-  font-size: 0.8rem;
 }
 
 .status-actions {

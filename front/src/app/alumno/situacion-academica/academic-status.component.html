@@ -1,5 +1,3 @@
-<p-toast position="bottom-right"></p-toast>
-
 <div class="status-wrapper flex flex-column gap-4">
   <div
     class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between"
@@ -70,7 +68,7 @@
               <th>Año</th>
               <th>Comisión</th>
               <th>Condición final</th>
-              <th>Información de examen</th>
+              <th>Nota final</th>
               <th class="text-center">Acción</th>
             </tr>
           </ng-template>
@@ -92,18 +90,8 @@
                   [severity]="stateSeverity(row.condition)"
                 ></p-tag>
               </td>
-              <td>
-                <div class="exam-info">
-                  <span class="final-score">{{ row.finalScore ?? "-" }}</span>
-                  <small class="text-color-secondary">
-                    {{ row.finalExplanation }}
-                  </small>
-                  <div class="notes-inline">
-                    <span class="note-chip" *ngFor="let note of row.notes">
-                      {{ note.label }}: {{ note.value ?? "-" }}
-                    </span>
-                  </div>
-                </div>
+              <td class="text-center">
+                <span class="final-score">{{ row.finalScore ?? "-" }}</span>
               </td>
               <td class="text-center">
                 <div class="status-actions">
@@ -130,8 +118,5 @@
   [(visible)]="detailVisible"
   [subject]="selectedSubject"
   [studentName]="studentName()"
-  [examBlockActions]="detailExamActions"
   (closed)="onDetailClosed()"
-  (courseEnroll)="onCourseEnroll($event)"
-  (examEnroll)="onExamEnroll($event)"
 ></app-subject-status-detail>
