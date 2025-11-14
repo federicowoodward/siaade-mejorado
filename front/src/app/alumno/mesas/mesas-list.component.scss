@@ -32,6 +32,22 @@
   font-weight: 600;
 }
 
+.status-wrapper,
+.action-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.cta-button {
+  min-width: 120px;
+  justify-content: center;
+}
+
+.window-status-btn {
+  pointer-events: none;
+  opacity: 1;
+}
+
 .mesas-table {
   border-radius: 0 0 1rem 1rem;
   overflow: hidden;

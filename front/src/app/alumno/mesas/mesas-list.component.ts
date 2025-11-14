@@ -19,7 +19,6 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageService } from 'primeng/api';
-import { ApiService } from '../../core/services/api.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -34,8 +33,6 @@ import {
   BlockMessageVariant,
   BlockMessageAction,
 } from '../../shared/block-message/block-message.component';
-import { AuthService } from '../../core/services/auth.service';
-import { ROLE } from '../../core/auth/roles';
 import { ExamTableSyncService } from '../../core/services/exam-table-sync.service';
 import {
   StudentStatusService,
@@ -51,7 +48,10 @@ interface ExamCallRow {
   call: StudentExamCall;
   windowState: StudentWindowState;
   windowRange: string;
-  quotaText: string;
+  enrollmentOpensAt: Date | null;
+  enrollmentClosesAt: Date | null;
+  enrollmentOpensLabel: string;
+  enrollmentClosesLabel: string;
   table: StudentExamTable;
 }
 
@@ -144,8 +144,6 @@ const BLOCK_COPY: Record<
 })
 export class MesasListComponent implements OnInit {
   private readonly inscriptions = inject(StudentInscriptionsService);
-  private readonly auth = inject(AuthService);
-  private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messages = inject(MessageService);
   private readonly router = inject(Router);
@@ -153,6 +151,11 @@ export class MesasListComponent implements OnInit {
   private readonly sync = inject(ExamTableSyncService);
   private readonly documentRef = inject(DOCUMENT, { optional: true });
   private readonly studentStatus = inject(StudentStatusService);
+  private readonly shortDateFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
   readonly tables = this.inscriptions.tables;
   readonly loading = this.inscriptions.loading;
@@ -209,7 +212,6 @@ export class MesasListComponent implements OnInit {
   private get enrolledStorageKey() {
     return 'mesas_enrolled_calls';
   }
-  isStudent = false;
   readonly blockAlert = signal<{
     title: string;
     message: string | string[];
@@ -229,6 +231,8 @@ export class MesasListComponent implements OnInit {
       command: () => this.loadTables(true),
     },
   ];
+  private readonly inscriptionsClosedMessage =
+    'Las inscripciones estan cerradas para esta mesa.';
 
   ngOnInit(): void {
     const subjectId = Number(
@@ -237,13 +241,6 @@ export class MesasListComponent implements OnInit {
     if (Number.isFinite(subjectId)) {
       this.filters.subjectId = subjectId;
     }
-    // Rol actual
-    this.auth
-      .getUser()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((u) => {
-        this.isStudent = (u?.role ?? null) === ROLE.STUDENT;
-      });
     // Cargar estado optimista persistido para esta sesión
     try {
       const raw = sessionStorage.getItem(this.enrolledStorageKey);
@@ -399,10 +396,7 @@ export class MesasListComponent implements OnInit {
   }
 
   private flattenRows(tables: StudentExamTable[]): ExamCallRow[] {
-    const formatter = new Intl.DateTimeFormat('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-    });
+    const formatter = this.shortDateFormatter;
     return tables.flatMap((table) =>
       table.availableCalls.map((call) => {
         let opens = call.enrollmentWindow.opensAt;
@@ -415,18 +409,15 @@ export class MesasListComponent implements OnInit {
           dt.setDate(dt.getDate() + 1);
           closes = dt.toISOString().slice(0, 10);
         }
-        const windowRange =
-          opens && closes
-            ? `${formatter.format(new Date(opens))} - ${formatter.format(
-                new Date(closes),
-              )}`
-            : 'Sin rango publicado';
-        const quotaText =
-          call.quotaTotal && call.quotaUsed !== null
-            ? `${call.quotaUsed}/${call.quotaTotal}`
-            : call.quotaTotal
-              ? `Hasta ${call.quotaTotal}`
-              : 'Sin cupo publicado';
+        const opensDate = opens ? new Date(opens) : null;
+        const closesDate = closes ? new Date(closes) : null;
+        const windowRange = this.describeWindowRange(opensDate, closesDate);
+        const opensLabel = opensDate
+          ? formatter.format(opensDate)
+          : 'Sin fecha';
+        const closesLabel = closesDate
+          ? formatter.format(closesDate)
+          : 'Sin fecha';
         // Determine effective window state: prefer call.enrollmentWindow.state but
         // if we forced opens/closes above for an enrolled call, treat it as 'open'.
         const effectiveState =
@@ -443,7 +434,10 @@ export class MesasListComponent implements OnInit {
           call,
           windowState: effectiveState as StudentWindowState,
           windowRange,
-          quotaText,
+          enrollmentOpensAt: opensDate,
+          enrollmentClosesAt: closesDate,
+          enrollmentOpensLabel: opensLabel,
+          enrollmentClosesLabel: closesLabel,
           table,
         };
       }),
@@ -455,6 +449,13 @@ export class MesasListComponent implements OnInit {
   ):
     | { blocked: false }
     | { blocked: true; reason: StudentExamBlockReason; message: string } {
+    if (this.isEnrollmentClosed(row)) {
+      return {
+        blocked: true,
+        reason: 'WINDOW_CLOSED',
+        message: this.inscriptionsClosedMessage,
+      };
+    }
     const block = this.resolveBlock(row);
     if (!block) {
       return { blocked: false };
@@ -471,6 +472,23 @@ export class MesasListComponent implements OnInit {
       to: to ? this.toIso(to) : undefined,
       windowState: current.windowState,
     };
+  }
+
+  private describeWindowRange(
+    opens: Date | null,
+    closes: Date | null,
+  ): string {
+    const formatter = this.shortDateFormatter;
+    if (opens && closes) {
+      return `${formatter.format(opens)} - ${formatter.format(closes)}`;
+    }
+    if (opens) {
+      return `Desde ${formatter.format(opens)}`;
+    }
+    if (closes) {
+      return `Hasta ${formatter.format(closes)}`;
+    }
+    return 'Sin rango publicado';
   }
 
   private toIso(date: Date): string {
@@ -563,6 +581,9 @@ export class MesasListComponent implements OnInit {
   }
 
   blockTooltip(row: ExamCallRow): string | undefined {
+    if (this.isEnrollmentClosed(row)) {
+      return this.inscriptionsClosedMessage;
+    }
     return this.resolveBlock(row)?.message || undefined;
   }
 
@@ -573,9 +594,20 @@ export class MesasListComponent implements OnInit {
   }
 
   isActionBlocked(row: ExamCallRow): boolean {
-    // No permitir acción si ya quedó inscripto (optimista o por backend)
-    if (this.isEnrolled(row)) return true;
+    // No permitir acción si ya quedó inscripto o con la ventana vencida
+    if (this.isEnrolled(row) || this.isEnrollmentClosed(row)) return true;
     return !!this.resolveBlock(row);
+  }
+
+  private isEnrollmentClosed(row: ExamCallRow): boolean {
+    if (row.windowState === 'past' || row.windowState === 'closed') {
+      return true;
+    }
+    const closesAt = row.enrollmentClosesAt?.getTime() ?? null;
+    if (closesAt === null) {
+      return false;
+    }
+    return Date.now() > closesAt;
   }
 
   private persistEnrolledLocal(): void {
@@ -587,42 +619,20 @@ export class MesasListComponent implements OnInit {
     } catch {}
   }
 
-  onUnenroll(row: ExamCallRow): void {
-    const studentId = this.auth.getUserId();
-    if (!studentId) return;
-    this.api
-      .toggleFinalEnrollment({
-        finalExamId: row.call.id,
-        studentId,
-        action: 'unenroll',
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.messages.add({
-            severity: 'success',
-            summary: 'Inscripción anulada',
-            detail: `${row.subjectName} - ${row.call.label}`,
-            life: 3000,
-          });
-          try {
-            (row.table as any).duplicateEnrollment = false;
-          } catch {}
-          this.enrolledLocal.delete(row.call.id);
-          this.persistEnrolledLocal();
-          this.refreshData();
-        },
-        error: () =>
-          this.messages.add({
-            severity: 'error',
-            summary: 'No se pudo anular',
-            life: 3000,
-          }),
-      });
+  onInscribedClick(row: ExamCallRow): void {
+    this.messages.add({
+      severity: 'info',
+      summary: 'Gestion en Secretaria',
+      detail: `${row.subjectName} - ${row.call.label}. En caso de querer desinscribirse, pedir informacion en Secretaria.`,
+      life: 4000,
+    });
   }
 
-  stateLabel(state: StudentWindowState): string {
-    switch (state) {
+  windowLabel(row: ExamCallRow): string {
+    if (this.isEnrollmentClosed(row)) {
+      return 'Inscripciones cerradas';
+    }
+    switch (row.windowState) {
       case 'open':
         return 'Abierta';
       case 'upcoming':
@@ -634,8 +644,11 @@ export class MesasListComponent implements OnInit {
     }
   }
 
-  stateSeverity(state: StudentWindowState): 'success' | 'info' | 'danger' {
-    switch (state) {
+  windowSeverity(row: ExamCallRow): 'success' | 'info' | 'danger' {
+    if (this.isEnrollmentClosed(row)) {
+      return 'danger';
+    }
+    switch (row.windowState) {
       case 'open':
         return 'success';
       case 'upcoming':
