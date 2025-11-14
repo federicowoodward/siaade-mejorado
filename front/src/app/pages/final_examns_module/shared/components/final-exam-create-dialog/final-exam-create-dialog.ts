@@ -75,6 +75,7 @@ export class FinalExamCreateDialogComponent implements OnChanges {
 
   private subjectsLoaded = false;
   private dropdownOpen = false;
+  private loadingInProgress = false;
 
   private fetchAllSubjectsOnce(updateOptions = false) {
     if (this.subjectsLoaded) {
@@ -83,6 +84,11 @@ export class FinalExamCreateDialogComponent implements OnChanges {
       }
       return;
     }
+    // Evitar múltiples llamadas simultáneas
+    if (this.loadingInProgress) {
+      return;
+    }
+    this.loadingInProgress = true;
     this.loadingSubjects.set(true);
     this.api.getAll<Subject>('subjects/read').subscribe({
       next: (subjects) => {
@@ -96,15 +102,24 @@ export class FinalExamCreateDialogComponent implements OnChanges {
         this.allSubjects.set(opts);
         this.subjectsLoaded = true;
         this.loadingSubjects.set(false);
+        this.loadingInProgress = false;
         // Si se solicitó actualizar opciones o el dropdown está abierto, actualizar
         if (updateOptions || this.dropdownOpen) {
           this.subjectOptions.set(opts);
         }
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error al cargar materias:', err);
         this.allSubjects.set([]);
         this.loadingSubjects.set(false);
+        this.loadingInProgress = false;
         this.subjectsLoaded = true;
+        // Mostrar mensaje de error
+        this.messages.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudieron cargar las materias. Por favor, intenta nuevamente.',
+        });
       },
     });
   }
@@ -130,20 +145,38 @@ export class FinalExamCreateDialogComponent implements OnChanges {
     // Marcar que el dropdown está abierto
     this.dropdownOpen = true;
     // Asegura datos y muestra todo al abrir el dropdown
-    if (!this.subjectsLoaded) {
-      // Pasar true para que actualice las opciones cuando se carguen
-      this.fetchAllSubjectsOnce(true);
-    } else {
+    if (this.subjectsLoaded) {
       // Si ya están cargadas, mostrarlas inmediatamente
-      this.subjectOptions.set(this.allSubjects());
+      const subjects = this.allSubjects();
+      if (subjects.length > 0) {
+        this.subjectOptions.set(subjects);
+      }
+    } else {
+      // Si no están cargadas, cargarlas y actualizar cuando terminen
+      // El flag dropdownOpen asegurará que se actualicen cuando se carguen
+      if (!this.loadingInProgress) {
+        this.fetchAllSubjectsOnce(true);
+      }
+      // Si ya se está cargando, el flag dropdownOpen hará que se actualicen cuando terminen
     }
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    // Cuando el modal se abre, precargar las materias
+    if (changes['visible'] && changes['visible'].currentValue) {
+      // Precargar las materias cuando se abre el modal
+      if (!this.subjectsLoaded && !this.loadingInProgress) {
+        this.fetchAllSubjectsOnce();
+      }
+    }
     // Resetear el flag cuando el modal se cierra
     if (changes['visible'] && !changes['visible'].currentValue) {
       this.dropdownOpen = false;
       this.subjectOptions.set([]);
+      // Resetear el formulario
+      this.selectedSubject = null;
+      this.dateTime = null;
+      this.aula = '';
     }
   }
 
