@@ -48,7 +48,6 @@ export class MenuComponent {
         icon: 'pi pi-book',
         routerLink: ['/alumno/situacion-academica'],
       },
-      { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
     ],
     [ROLE.TEACHER]: [
       { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },

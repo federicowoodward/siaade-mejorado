@@ -46,12 +46,6 @@ export class QuickAccessComponent {
         description: 'Mesas disponibles y ventanas activas.',
         route: ['/alumno/mesas'],
       },
-      {
-        label: 'Avisos oficiales',
-        icon: 'pi pi-bell',
-        description: 'Comunicados publicados por Secretaria.',
-        route: ['/notices'],
-      },
     ],
     [ROLE.TEACHER]: [
       {
