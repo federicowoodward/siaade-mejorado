@@ -5,6 +5,8 @@ import {
   Output,
   inject,
   signal,
+  OnChanges,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -42,7 +44,7 @@ type SubjectOption = { label: string; value: number };
   styleUrls: ['./final-exam-create-dialog.scss'],
   providers: [MessageService],
 })
-export class FinalExamCreateDialogComponent {
+export class FinalExamCreateDialogComponent implements OnChanges {
   private api = inject(ApiService);
   private messages = inject(MessageService);
 
@@ -72,9 +74,15 @@ export class FinalExamCreateDialogComponent {
   loadingSubjects = signal<boolean>(false);
 
   private subjectsLoaded = false;
+  private dropdownOpen = false;
 
-  private fetchAllSubjectsOnce() {
-    if (this.subjectsLoaded) return;
+  private fetchAllSubjectsOnce(updateOptions = false) {
+    if (this.subjectsLoaded) {
+      if (updateOptions) {
+        this.subjectOptions.set(this.allSubjects());
+      }
+      return;
+    }
     this.loadingSubjects.set(true);
     this.api.getAll<Subject>('subjects/read').subscribe({
       next: (subjects) => {
@@ -88,6 +96,10 @@ export class FinalExamCreateDialogComponent {
         this.allSubjects.set(opts);
         this.subjectsLoaded = true;
         this.loadingSubjects.set(false);
+        // Si se solicitó actualizar opciones o el dropdown está abierto, actualizar
+        if (updateOptions || this.dropdownOpen) {
+          this.subjectOptions.set(opts);
+        }
       },
       error: () => {
         this.allSubjects.set([]);
@@ -115,9 +127,24 @@ export class FinalExamCreateDialogComponent {
   }
 
   showAllSubjects() {
+    // Marcar que el dropdown está abierto
+    this.dropdownOpen = true;
     // Asegura datos y muestra todo al abrir el dropdown
-    if (!this.subjectsLoaded) this.fetchAllSubjectsOnce();
-    this.subjectOptions.set(this.allSubjects());
+    if (!this.subjectsLoaded) {
+      // Pasar true para que actualice las opciones cuando se carguen
+      this.fetchAllSubjectsOnce(true);
+    } else {
+      // Si ya están cargadas, mostrarlas inmediatamente
+      this.subjectOptions.set(this.allSubjects());
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    // Resetear el flag cuando el modal se cierra
+    if (changes['visible'] && !changes['visible'].currentValue) {
+      this.dropdownOpen = false;
+      this.subjectOptions.set([]);
+    }
   }
 
   onCancel() {
