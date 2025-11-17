@@ -6,10 +6,17 @@ services:
       POSTGRES_DB: SIAD
       POSTGRES_USER: siad_admin
       POSTGRES_PASSWORD: 12345SIAAD*
+      TZ: America/Argentina/Buenos_Aires   # SO/Logs
+    command:
+      - "postgres"
+      - "-c"
+      - "timezone=America/Argentina/Buenos_Aires"     # <-- fija el GUC siempre
+      - "-c"
+      - "log_timezone=America/Argentina/Buenos_Aires" # <-- logs coherentes
     ports:
       - "5432:5432"
     # volumes:
-      # - postgres_data:/var/lib/postgresql/data
+    #   - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test:
         [
