@@ -13,6 +13,7 @@ import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { User } from "@/entities/users/user.entity";
+import { SubjectGradeAudit } from "@/entities/subjects/subject-grade-audit.entity";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";
 import { PatchCellDto } from "./dto/patch-cell.dto";
 import { GradeRowDto } from "./dto/grade-row.dto";
@@ -29,9 +30,40 @@ type AuthenticatedUser = {
   role?: ROLE | null;
 };
 
+type GradeWindowState = {
+  status: "open" | "closed";
+  openedAt: Date | null;
+  expiresAt: Date | null;
+};
+
+type TeacherWindowDto = {
+  status: "open" | "closed";
+  openedAt: string | null;
+  closesAt: string | null;
+  remainingDays: number | null;
+};
+
+type GradeSnapshot = {
+  note1: number | null;
+  note2: number | null;
+  note3: number | null;
+  note4: number | null;
+  attendancePercentage: number | null;
+};
+
+type GradeAuditChange = {
+  field: string;
+  previous: number | null;
+  next: number | null;
+};
+
 type CommissionWithRole = {
-  commission: Pick<SubjectCommission, "id" | "subjectId" | "teacherId">;
+  commission: Pick<
+    SubjectCommission,
+    "id" | "subjectId" | "teacherId" | "gradeWindowOpenedAt" | "gradeWindowExpiresAt"
+  >;
   role: ROLE;
+  gradeWindow: GradeWindowState;
 };
 
 @Injectable()
@@ -47,12 +79,19 @@ export class SubjectsService {
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
     @InjectRepository(Subject)
     private readonly subjectRepo: Repository<Subject>,
-    @InjectRepository(SubjectGradesView)
-    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    private readonly dataSource: DataSource,
-  ) {}
+  @InjectRepository(SubjectGradesView)
+  private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
+  @InjectRepository(User)
+  private readonly userRepo: Repository<User>,
+  @InjectRepository(SubjectGradeAudit)
+  private readonly gradeAuditRepo: Repository<SubjectGradeAudit>,
+  private readonly dataSource: DataSource,
+) {}
+
+  private readonly teacherGradeWindowDays = Math.max(
+    Number(process.env.TEACHER_GRADE_EDIT_WINDOW_DAYS ?? 10),
+    0,
+  );
 
   private deriveConditionFromValues(
     notes: Array<number | null | undefined>,
@@ -87,10 +126,14 @@ export class SubjectsService {
     dto: PatchCellDto,
     user?: AuthenticatedUser,
   ): Promise<GradeRowDto> {
-    const { commission } = await this.ensureAccess(subjectCommissionId, user, {
-      allowStudent: false,
-      targetStudentId: studentId,
-    });
+    const { commission, role, gradeWindow } = await this.ensureAccess(
+      subjectCommissionId,
+      user,
+      {
+        allowStudent: false,
+        targetStudentId: studentId,
+      },
+    );
 
     let progress = await this.progressRepo.findOne({
       where: { subjectCommissionId, studentId },
@@ -106,6 +149,8 @@ export class SubjectsService {
         statusId: null,
       });
     }
+
+    const beforeSnapshot = this.captureGradeSnapshot(progress);
 
     switch (dto.path) {
       case "note1":
@@ -177,6 +222,19 @@ export class SubjectsService {
     if (dto.path !== "statusId") {
       await this.autoAssignCondition(progress);
     }
+
+    const afterSnapshot = this.captureGradeSnapshot(progress);
+
+    await this.maybeAuditGradeChange(null, {
+      commissionId: subjectCommissionId,
+      studentId,
+      actor: user,
+      role,
+      gradeWindow,
+      before: beforeSnapshot,
+      after: afterSnapshot,
+    });
+
     const [row] = await this.fetchGradeRows(subjectCommissionId, [studentId]);
     if (!row) {
       throw new NotFoundException("Updated grade row not found");
@@ -189,9 +247,13 @@ export class SubjectsService {
     dto: UpsertGradeDto,
     user?: AuthenticatedUser,
   ): Promise<{ updated: number }> {
-    const { commission } = await this.ensureAccess(subjectCommissionId, user, {
-      allowStudent: false,
-    });
+    const { commission, role, gradeWindow } = await this.ensureAccess(
+      subjectCommissionId,
+      user,
+      {
+        allowStudent: false,
+      },
+    );
 
     const updated = await this.dataSource.transaction(async (manager) => {
       let count = 0;
@@ -201,6 +263,9 @@ export class SubjectsService {
           commission,
           subjectCommissionId,
           row,
+          user,
+          role,
+          gradeWindow,
         );
         count += 1;
       }
@@ -228,6 +293,7 @@ export class SubjectsService {
       commission: { id: number; letter: string | null };
       partials: 2 | 4;
       rows: GradeRowDto[];
+      teacherWindow: TeacherWindowDto;
     }>;
   }> {
     const subject = await this.subjectRepo.findOne({
@@ -279,6 +345,7 @@ export class SubjectsService {
             },
             partials: bucket.partials,
             rows: bucket.rows,
+            teacherWindow: this.serializeTeacherWindow(commission),
           };
         }
         const fallbackPartials = this.normalizePartials(
@@ -291,6 +358,7 @@ export class SubjectsService {
           },
           partials: fallbackPartials,
           rows: [],
+          teacherWindow: this.serializeTeacherWindow(commission),
         };
       }),
     };
@@ -301,7 +369,11 @@ export class SubjectsService {
     filters?: { q?: string; commissionId?: number },
   ): Promise<{
     subject: { id: number; name: string; partials: 2 | 4 };
-    commissions: Array<{ id: number; letter: string | null }>;
+    commissions: Array<{
+      id: number;
+      letter: string | null;
+      teacherWindow: TeacherWindowDto;
+    }>;
     rows: Array<{
       studentId: string;
       fullName: string;
@@ -524,6 +596,7 @@ export class SubjectsService {
       commissions: commissions.map((commission) => ({
         id: commission.id,
         letter: commission.commission?.commissionLetter ?? null,
+        teacherWindow: this.serializeTeacherWindow(commission),
       })),
       rows,
     };
@@ -572,7 +645,13 @@ export class SubjectsService {
   ): Promise<CommissionWithRole> {
     const commission = await this.subjectCommissionRepo.findOne({
       where: { id: subjectCommissionId },
-      select: ["id", "subjectId", "teacherId"],
+      select: [
+        "id",
+        "subjectId",
+        "teacherId",
+        "gradeWindowOpenedAt",
+        "gradeWindowExpiresAt",
+      ],
     });
 
     if (!commission) {
@@ -603,7 +682,190 @@ export class SubjectsService {
       }
     }
 
-    return { commission, role };
+    const gradeWindow = await this.ensureGradeWindowState(commission, {
+      autoStart: role === ROLE.TEACHER,
+    });
+
+    if (role === ROLE.TEACHER && gradeWindow.status === "closed") {
+      throw new ForbiddenException({
+        message:
+          "El plazo de edición de notas está cerrado. Contacta a Secretaría para solicitar cambios.",
+        code: "GRADE_WINDOW_CLOSED",
+      });
+    }
+
+    return { commission, role, gradeWindow };
+  }
+
+  private async ensureGradeWindowState(
+    commission: Pick<
+      SubjectCommission,
+      "id" | "gradeWindowOpenedAt" | "gradeWindowExpiresAt"
+    >,
+    options?: { autoStart?: boolean },
+  ): Promise<GradeWindowState> {
+    let openedAt = commission.gradeWindowOpenedAt ?? null;
+    let expiresAt = commission.gradeWindowExpiresAt ?? null;
+
+    const shouldAutoStart =
+      options?.autoStart &&
+      this.teacherGradeWindowDays > 0 &&
+      !openedAt;
+
+    if (shouldAutoStart) {
+      openedAt = new Date();
+      expiresAt = this.addDays(openedAt, this.teacherGradeWindowDays);
+      await this.subjectCommissionRepo.update(commission.id, {
+        gradeWindowOpenedAt: openedAt,
+        gradeWindowExpiresAt: expiresAt,
+      });
+      commission.gradeWindowOpenedAt = openedAt;
+      commission.gradeWindowExpiresAt = expiresAt;
+    }
+
+    return this.computeGradeWindowState(openedAt, expiresAt);
+  }
+
+  private computeGradeWindowState(
+    openedAt: Date | null,
+    expiresAt: Date | null,
+  ): GradeWindowState {
+    if (this.teacherGradeWindowDays <= 0 || !expiresAt) {
+      return { status: "open", openedAt, expiresAt };
+    }
+    return {
+      status: expiresAt.getTime() > Date.now() ? "open" : "closed",
+      openedAt,
+      expiresAt,
+    };
+  }
+
+  private serializeTeacherWindow(
+    commission: SubjectCommission,
+  ): TeacherWindowDto {
+    const state = this.computeGradeWindowState(
+      commission.gradeWindowOpenedAt ?? null,
+      commission.gradeWindowExpiresAt ?? null,
+    );
+    return {
+      status: state.status,
+      openedAt: state.openedAt ? state.openedAt.toISOString() : null,
+      closesAt: state.expiresAt ? state.expiresAt.toISOString() : null,
+      remainingDays: state.expiresAt
+        ? Math.max(
+            0,
+            Math.ceil(
+              (state.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+            ),
+          )
+        : null,
+    };
+  }
+
+  private addDays(base: Date, days: number): Date {
+    const value = new Date(base);
+    value.setDate(value.getDate() + days);
+    return value;
+  }
+
+  private captureGradeSnapshot(
+    progress: StudentSubjectProgress,
+  ): GradeSnapshot {
+    const scores = progress.partialScores ?? {};
+    const read = (key: "1" | "2" | "3" | "4"): number | null => {
+      const value = scores[key];
+      if (typeof value !== "number" || Number.isNaN(value)) {
+        return null;
+      }
+      return Number(value);
+    };
+    const attendanceRaw =
+      progress.attendancePercentage === null ||
+      progress.attendancePercentage === undefined
+        ? null
+        : Number(progress.attendancePercentage);
+    const attendance = Number.isFinite(attendanceRaw) ? attendanceRaw : null;
+    return {
+      note1: read("1"),
+      note2: read("2"),
+      note3: read("3"),
+      note4: read("4"),
+      attendancePercentage: attendance,
+    };
+  }
+
+  private diffSnapshots(
+    before: GradeSnapshot,
+    after: GradeSnapshot,
+  ): GradeAuditChange[] {
+    const fields: Array<keyof GradeSnapshot> = [
+      "note1",
+      "note2",
+      "note3",
+      "note4",
+      "attendancePercentage",
+    ];
+    const changes: GradeAuditChange[] = [];
+    for (const field of fields) {
+      const previous = before[field] ?? null;
+      const next = after[field] ?? null;
+      if (previous === next) {
+        continue;
+      }
+      const mappedField =
+        field === "attendancePercentage" ? "attendance" : (field as string);
+      changes.push({ field: mappedField, previous, next });
+    }
+    return changes;
+  }
+
+  private shouldAuditRole(role: ROLE): boolean {
+    return role !== ROLE.TEACHER;
+  }
+
+  private resolveAuditContext(
+    role: ROLE,
+    gradeWindow: GradeWindowState,
+  ): string {
+    if (role === ROLE.TEACHER) {
+      return gradeWindow.status === "closed"
+        ? "teacher_after_deadline"
+        : "teacher_window_open";
+    }
+    return gradeWindow.status === "closed"
+      ? "secretary_after_deadline"
+      : "secretary_override";
+  }
+
+  private async maybeAuditGradeChange(
+    manager: EntityManager | null,
+    params: {
+      commissionId: number;
+      studentId: string;
+      actor: AuthenticatedUser | undefined;
+      role: ROLE;
+      gradeWindow: GradeWindowState;
+      before: GradeSnapshot;
+      after: GradeSnapshot;
+    },
+  ): Promise<void> {
+    if (!params.actor?.id || !this.shouldAuditRole(params.role)) {
+      return;
+    }
+    const changes = this.diffSnapshots(params.before, params.after);
+    if (!changes.length) {
+      return;
+    }
+    const repo =
+      manager?.getRepository(SubjectGradeAudit) ?? this.gradeAuditRepo;
+    await repo.insert({
+      subjectCommissionId: params.commissionId,
+      studentId: params.studentId,
+      actorId: params.actor.id,
+      actorRole: params.role,
+      payload: { changes },
+      context: this.resolveAuditContext(params.role, params.gradeWindow),
+    });
   }
 
   private async fetchGradeRows(
@@ -1193,6 +1455,9 @@ export class SubjectsService {
     commission: Pick<SubjectCommission, "subjectId">,
     subjectCommissionId: number,
     row: UpsertGradeDto["rows"][number],
+    user: AuthenticatedUser | undefined,
+    role: ROLE,
+    gradeWindow: GradeWindowState,
   ): Promise<void> {
     if (!row) return;
     const studentId = row.studentId;
@@ -1218,6 +1483,8 @@ export class SubjectsService {
         statusId: null,
       });
     }
+
+    const beforeSnapshot = this.captureGradeSnapshot(progress);
 
     const expected = await this.getExpectedPartialsForSubject(
       commission.subjectId,
@@ -1267,11 +1534,23 @@ export class SubjectsService {
     if (row.statusId === undefined) {
       progress.statusId = null;
     }
+    const afterSnapshot = this.captureGradeSnapshot(progress);
+
     await manager.save(progress);
     // If no manual status was provided, recalc condition using new rules
     if (row.statusId === undefined) {
       await this.autoAssignCondition(progress, manager);
     }
+
+    await this.maybeAuditGradeChange(manager, {
+      commissionId: subjectCommissionId,
+      studentId,
+      actor: user,
+      role,
+      gradeWindow,
+      before: beforeSnapshot,
+      after: afterSnapshot,
+    });
   }
 
   /**

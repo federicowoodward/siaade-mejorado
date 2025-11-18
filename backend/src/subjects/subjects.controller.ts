@@ -147,6 +147,15 @@ export class SubjectGradesController {
             properties: {
               id: { type: "number" },
               letter: { type: "string", nullable: true },
+              teacherWindow: {
+                type: "object",
+                properties: {
+                  status: { type: "string", enum: ["open", "closed"] },
+                  openedAt: { type: "string", nullable: true },
+                  closesAt: { type: "string", nullable: true },
+                  remainingDays: { type: "number", nullable: true },
+                },
+              },
             },
           },
         },
