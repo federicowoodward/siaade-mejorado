@@ -187,7 +187,7 @@
                     icon="pi pi-check"
                     size="small"
                     severity="success"
-                    (onClick)="onInscribedClick(row)"
+                    (onClick)="onUnenroll(row, $event)"
                     styleClass="cta-button"
                     ariaLabel="Inscripto en {{ row.subjectName }} - {{
                       row.call.label
@@ -221,16 +221,30 @@
   [closeOnEscape]="true"
   [dismissableMask]="true"
   [style]="{ width: '420px' }"
-  [header]="'Confirmar inscripcion'"
+  [header]="
+    dialogMode === 'enroll'
+      ? 'Confirmar inscripcion'
+      : 'Cancelar inscripcion'
+  "
   [(visible)]="dialogVisible"
   (onHide)="cancelDialog()"
 >
-  <p class="mb-3">
-    Confirmas la inscripcion a
-    <strong>{{ selectedRow?.subjectName }}</strong> en el
-    <strong>{{ selectedRow?.call?.label }}</strong
-    >?
-  </p>
+  <ng-container *ngIf="dialogMode === 'enroll'; else unenrollCopy">
+    <p class="mb-3">
+      Confirmas la inscripcion a
+      <strong>{{ selectedRow?.subjectName }}</strong> en el
+      <strong>{{ selectedRow?.call?.label }}</strong
+      >?
+    </p>
+  </ng-container>
+  <ng-template #unenrollCopy>
+    <p class="mb-3">
+      Queres cancelar tu inscripcion a
+      <strong>{{ selectedRow?.subjectName }}</strong> en el
+      <strong>{{ selectedRow?.call?.label }}</strong
+      >?
+    </p>
+  </ng-template>
   <ul class="confirmation-list">
     <li>
       <strong>Fecha:</strong>
@@ -248,9 +262,10 @@
       />
       <p-button
         type="button"
-        label="Confirmar"
-        icon="pi pi-check"
-        (onClick)="confirmEnroll()"
+        [label]="dialogMode === 'enroll' ? 'Confirmar' : 'Desinscribirme'"
+        [icon]="dialogMode === 'enroll' ? 'pi pi-check' : 'pi pi-times'"
+        [severity]="dialogMode === 'unenroll' ? 'danger' : 'primary'"
+        (onClick)="confirmDialogAction()"
       />
     </div>
   </ng-template>

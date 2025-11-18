@@ -206,6 +206,7 @@ export class MesasListComponent implements OnInit {
 
   dialogVisible = false;
   selectedRow: ExamCallRow | null = null;
+  dialogMode: 'enroll' | 'unenroll' = 'enroll';
   private lastActionTrigger: HTMLElement | null = null;
   // Marca local optimista para evitar re-inscripciones mientras llega el refresh
   private enrolledLocal = new Set<number>();
@@ -266,7 +267,7 @@ export class MesasListComponent implements OnInit {
     this.inscriptions
       .listExamTables(this.buildFilterPayload(), { refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe();
+      .subscribe((tables) => this.reconcileLocalEnrollment(tables));
   }
 
   applyFilters(): void {
@@ -333,6 +334,17 @@ export class MesasListComponent implements OnInit {
       this.audit(row, 'blocked', validation.reason);
       return;
     }
+    this.dialogMode = 'enroll';
+    this.selectedRow = row;
+    this.dialogVisible = true;
+  }
+
+  onUnenroll(row: ExamCallRow, event?: MouseEvent): void {
+    this.lastActionTrigger = (event?.currentTarget as HTMLElement) ?? null;
+    if (!this.isEnrolled(row)) {
+      return;
+    }
+    this.dialogMode = 'unenroll';
     this.selectedRow = row;
     this.dialogVisible = true;
   }
@@ -340,13 +352,22 @@ export class MesasListComponent implements OnInit {
   cancelDialog(): void {
     this.dialogVisible = false;
     this.selectedRow = null;
+    this.dialogMode = 'enroll';
     this.restoreFocus();
   }
 
-  confirmEnroll(): void {
+  confirmDialogAction(): void {
     const row = this.selectedRow;
     if (!row) return;
     this.dialogVisible = false;
+    if (this.dialogMode === 'unenroll') {
+      this.performUnenroll(row);
+    } else {
+      this.performEnroll(row);
+    }
+  }
+
+  private performEnroll(row: ExamCallRow): void {
     this.inscriptions
       .enroll({ mesaId: row.mesaId, callId: row.call.id })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -375,6 +396,35 @@ export class MesasListComponent implements OnInit {
         }
         this.restoreFocus();
         this.selectedRow = null;
+        this.dialogMode = 'enroll';
+      });
+  }
+
+  private performUnenroll(row: ExamCallRow): void {
+    this.inscriptions
+      .unenroll({ mesaId: row.mesaId, callId: row.call.id })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (response.ok) {
+          this.messages.add({
+            severity: 'info',
+            summary: 'Inscripcion cancelada',
+            detail: `${row.subjectName} - ${row.call.label}`,
+            life: 4000,
+          });
+          if (this.enrolledLocal.delete(row.call.id)) {
+            this.persistEnrolledLocal();
+          }
+          this.blockAlert.set(null);
+          this.refreshData(true);
+        } else {
+          const reason =
+            (response.reasonCode as StudentExamBlockReason) ?? 'UNKNOWN';
+          this.showBlock(reason, response.message ?? '', row);
+        }
+        this.restoreFocus();
+        this.selectedRow = null;
+        this.dialogMode = 'enroll';
       });
   }
 
@@ -382,7 +432,33 @@ export class MesasListComponent implements OnInit {
     this.inscriptions
       .refresh({ refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe();
+      .subscribe((tables) => this.reconcileLocalEnrollment(tables));
+  }
+
+  private reconcileLocalEnrollment(
+    tables: StudentExamTable[] | null | undefined,
+  ): void {
+    if (!tables || !tables.length) {
+      return;
+    }
+    const seen = new Set<number>();
+    tables.forEach((table) =>
+      table.availableCalls.forEach((call) => seen.add(call.id)),
+    );
+    if (!seen.size) {
+      return;
+    }
+    let changed = false;
+    const pending = Array.from(this.enrolledLocal.values());
+    for (const callId of pending) {
+      if (seen.has(callId)) {
+        this.enrolledLocal.delete(callId);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.persistEnrolledLocal();
+    }
   }
 
   private loadStudentSubjects(force = false): void {
@@ -590,7 +666,10 @@ export class MesasListComponent implements OnInit {
   isEnrolled(row: ExamCallRow): boolean {
     // Preferir estado por llamado (proporcionado por backend).
     // Fallback a marca local optimista en esta sesión.
-    return Boolean(row.call?.enrolled) || this.enrolledLocal.has(row.call.id);
+    if (row.call?.enrolled !== undefined) {
+      return !!row.call.enrolled;
+    }
+    return this.enrolledLocal.has(row.call.id);
   }
 
   isActionBlocked(row: ExamCallRow): boolean {
@@ -617,15 +696,6 @@ export class MesasListComponent implements OnInit {
         JSON.stringify(Array.from(this.enrolledLocal.values())),
       );
     } catch {}
-  }
-
-  onInscribedClick(row: ExamCallRow): void {
-    this.messages.add({
-      severity: 'info',
-      summary: 'Gestion en Secretaria',
-      detail: `${row.subjectName} - ${row.call.label}. En caso de querer desinscribirse, pedir informacion en Secretaria.`,
-      life: 4000,
-    });
   }
 
   windowLabel(row: ExamCallRow): string {
@@ -778,3 +848,4 @@ export class MesasListComponent implements OnInit {
     );
   }
 }
+

@@ -162,6 +162,29 @@ export class StudentInscriptionsService {
       );
   }
 
+  unenroll(
+    payload: StudentEnrollPayload,
+  ): Observable<StudentEnrollmentResponse> {
+    const studentId = payload.studentId ?? this.auth.getUserId();
+    const body = {
+      mesaId: payload.mesaId,
+      callId: payload.callId,
+      studentId,
+    };
+    return this.api
+      .request<any>(
+        'POST',
+        `students/inscriptions/exam-tables/${payload.mesaId}/unenroll`,
+        body,
+      )
+      .pipe(
+        map((resp) => this.normalizeEnrollmentResponse(resp)),
+        catchError((error) =>
+          of(this.normalizeEnrollmentResponse(error?.error ?? error)),
+        ),
+      );
+  }
+
   logAudit(payload: StudentExamAuditPayload): Observable<void> {
     return this.api
       .request<void>('POST', 'students/inscriptions/audit-events', payload)

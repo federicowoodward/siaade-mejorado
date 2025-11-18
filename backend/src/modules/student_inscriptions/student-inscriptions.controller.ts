@@ -608,6 +608,114 @@ export class StudentInscriptionsController {
     }
   }
 
+  @Post("exam-tables/:mesaId/unenroll")
+  @ApiOperation({
+    summary: "Desinscribir alumno de un examen final (por callId)",
+  })
+  @ApiParam({ name: "mesaId", type: Number })
+  @ApiOkResponse({ description: "Respuesta normalizada de desinscripci�n" })
+  async unenroll(
+    @Param("mesaId") mesaIdParam: string,
+    @Body() body: { callId?: number; studentId?: string },
+    @Req() req: Request,
+  ) {
+    const studentId = body?.studentId || (req.user as any)?.id;
+    if (!studentId) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "No se pudo resolver el alumno autenticado.",
+      };
+    }
+    if (!body?.callId) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "callId es requerido",
+      };
+    }
+    const finalExam = await this.finalRepo.findOne({
+      where: { id: Number(body.callId) },
+      relations: ["examTable", "subject"],
+    });
+    if (!finalExam) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "Final no encontrado",
+      };
+    }
+    const mesaId = Number(mesaIdParam);
+    if (Number.isFinite(mesaId) && finalExam.examTableId !== mesaId) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "La mesa indicada no coincide con el llamado seleccionado.",
+      };
+    }
+
+    const link = await this.linkRepo.findOne({
+      where: { finalExamId: finalExam.id, studentId },
+    });
+
+    if (!link || !(link as any).enrolledAt) {
+      await this.auditSafeSave({
+        studentId,
+        context: "unenroll-exam",
+        mesaId: finalExam.examTableId,
+        callId: finalExam.id,
+        outcome: "success",
+        reasonCode: null,
+        subjectId: finalExam.subjectId,
+        subjectOrderNo: finalExam.subject?.orderNo ?? null,
+        subjectName: finalExam.subject?.subjectName ?? null,
+        missingCorrelatives: null,
+        ip: req.ip || null,
+        userAgent: req.headers["user-agent"]
+          ? String(req.headers["user-agent"])
+          : null,
+      });
+      return {
+        ok: true,
+        blocked: false,
+        message: "No se registraba una inscripci�n activa para este llamado.",
+      };
+    }
+
+    (link as any).enrolledAt = null;
+    (link as any).enrolledBy = null;
+    link.score = null;
+    link.notes = "";
+    await this.linkRepo.save(link as any);
+
+    await this.auditSafeSave({
+      studentId,
+      context: "unenroll-exam",
+      mesaId: finalExam.examTableId,
+      callId: finalExam.id,
+      outcome: "success",
+      reasonCode: null,
+      subjectId: finalExam.subjectId,
+      subjectOrderNo: finalExam.subject?.orderNo ?? null,
+      subjectName: finalExam.subject?.subjectName ?? null,
+      missingCorrelatives: null,
+      ip: req.ip || null,
+      userAgent: req.headers["user-agent"]
+        ? String(req.headers["user-agent"])
+        : null,
+    });
+
+    return {
+      ok: true,
+      blocked: false,
+      message: "Inscripci�n cancelada correctamente.",
+    };
+  }
+
   @Post("audit-events")
   @ApiOperation({
     summary: "Auditoría de eventos de inscripción (no persistente)",
