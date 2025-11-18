@@ -73,10 +73,8 @@ export class StudentInscriptionsController {
     description: "Exámenes donde hay inscripción activa (enrolledAt != null)",
   })
   async listEnrolledExamTables(@Req() req: Request) {
-    const studentId = (req.user as any)?.id as string | undefined;
-    console.log("[ENROLLED] studentId:", studentId);
+    const studentId = ((req.user as any)?.id ?? (req.user as any)?.sub ?? (req.user as any)?.userId) as string | undefined;
     if (!studentId) {
-      console.log("[ENROLLED] No studentId, returning empty");
       return { data: [] };
     }
 
@@ -91,9 +89,7 @@ export class StudentInscriptionsController {
       },
     });
 
-    console.log("[ENROLLED] Found links:", links.length);
     if (!links.length) {
-      console.log("[ENROLLED] No links found, returning empty");
       return { data: [] };
     }
 
@@ -102,7 +98,6 @@ export class StudentInscriptionsController {
     for (const link of links) {
       const fe = link.finalExam;
       if (!fe || !fe.examTable || !fe.subject) {
-        console.log("[ENROLLED] Skipping link, missing relations");
         continue;
       }
 
@@ -123,18 +118,28 @@ export class StudentInscriptionsController {
       }
 
       const group = groups.get(key);
+      // Calculate default opens/closes using examDate when table dates are missing
+      const examDay = fe.examDate?.toISOString?.().split("T")[0] ?? null;
+      const defaultOpens = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay;
+      let defaultCloses = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+      if (!defaultCloses && examDay) {
+        const tmp = new Date(examDay);
+        tmp.setDate(tmp.getDate() + 1);
+        defaultCloses = tmp.toISOString().split("T")[0];
+      }
+
       group.availableCalls.push({
         id: fe.id,
         label: "Llamado",
-        examDate: fe.examDate.toISOString().split("T")[0],
+        examDate: examDay,
         aula: fe.aula ?? null,
         quotaTotal: null,
         quotaUsed: null,
         enrollmentWindow: {
           id: fe.examTableId,
           label: fe.examTable.name ?? "Examen",
-          opensAt: fe.examTable.startDate?.toISOString?.().split("T")[0] ?? null,
-          closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
+          opensAt: defaultOpens ?? null,
+          closesAt: defaultCloses ?? null,
         },
         additional: false,
         enrolled: !!link.enrolledAt,
@@ -142,7 +147,6 @@ export class StudentInscriptionsController {
     }
 
     const result = { data: Array.from(groups.values()) };
-    console.log("[ENROLLED] Returning:", result.data.length, "groups");
     return result;
   }
 
@@ -170,7 +174,7 @@ export class StudentInscriptionsController {
     @Query("to") to?: string,
     @Query("windowState") windowState: WindowState | "all" = "open",
   ) {
-    const studentId = (req.user as any)?.id as string | undefined;
+    const studentId = ((req.user as any)?.id ?? (req.user as any)?.sub ?? (req.user as any)?.userId) as string | undefined;
     
     // PASO 1: Obtener TODOS los exámenes disponibles (con filtros opcionales)
     const qb = this.finalRepo
@@ -266,6 +270,15 @@ export class StudentInscriptionsController {
 
         const key = `${fe.examTableId}:${fe.subjectId}`;
         if (!enrolledGroups.has(key)) {
+          // Use examDate as fallback for table dates; ensure closesAt defaults to next day
+          const tableOpens = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? fe.examDate?.toISOString?.().split("T")[0] ?? null;
+          let tableCloses = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+          if (!tableCloses && fe.examDate) {
+            const tmp = new Date(fe.examDate.toISOString().split("T")[0]);
+            tmp.setDate(tmp.getDate() + 1);
+            tableCloses = tmp.toISOString().split("T")[0];
+          }
+
           enrolledGroups.set(key, {
             mesaId: fe.examTableId,
             subjectId: fe.subjectId,
@@ -278,12 +291,8 @@ export class StudentInscriptionsController {
             blockedMessage: null,
             academicRequirement: null,
             window: {
-              opensAt: fe.examTable.startDate
-                ?.toISOString?.()
-                .split("T")[0] ?? null,
-              closesAt: fe.examTable.endDate
-                ?.toISOString?.()
-                .split("T")[0] ?? null,
+              opensAt: tableOpens,
+              closesAt: tableCloses,
               label: fe.examTable.name ?? "Examen",
               id: fe.examTableId,
             },
@@ -292,20 +301,31 @@ export class StudentInscriptionsController {
         }
 
         const group = enrolledGroups.get(key);
+        // Ensure each available call also inherits the table defaults with examDate fallback
+        const examDay2 = fe.examDate?.toISOString?.().split("T")[0] ?? null;
+        const opens2 = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay2;
+        let closes2 = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+        if (!closes2 && examDay2) {
+          const tmp2 = new Date(examDay2);
+          tmp2.setDate(tmp2.getDate() + 1);
+          closes2 = tmp2.toISOString().split("T")[0];
+        }
+
         group.availableCalls.push({
           id: fe.id,
           label: "Llamado",
-          examDate: fe.examDate.toISOString().split("T")[0],
+          examDate: examDay2,
           aula: fe.aula ?? null,
           quotaTotal: null,
           quotaUsed: null,
           enrollmentWindow: {
             id: fe.examTableId,
             label: fe.examTable.name ?? "Examen",
-            opensAt: fe.examTable.startDate?.toISOString?.().split("T")[0] ?? null,
-            closesAt: fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null,
+            opensAt: opens2 ?? null,
+            closesAt: closes2 ?? null,
           },
           additional: false,
+          enrolled: !!link.enrolledAt,
         });
       }
 
@@ -332,22 +352,38 @@ export class StudentInscriptionsController {
     // PASO 3: Marcar enrolled y duplicates
     if (studentId) {
       const allFinalIds = result.flatMap((g) =>
-        g.availableCalls.map((c: any) => c.id),
+        g.availableCalls.map((c: any) => Number(c.id)),
       );
       if (allFinalIds.length > 0) {
         const links = await this.linkRepo.find({
           where: { finalExamId: In(allFinalIds), studentId } as any,
         });
         const enrolledByFinal = new Set<number>(
-          links.filter((l) => (l as any).enrolledAt).map((l) => l.finalExamId),
+          links
+            .filter((l) => (l as any).enrolledAt)
+            .map((l) => Number((l as any).finalExamId)),
         );
         for (const g of result) {
           let any = false;
           g.availableCalls = g.availableCalls.map((c: any) => {
-            const enrolled = enrolledByFinal.has(c.id);
-            if (enrolled) any = true;
-            return { ...c, enrolled };
-          });
+              const enrolled = enrolledByFinal.has(Number(c.id));
+              if (enrolled) any = true;
+              // If student is enrolled and the call/window doesn't have a closesAt,
+              // assume the window lasts the exam day and closes the next day.
+              const examDateStr = c.examDate ?? null;
+              const enrollmentWindow = c.enrollmentWindow ? { ...c.enrollmentWindow } : { id: null, label: null, opensAt: null, closesAt: null };
+              if (enrolled) {
+                if (!enrollmentWindow.opensAt && examDateStr) {
+                  enrollmentWindow.opensAt = examDateStr;
+                }
+                if (!enrollmentWindow.closesAt && examDateStr) {
+                  const dt = new Date(examDateStr);
+                  dt.setDate(dt.getDate() + 1);
+                  enrollmentWindow.closesAt = dt.toISOString().split("T")[0];
+                }
+              }
+              return { ...c, enrolled, enrollmentWindow };
+            });
           g.duplicateEnrollment = any;
         }
       }
@@ -570,6 +606,114 @@ export class StudentInscriptionsController {
         message: String(e?.message || "No se pudo inscribir"),
       };
     }
+  }
+
+  @Post("exam-tables/:mesaId/unenroll")
+  @ApiOperation({
+    summary: "Desinscribir alumno de un examen final (por callId)",
+  })
+  @ApiParam({ name: "mesaId", type: Number })
+  @ApiOkResponse({ description: "Respuesta normalizada de desinscripci�n" })
+  async unenroll(
+    @Param("mesaId") mesaIdParam: string,
+    @Body() body: { callId?: number; studentId?: string },
+    @Req() req: Request,
+  ) {
+    const studentId = body?.studentId || (req.user as any)?.id;
+    if (!studentId) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "No se pudo resolver el alumno autenticado.",
+      };
+    }
+    if (!body?.callId) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "callId es requerido",
+      };
+    }
+    const finalExam = await this.finalRepo.findOne({
+      where: { id: Number(body.callId) },
+      relations: ["examTable", "subject"],
+    });
+    if (!finalExam) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "Final no encontrado",
+      };
+    }
+    const mesaId = Number(mesaIdParam);
+    if (Number.isFinite(mesaId) && finalExam.examTableId !== mesaId) {
+      return {
+        ok: false,
+        blocked: true,
+        reasonCode: "UNKNOWN",
+        message: "La mesa indicada no coincide con el llamado seleccionado.",
+      };
+    }
+
+    const link = await this.linkRepo.findOne({
+      where: { finalExamId: finalExam.id, studentId },
+    });
+
+    if (!link || !(link as any).enrolledAt) {
+      await this.auditSafeSave({
+        studentId,
+        context: "unenroll-exam",
+        mesaId: finalExam.examTableId,
+        callId: finalExam.id,
+        outcome: "success",
+        reasonCode: null,
+        subjectId: finalExam.subjectId,
+        subjectOrderNo: finalExam.subject?.orderNo ?? null,
+        subjectName: finalExam.subject?.subjectName ?? null,
+        missingCorrelatives: null,
+        ip: req.ip || null,
+        userAgent: req.headers["user-agent"]
+          ? String(req.headers["user-agent"])
+          : null,
+      });
+      return {
+        ok: true,
+        blocked: false,
+        message: "No se registraba una inscripci�n activa para este llamado.",
+      };
+    }
+
+    (link as any).enrolledAt = null;
+    (link as any).enrolledBy = null;
+    link.score = null;
+    link.notes = "";
+    await this.linkRepo.save(link as any);
+
+    await this.auditSafeSave({
+      studentId,
+      context: "unenroll-exam",
+      mesaId: finalExam.examTableId,
+      callId: finalExam.id,
+      outcome: "success",
+      reasonCode: null,
+      subjectId: finalExam.subjectId,
+      subjectOrderNo: finalExam.subject?.orderNo ?? null,
+      subjectName: finalExam.subject?.subjectName ?? null,
+      missingCorrelatives: null,
+      ip: req.ip || null,
+      userAgent: req.headers["user-agent"]
+        ? String(req.headers["user-agent"])
+        : null,
+    });
+
+    return {
+      ok: true,
+      blocked: false,
+      message: "Inscripci�n cancelada correctamente.",
+    };
   }
 
   @Post("audit-events")

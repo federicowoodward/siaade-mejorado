@@ -32,6 +32,39 @@
   font-weight: 600;
 }
 
+.action-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.cta-button {
+  min-width: 120px;
+  justify-content: center;
+}
+
+.window-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.window-label--success {
+  color: #16a34a;
+}
+
+.window-label--info {
+  color: #0ea5e9;
+}
+
+.window-label--danger {
+  color: #dc2626;
+}
+
 .mesas-table {
   border-radius: 0 0 1rem 1rem;
   overflow: hidden;

@@ -135,10 +135,9 @@
         <ng-template pTemplate="header">
           <tr>
             <th>Materia</th>
-            <th>Llamado</th>
-            <th>Fecha</th>
-            <th>Ventana</th>
-            <th>Cupo</th>
+            <th>Fecha apertura</th>
+            <th>Fecha cierre</th>
+            <th class="text-center">Ventana</th>
             <th class="text-center">Accion</th>
           </tr>
         </ng-template>
@@ -147,85 +146,55 @@
             <td>
               <div class="subject-cell">
                 <span class="subject-name">{{ row.subjectName }}</span>
-                <small class="text-color-secondary" *ngIf="row.commissionLabel">
-                  Comision {{ row.commissionLabel }}
-                </small>
-                <div class="mt-1" *ngIf="isEnrolled(row)">
-                  <p-tag
-                    severity="success"
-                    value="Inscripto"
-                    styleClass="text-xs"
-                  ></p-tag>
-                </div>
               </div>
             </td>
             <td>
-              <div class="flex align-items-center gap-2">
-                <span>{{ row.call.label }}</span>
-                <p-tag
-                  *ngIf="row.call.additional"
-                  severity="info"
-                  value="Llamado adicional"
-                  styleClass="text-xs"
-                />
-              </div>
+              {{ row.enrollmentOpensLabel }}
             </td>
             <td>
-              {{ row.call.examDate | date: "dd/MM/yyyy" }}
-            </td>
-            <td>
-              <div class="flex flex-column gap-1">
-                <p-tag
-                  [severity]="stateSeverity(row.windowState)"
-                  [value]="stateLabel(row.windowState)"
-                />
-                <small class="text-color-secondary">{{
-                  row.windowRange
-                }}</small>
-              </div>
-            </td>
-            <td>
-              <div class="flex flex-column gap-1">
-                <span>{{ row.quotaText }}</span>
-                <small class="text-color-secondary" *ngIf="row.call.quotaTotal">
-                  Actualizado por Secretaria
-                </small>
-              </div>
+              {{ row.enrollmentClosesLabel }}
             </td>
             <td class="text-center">
-              <ng-container *ngIf="!isEnrolled(row); else enrolledTag">
-                <p-button
-                  type="button"
-                  label="Inscribirme"
-                  icon="pi pi-check"
-                  size="small"
-                  [disabled]="isActionBlocked(row)"
-                  [pTooltip]="blockTooltip(row) || ''"
-                  tooltipPosition="top"
-                  (onClick)="onEnroll(row, $event)"
-                  ariaLabel="Inscribirme a {{ row.subjectName }} - {{
-                    row.call.label
-                  }}"
-                />
-              </ng-container>
-              <ng-template #enrolledTag>
-                <ng-container *ngIf="isStudent; else enrolledBadge">
+              <span
+                class="window-label"
+                [ngClass]="'window-label--' + windowSeverity(row)"
+              >
+                {{ windowLabel(row) }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-wrapper">
+                <ng-container *ngIf="!isEnrolled(row); else enrolledButton">
                   <p-button
                     type="button"
-                    label="Desinscribirme"
-                    icon="pi pi-times"
+                    label="Inscribirme"
+                    icon="pi pi-check"
                     size="small"
-                    severity="danger"
-                    (onClick)="onUnenroll(row)"
-                    ariaLabel="Desinscribirme de {{ row.subjectName }} - {{
+                    [disabled]="isActionBlocked(row)"
+                    [pTooltip]="blockTooltip(row) || ''"
+                    tooltipPosition="top"
+                    (onClick)="onEnroll(row, $event)"
+                    styleClass="cta-button"
+                    ariaLabel="Inscribirme a {{ row.subjectName }} - {{
                       row.call.label
                     }}"
                   />
                 </ng-container>
-                <ng-template #enrolledBadge>
-                  <p-tag severity="success" value="Inscripto" />
+                <ng-template #enrolledButton>
+                  <p-button
+                    type="button"
+                    label="Inscripto"
+                    icon="pi pi-check"
+                    size="small"
+                    severity="success"
+                    (onClick)="onUnenroll(row, $event)"
+                    styleClass="cta-button"
+                    ariaLabel="Inscripto en {{ row.subjectName }} - {{
+                      row.call.label
+                    }}"
+                  />
                 </ng-template>
-              </ng-template>
+              </div>
             </td>
           </tr>
         </ng-template>
@@ -252,16 +221,30 @@
   [closeOnEscape]="true"
   [dismissableMask]="true"
   [style]="{ width: '420px' }"
-  [header]="'Confirmar inscripcion'"
+  [header]="
+    dialogMode === 'enroll'
+      ? 'Confirmar inscripcion'
+      : 'Cancelar inscripcion'
+  "
   [(visible)]="dialogVisible"
   (onHide)="cancelDialog()"
 >
-  <p class="mb-3">
-    Confirmas la inscripcion a
-    <strong>{{ selectedRow?.subjectName }}</strong> en el
-    <strong>{{ selectedRow?.call?.label }}</strong
-    >?
-  </p>
+  <ng-container *ngIf="dialogMode === 'enroll'; else unenrollCopy">
+    <p class="mb-3">
+      Confirmas la inscripcion a
+      <strong>{{ selectedRow?.subjectName }}</strong> en el
+      <strong>{{ selectedRow?.call?.label }}</strong
+      >?
+    </p>
+  </ng-container>
+  <ng-template #unenrollCopy>
+    <p class="mb-3">
+      Queres cancelar tu inscripcion a
+      <strong>{{ selectedRow?.subjectName }}</strong> en el
+      <strong>{{ selectedRow?.call?.label }}</strong
+      >?
+    </p>
+  </ng-template>
   <ul class="confirmation-list">
     <li>
       <strong>Fecha:</strong>
@@ -279,9 +262,10 @@
       />
       <p-button
         type="button"
-        label="Confirmar"
-        icon="pi pi-check"
-        (onClick)="confirmEnroll()"
+        [label]="dialogMode === 'enroll' ? 'Confirmar' : 'Desinscribirme'"
+        [icon]="dialogMode === 'enroll' ? 'pi pi-check' : 'pi pi-times'"
+        [severity]="dialogMode === 'unenroll' ? 'danger' : 'primary'"
+        (onClick)="confirmDialogAction()"
       />
     </div>
   </ng-template>

@@ -1,66 +1,26 @@
-import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
+import { TableModule } from 'primeng/table';
 import {
   StudentStatusService,
   StudentSubjectCard,
 } from '../../core/services/student-status.service';
-import {
-  BlockMessageComponent,
-  BlockMessageVariant,
-  BlockMessageAction,
-} from '../../shared/block-message/block-message.component';
-import { StudentExamBlockReason } from '../../core/models/student-exam.model';
+import { AuthService } from '../../core/services/auth.service';
+import { SubjectStatusDetailComponent } from './subject-status-detail/subject-status-detail.component';
 
-const ACTION_REASON_COPY: Record<
-  StudentExamBlockReason | 'DEFAULT',
-  { title: string; message: string; variant: BlockMessageVariant }
-> = {
-  WINDOW_CLOSED: {
-    title: 'Ventana cerrada',
-    message: 'El periodo para esta accion aun no esta abierto o ya finalizo.',
-    variant: 'institutional',
-  },
-  MISSING_REQUIREMENTS: {
-    title: 'Falta cumplir requisitos',
-    message:
-      'Todavia no se cumplen los requisitos academicos para habilitar la accion.',
-    variant: 'official',
-  },
-  DUPLICATE: {
-    title: 'Solicitud duplicada',
-    message: 'Ya existe una gestion activa para esta materia.',
-    variant: 'official',
-  },
-  QUOTA_FULL: {
-    title: 'Cupo completo',
-    message: 'El cupo definido para esta materia ya fue utilizado.',
-    variant: 'institutional',
-  },
-  BACKEND_BLOCK: {
-    title: 'Acceso restringido',
-    message: 'Esta materia se inscribe de manera manual en Secretaria.',
-    variant: 'official',
-  },
-  UNKNOWN: {
-    title: 'No disponible',
-    message: 'La accion no esta disponible por el momento.',
-    variant: 'info',
-  },
-  DEFAULT: {
-    title: 'Accion bloqueada',
-    message: 'El sistema bloqueo esta accion. Consulta con Secretaria.',
-    variant: 'info',
-  },
-};
+type YearGroup = { label: string; order: number; subjects: StudentSubjectCard[] };
 
 @Component({
   selector: 'app-academic-status-student',
@@ -68,48 +28,62 @@ const ACTION_REASON_COPY: Record<
   imports: [
     CommonModule,
     ButtonModule,
-    ChipModule,
     TagModule,
-    TooltipModule,
-    ToastModule,
     ProgressSpinnerModule,
-    BlockMessageComponent,
+    TableModule,
+    SubjectStatusDetailComponent,
   ],
   templateUrl: './academic-status.component.html',
   styleUrl: './academic-status.component.scss',
-  providers: [MessageService],
 })
 export class AcademicStatusComponent implements OnInit {
   private readonly statusService = inject(StudentStatusService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly messages = inject(MessageService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   readonly cards = this.statusService.status;
   readonly loading = this.statusService.loading;
 
-  readonly groupedCards = computed(() => {
-    const map = new Map<string, StudentSubjectCard[]>();
+  readonly groupedCards = computed<YearGroup[]>(() => {
+    const map = new Map<string, YearGroup>();
     this.cards().forEach((card) => {
       const key = card.yearLabel;
       if (!map.has(key)) {
-        map.set(key, []);
+        map.set(key, { label: key, order: this.getYearOrder(card), subjects: [] });
       }
-      map.get(key)!.push(card);
+      map.get(key)!.subjects.push(card);
     });
-    return Array.from(map.entries()).map(([year, subjects]) => ({
-      year,
-      subjects,
-    }));
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.label.localeCompare(b.label);
+    });
   });
 
-  readonly calcHelp =
-    'La nota final se calcula con el promedio de los parciales informados y se redondea segun el reglamento vigente.';
-  readonly accreditationHelp =
-    'La acreditacion resume el estado oficial de la materia dentro del plan (regularizada, promocionada, aprobada).';
+  readonly studentName = signal<string | null>(null);
+  selectedSubject: StudentSubjectCard | null = null;
+  detailVisible = false;
 
   ngOnInit(): void {
     this.reload();
+    this.auth
+      .getUser()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((user) => {
+        if (!user) {
+          this.studentName.set(null);
+          return;
+        }
+        const segments = [
+          typeof user['name'] === 'string' ? user['name'] : null,
+          typeof user['lastName'] === 'string' ? user['lastName'] : null,
+        ].filter(
+          (value): value is string =>
+            typeof value === 'string' && value.trim().length > 0,
+        );
+        const fullName = segments.join(' ').trim();
+        this.studentName.set(fullName.length ? fullName : user['username'] ?? null);
+      });
   }
 
   reload(): void {
@@ -117,27 +91,6 @@ export class AcademicStatusComponent implements OnInit {
       .loadStatus()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
-  }
-
-  onCourseEnroll(card: StudentSubjectCard): void {
-    this.messages.add({
-      severity: 'info',
-      summary: 'Gestion presencial',
-      detail: `Coordina la inscripcion de cursado de ${card.subjectName} con Secretaria.`,
-      life: 5000,
-    });
-  }
-
-  onExamEnroll(card: StudentSubjectCard): void {
-    this.goToMesas(card.subjectId);
-  }
-
-  blockInfo(reason: StudentExamBlockReason | string | null) {
-    if (!reason) return null;
-    const resolved =
-      ACTION_REASON_COPY[(reason as StudentExamBlockReason) ?? 'DEFAULT'] ??
-      ACTION_REASON_COPY.DEFAULT;
-    return resolved;
   }
 
   stateSeverity(
@@ -156,13 +109,30 @@ export class AcademicStatusComponent implements OnInit {
     void this.router.navigate(['/alumno/mesas'], { queryParams });
   }
 
-  blockActions(card: StudentSubjectCard): BlockMessageAction[] {
-    return [
-      {
-        label: 'Ver mesas',
-        icon: 'pi pi-calendar',
-        command: () => this.goToMesas(card.subjectId),
-      },
-    ];
+  openSubjectDetail(card: StudentSubjectCard): void {
+    this.selectedSubject = card;
+    this.detailVisible = true;
   }
+
+  onDetailClosed(): void {
+    this.detailVisible = false;
+    this.selectedSubject = null;
+  }
+
+  private getYearOrder(card: StudentSubjectCard): number {
+    if (typeof card.yearNumber === 'number' && Number.isFinite(card.yearNumber)) {
+      return card.yearNumber;
+    }
+    const match = card.yearLabel.match(/\d+/);
+    if (match) {
+      const numeric = Number(match[0]);
+      if (Number.isFinite(numeric)) return numeric;
+    }
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  trackGroup(_: number, group: YearGroup): string {
+    return `${group.label}-${group.order}`;
+  }
+
 }

@@ -14,6 +14,7 @@ class InscriptionsStub {
   listExamTables = jasmine.createSpy('listExamTables').and.returnValue(of([]));
   refresh = jasmine.createSpy('refresh').and.returnValue(of([]));
   enroll = jasmine.createSpy('enroll').and.returnValue(of({ ok: true }));
+  unenroll = jasmine.createSpy('unenroll').and.returnValue(of({ ok: true }));
   logAudit = jasmine.createSpy('logAudit').and.returnValue(of(void 0));
 }
 
