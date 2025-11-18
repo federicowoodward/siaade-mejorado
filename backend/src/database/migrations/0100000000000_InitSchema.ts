@@ -36,7 +36,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       CONSTRAINT "PK_4668d4752e6766682d1be0b346f" PRIMARY KEY ("user_id")
     )`);
     await queryRunner.query(
-      `CREATE TABLE "subject_commissions" ("id" SERIAL NOT NULL, "subject_id" integer NOT NULL, "commission_id" integer NOT NULL, "teacher_id" uuid NOT NULL, "active" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_e571e9793479304b14d607f6c23" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "subject_commissions" ("id" SERIAL NOT NULL, "subject_id" integer NOT NULL, "commission_id" integer NOT NULL, "teacher_id" uuid NOT NULL, "active" boolean NOT NULL DEFAULT true, "grade_window_opened_at" TIMESTAMP WITH TIME ZONE DEFAULT now(), "grade_window_expires_at" TIMESTAMP WITH TIME ZONE DEFAULT (now() + INTERVAL '10 days'), CONSTRAINT "PK_e571e9793479304b14d607f6c23" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_e7e4849f084c18911c0dbbbc75" ON "subject_commissions" ("teacher_id") `,
@@ -107,6 +107,27 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"),
       CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id")
     )`);
+    await queryRunner.query(`
+      CREATE TABLE "subject_grade_audits" (
+        "id" SERIAL PRIMARY KEY,
+        "subject_commission_id" INT NOT NULL REFERENCES "subject_commissions"("id") ON DELETE CASCADE,
+        "student_id" UUID NOT NULL REFERENCES "students"("user_id") ON DELETE CASCADE,
+        "actor_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "actor_role" TEXT NOT NULL,
+        "payload" JSONB NOT NULL,
+        "context" TEXT,
+        "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+      )
+    `);
+    await queryRunner.query(
+      `CREATE INDEX "idx_subject_grade_audits_commission" ON "subject_grade_audits" ("subject_commission_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_subject_grade_audits_student" ON "subject_grade_audits" ("student_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_subject_grade_audits_actor" ON "subject_grade_audits" ("actor_id")`,
+    );
     // Password reset tokens
     await queryRunner.query(`CREATE TABLE "password_reset_tokens" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -664,6 +685,16 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `DROP TABLE IF EXISTS "student_inscription_audits"`,
     );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_subject_grade_audits_actor"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_subject_grade_audits_student"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_subject_grade_audits_commission"`,
+    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "subject_grade_audits"`);
     await queryRunner.query(`DROP TABLE "notices"`);
     await queryRunner.query(`DROP TABLE "career_students"`);
     await queryRunner.query(
