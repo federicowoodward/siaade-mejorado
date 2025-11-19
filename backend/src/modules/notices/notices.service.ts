@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Notice } from "@/entities/notices/notice.entity";
-import { NoticeCommission } from "@/entities/notices/notice-commission.entity";
+import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { Role } from "@/entities/roles/role.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { CreateNoticeDto } from "./dto/create-notice.dto";
@@ -19,8 +19,8 @@ export class NoticesService {
   constructor(
     @InjectRepository(Notice)
     private readonly repo: Repository<Notice>,
-    @InjectRepository(NoticeCommission)
-    private readonly noticeCommissionRepo: Repository<NoticeCommission>,
+    @InjectRepository(SubjectCommission)
+    private readonly subjectCommissionRepo: Repository<SubjectCommission>,
     @InjectRepository(SubjectStudent)
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
     @InjectRepository(Role)
@@ -37,9 +37,9 @@ export class NoticesService {
       content: dto.content,
       visibleRoleId: this.resolveVisibleRoleId(dto.visibleFor),
       createdByUserId: createdByUserId ?? null,
+      subjectCommissionIds: dto.commissionIds ?? [],
     });
     const saved = await this.repo.save(notice);
-    await this.syncNoticeCommissions(saved.id, dto.commissionIds);
     return this.findOneForReturn(saved.id);
   }
 
@@ -51,10 +51,10 @@ export class NoticesService {
     if (dto.visibleFor !== undefined) {
       existing.visibleRoleId = this.resolveVisibleRoleId(dto.visibleFor);
     }
-    await this.repo.save(existing);
     if (dto.commissionIds !== undefined) {
-      await this.syncNoticeCommissions(id, dto.commissionIds);
+      existing.subjectCommissionIds = dto.commissionIds;
     }
+    await this.repo.save(existing);
     return this.findOneForReturn(id);
   }
 
@@ -72,10 +72,6 @@ export class NoticesService {
   ) {
     const qb = this.repo
       .createQueryBuilder("n")
-      .leftJoinAndSelect("n.noticeCommissions", "nc")
-      .leftJoinAndSelect("nc.subjectCommission", "sc")
-      .leftJoinAndSelect("sc.subject", "subject")
-      .leftJoinAndSelect("sc.commission", "commission")
       .orderBy("n.created_at", "DESC");
 
     if (audience === "student") {
@@ -102,45 +98,30 @@ export class NoticesService {
       if (commissionIds.length > 0) {
         qb.andWhere(
           `
-            NOT EXISTS (
-              SELECT 1 FROM notice_commissions nc_all WHERE nc_all.notice_id = n.id
-            )
-            OR EXISTS (
-              SELECT 1 FROM notice_commissions nc_match
-              WHERE nc_match.notice_id = n.id
-                AND nc_match.subject_commission_id IN (:...commissionIds)
-            )
+            (n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)
+            OR n.subject_commission_ids @> to_jsonb(:commissionIds::int[])
           `,
-          { commissionIds },
+          { commissionIds: JSON.stringify(commissionIds) },
         );
       } else {
         qb.andWhere(
-          `NOT EXISTS (
-            SELECT 1 FROM notice_commissions nc_all WHERE nc_all.notice_id = n.id
-          )`,
+          `(n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)`,
         );
       }
     }
 
     const [rows, total] = await qb.getManyAndCount();
-    const mapped = rows.map((row) => this.mapNotice(row));
+    const mapped = await Promise.all(rows.map((row) => this.mapNotice(row)));
     return [mapped, total] as const;
   }
 
   private async findOneForReturn(id: number) {
-    const entity = await this.repo
-      .createQueryBuilder("n")
-      .leftJoinAndSelect("n.noticeCommissions", "nc")
-      .leftJoinAndSelect("nc.subjectCommission", "sc")
-      .leftJoinAndSelect("sc.subject", "subject")
-      .leftJoinAndSelect("sc.commission", "commission")
-      .where("n.id = :id", { id })
-      .getOne();
+    const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException("Notice not found");
     return this.mapNotice(entity);
   }
 
-  private mapNotice(entity: Notice) {
+  private async mapNotice(entity: Notice) {
     const visibleFor =
       entity.visibleRoleId === ROLE_IDS[ROLE.TEACHER]
         ? "teacher"
@@ -148,11 +129,22 @@ export class NoticesService {
           ? "student"
           : "all";
 
-    const commissionTargets =
-      entity.noticeCommissions?.map((nc) => ({
-        id: nc.subjectCommissionId,
-        label: this.buildCommissionLabel(nc.subjectCommission, nc.id),
-      })) ?? [];
+    // Cargar datos de las comisiones si es necesario
+    const commissionTargets = [];
+    const subjectCommissionIds = entity.subjectCommissionIds || [];
+
+    for (const scId of subjectCommissionIds) {
+      const sc = await this.subjectCommissionRepo.findOne({
+        where: { id: scId },
+        relations: ["subject", "commission"],
+      });
+      if (sc) {
+        commissionTargets.push({
+          id: scId,
+          label: this.buildCommissionLabel(sc),
+        });
+      }
+    }
 
     return {
       id: entity.id,
@@ -167,13 +159,7 @@ export class NoticesService {
     };
   }
 
-  private buildCommissionLabel(
-    subjectCommission: NoticeCommission["subjectCommission"],
-    fallbackId: number,
-  ): string {
-    if (!subjectCommission) {
-      return `Comision ${fallbackId}`;
-    }
+  private buildCommissionLabel(subjectCommission: SubjectCommission): string {
     const subjectName =
       subjectCommission.subject?.subjectName ??
       `Materia ${subjectCommission.subjectId}`;
@@ -201,27 +187,6 @@ export class NoticesService {
     return rows
       .map((row) => Number(row.commission_id))
       .filter((value) => Number.isFinite(value));
-  }
-
-  private async syncNoticeCommissions(
-    noticeId: number,
-    commissionIds?: number[],
-  ) {
-    await this.noticeCommissionRepo.delete({ noticeId });
-    if (!commissionIds || commissionIds.length === 0) {
-      return;
-    }
-    const uniqueIds = Array.from(
-      new Set(commissionIds.map((value) => Number(value)).filter((v) => v)),
-    );
-    if (!uniqueIds.length) return;
-    const rows = uniqueIds.map((subjectCommissionId) =>
-      this.noticeCommissionRepo.create({
-        noticeId,
-        subjectCommissionId,
-      }),
-    );
-    await this.noticeCommissionRepo.save(rows);
   }
 
   private async resolveRoleId(

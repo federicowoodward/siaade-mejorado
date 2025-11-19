@@ -6,11 +6,9 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from "typeorm";
 import { Role } from "@/entities/roles/role.entity";
 import { User } from "@/entities/users/user.entity";
-import { NoticeCommission } from "./notice-commission.entity";
 
 @Entity("notices")
 export class Notice {
@@ -38,14 +36,13 @@ export class Notice {
   @JoinColumn({ name: "created_by" })
   createdBy?: User | null;
 
+  // Array de subject_commission_id en JSON
+  @Column({ name: "subject_commission_ids", type: "jsonb", default: "[]" })
+  subjectCommissionIds: number[];
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 
   @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt: Date;
-
-  @OneToMany(() => NoticeCommission, (nc) => nc.notice, {
-    cascade: true,
-  })
-  noticeCommissions?: NoticeCommission[];
 }
