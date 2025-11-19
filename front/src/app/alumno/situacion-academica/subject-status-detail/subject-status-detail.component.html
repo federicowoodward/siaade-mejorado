@@ -1,80 +1,127 @@
-﻿<p-dialog
-  [(visible)]="visible"
-  (onHide)="handleHide()"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [style]="{ width: '640px' }"
-  [breakpoints]="{ '960px': '90vw', '600px': '96vw' }"
-  [closeOnEscape]="true"
-  [dismissableMask]="true"
-  [header]="subject?.subjectName || 'Detalle de materia'"
->
-  <ng-container *ngIf="subject; else emptyDetail">
-    <div class="detail-meta">
-      <div>
-        <span class="meta-label">Estudiante</span>
-        <p class="meta-value">{{ studentName || 'No disponible' }}</p>
-      </div>
-      <div>
-        <span class="meta-label">Año</span>
-        <p class="meta-value">{{ subject.yearLabel }}</p>
-      </div>
-      <div>
-        <span class="meta-label">Comisión</span>
-        <p class="meta-value">{{ subject.commissionLabel || 'Sin comisión' }}</p>
-      </div>
-      <div>
-        <span class="meta-label">Plan</span>
-        <p class="meta-value">{{ subject.studyPlan || 'No informado' }}</p>
-      </div>
-    </div>
-
-    <div class="detail-section">
-      <h4 class="section-title">Estado actual</h4>
-      <div class="status-badges">
-        <p-tag
-          [value]="subject.accreditation || subject.condition || 'Sin estado'"
-          [severity]="stateSeverity(subject.condition)"
-        ></p-tag>
-        <span class="final-score">
-          Nota final: {{ subject.finalScore ?? '-' }}
-        </span>
-      </div>
-      <p class="text-color-secondary m-0">
-        {{ subject.finalExplanation }}
+<div class="status-detail-wrapper flex flex-column gap-4">
+  <div
+    class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between"
+  >
+    <div>
+      <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
+        Alumno / Situación académica
+      </p>
+      <h2 class="m-0 text-2xl font-semibold">
+        {{ subject()?.subjectName || 'Detalle de materia' }}
+      </h2>
+      <p class="text-color-secondary mt-1 mb-0" *ngIf="studentName()">
+        {{ studentName() }}
       </p>
     </div>
+    <div class="flex gap-2 flex-wrap">
+      <p-button
+        type="button"
+        label="Volver al resumen"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        (onClick)="goBack()"
+      ></p-button>
+      <p-tag
+        *ngIf="subject() as headerSubject"
+        [value]="headerSubject.accreditation || headerSubject.condition || 'Sin estado'"
+        [severity]="stateSeverity(headerSubject.condition)"
+      ></p-tag>
+    </div>
+  </div>
 
-    <div class="detail-section">
-      <h4 class="section-title">Notas del año</h4>
-      <div class="partial-list">
-        <span
-          class="partial-chip"
-          *ngFor="let note of subject.notes; trackBy: trackNote"
+  <div
+    class="surface-card shadow-1 border-round p-4"
+    *ngIf="loading(); else detailContent"
+  >
+    <div class="flex justify-content-center py-5">
+      <p-progressSpinner strokeWidth="3"></p-progressSpinner>
+    </div>
+  </div>
+
+  <ng-template #detailContent>
+    <ng-container *ngIf="subject() as subject; else detailFallback">
+      <div class="surface-card shadow-1 border-round p-4 flex flex-column gap-3">
+        <div class="detail-meta">
+          <div>
+            <span class="meta-label">Estudiante</span>
+            <p class="meta-value">{{ studentName() || 'No disponible' }}</p>
+          </div>
+          <div>
+            <span class="meta-label">Año</span>
+            <p class="meta-value">{{ subject.yearLabel }}</p>
+          </div>
+          <div>
+            <span class="meta-label">Comisión</span>
+            <p class="meta-value">{{ subject.commissionLabel || 'Sin comisión' }}</p>
+          </div>
+          <div>
+            <span class="meta-label">Plan</span>
+            <p class="meta-value">{{ subject.studyPlan || 'No informado' }}</p>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4 class="section-title">Estado actual</h4>
+          <div class="status-badges">
+            <p-tag
+              [value]="subject.accreditation || subject.condition || 'Sin estado'"
+              [severity]="stateSeverity(subject.condition)"
+            ></p-tag>
+            <span class="final-score">
+              Nota final: {{ subject.finalScore ?? '-' }}
+            </span>
+          </div>
+          <p class="text-color-secondary m-0">
+            {{ subject.finalExplanation }}
+          </p>
+        </div>
+
+        <div class="detail-section">
+          <h4 class="section-title">Notas del año</h4>
+          <p class="text-color-secondary m-0">
+            Se requieren {{ subject.partialsExpected }} parciales durante el año.
+          </p>
+          <div class="partial-list">
+            <span
+              class="partial-chip"
+              *ngFor="let note of subject.notes; trackBy: trackNote"
+            >
+              {{ note.label }}: {{ note.value ?? '-' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4 class="section-title">Asistencia</h4>
+          <p class="metric-value">
+            {{ subject.attendancePct | number: '1.0-0' }}%
+          </p>
+        </div>
+
+        <div
+          class="pedagogic-alert"
+          *ngIf="subject.pedagogicalMessage as pedagogicalMessage"
         >
-          {{ note.label }}: {{ note.value ?? '-' }}
-        </span>
+          <i class="pi pi-info-circle"></i>
+          <span>{{ pedagogicalMessage }}</span>
+        </div>
       </div>
-    </div>
-
-    <div class="detail-section">
-      <h4 class="section-title">Asistencia</h4>
-      <p class="metric-value">{{ subject.attendancePct | number: '1.0-0' }}%</p>
-    </div>
-
-    <div
-      class="pedagogic-alert"
-      *ngIf="subject.pedagogicalMessage as pedagogicalMessage"
-    >
-      <i class="pi pi-info-circle"></i>
-      <span>{{ pedagogicalMessage }}</span>
-    </div>
-  </ng-container>
-
-  <ng-template #emptyDetail>
-    <p class="text-color-secondary m-0">
-      Selecciona una materia para ver su detalle.
-    </p>
+    </ng-container>
   </ng-template>
-</p-dialog>
+
+  <ng-template #detailFallback>
+    <div class="surface-card shadow-1 border-round p-4 text-center">
+      <p class="text-color-secondary m-0">
+        {{ error() || 'No encontramos la materia solicitada.' }}
+      </p>
+      <p-button
+        type="button"
+        label="Volver al resumen"
+        icon="pi pi-arrow-left"
+        class="mt-3"
+        severity="secondary"
+        (onClick)="goBack()"
+      ></p-button>
+    </div>
+  </ng-template>
+</div>

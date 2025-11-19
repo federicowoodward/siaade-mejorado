@@ -13,6 +13,7 @@ import { roleCanActivate } from './core/guards/role.guard';
 import { ROLE } from './core/auth/roles';
 import { MesasListComponent } from './alumno/mesas/mesas-list.component';
 import { AcademicStatusComponent } from './alumno/situacion-academica/academic-status.component';
+import { SubjectStatusDetailComponent } from './alumno/situacion-academica/subject-status-detail/subject-status-detail.component';
 import { ACCOUNT_ROUTES } from './pages/account/account.routes';
 import { forcePasswordChangeGuard } from './core/guards/force-password-change.guard';
 
@@ -104,6 +105,10 @@ export const routes: Routes = [
     children: [
       { path: 'mesas', component: MesasListComponent },
       { path: 'situacion-academica', component: AcademicStatusComponent },
+      {
+        path: 'situacion-academica/:subjectId',
+        component: SubjectStatusDetailComponent,
+      },
       { path: '', redirectTo: 'mesas', pathMatch: 'full' },
     ],
   },
