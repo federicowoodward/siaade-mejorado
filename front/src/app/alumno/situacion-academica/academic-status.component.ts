@@ -45,7 +45,7 @@ export class AcademicStatusComponent implements OnInit {
   readonly cards = this.statusService.status;
   readonly loading = this.statusService.loading;
 
-  readonly groupedCards = computed<YearGroup[]>(() => {
+  private readonly yearGroups = computed<YearGroup[]>(() => {
     const map = new Map<string, YearGroup>();
     this.cards().forEach((card) => {
       const key = card.yearLabel;
@@ -54,11 +54,39 @@ export class AcademicStatusComponent implements OnInit {
       }
       map.get(key)!.subjects.push(card);
     });
-    return Array.from(map.values()).sort((a, b) => {
-      if (a.order !== b.order) return a.order - b.order;
-      return a.label.localeCompare(b.label);
+    return Array.from(map.values())
+      .map((group) => ({
+        ...group,
+        subjects: this.sortSubjects(group.subjects),
+      }))
+      .sort((a, b) => {
+        if (a.order !== b.order) return a.order - b.order;
+        return a.label.localeCompare(b.label);
+      });
+  });
+
+  readonly groupedCards = computed<YearGroup[]>(() => {
+    const groups = this.yearGroups();
+    const limit = this.resolveVisibleYearLimit(groups);
+    if (!limit) return groups;
+    return groups.filter((group) => {
+      if (!Number.isFinite(group.order) || group.order <= 0) return true;
+      return group.order <= limit;
     });
   });
+
+  private sortSubjects(subjects: StudentSubjectCard[]): StudentSubjectCard[] {
+    return [...subjects].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+  }
+
+  private resolveVisibleYearLimit(groups: YearGroup[]): number | null {
+    const validOrders = groups
+      .map((group) => group.order)
+      .filter((order) => Number.isFinite(order) && order > 0);
+    if (!validOrders.length) return null;
+    const highest = Math.max(...validOrders);
+    return Math.min(highest, 3);
+  }
 
   readonly studentName = signal<string | null>(null);
   selectedSubject: StudentSubjectCard | null = null;
@@ -128,7 +156,7 @@ export class AcademicStatusComponent implements OnInit {
       const numeric = Number(match[0]);
       if (Number.isFinite(numeric)) return numeric;
     }
-    return Number.MAX_SAFE_INTEGER;
+    return Number.POSITIVE_INFINITY;
   }
 
   trackGroup(_: number, group: YearGroup): string {

@@ -1,4 +1,4 @@
-<div class="status-wrapper flex flex-column gap-4">
+﻿<div class="status-wrapper flex flex-column gap-4">
   <div
     class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between"
   >
@@ -47,69 +47,71 @@
     </div>
 
     <ng-container *ngFor="let group of groupedCards(); trackBy: trackGroup">
-      <div class="year-card surface-card shadow-1 border-round overflow-hidden">
+      <section class="year-card surface-card shadow-1 border-round overflow-hidden">
         <div class="year-card__header">
-          <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
-            {{ group.label }}
-          </p>
-          <h3 class="m-0 text-xl font-semibold">
-            {{ group.subjects.length }} {{ group.subjects.length === 1 ? 'materia' : 'materias' }}
-          </h3>
+          <div class="year-card__title">
+            <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
+              Año académico
+            </p>
+            <h3 class="m-0 text-2xl font-semibold">{{ group.label }}</h3>
+          </div>
+          <span class="year-card__count text-sm text-color-secondary">
+            {{ group.subjects.length }}
+            {{ group.subjects.length === 1 ? 'materia' : 'materias' }}
+          </span>
         </div>
 
-        <p-table
-          [value]="group.subjects"
-          [responsiveLayout]="'scroll'"
-          class="status-table"
-        >
-          <ng-template pTemplate="header">
-            <tr>
-              <th>Materia</th>
-              <th>Año</th>
-              <th>Comisión</th>
-              <th>Condición final</th>
-              <th>Nota final</th>
-              <th class="text-center">Acción</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-row>
-            <tr>
-              <td>
-                <div class="subject-cell">
-                  <span class="subject-name">{{ row.subjectName }}</span>
-                  <small class="text-color-secondary"
-                    >Plan {{ row.studyPlan || "sin asignar" }}</small
-                  >
-                </div>
-              </td>
-              <td>{{ row.yearLabel }}</td>
-              <td>{{ row.commissionLabel || "Sin comisión" }}</td>
-              <td>
-                <p-tag
-                  [value]="row.accreditation || row.condition || 'Sin estado'"
-                  [severity]="stateSeverity(row.condition)"
-                ></p-tag>
-              </td>
-              <td class="text-center">
-                <span class="final-score">{{ row.finalScore ?? "-" }}</span>
-              </td>
-              <td class="text-center">
-                <div class="status-actions">
-                  <p-button
-                    type="button"
-                    size="small"
-                    label="Detalle"
-                    icon="pi pi-search"
-                    severity="secondary"
-                    (onClick)="openSubjectDetail(row)"
-                    ariaLabel="Ver detalle de {{ row.subjectName }}"
-                  ></p-button>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </div>
+        <div class="year-card__body">
+          <p-table
+            [value]="group.subjects"
+            [responsiveLayout]="'scroll'"
+            class="status-table"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Materia</th>
+                <th>Año</th>
+                <th>Comisión</th>
+                <th>Condición final</th>
+                <th>Nota final</th>
+                <th class="text-center">Acción</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+              <tr>
+                <td>
+                  <div class="subject-cell">
+                    <span class="subject-name">{{ row.subjectName }}</span>
+                  </div>
+                </td>
+                <td>{{ row.yearLabel }}</td>
+                <td>{{ row.commissionLabel || 'Sin comisión' }}</td>
+                <td>
+                  <p-tag
+                    [value]="row.accreditation || row.condition || 'Sin estado'"
+                    [severity]="stateSeverity(row.condition)"
+                  ></p-tag>
+                </td>
+                <td class="text-center">
+                  <span class="final-score">{{ row.finalScore ?? '-' }}</span>
+                </td>
+                <td class="text-center">
+                  <div class="status-actions">
+                    <p-button
+                      type="button"
+                      icon="pi pi-search"
+                      severity="secondary"
+                      styleClass="p-button-rounded p-button-text action-icon"
+                      (onClick)="openSubjectDetail(row)"
+                      [ariaLabel]="'Ver detalle de ' + row.subjectName"
+                    ></p-button>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </section>
     </ng-container>
   </ng-template>
 </div>

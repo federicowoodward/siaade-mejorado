@@ -3,6 +3,8 @@
 }
 
 .year-card {
+  display: flex;
+  flex-direction: column;
   margin-top: 1.5rem;
   border: 1px solid var(--surface-border);
 }
@@ -10,9 +12,25 @@
 .year-card__header {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--surface-border);
+}
+
+.year-card__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.year-card__count {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.year-card__body {
+  padding: 0 1.5rem 1.5rem;
 }
 
 .status-table {
@@ -43,9 +61,22 @@
   justify-content: center;
 }
 
+:host ::ng-deep .action-icon.p-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .year-card__header {
     padding: 1rem;
+  }
+
+  .year-card__body {
+    padding: 0 1rem 1rem;
   }
 }
 
@@ -54,5 +85,9 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .year-card__count {
+    text-align: right;
   }
 }
