@@ -1,11 +1,21 @@
-<div>
-  <p>Estudiante: {{user()?.name}}</p>
-  <p>Documento Nº: {{user()?.cuil}}</p>
+<div class="mb-3">
+  <h3>Estudiante: {{user()?.name}}</h3>
+  <p><strong>Documento Nº:</strong> {{user()?.cuil}}</p>
 </div>
 
-<div *ngIf="loading(); else showTable">Cargando datos...</div>
+<div *ngIf="loading(); else showTable">
+  <p class="text-center p-4">Cargando situación académica...</p>
+</div>
+
 <ng-template #showTable>
   <div class="flex flex-column gap-4">
+    <div
+      *ngIf="(subjectsByYear() | keyvalue).length === 0"
+      class="text-center p-4"
+    >
+      <p>No hay materias registradas para este estudiante.</p>
+    </div>
+
     <ng-container *ngFor="let year of subjectsByYear() | keyvalue">
       <h4 class="mt-4">{{ year.key }}</h4>
 
@@ -19,23 +29,33 @@
           <tr>
             <th>Materia</th>
             <th>Año</th>
-            <th>Curso</th>
+            <th>Comisión</th>
+            <th>P1</th>
+            <th>P2</th>
+            <th>P3</th>
+            <th>P4</th>
+            <th>Final</th>
+            <th>Asistencia</th>
             <th>Estado</th>
-            <th>Examen</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-row>
           <tr>
             <td>{{ row.subjectName }}</td>
             <td>{{ row.year }}</td>
-            <td>{{ row.division }}</td>
+            <td>{{ row.commissionLetter || ('ID ' + row.commissionId) }}</td>
+            <td>{{ row.note1 ?? '-' }}</td>
+            <td>{{ row.note2 ?? '-' }}</td>
+            <td>{{ row.note3 ?? '-' }}</td>
+            <td>{{ row.note4 ?? '-' }}</td>
+            <td>{{ row.final ?? '-' }}</td>
+            <td>{{ (row.attendancePercentage ?? 0) | number: '1.0-0' }}%</td>
             <td>
               <p-tag
                 [value]="row.condition"
                 [severity]="getSeverity(row.condition)"
               />
             </td>
-            <td>{{ row.examInfo }}</td>
           </tr>
         </ng-template>
       </p-table>

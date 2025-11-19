@@ -14,4 +14,7 @@ export class SubjectsPage {
   goToNewSubject() {
     this.router.navigate(['subjects/new']);
   }
+  goToCareerInfo() {
+    this.router.navigate(['subjects/career-data']);
+  }
 }

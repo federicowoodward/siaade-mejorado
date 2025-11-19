@@ -7,8 +7,9 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { ROLE, normalizeRole } from "@/shared/rbac/roles.constants";
 import { UserProvisioningService } from "../../../shared/services/user-provisioning/user-provisioning.service";
 import {
   CreateSecretaryDto,
@@ -18,7 +19,9 @@ import {
   UpdateUserDto,
 } from "./dto";
 import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
-import { Subject } from "../../../entities/subjects.entity";
+import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
+import { Career } from "@/entities/registration/career.entity";
+import { DataSource } from "typeorm";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -29,10 +32,8 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
-    @InjectRepository(Subject)
-    private subjectsRepository: Repository<Subject>,
     private readonly provisioning: UserProvisioningService,
-    private readonly userReader: UserProfileReaderService
+    private readonly userReader: UserProfileReaderService,
   ) {}
 
   private async buildUserData(input: {
@@ -59,7 +60,7 @@ export class UsersService {
     return this.provisioning.createSecretary({
       userData: {
         ...userData,
-        roleName: "secretary",
+        roleName: ROLE.SECRETARY,
         email: userData.email,
       },
       isDirective: dto.isDirective ?? false,
@@ -72,12 +73,16 @@ export class UsersService {
     // Validación mínima de user_info: sólo documentValue requerido; documentType por defecto 'DNI'
     if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para preceptor"
+        "userInfo.documentValue (DNI) es requerido para preceptor",
       );
     }
-    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
+    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     return this.provisioning.createPreceptor({
-      userData: { ...userData, roleName: "preceptor", email: userData.email },
+      userData: {
+        ...userData,
+        roleName: ROLE.PRECEPTOR,
+        email: userData.email,
+      },
       userInfo: dto.userInfo,
       // commonData NO requerido para preceptor
     });
@@ -89,10 +94,10 @@ export class UsersService {
     // Validaciones mínimas: sólo documentValue requerido; documentType por defecto 'DNI'
     if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para teacher"
+        "userInfo.documentValue (DNI) es requerido para teacher",
       );
     }
-    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
+    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     if (
       !dto.commonData?.sex ||
       !dto.commonData?.birthDate ||
@@ -100,11 +105,15 @@ export class UsersService {
       !dto.commonData?.nationality
     ) {
       throw new BadRequestException(
-        "commonData.sex, birthDate, birthPlace y nationality son requeridos para teacher"
+        "commonData.sex, birthDate, birthPlace y nationality son requeridos para teacher",
       );
     }
     return this.provisioning.createTeacher({
-      userData: { ...userData, roleName: "teacher", email: userData.email },
+      userData: {
+        ...userData,
+        roleName: ROLE.TEACHER,
+        email: userData.email,
+      },
       userInfo: dto.userInfo,
       commonData: dto.commonData,
     });
@@ -116,10 +125,10 @@ export class UsersService {
 
     if (!dto.userInfo?.documentValue) {
       throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para student"
+        "userInfo.documentValue (DNI) es requerido para student",
       );
     }
-    dto.userInfo.documentType = dto.userInfo.documentType || 'DNI';
+    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     if (
       !dto.commonData?.sex ||
       !dto.commonData?.birthDate ||
@@ -127,19 +136,48 @@ export class UsersService {
       !dto.commonData?.nationality
     ) {
       throw new BadRequestException(
-        "commonData.sex, birthDate, birthPlace y nationality son requeridos para student"
+        "commonData.sex, birthDate, birthPlace y nationality son requeridos para student",
+      );
+    }
+
+    const rawStartYear =
+      dto.studentStartYear !== undefined && dto.studentStartYear !== null
+        ? dto.studentStartYear
+        : new Date().getFullYear();
+
+    const startYear = Number(rawStartYear);
+
+    if (!Number.isInteger(startYear)) {
+      throw new BadRequestException("studentStartYear must be an integer year");
+    }
+
+    if (startYear < 1990 || startYear > 2100) {
+      throw new BadRequestException(
+        "studentStartYear must be between 1990 and 2100",
       );
     }
 
     return this.provisioning.createStudent({
-      userData: { ...userData, roleName: "student", email: userData.email },
+      userData: {
+        ...userData,
+        roleName: ROLE.STUDENT,
+        email: userData.email,
+      },
       userInfo: dto.userInfo,
       commonData: dto.commonData,
+      studentData: {
+        legajo: dto.legajo,
+        commissionId: dto.commissionId ?? null,
+        canLogin: dto.canLogin ?? true,
+        isActive: dto.isActive ?? true,
+        studentStartYear: startYear,
+      },
     });
   }
 
   async findAll(): Promise<any[]> {
     const users = await this.usersRepository.find({
+      where: { isActive: true } as any,
       relations: ["role"],
     });
     return users.map((user) => this.mapToResponseDto(user, user.role));
@@ -152,7 +190,7 @@ export class UsersService {
 
   async update(
     id: string,
-    updateUserDto: Partial<UpdateUserDto>
+    updateUserDto: Partial<UpdateUserDto>,
   ): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { id },
@@ -195,8 +233,28 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<void> {
-    // Dejar método para compatibilidad pero usar transacción con QB
+    // Cambio de semántica: dejamos delete físico sólo para casos especiales y fomentamos inactivate.
     await this.deleteTx(id);
+  }
+
+  // Soft activate/inactivate
+  async setUserActiveState(userId: string, active: boolean) {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
+    if (!user) throw new NotFoundException("User not found");
+    if ((user as any).isActive === active) {
+      return this.mapToResponseDto(user, user.role);
+    }
+    await this.usersRepository.update({ id: userId }, {
+      isActive: active,
+    } as any);
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
+    return this.mapToResponseDto(updated!, updated?.role);
   }
 
   // Borrado transaccional con QueryBuilder/QueryRunner y rollback automático
@@ -220,41 +278,45 @@ export class UsersService {
       });
       if (!user) throw new NotFoundException("User not found");
 
-      const roleName = user.role.name as
-        | "student"
-        | "teacher"
-        | "preceptor"
-        | "secretary";
+      const roleName = normalizeRole(user.role?.name);
+      if (!roleName) {
+        throw new ConflictException("User role is not recognized");
+      }
 
-      // ✅ Guard: si es teacher/preceptor y está vinculado a alguna materia, abortar con 409
-      if (roleName === "teacher") {
-        const subj = await qr.manager.findOne(Subject, {
-          where: { teacher: id }, // tu columna se llama 'teacher'
-          select: ["id", "subjectName"],
+      // Guard: si es teacher o preceptor y esta vinculado a recursos dependientes, abortar con 409
+      if (roleName === ROLE.TEACHER) {
+        const commission = await qr.manager.findOne(SubjectCommission, {
+          where: { teacherId: id },
+          relations: { subject: true },
         });
-        if (subj) {
+        if (commission) {
           throw new ConflictException({
             message:
-              "No se puede borrar el docente: existe al menos una materia vinculada.",
-            subject: { id: subj.id, subjectName: subj.subjectName },
+              "No se puede borrar el docente: existe al menos una comision vinculada a una materia.",
+            subject: commission.subject
+              ? {
+                  id: commission.subject.id,
+                  subjectName: commission.subject.subjectName,
+                }
+              : undefined,
           });
         }
-      } else if (roleName === "preceptor") {
-        const subj = await qr.manager.findOne(Subject, {
-          where: { preceptor: id }, // tu columna se llama 'preceptor'
-          select: ["id", "subjectName"],
+      } else if (roleName === ROLE.PRECEPTOR) {
+        const career = await qr.manager.findOne(Career, {
+          where: { preceptorId: id },
+          select: ["id", "careerName"],
         });
-        if (subj) {
+        if (career) {
           throw new ConflictException({
             message:
-              "No se puede borrar el preceptor: existe al menos una materia vinculada.",
-            subject: { id: subj.id, subjectName: subj.subjectName },
+              "No se puede borrar el preceptor: existe al menos una carrera vinculada.",
+            career: { id: career.id, careerName: career.careerName },
           });
         }
       }
       // Borrar específico por rol
       switch (roleName) {
-        case "student":
+        case ROLE.STUDENT:
           if (user.student) {
             await qr.manager
               .createQueryBuilder()
@@ -264,7 +326,7 @@ export class UsersService {
               .execute();
           }
           break;
-        case "teacher":
+        case ROLE.TEACHER:
           if (user.teacher) {
             await qr.manager
               .createQueryBuilder()
@@ -274,7 +336,7 @@ export class UsersService {
               .execute();
           }
           break;
-        case "preceptor":
+        case ROLE.PRECEPTOR:
           if (user.preceptor) {
             await qr.manager
               .createQueryBuilder()
@@ -284,7 +346,8 @@ export class UsersService {
               .execute();
           }
           break;
-        case "secretary":
+        case ROLE.SECRETARY:
+        case ROLE.EXECUTIVE_SECRETARY:
           if (user.secretary) {
             await qr.manager
               .createQueryBuilder()
@@ -359,13 +422,56 @@ export class UsersService {
             name: role.name,
           }
         : undefined,
+      isBlocked: (user as any).isBlocked ?? false,
+      blockedReason: (user as any).blockedReason ?? null,
+      isActive: (user as any).isActive ?? true,
     };
+  }
+
+  // ---------------- BLOQUEO / DESBLOQUEO -----------------
+  async blockUser(userId: string, reason?: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException("User not found");
+    const final = (reason ?? "").trim();
+    const dbReason: string | null = final.length ? final : null;
+    if (
+      (user as any).isBlocked &&
+      ((user as any).blockedReason ?? null) === dbReason
+    ) {
+      return this.mapToResponseDto(user, undefined as any);
+    }
+    await this.usersRepository.update({ id: userId }, {
+      isBlocked: true,
+      blockedReason: dbReason,
+    } as any);
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
+    return this.mapToResponseDto(updated!, updated?.role);
+  }
+
+  async unblockUser(userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException("User not found");
+    if (!(user as any).isBlocked && !(user as any).blockedReason) {
+      return this.mapToResponseDto(user, undefined as any);
+    }
+    await this.usersRepository.update({ id: userId }, {
+      isBlocked: false,
+      blockedReason: null,
+    } as any);
+    const updated = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role"],
+    });
+    return this.mapToResponseDto(updated!, updated?.role);
   }
 
   // Método para validar usuario por email y contraseña (usado por Auth)
   async validateUser(
     email: string,
-    password: string
+    password: string,
   ): Promise<User["id"] | null> {
     try {
       const user = await this.usersRepository.findOne({
@@ -379,7 +485,7 @@ export class UsersService {
       return null;
     } catch (error: any) {
       throw new BadRequestException(
-        "Error al validar usuario: " + error.message
+        "Error al validar usuario: " + error.message,
       );
     }
   }

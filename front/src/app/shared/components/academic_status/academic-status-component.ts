@@ -1,4 +1,3 @@
-// #ASUMIENDO CODIGO: src/app/shared/components/academic_status/academic-status-component.ts
 import {
   Component,
   Input,
@@ -7,6 +6,7 @@ import {
   SimpleChanges,
   inject,
   signal,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
@@ -28,7 +28,7 @@ export interface StudentMinimal {
   imports: [CommonModule, TableModule, Tag],
   templateUrl: './academic-status-component.html',
 })
-export class AcademicStatus implements OnInit {
+export class AcademicStatus implements OnInit, OnChanges {
   /** If provided, we load this student; otherwise we fall back to the logged-in user */
   @Input() student?: StudentMinimal;
 
@@ -36,22 +36,52 @@ export class AcademicStatus implements OnInit {
   loading = signal(true);
   user = signal<{ name: string; cuil: string } | undefined>(undefined);
 
+  private studentSignal = signal<StudentMinimal | undefined>(undefined);
+
   private api = inject(ApiService);
   private auth = inject(AuthService);
 
+  constructor() {
+    // Effect que reacciona cuando studentSignal cambia
+    effect(() => {
+      const s = this.studentSignal();
+
+      if (s && s.id) {
+        this.loading.set(true);
+        this.subjectsByYear.set({});
+        this.loadData(s);
+      }
+    });
+  }
+
   ngOnInit() {
-    if (this.student) {
-      this.loadData(this.student);
-    } else {
-      // no student input → use the logged-in user
+    // Si no hay student Input, cargar usuario logueado
+    if (!this.student) {
       this.auth.getUser().subscribe((u) => {
-        if (!u) return;
-        this.loadData(u);
+        if (u && u.id) {
+          this.studentSignal.set(u as any);
+        }
       });
     }
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['student']) {
+      const current = changes['student'].currentValue;
+      if (current && current.id) {
+        // Actualizar el signal para disparar el effect
+        this.studentSignal.set(current);
+      }
+    }
+  }
+
   private loadData(s: any) {
+    if (!s || !s.id) {
+      console.error('[AcademicStatus] Student sin ID válido:', s);
+      this.loading.set(false);
+      return;
+    }
+
     this.user.set({
       name: `${s.name} ${s.lastName}`,
       cuil: s.cuil,
@@ -61,37 +91,30 @@ export class AcademicStatus implements OnInit {
   }
 
   getAcademicStatus(studentId: string): void {
-    this.api.getAll('subjects').subscribe((subjects) => {
-      this.api.getAll('exam_results').subscribe((results) => {
-        const byYear: Record<string, any[]> = {};
+    this.loading.set(true);
 
-        subjects.forEach((subject) => {
-          const res = results.find(
-            (r) => r.studentId === studentId && subject.id === r.examId
-          );
-
-          const yearKey = `${subject.courseYear}° Año`;
-
-          if (!byYear[yearKey]) byYear[yearKey] = [];
-
-          byYear[yearKey].push({
-            subjectName: subject.subjectName,
-            year: subject.courseYear,
-            division: `${subject.courseNum}-${subject.courseLetter}`,
-            condition: res ? 'Aprobado' : 'Inscripto',
-            examInfo: res ? `Nota: ${res.score}` : '-',
-          });
-        });
-
-        this.subjectsByYear.set(byYear);
-        this.loading.set(false);
+    this.api
+      .request<{
+        byYear: Record<string, any[]>;
+      }>('GET', `catalogs/student/${studentId}/academic-status`)
+      .subscribe({
+        next: (payload) => {
+          this.subjectsByYear.set(payload?.byYear ?? {});
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('[AcademicStatus] Error al cargar:', err);
+          this.subjectsByYear.set({});
+          this.loading.set(false);
+        },
       });
-    });
   }
 
   getSeverity(condition: string): string {
     switch (condition) {
       case 'Aprobado':
+        return 'success';
+      case 'Promocionado':
         return 'success';
       case 'Desaprobado':
         return 'warn';

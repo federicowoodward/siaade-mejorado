@@ -1,4 +1,6 @@
 // src/shared/services/dtos/create-user-base.dto.ts
+import { ROLE } from "@/shared/rbac/roles.constants";
+
 export class CreateUserBaseDto {
   name?: string;
   lastName?: string;
@@ -6,7 +8,7 @@ export class CreateUserBaseDto {
   password?: string;
   cuil?: string;
   roleId?: number;
-  roleName?: "student" | "teacher" | "preceptor" | "secretary";
+  roleName?: ROLE;
 }
 
 export class CreateAddressDataDto {
@@ -37,28 +39,31 @@ export class CreateUserInfoDto {
   emergencyPhone?: string;
 }
 
-// Student
 export class CreateStudentUserDto {
   userData: CreateUserBaseDto;
   userInfo?: CreateUserInfoDto | null;
   commonData?: CreateCommonDataDto | null;
+  studentData: {
+    legajo: string;
+    commissionId?: number | null;
+    canLogin?: boolean | null;
+    isActive?: boolean | null;
+    studentStartYear?: number | null;
+  };
 }
 
-// Teacher
 export class CreateTeacherUserDto {
   userData: CreateUserBaseDto;
   userInfo?: CreateUserInfoDto | null;
   commonData?: CreateCommonDataDto | null;
 }
 
-// Preceptor
 export class CreatePreceptorUserDto {
   userData: CreateUserBaseDto;
   userInfo?: CreateUserInfoDto | null;
   commonData?: CreateCommonDataDto | null;
 }
 
-// Secretary
 export class CreateSecretaryUserDto {
   userData: CreateUserBaseDto;
   isDirective?: boolean;

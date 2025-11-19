@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../../entities/users.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "@/entities/users/user.entity";
 
 @Injectable()
 export class UsersService {
@@ -13,11 +13,11 @@ export class UsersService {
   async getUserInfo(id: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { id },
-      relations: ['role']
-    });  // Buscar un usuario por ID
+      relations: ["role"],
+    }); // Buscar un usuario por ID
   }
 
   async getAllUsers(): Promise<User[]> {
-    return this.usersRepository.find();  // Obtener todos los usuarios
+    return this.usersRepository.find(); // Obtener todos los usuarios
   }
 }

@@ -1274,35 +1274,7 @@
     }
   ],
 
-  "subject_absences": [
-    {
-      "id": 1,
-      "subjectId": 1,
-      "studentId": "u1",
-      "dates": ["2024-04-15", "2024-05-02"]
-    },
-    {
-      "id": 2,
-      "subjectId": 2,
-      "studentId": "u13",
-      "dates": ["2024-04-16", "2024-05-05"]
-    },
-    {
-      "id": 3,
-      "subjectId": 3,
-      "studentId": "u18",
-      "dates": ["2024-04-10", "2024-06-01"]
-    },
-    {
-      "id": 4,
-      "subjectId": 4,
-      "studentId": "u23",
-      "dates": ["2024-03-20", "2024-05-15"]
-    }
-  ],
-
   "exams": [
-    
     {
       "id": 3,
       "subjectId": 2,

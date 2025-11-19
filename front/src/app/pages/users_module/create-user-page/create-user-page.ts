@@ -15,6 +15,7 @@ import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
 import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 import { buildPreviewRows } from '../../../shared/utils/create-user/user-preview-table';
+import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 
 import {
   ROLE_REQUIREMENTS,
@@ -28,6 +29,8 @@ import {
   canCreateBase,
   canCreateStep2,
 } from '../../../shared/utils/create-user/user-validators.util';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE } from '../../../core/auth/roles';
 
 type PreviewRow = { field: string; value: string };
 @Component({
@@ -44,6 +47,7 @@ type PreviewRow = { field: string; value: string };
     TableModule,
     FieldLabelPipe,
     RoleLabelPipe,
+    BlockedActionDirective,
   ],
   templateUrl: './create-user-page.html',
   styleUrl: './create-user-page.scss',
@@ -52,6 +56,7 @@ export class CreateUserPage {
   private goBackSvc = inject(GoBackService);
   private api = inject(ApiService);
   private router = inject(Router);
+  private permissions = inject(PermissionService);
 
   isCreating = false;
 
@@ -92,6 +97,45 @@ export class CreateUserPage {
   addressCountry = '';
   addressPostalCode = '';
 
+  // extras de alumno
+  studentLegajo = '';
+  studentStartYear: number | null = null; // opcional
+  canLogin = true;
+  isActive = true;
+
+  // Permisos por rol para editar flags
+  get canEditCanLogin(): boolean {
+    // Preceptor y superiores (incluye secretario común y ejecutivo)
+    return this.permissions.hasAnyRole([
+      ROLE.PRECEPTOR,
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+  }
+
+  get canEditIsActive(): boolean {
+    // Secretaría (incluye Secretario y Secretario Admin)
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+  }
+
+  // Si el alumno no está activo o el rol no lo permite, no puede loguearse: reflejar en UI
+  get canLoginDisabled(): boolean {
+    const inactive = this.role === 'student' && this.isActive === false;
+    const noPerms = !this.canEditCanLogin;
+    return inactive || noPerms;
+  }
+
+  onIsActiveChange(next: boolean): void {
+    if (!this.canEditIsActive) return; // sin permisos, ignorar
+    this.isActive = !!next;
+    if (this.isActive === false) {
+      this.canLogin = false; // override visual y de payload
+    }
+  }
+
   private addressObj() {
     return {
       street: this.addressStreet || undefined,
@@ -124,6 +168,10 @@ export class CreateUserPage {
       birthDate: this.birthDate,
       birthPlace: this.birthPlace,
       nationality: this.nationality,
+      legajo:
+        this.role === 'student'
+          ? this.studentLegajo || this.cuil || this.documentValue
+          : undefined,
     });
   }
 
@@ -161,6 +209,17 @@ export class CreateUserPage {
           this.req?.allowsAddress && this.hasAddress()
             ? this.addressObj()
             : undefined,
+        // extras para student
+        studentLegajo:
+          this.role === 'student'
+            ? this.studentLegajo || this.cuil || this.documentValue
+            : undefined,
+        studentStartYear:
+          this.role === 'student' && this.studentStartYear
+            ? this.studentStartYear
+            : undefined,
+        canLogin: this.role === 'student' ? this.canLogin : undefined,
+        isActive: this.role === 'student' ? this.isActive : undefined,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
@@ -185,6 +244,17 @@ export class CreateUserPage {
         cuil: this.cuil,
         password: this.passwordPreview,
       },
+      roleExtras:
+        this.role === 'student'
+          ? {
+              legajo: this.studentLegajo || this.cuil || this.documentValue,
+              studentStartYear: this.studentStartYear || undefined,
+              canLogin: this.canLogin,
+              isActive: this.isActive,
+            }
+          : this.role === 'secretary'
+            ? { isDirective: true }
+            : undefined,
       user_info: this.req?.needsUserInfo
         ? {
             documentType: this.documentType || undefined,

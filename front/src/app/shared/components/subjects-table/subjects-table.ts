@@ -1,26 +1,18 @@
-// src/app/shared/components/subject-table/subject-table.component.ts
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+// src/app/shared/components/subjects-table/subject-table.component.ts
+import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { FormsModule } from '@angular/forms';
-import { InputTextModule } from 'primeng/inputtext';
-import { TooltipModule } from 'primeng/tooltip';
-import { ActivatedRoute, Router } from '@angular/router';
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { expandCollapse } from '../../animations/expand-collapse.animation';
-
-import { ApiService } from '../../../core/services/api.service';
-import { Subject as RxSubject, forkJoin } from 'rxjs';
-
 import {
-  Subject,
-  Subject as SubjectModel,
-} from '../../../core/models/subject.model';
-import { User } from '../../../core/models/user.model';
-import { SubjectsFilterComponent } from '../subjets-filter/subjets-filter';
-
+  CareerCatalogService,
+  SubjectCommissionTeachersDto,
+} from '../../../core/services/career-catalog.service';
+import { ApiService } from '../../../core/services/api.service';
+import { Router } from '@angular/router';
+import { DialogModule } from 'primeng/dialog';
+import { BlockedActionDirective } from '../../directives/blocked-action.directive';
+import { CardModule } from 'primeng/card';
 @Component({
   selector: 'app-subjects-table',
   standalone: true,
@@ -30,112 +22,167 @@ import { SubjectsFilterComponent } from '../subjets-filter/subjets-filter';
     ButtonModule,
     DialogModule,
     FormsModule,
-    InputTextModule,
-    TooltipModule,
-    AutoCompleteModule,
-    SubjectsFilterComponent,
+    BlockedActionDirective,
+    CardModule,
   ],
   templateUrl: './subjects-table.html',
-  styleUrl: './subjects-table.scss',
-  animations: [expandCollapse],
+  styleUrls: ['./subjects-table.scss'],
 })
 export class SubjectTableComponent implements OnInit {
-  private api = inject(ApiService);
+  private catalog = inject(CareerCatalogService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
+  private api = inject(ApiService);
 
-  expandedRowKeys: { [s: string]: boolean } = {};
-
-  // Datos
-  subjects = signal<SubjectModel[]>([]);
-  teachers = signal<{ id: string; name: string; email: string }[]>([]);
-
-  // Filtros
-  courseData = signal<{ num: string; letter: string; year: string }>({
-    num: '',
-    letter: '',
-    year: '',
+  basicSubjects = signal<
+    { id: number; name: string; teacherId: string | null }[]
+  >([]);
+  private syncSubjects = effect(() => {
+    this.basicSubjects.set(this.catalog.basicSubjects());
   });
 
-  // Trigger RxJS para limpiar filtros desde el padre
-  clearFilters$ = new RxSubject<void>();
-
-  // Derivado filtrado
-  filtered = computed(() => {
-    const { num, letter, year } = this.courseData();
-    const n = (num ?? '').trim();
-    const l = (letter ?? '').toLowerCase().trim();
-    const y = (year ?? '').trim();
-
-    return this.subjects().filter(
-      (s) =>
-        s.courseNum.toString().includes(n) &&
-        s.courseLetter.toLowerCase().includes(l) &&
-        s.courseYear.includes(y)
-    );
-  });
-
-  // Estado de diálogos/selecciones
-  selectedSubject = signal<SubjectModel | null>(null);
-  showStudentsDialog = signal(false);
-  showFilterDialog = signal(false);
-  showCorrelativeDialog = signal(false);
-  enrolledStudents = signal<string[]>([]);
-  correlativeSubject = signal<SubjectModel | null>(null);
-
-  ngOnInit() {
-    // 1) Primero traemos las materias
-    this.api.getAll<Subject>('subjects/read').subscribe((subjects) => {
-      this.subjects.set(subjects);
-    });
-
-    // 2) Traemos todos los usuarios y filtramos solo los profesores
-    this.api.getAll<User>('users').subscribe((users) => {
-      // Filtramos usuarios que tienen roleId de Profesor (ID 3)
-      const list = users
-        .filter((u) => u.roleId === 3) // Asumiendo que Profesor tiene ID 3
-        .map((u) => ({
-          id: u.id,
-          name: `${u.name} ${u.lastName}`,
-          email: u.email,
-        }));
-      this.teachers.set(list);
+  ngOnInit(): void {
+    const careerId = 1;
+    this.catalog.loadCareer(careerId).subscribe({
+      next: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        console.error(err);
+      },
     });
   }
 
-  toggleFilters() {
-    this.showFilterDialog.set(!this.showFilterDialog());
+  loading = signal(true);
+
+  // Estado del diálogo
+  dialogTeachers = signal<{ visible: boolean; subjectId: number | null }>({
+    visible: false,
+    subjectId: null,
+  });
+  dialogLoading = signal(false);
+  dialogError = signal<string | null>(null);
+  dialogData = signal<SubjectCommissionTeachersDto | null>(null);
+
+  // Cambio docente
+  changeTeacherDialog = signal<{
+    visible: boolean;
+    loading: boolean;
+    subjectId: number | null;
+    commissionId: number | null;
+  }>({ visible: false, loading: false, subjectId: null, commissionId: null });
+  teacherOptions = signal<{ label: string; value: string }[]>([]);
+  selectedNewTeacher: string | null = null;
+
+  // Abre el diálogo y carga comisiones+docentes
+  viewComissions(subjectId: number): void {
+    this.dialogTeachers.set({ visible: true, subjectId });
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
+
+    this.catalog.getSubjectCommissionTeachers(subjectId).subscribe({
+      next: (data) => {
+        this.dialogData.set(data);
+        this.dialogLoading.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.dialogError.set(
+          'No se pudieron cargar las comisiones y docentes.',
+        );
+        this.dialogLoading.set(false);
+      },
+    });
   }
 
-  clearFilters() {
-    this.clearFilters$.next();
+  // Cerrar y limpiar estado del diálogo
+  closeTeachersDialog(): void {
+    this.dialogTeachers.set({ visible: false, subjectId: null });
+    this.dialogLoading.set(false);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
   }
 
-  viewStudents(subj: SubjectModel) {
-    this.router.navigate(['/subjects', 'students', subj.id]);
+  // Navegar al perfil del docente
+  goToTeacher(teacherId: string): void {
+    this.router.navigate(['/users', 'user_detail', teacherId]);
   }
 
-  viewCorrelative(correlativeId: number | null) {
-    if (!correlativeId) {
-      this.correlativeSubject.set(null);
-      this.showCorrelativeDialog.set(true);
-      return;
-    }
-    const corr = this.subjects().find((s) => s.id === correlativeId) ?? null;
-    this.correlativeSubject.set(corr);
-    this.showCorrelativeDialog.set(true);
+  viewStatus(id: number): void {
+    this.router.navigate(['/subjects', id, 'academic-situation']);
   }
 
-  getTeacherName(teacherId: string) {
-    const teacher = this.teachers().find((t) => t.id === teacherId);
-    return teacher ? teacher.name : 'Sin asignar';
+  startChangeTeacher(
+    subjectId: number,
+    commissionId: number,
+    currentTeacherId: string,
+  ) {
+    this.selectedNewTeacher = null;
+    this.changeTeacherDialog.set({
+      visible: true,
+      loading: true,
+      subjectId,
+      commissionId,
+    });
+    // Cargar lista completa de docentes desde el backend
+    this.api
+      .request<
+        Array<{ teacherId: string; name: string }>
+      >('GET', 'catalogs/teachers')
+      .subscribe({
+        next: (rows) => {
+          const opts = rows.map((r) => ({
+            label: r.name || r.teacherId,
+            value: r.teacherId,
+          }));
+          this.teacherOptions.set(opts);
+          this.changeTeacherDialog.update((v) => ({ ...v, loading: false }));
+        },
+        error: (err) => {
+          console.error('No se pudieron cargar los docentes', err);
+          // Fallback a docentes visibles en la materia si falla el endpoint nuevo
+          const data = this.dialogData();
+          const teachersRaw =
+            data?.commissions?.flatMap((c) => c.teachers) ?? [];
+          const opts = teachersRaw.map((t) => ({
+            label: t.name,
+            value: t.teacherId,
+          }));
+          this.teacherOptions.set(opts);
+          this.changeTeacherDialog.update((v) => ({ ...v, loading: false }));
+        },
+      });
   }
 
-  goToGrades(subj: SubjectModel) {
-    this.router.navigate(['/subjects', 'grades', subj.id]);
+  closeChangeTeacherDialog() {
+    this.changeTeacherDialog.set({
+      visible: false,
+      loading: false,
+      subjectId: null,
+      commissionId: null,
+    });
+    this.teacherOptions.set([]);
+    this.selectedNewTeacher = null;
   }
 
-  goToAttendance(subj: SubjectModel) {
-    this.router.navigate(['/subjects', 'attendance', subj.id]);
+  confirmChangeTeacher() {
+    const dialog = this.changeTeacherDialog();
+    if (!dialog.commissionId || !this.selectedNewTeacher) return;
+    this.api
+      .request('PATCH', `subject-commissions/${dialog.commissionId}/teacher`, {
+        teacherId: this.selectedNewTeacher,
+      })
+      .subscribe({
+        next: () => {
+          // Refrescar listado de comisiones/docentes
+          if (dialog.subjectId) {
+            this.viewComissions(dialog.subjectId);
+          }
+          this.closeChangeTeacherDialog();
+        },
+        error: (err: unknown) => {
+          console.error('Error cambiando docente', err);
+          this.closeChangeTeacherDialog();
+        },
+      });
   }
 }

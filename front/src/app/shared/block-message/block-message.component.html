@@ -1,0 +1,47 @@
+<div
+  #wrapper
+  class="block-message surface-card shadow-1 border-round p-3 flex gap-3"
+  [ngClass]="'block-message--' + variant"
+  tabindex="-1"
+  [attr.role]="role"
+  [attr.aria-live]="ariaLive"
+  aria-atomic="true"
+>
+  <div class="block-message__icon" aria-hidden="true">
+    <i [class]="resolveIcon()"></i>
+  </div>
+
+  <div class="block-message__body flex-1">
+    <p class="block-message__title font-semibold text-lg m-0">
+      {{ title }}
+    </p>
+    <p
+      *ngIf="reasonCode"
+      class="block-message__code m-0 text-sm text-color-secondary"
+    >
+      Código institucional: {{ reasonCode }}
+    </p>
+
+    <div class="block-message__text">
+      <p *ngFor="let line of asList(message)" class="m-0 mt-2">
+        {{ line }}
+      </p>
+    </div>
+  </div>
+
+  <div
+    *ngIf="actions?.length"
+    class="block-message__actions flex flex-column gap-2 align-items-end"
+  >
+    <p-button
+      *ngFor="let action of actions; trackBy: trackByAction"
+      [label]="action.label"
+      [icon]="action.icon"
+      [severity]="resolveSeverity(action)"
+      [ariaLabel]="action.ariaLabel || action.label"
+      [disabled]="action.disabled"
+      size="small"
+      (onClick)="onAction(action)"
+    />
+  </div>
+</div>

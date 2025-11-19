@@ -1,0 +1,46 @@
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [style]="{width:'28rem'}"
+  header="Mover alumno de comisión"
+  (onHide)="handleHide()"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div *ngIf="loading" class="p-3 flex gap-2 align-items-center">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Procesando...</span>
+  </div>
+  <div *ngIf="!loading">
+    <p class="mb-2">Selecciona la nueva comisión para el alumno.</p>
+    <select
+      class="p-inputtext p-component w-full"
+      [(ngModel)]="selectedNewCommission"
+    >
+      <option [ngValue]="null" disabled selected>Comisión destino</option>
+      <!-- No mostrar la opción 'Todas' y asegurar que el valor sea numérico -->
+      <option
+        *ngFor="let c of options"
+        [ngValue]="c.id"
+        [disabled]="c.id === currentCommissionId"
+      >
+        {{ c.letter || ('Comisión ' + c.id) }}
+      </option>
+    </select>
+  </div>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      label="Cancelar"
+      class="p-button-text"
+      (click)="onCancel()"
+    ></button>
+    <button
+      pButton
+      label="Mover"
+      icon="pi pi-check"
+      [disabled]="isMoveDisabled"
+      (click)="onConfirm()"
+    ></button>
+  </ng-template>
+</p-dialog>

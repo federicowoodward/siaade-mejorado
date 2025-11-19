@@ -1,17 +1,18 @@
 <!-- src/app/pages/subject-new/subject-new-page.html -->
 <div class="m-w-custom">
-        <div class="flex align-items-center justify-content-between mb-4">
-          <h1 class="text-xl font-bold text-gray-800 m-0">Crear Nueva Materia</h1>
-          <p-button 
-            icon="pi pi-refresh" 
-            severity="secondary" 
-            size="small"
-            (onClick)="loadData()" 
-            [loading]="loading"
-            pTooltip="Recargar datos"
-            tooltipPosition="left">
-          </p-button>
-        </div>
+  <div class="flex align-items-center justify-content-between mb-4">
+    <h1 class="text-xl font-bold text-gray-800 m-0">Crear Nueva Materia</h1>
+    <p-button
+      icon="pi pi-refresh"
+      severity="secondary"
+      size="small"
+      (onClick)="loadData()"
+      [loading]="loading"
+      pTooltip="Recargar datos"
+      tooltipPosition="left"
+    >
+    </p-button>
+  </div>
 
   <div class="grid form-grid">
     <!-- Nombre -->
@@ -23,6 +24,7 @@
         id="subjectName"
         [(ngModel)]="subjectName"
         placeholder="Ej: Matemática I"
+        blockedAction
       />
     </div>
 
@@ -39,6 +41,7 @@
         [(ngModel)]="teacherId"
         optionLabel="displayName"
         placeholder="Seleccionar docente"
+        blockedAction
       ></p-autoComplete>
     </div>
 
@@ -55,6 +58,7 @@
         [(ngModel)]="preceptorId"
         optionLabel="displayName"
         placeholder="Seleccionar preceptor"
+        blockedAction
       ></p-autoComplete>
     </div>
 
@@ -69,6 +73,7 @@
         [minLength]="0"
         (onSelect)="onPickCorr($event)"
         placeholder="Buscar materia..."
+        blockedAction
       ></p-autoComplete>
       <small *ngIf="corrSelectedId"
         >Seleccionada ID: {{ corrSelectedId }}</small
@@ -87,6 +92,7 @@
         [ngModel]="courseNum"
         (ngModelChange)="courseNum = $event"
         placeholder="Ej: 2"
+        blockedAction
       ></p-autoComplete>
     </div>
 
@@ -103,6 +109,7 @@
         [ngModel]="courseLetter"
         (ngModelChange)="courseLetter = $event"
         placeholder="A, B, C..."
+        blockedAction
       ></p-autoComplete>
     </div>
 
@@ -119,6 +126,7 @@
         [ngModel]="courseYear"
         (ngModelChange)="courseYear = $event"
         placeholder="Ej: 2025"
+        blockedAction
       ></p-autoComplete>
     </div>
   </div>
@@ -131,6 +139,7 @@
       [disabled]="creating"
       [loading]="creating"
       (click)="createSubject()"
+      blockedAction
     ></p-button>
   </div>
 </div>

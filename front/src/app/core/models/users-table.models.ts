@@ -1,32 +1,25 @@
-export type Role =
-  | 'student'
-  | 'teacher'
-  | 'preceptor'
-  | 'secretary'
-  | 'director'
-  | 'admin';
+﻿import { ROLE } from '../auth/roles';
+
+export type Role = ROLE;
 
 export interface UserRow {
   id: string;
   name: string;
   lastName: string;
   cuil: string;
+  email: string;
   role: Role;
 }
 
 export type UsersTableContext =
-  | 'default'          // gestión general
+  | 'default' // gestion general
   | 'subject-students' // listado de alumnos por materia (docente)
-  | 'readonly';        // listados sin acciones (ej. profesor)
+  | 'readonly'; // listados sin acciones (ej. profesor)
 
 export interface RowAction {
-  id: string;                // ej: 'view', 'cert', 'academic', 'teacher-subjects'
+  id: string;
   label: string;
-  icon: string;              // PrimeIcons
-  // hint opcional para tooltip
+  icon: string;
   hint?: string;
-  // si la acción está deshabilitada según otras reglas (no RBAC)
   disabled?: boolean;
 }
-
-

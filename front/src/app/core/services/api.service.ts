@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   HttpClient,
   HttpHeaders,
@@ -9,52 +9,64 @@ import { Observable, throwError, of, defer, from } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment as enviroment } from '../../../environments/environment';
 import { ApiCacheService } from '../cache/api-cache.service';
-import {
-  buildCacheKey,
-  logCacheHit,
-  shortPathFrom,
-} from '../cache/cache-utils';
+import { buildCacheKey, logCacheHit } from '../cache/cache-utils';
+import { AuthStateService } from './auth/auth-state.service';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type MaybeWrapped<T> = T | { data: T; error?: any };
 
+export interface ToggleEnrollmentResponse {
+  entity: 'subject' | 'final_exam';
+  action: 'enroll' | 'unenroll';
+  enrolled: boolean;
+  enrolled_by: 'student' | 'preceptor' | 'system' | null;
+  enrolled_at: string | null;
+  student_id: string;
+  subject_id?: number;
+  subject_commission_id?: number;
+  commission_id?: number | null;
+  final_exam_id?: number;
+  condition?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  constructor(private http: HttpClient, private cache: ApiCacheService) {}
+  constructor(
+    private http: HttpClient,
+    private cache: ApiCacheService,
+    private authState: AuthStateService,
+  ) {}
+  private readonly LOG = (enviroment as any).debugApi === true;
 
   request<T>(
     method: HttpMethod,
     url: string,
     data?: any,
     params?: Record<string, any>,
-    headers?: HttpHeaders
+    headers?: HttpHeaders,
   ): Observable<T> {
     const base = enviroment.apiBaseUrl;
     const fullUrl = `${base}/${url}`;
 
-    let finalHeaders =
+    const token = this.authState.getAccessTokenSnapshot();
+    const finalHeaders =
       headers ?? new HttpHeaders({ 'Content-Type': 'application/json' });
-    const token = localStorage.getItem('access_token');
 
-    console.log(
-      'API Service - Token check:',
-      token ? 'TOKEN EXISTS' : 'NO TOKEN'
-    );
-
-    if (token) {
-      finalHeaders = finalHeaders.set('Authorization', `Bearer ${token}`);
-      console.log('API Service - Added Authorization header');
-    } else {
-      console.log('API Service - No token, skipping Authorization header');
-    }
-
-    const options: { headers: HttpHeaders; params: HttpParams; body?: any } = {
+    const options: {
+      headers: HttpHeaders;
+      params: HttpParams;
+      body?: any;
+      withCredentials: boolean;
+    } = {
       headers: finalHeaders,
       params: new HttpParams({ fromObject: params ?? {} }),
+      withCredentials: true,
     };
     if (data !== undefined) options.body = data;
 
     // --- CACHE para GET ---
+    // NOTE: Cache temporarily disabled for troubleshooting.
+    /*
     if (method === 'GET') {
       const cacheKey = buildCacheKey(method, fullUrl, params ?? {}, token);
 
@@ -120,40 +132,47 @@ export class ApiService {
         )
       );
     }
+    */
 
     // --- Mutaciones: request normal + invalidación por prefijo ---
     const req$ = this.http.request<MaybeWrapped<T>>(method, fullUrl, options);
 
     return req$.pipe(
       tap((resp) => {
-        console.groupCollapsed(`[API ✅] ${method} ${fullUrl}`);
-        if (data !== undefined) console.log('Body:', data);
-        if (params) console.log('Params:', params);
-        console.log('Response:', resp);
-        console.groupEnd();
+        if (this.LOG) {
+          console.groupCollapsed(`[API ✅] ${method} ${fullUrl}`);
+          if (data !== undefined) console.log('Body:', data);
+          if (params) console.log('Params:', params);
+          console.log('Response:', resp);
+          console.groupEnd();
+        }
       }),
       catchError((err: unknown) => {
-        console.groupCollapsed(`[API ❌] ${method} ${fullUrl}`);
-        if (data !== undefined) console.log('Body:', data);
-        if (params) console.log('Params:', params);
+        if (this.LOG) {
+          console.groupCollapsed(`[API ❌] ${method} ${fullUrl}`);
+          if (data !== undefined) console.log('Body:', data);
+          if (params) console.log('Params:', params);
 
-        if (err instanceof HttpErrorResponse) {
-          const server = err.error;
-          const messages = Array.isArray(server?.message)
-            ? server.message
-            : server?.message
-            ? [server.message]
-            : [err.message];
+          if (err instanceof HttpErrorResponse) {
+            const server = err.error;
+            const messages = Array.isArray(server?.message)
+              ? server.message
+              : server?.message
+                ? [server.message]
+                : [err.message];
 
-          console.log('Status:', err.status, err.statusText);
-          console.log('URL:', err.url);
-          console.log('Server payload:', server);
-          console.log('Messages:');
-          messages.forEach((m: any, i: number) => console.log(`  - [${i}]`, m));
-        } else {
-          console.log('Unknown error object:', err);
+            console.log('Status:', err.status, err.statusText);
+            console.log('URL:', err.url);
+            console.log('Server payload:', server);
+            console.log('Messages:');
+            messages.forEach((m: any, i: number) =>
+              console.log(`  - [${i}]`, m),
+            );
+          } else {
+            console.log('Unknown error object:', err);
+          }
+          console.groupEnd();
         }
-        console.groupEnd();
 
         return throwError(() => err);
       }),
@@ -175,10 +194,52 @@ export class ApiService {
           const baseUrl = `${base}/${topSegment}`;
           const prefix = `GET:${baseUrl}`;
           await this.cache.invalidateByPrefix(prefix);
-          console.groupCollapsed(`[CACHE ♻️] Invalidado prefijo "${prefix}"`);
-          console.groupEnd();
+          if (this.LOG) {
+            console.groupCollapsed(`[CACHE ♻️] Invalidado prefijo "${prefix}"`);
+            console.groupEnd();
+          }
         }
-      })
+      }),
+    );
+  }
+
+  toggleSubjectEnrollment(payload: {
+    subjectCommissionId: number;
+    studentId: string;
+    action: 'enroll' | 'unenroll';
+  }): Observable<ToggleEnrollmentResponse> {
+    return this.request<ToggleEnrollmentResponse>(
+      'POST',
+      'subjects/enrollments/toggle',
+      {
+        entity: 'subject',
+        ...payload,
+      },
+    ).pipe(
+      map((res) => {
+        const enrolled = !!res?.enrolled;
+        // Normalizar coherencia para el front: cuando queda inscripto, forzar condition falsy
+        // para que el template use el fallback por "enrolled". Al desinscribir, setear "No inscripto".
+        return {
+          ...res,
+          condition: enrolled ? '' : (res?.condition ?? 'No inscripto'),
+        } as ToggleEnrollmentResponse;
+      }),
+    );
+  }
+
+  toggleFinalEnrollment(payload: {
+    finalExamId: number;
+    studentId: string;
+    action: 'enroll' | 'unenroll';
+  }): Observable<ToggleEnrollmentResponse> {
+    return this.request<ToggleEnrollmentResponse>(
+      'POST',
+      'finals/exam/enrollments/toggle',
+      {
+        entity: 'final_exam',
+        ...payload,
+      },
     );
   }
 

@@ -1,25 +1,29 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { UsersService } from './users.service';  // Servicio local de users read
-import { UserResponseDto } from '../manage/dto/create-user.dto';  // DTO de respuesta de usuario
-import { RolesGuard } from '../../../guards/roles.guard';
-import { Roles } from '../auth/roles.decorator';  // Decorador para definir los roles
-import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
+import { Controller, Get, Param, UseGuards } from "@nestjs/common";
+import { UsersService } from "./users.service";
+import { UserResponseDto } from "../manage/dto/create-user.dto";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { Action } from "@/shared/rbac/decorators/action.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
 
-@Controller('users/read')  // Ruta para leer la información de los usuarios
+@Controller("users/read")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get(':id')
+  @Get(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_GENERAL', 'PRECEPTOR')  // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'PRECEPTOR' consultar usuarios
-  async getUserInfo(@Param('id') id: string): Promise<UserResponseDto | null> {
-    return this.usersService.getUserInfo(id);  // Consultar información de un usuario por ID
+  @Action("users.readOne")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
+  async getUserInfo(@Param("id") id: string): Promise<UserResponseDto | null> {
+    return this.usersService.getUserInfo(id);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_GENERAL', 'SECRETARIO')  // Permite a los usuarios con rol 'ADMIN_GENERAL' o 'SECRETARIO' consultar todos los usuarios
+  @Action("users.readAll")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   async getAllUsers(): Promise<UserResponseDto[]> {
-    return this.usersService.getAllUsers();  // Consultar todos los usuarios
+    return this.usersService.getAllUsers();
   }
 }

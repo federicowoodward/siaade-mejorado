@@ -3,15 +3,16 @@ import { Injectable, BadRequestException } from "@nestjs/common";
 import { DataSource, QueryRunner, Repository, DeepPartial } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
-import { UserInfo } from "../../../entities/user_info.entity";
-import { CommonData } from "../../../entities/common_data.entity";
-import { AddressData } from "../../../entities/address_data.entity";
-import { Student } from "../../../entities/students.entity";
-import { Teacher } from "../../../entities/teachers.entity";
-import { Preceptor } from "../../../entities/preceptors.entity";
-import { Secretary } from "../../../entities/secretaries.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { UserInfo } from "@/entities/users/user-info.entity";
+import { CommonData } from "@/entities/users/common-data.entity";
+import { AddressData } from "@/entities/users/address-data.entity";
+import { Student } from "@/entities/users/student.entity";
+import { Teacher } from "@/entities/users/teacher.entity";
+import { Preceptor } from "@/entities/users/preceptor.entity";
+import { Secretary } from "@/entities/users/secretary.entity";
+import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 import {
   CreateStudentUserDto,
@@ -46,19 +47,45 @@ export class UserProvisioningService {
     @InjectRepository(Preceptor)
     private readonly preceptorsRepo: Repository<Preceptor>,
     @InjectRepository(Secretary)
-    private readonly secretariesRepo: Repository<Secretary>
+    private readonly secretariesRepo: Repository<Secretary>,
   ) {}
 
   async createStudent(dto: CreateStudentUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "student");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.STUDENT);
       const user = await this.createUser(qr, dto.userData, role.id);
+
+      if (!dto.studentData?.legajo) {
+        throw new BadRequestException("studentData.legajo is required");
+      }
+
+      const rawStartYear =
+        dto.studentData.studentStartYear ?? new Date().getFullYear();
+
+      const startYear = Number(rawStartYear);
+
+      if (!Number.isInteger(startYear)) {
+        throw new BadRequestException(
+          "studentStartYear must be an integer year",
+        );
+      }
+
+      if (startYear < 1990 || startYear > 2100) {
+        throw new BadRequestException(
+          "studentStartYear must be between 1990 and 2100",
+        );
+      }
 
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
       await this.maybeCreateCommonData(qr, user.id, dto.commonData);
 
       const student = this.studentsRepo.create({
         userId: user.id,
+        legajo: dto.studentData.legajo,
+        commissionId: dto.studentData.commissionId ?? null,
+        canLogin: dto.studentData.canLogin ?? true,
+        isActive: dto.studentData.isActive ?? true,
+        studentStartYear: startYear,
       } as DeepPartial<Student>);
       const savedStudent = await qr.manager.save(Student, student);
 
@@ -68,7 +95,7 @@ export class UserProvisioningService {
 
   async createTeacher(dto: CreateTeacherUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "teacher");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.TEACHER);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
@@ -85,7 +112,7 @@ export class UserProvisioningService {
 
   async createPreceptor(dto: CreatePreceptorUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "preceptor");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.PRECEPTOR);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
@@ -102,7 +129,7 @@ export class UserProvisioningService {
 
   async createSecretary(dto: CreateSecretaryUserDto) {
     return this.runInTx(async (qr) => {
-      const role = await this.resolveRole(qr, dto.userData, "secretary");
+      const role = await this.resolveRole(qr, dto.userData, ROLE.SECRETARY);
       const user = await this.createUser(qr, dto.userData, role.id);
 
       const secretary = this.secretariesRepo.create({
@@ -136,7 +163,7 @@ export class UserProvisioningService {
   private async resolveRole(
     qr: QueryRunner,
     userDto: CreateUserBaseDto,
-    fallback: RoleLiteral
+    fallback: RoleLiteral,
   ): Promise<Role> {
     // Asegura que roleName sea del literal correcto si no vino
     if (!userDto.roleId && !userDto.roleName) {
@@ -153,16 +180,26 @@ export class UserProvisioningService {
     }
 
     // En este punto, roleName existe y es literal
-    const name: string = userDto.roleName as RoleLiteral;
+    const name = userDto.roleName as RoleLiteral;
+    const expectedId = ROLE_IDS[name];
+    if (expectedId) {
+      const r = await qr.manager.findOne(Role, { where: { id: expectedId } });
+      if (r) {
+        userDto.roleId = expectedId;
+        return r;
+      }
+    }
+
     const r = await qr.manager.findOne(Role, { where: { name } });
     if (!r) throw new BadRequestException(`Role "${name}" no existe`);
+    userDto.roleId = r.id;
     return r;
   }
 
   private async createUser(
     qr: QueryRunner,
     dto: CreateUserBaseDto,
-    roleId: number
+    roleId: number,
   ): Promise<User> {
     // Crear con DeepPartial para seleccionar el overload correcto (no el de arrays)
     const toCreate: DeepPartial<User> = {
@@ -183,14 +220,12 @@ export class UserProvisioningService {
   private async maybeCreateUserInfo(
     qr: QueryRunner,
     userId: string,
-    dto?: CreateUserInfoDto | null
+    dto?: CreateUserInfoDto | null,
   ): Promise<UserInfo | void> {
     if (!dto) return;
 
     const toCreate: DeepPartial<UserInfo> = {
       userId,
-      documentType: dto.documentType || 'DNI',
-      documentValue: dto.documentValue,
       phone: dto.phone,
       emergencyName: dto.emergencyName,
       emergencyPhone: dto.emergencyPhone,
@@ -203,7 +238,7 @@ export class UserProvisioningService {
   private async maybeCreateCommonData(
     qr: QueryRunner,
     userId: string,
-    dto?: CreateCommonDataDto | null
+    dto?: CreateCommonDataDto | null,
   ): Promise<CommonData | void> {
     if (!dto) return;
 

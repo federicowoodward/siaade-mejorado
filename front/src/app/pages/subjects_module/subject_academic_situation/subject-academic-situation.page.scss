@@ -1,0 +1,87 @@
+﻿:host {
+  display: block;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  height: 220px;
+}
+
+.error {
+  color: #b91c1c;
+  margin: 0.5rem 0;
+}
+
+.table-container {
+  margin-top: 1rem;
+}
+
+.note-cell {
+  text-align: center;
+}
+
+.final-cell {
+  text-align: center;
+  font-weight: 600;
+}
+
+.nota-aprobada {
+  color: #0ea5e9;
+}
+
+.nota-promocionada {
+  color: #16a34a;
+}
+
+.nota-desaprobada {
+  color: #dc2626;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f5f5f5;
+  text-align: center;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: center;
+}
+
+.p-datatable .p-datatable-tbody > tr > td.alumno-cell {
+  text-align: left;
+}
+
+.grade-window-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.grade-window-status__card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  min-width: 220px;
+  background-color: #fafafa;
+}
+
+.grade-window-status__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.grade-window-status__label {
+  font-weight: 600;
+}
+
+.window-notice {
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}

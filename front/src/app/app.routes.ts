@@ -1,5 +1,4 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { AUTH_ROUTES } from './pages/auth/auth.router';
 import { SUBJECTS_ROUTES } from './pages/subjects_module/subjects.router';
 import { USERS_ROUTES } from './pages/users_module/users.router';
@@ -7,10 +6,15 @@ import { STUDENTS_ROUTES } from './pages/students_module/students.router';
 import { WelcomePage } from './pages/welcome_page/welcome-page';
 import { PersonalDataPage } from './pages/personal_data_page/personal-data-page';
 import { AuthGuard } from './core/guards/auth.guard';
-import { RoleGuard } from './core/guards/role.guard';
 import { UnAuthGuard } from './core/guards/unauth.guard';
 import { FINAL_EXAMS_ROUTES } from './pages/final_examns_module/final_examns_module.routes';
 import { NoticesPageComponent } from './pages/notices_page/notices_page.component';
+import { roleCanActivate } from './core/guards/role.guard';
+import { ROLE } from './core/auth/roles';
+import { MesasListComponent } from './alumno/mesas/mesas-list.component';
+import { AcademicStatusComponent } from './alumno/situacion-academica/academic-status.component';
+import { ACCOUNT_ROUTES } from './pages/account/account.routes';
+import { forcePasswordChangeGuard } from './core/guards/force-password-change.guard';
 
 export const routes: Routes = [
   {
@@ -20,41 +24,89 @@ export const routes: Routes = [
   },
   {
     path: 'subjects',
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [
+      AuthGuard,
+      forcePasswordChangeGuard,
+      roleCanActivate([
+        ROLE.SECRETARY,
+        ROLE.EXECUTIVE_SECRETARY,
+        ROLE.PRECEPTOR,
+        ROLE.TEACHER,
+      ]),
+    ],
     children: SUBJECTS_ROUTES,
   },
   {
     path: 'users',
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [
+      AuthGuard,
+      forcePasswordChangeGuard,
+      roleCanActivate([
+        ROLE.SECRETARY,
+        ROLE.EXECUTIVE_SECRETARY,
+        ROLE.PRECEPTOR,
+        ROLE.TEACHER,
+      ]),
+    ],
     children: USERS_ROUTES,
   },
   {
     path: 'students',
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [
+      AuthGuard,
+      forcePasswordChangeGuard,
+      roleCanActivate([
+        ROLE.SECRETARY,
+        ROLE.EXECUTIVE_SECRETARY,
+        ROLE.PRECEPTOR,
+        ROLE.TEACHER,
+      ]),
+    ],
     children: STUDENTS_ROUTES,
   },
   {
     path: 'final_examns',
-    canActivate: [AuthGuard, RoleGuard],
-    children: FINAL_EXAMS_ROUTES
+    canActivate: [
+      AuthGuard,
+      forcePasswordChangeGuard,
+      roleCanActivate([
+        ROLE.SECRETARY,
+        ROLE.EXECUTIVE_SECRETARY,
+        ROLE.PRECEPTOR,
+        ROLE.TEACHER,
+      ]),
+    ],
+    children: FINAL_EXAMS_ROUTES,
   },
   {
     path: 'welcome',
     component: WelcomePage,
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [AuthGuard],
   },
   {
     path: 'personal-data',
     component: PersonalDataPage,
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [AuthGuard, forcePasswordChangeGuard],
   },
   {
     path: 'notices',
     component: NoticesPageComponent,
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [AuthGuard, forcePasswordChangeGuard],
+  },
+  {
+    path: 'account',
+    canActivate: [AuthGuard],
+    children: ACCOUNT_ROUTES,
+  },
+  {
+    path: 'alumno',
+    canActivate: [AuthGuard, roleCanActivate([ROLE.STUDENT])],
+    children: [
+      { path: 'mesas', component: MesasListComponent },
+      { path: 'situacion-academica', component: AcademicStatusComponent },
+      { path: '', redirectTo: 'mesas', pathMatch: 'full' },
+    ],
   },
   { path: '', redirectTo: 'welcome', pathMatch: 'full' },
   { path: '**', redirectTo: 'welcome' },
-
-
 ];

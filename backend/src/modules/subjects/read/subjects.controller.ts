@@ -1,25 +1,78 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { SubjectsService } from './subjects.service';  // Importa el servicio local de read
-import { Subject } from '../../../entities/subjects.entity';  // Entidad de materia para el tipo de retorno
-import { RolesGuard } from '../../../guards/roles.guard';
-import { Roles } from '../../users/auth/roles.decorator';  // Decorador de roles original
-import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from "@nestjs/swagger";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { Action } from "@/shared/rbac/decorators/action.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
+import { SubjectsReadService } from "./subjects.service";
 
-@Controller('subjects/read')
-export class SubjectsController {
-  constructor(private readonly subjectsService: SubjectsService) {}
-
-  @Get(':id')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
-  async getSubjectInfo(@Param('id') id: string): Promise<Subject | null> {
-    return this.subjectsService.getSubjectInfo(parseInt(id));
-  }
+@ApiTags("subjects")
+@ApiBearerAuth()
+@Controller("subjects/read")
+export class SubjectsReadController {
+  constructor(private readonly service: SubjectsReadService) {}
 
   @Get()
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('PRECEPTOR', 'ADMIN_GENERAL', 'SECRETARIO', 'TEACHER', 'STUDENT')
-  async getAllSubjects(): Promise<Subject[]> {
-    return this.subjectsService.getAllSubjects();
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("subjects.readAll")
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({ summary: "Listar materias (mínimo)" })
+  @ApiOkResponse({
+    schema: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          subjectName: { type: "string" },
+        },
+      },
+    },
+  })
+  getAll() {
+    return this.service.getAll();
+  }
+
+  @Get(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("subjects.readOne")
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({ summary: "Obtener una materia por id (mínimo)" })
+  @ApiParam({ name: "id", type: Number })
+  @ApiOkResponse({
+    schema: {
+      type: "object",
+      nullable: true,
+      properties: {
+        id: { type: "number" },
+        subjectName: { type: "string" },
+      },
+    },
+  })
+  getOne(@Param("id", ParseIntPipe) id: number) {
+    return this.service.getOne(id);
   }
 }

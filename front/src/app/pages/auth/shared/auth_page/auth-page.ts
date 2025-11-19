@@ -1,6 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -30,7 +31,7 @@ export class AuthPage {
   // Estado: true = login, false = recover
   loginMode = signal(true);
   modeTitle = computed(() =>
-    this.loginMode() ? 'Iniciar sesión' : 'Recuperar contraseña'
+    this.loginMode() ? 'Iniciar sesión' : 'Recuperar contraseña',
   );
   // (Simplificado) Solo modo; se eliminan señales de barrido para transición fluida
   transitioning = signal(false);
@@ -52,9 +53,9 @@ export class AuthPage {
   constructor(
     private auth: AuthService,
     private router: Router,
-    private message: MessageService
+    private message: MessageService,
   ) {}
-  
+
   changeMode() {
     if (this.transitioning()) return;
     // En móvil (layout compacto) hacemos toggle instantáneo sin animación wipe
@@ -80,6 +81,10 @@ export class AuthPage {
     }, expandMs + shrinkMs);
   }
 
+  goToResetCode() {
+    this.router.navigate(['/auth/reset-code']);
+  }
+
   setMode(mode: 'login' | 'recover') {
     if ((mode === 'login') === this.loginMode()) return;
     // reutiliza changeMode (auto-decide animación) pero evita doble lógica
@@ -92,49 +97,113 @@ export class AuthPage {
     this.submittingLogin.set(true);
 
     try {
-      const success = await this.auth.loginFlexible({
-        username: identity!,
-        password: password!,
-      });
-      if (success) {
-        this.router.navigate(['/welcome']);
-      } else {
-        this.message.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Usuario o contraseña incorrectos',
-        });
+      const result = await firstValueFrom(
+        this.auth.loginWithReason({
+          identity: identity!,
+          password: password!,
+        }),
+      );
+
+      if (result.ok) {
+        await this.router.navigate(['/welcome']);
+        return;
       }
-    } catch (error) {
-      this.message.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo iniciar sesión',
-      });
+
+      switch (result.kind) {
+        case 'user_blocked':
+          this.message.add({
+            severity: 'warn',
+            summary: 'Usuario bloqueado',
+            detail: result.reason
+              ? `Tu cuenta está bloqueada. Motivo: ${result.reason}`
+              : 'Tu cuenta está bloqueada.',
+          });
+          break;
+        case 'user_not_found':
+          this.message.add({
+            severity: 'warn',
+            summary: 'Usuario no existe',
+            detail: 'Verificá los datos ingresados.',
+          });
+          break;
+        case 'invalid_credentials':
+          this.message.add({
+            severity: 'error',
+            summary: 'Credenciales incorrectas',
+            detail: 'Usuario o contraseña incorrectos',
+          });
+          break;
+        case 'server':
+          this.message.add({
+            severity: 'error',
+            summary: 'Error de servidor',
+            detail: 'Ocurrió un problema procesando la solicitud.',
+          });
+          break;
+        case 'network':
+          this.message.add({
+            severity: 'error',
+            summary: 'Sin conexión',
+            detail: 'No se pudo conectar al servidor.',
+          });
+          break;
+        default:
+          this.message.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: result.message || 'No se pudo iniciar sesión',
+          });
+      }
     } finally {
       this.submittingLogin.set(false);
     }
   }
 
-  submitRecover() {
+  async submitRecover() {
     if (this.recoverForm.invalid || this.submittingRecover()) return;
     const { identity } = this.recoverForm.value;
     this.submittingRecover.set(true);
-    // TODO: Integrar endpoint real requestPasswordRecovery
-    setTimeout(() => {
-      this.submittingRecover.set(false);
+
+    try {
+      const result = await firstValueFrom(
+        this.auth.requestPasswordRecovery(identity!),
+      );
+
+      if (result.ok) {
+        this.message.add({
+          severity: 'success',
+          summary: 'Código enviado',
+          detail:
+            result.message ??
+            'Te enviamos un código a tu correo. Ingresalo para continuar',
+        });
+
+        try {
+          sessionStorage.setItem('resetIdentity', identity!);
+        } catch {
+          /* ignore storage failures */
+        }
+
+        await this.router.navigate(['/auth/reset-code'], {
+          state: { identity },
+        });
+        return;
+      }
+
+      const summary =
+        result.kind === 'network'
+          ? 'Sin conexión'
+          : result.kind === 'server'
+            ? 'Error de servidor'
+            : 'Atención';
+
       this.message.add({
-        severity: 'success',
-        summary: 'Listo',
-        detail: 'Si el correo existe, recibirás un email.',
+        severity: result.kind === 'network' ? 'error' : 'warn',
+        summary,
+        detail: result.message || 'No se pudo procesar la solicitud.',
       });
-      this.changeMode();
-    }, 1000);
-    // Ejemplo real:
-    // this.auth.requestPasswordRecovery(identity!).subscribe({
-    //   next: () => { this.message.add({ severity: 'success', summary: 'Listo', detail: 'Revisa tu correo.' }); this.changeMode(); },
-    //   error: () => this.message.add({ severity: 'warn', summary: 'Atención', detail: 'No se pudo procesar la solicitud.' }),
-    //   complete: () => this.submittingRecover.set(false)
-    // });
+    } finally {
+      this.submittingRecover.set(false);
+    }
   }
 }

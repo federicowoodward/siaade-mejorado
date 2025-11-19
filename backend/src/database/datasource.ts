@@ -1,53 +1,45 @@
-import 'dotenv/config';
-import * as path from 'path';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import "dotenv/config";
+import * as path from "path";
+import { DataSource, DataSourceOptions } from "typeorm";
 
-/**
- * Usa el mismo set de envs que tu app:
- * - DATABASE_URL o DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_DATABASE
- * - DB_SSL=true para activar SSL (rejectUnauthorized:false)
- * 
- * Soporta TS (src) y JS (dist) con los mismos globs.
- */
-function buildDataSourceOptionsFromEnv(): DataSourceOptions {
-  const isTs = __filename.endsWith('.ts');
+function buildOptions(): DataSourceOptions {
+  const runningTs = path.extname(__filename) === ".ts";
 
-  const entities = [
-    path.resolve(__dirname, isTs ? '../entities/*.entity.ts' : '../entities/*.entity.js'),
-  ];
+  const root = process.cwd();
+  const entitiesGlob = runningTs
+    ? path.join(root, "src", "entities", "**", "*.entity.ts")
+    : path.join(root, "dist", "entities", "**", "*.entity.js");
 
-  const migrations = [
-    path.resolve(__dirname, isTs ? './migrations/*.ts' : './migrations/*.js'),
-  ];
+  const migrationsGlob = runningTs
+    ? path.join(root, "src/database/migrations/*.ts")
+    : path.join(root, "dist/database/migrations/*.js");
 
-  const useSsl = process.env.DB_SSL === 'true';
+  const useSsl = process.env.DB_SSL === "true";
+
+  const base: DataSourceOptions = {
+    type: "postgres",
+    entities: [entitiesGlob],
+    migrations: [migrationsGlob],
+    migrationsRun: false,
+    synchronize: false,
+    logging: false,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+    migrationsTableName: "migrations",
+  };
 
   if (process.env.DATABASE_URL) {
-    return {
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-      entities,
-      migrations,
-      synchronize: false,
-      logging: false,
-    };
+    return { ...base, url: process.env.DATABASE_URL };
   }
 
   return {
-    type: 'postgres',
+    ...base,
     host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432', 10),
+    port: parseInt(process.env.DB_PORT || "5432", 10),
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-    entities,
-    migrations,
-    synchronize: false,
-    logging: false,
   };
 }
 
-const AppDataSource = new DataSource(buildDataSourceOptionsFromEnv());
+const AppDataSource = new DataSource(buildOptions());
 export default AppDataSource;

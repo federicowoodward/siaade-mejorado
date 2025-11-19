@@ -1,0 +1,77 @@
+2025-10-26T15:34:40.406Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-26T15:35:07.164Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:41:26.726Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:42:52.293Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:44:40.423Z
+Error: PostgreSQL connection error: error: password authentication failed for user "postgres"
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:46:46.158Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:47:20.975Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:47:42.453Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:47:51.598Z
+Error: PostgreSQL connection error: Error: getaddrinfo ENOTFOUND base
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-10-27T19:49:21.418Z
+Error: PostgreSQL connection error: error: password authentication failed for user "postgres"
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+
+2025-11-09T21:33:33.668Z
+Error: PostgreSQL connection error: error: password authentication failed for user "postgres"
+    at getValidatedClient (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:21:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchSchemaJson (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\node_modules\@dbml\connector\dist\connectors\postgresConnector.js:415:20)
+    at async connectionHandler (C:\Users\Fede\AppData\Roaming\npm\node_modules\@dbml\cli\lib\cli\connector.js:24:24)
+

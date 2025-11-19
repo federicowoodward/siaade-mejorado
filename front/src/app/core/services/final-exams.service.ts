@@ -43,14 +43,25 @@ export class FinalExamsService {
     exam_time?: string;
     aula?: string;
   }): Observable<FinalExam> {
+    const dateOnly = this.normalizeDate(dto.exam_date);
+    const withTime = dto?.exam_time
+      ? `${dateOnly}T${dto.exam_time}:00`
+      : dateOnly;
+    const payload: any = {
+      exam_table_id: dto.final_exam_table_id,
+      subject_id: dto.subject_id,
+      exam_date: withTime,
+    };
+    if (dto.aula !== undefined) payload.aula = dto.aula;
+
     return this.api
-      .request<any>('POST', `${this.base}/create`, dto)
+      .request<any>('POST', `${this.base}/create`, payload)
       .pipe(map(this.toFinal));
   }
 
   edit(
     id: number,
-    dto: Partial<{ subject_id: number; exam_date: string; aula?: string }>
+    dto: Partial<{ subject_id: number; exam_date: string; aula?: string }>,
   ): Observable<FinalExam> {
     const payload: any = {};
     if (dto.subject_id !== undefined) payload.subject_id = dto.subject_id;

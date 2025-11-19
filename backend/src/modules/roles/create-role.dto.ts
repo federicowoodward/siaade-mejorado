@@ -1,6 +1,6 @@
-import { IsString } from 'class-validator';
+import { IsString } from "class-validator";
 
 export class CreateRoleDto {
   @IsString()
-  readonly name: string;  // Nombre del rol (por ejemplo: 'ADMIN_GENERAL', 'PRECEPTOR')
+  readonly name: string; // Nombre del rol (por ejemplo: 'ADMIN_GENERAL', 'PRECEPTOR')
 }

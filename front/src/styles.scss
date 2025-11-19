@@ -1,6 +1,9 @@
 @use "primeicons/primeicons.css";
 @use "primeflex/primeflex.css";
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+/* Estilos de Quill para el editor de texto (necesarios para toolbar y layout) */
+@import "quill/dist/quill.core.css";
+@import "quill/dist/quill.snow.css";
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 
 * {
   padding: 0;
@@ -14,7 +17,7 @@
   margin: auto;
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1200px) {
   .m-w-custom {
     max-width: 1000px !important;
     margin: auto;

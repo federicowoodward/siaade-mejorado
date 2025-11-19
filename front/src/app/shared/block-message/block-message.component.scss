@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.block-message {
+  --block-message-color: var(--primary-color);
+  border: 1px solid var(--surface-border);
+  border-left: 4px solid var(--block-message-color);
+  background: var(--surface-card);
+  color: var(--text-color);
+  outline: none;
+  min-height: 72px;
+  transition: border-color 0.2s ease;
+}
+
+.block-message:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus-ring-color, var(--primary-color));
+}
+
+.block-message__icon {
+  font-size: 1.75rem;
+  color: var(--block-message-color);
+  display: flex;
+  align-items: flex-start;
+}
+
+.block-message__icon i {
+  line-height: 1;
+}
+
+.block-message__title {
+  color: var(--text-color);
+}
+
+.block-message__code {
+  color: var(--text-color-secondary);
+}
+
+.block-message__text p + p {
+  margin-top: 0.35rem;
+}
+
+.block-message__actions {
+  min-width: max-content;
+}
+
+.block-message--official {
+  --block-message-color: var(--yellow-500, #f59e0b);
+}
+
+.block-message--success {
+  --block-message-color: var(--green-500, #22c55e);
+}
+
+.block-message--warning {
+  --block-message-color: var(--orange-500, #f97316);
+}
+
+.block-message--danger {
+  --block-message-color: var(--red-500, #ef4444);
+}
+
+.block-message--info {
+  --block-message-color: var(--blue-500, #3b82f6);
+}
+
+@media (max-width: 600px) {
+  .block-message {
+    flex-direction: column;
+  }
+
+  .block-message__actions {
+    width: 100%;
+    align-items: stretch;
+  }
+}

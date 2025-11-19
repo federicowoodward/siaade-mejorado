@@ -1,0 +1,53 @@
+<div class="container">
+  <p-toast></p-toast>
+  <h2>Ingresar código de recuperación</h2>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    <!-- Si ya tenemos la identidad, no pedimos el campo y mostramos un recordatorio -->
+    <div class="field" *ngIf="form.value.identity; else askIdentity">
+      <small
+        >Enviamos un código a:
+        <b>{{ maskedIdentity || form.value.identity }}</b></small
+      >
+    </div>
+    <ng-template #askIdentity>
+      <div class="field">
+        <label for="identity">Email, CUIL o Nombre Apellido</label>
+        <input
+          id="identity"
+          pInputText
+          formControlName="identity"
+          placeholder="ej: juan@test.com o 20123456789"
+        />
+      </div>
+    </ng-template>
+
+    <div class="field">
+      <label for="code">Código de 6 dígitos</label>
+      <input
+        id="code"
+        pInputText
+        formControlName="code"
+        placeholder="000000"
+        maxlength="6"
+      />
+      <div class="mt-2">
+        <button
+          pButton
+          type="button"
+          class="p-button-text"
+          (click)="resendCode()"
+          [disabled]="!canResend"
+        >
+          {{ canResend ? 'Reenviar código' : ('Reenviar en ' + resendIn + 's')
+          }}
+        </button>
+      </div>
+    </div>
+    <button
+      pButton
+      type="submit"
+      label="Verificar código"
+      [disabled]="form.invalid || submitting"
+    ></button>
+  </form>
+</div>

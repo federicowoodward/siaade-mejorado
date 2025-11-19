@@ -1,33 +1,62 @@
-import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
+import { inject, isDevMode } from '@angular/core';
+import { CanActivateFn, CanMatchFn, Router, UrlTree } from '@angular/router';
+import { ROLE } from '../auth/roles';
+import { AuthService } from '../services/auth.service';
+import { RbacService } from '../rbac/rbac.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class RoleGuard implements CanActivate {
-
-  constructor(
-    private router: Router,
-    // private userSession: UserSessionService // <- Descomenta cuando uses session real
-  ) {}
-
-  canActivate(
-    next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ): boolean | UrlTree | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> {
-    // 👇 Acá deberías comparar el rol del usuario logueado contra el requerido.
-    // Ejemplo:
-    // const requiredRoles = next.data['role'] as string[] | string;
-    // const userRole = this.userSession.getRole();
-    // if (Array.isArray(requiredRoles) ? requiredRoles.includes(userRole) : requiredRoles === userRole) {
-    //   return true;
-    // }
-    // else {
-    //   return this.router.createUrlTree(['/auth']);
-    // }
-
-    // Por ahora permite navegar siempre
+async function resolveRolesGuard(
+  allowed: ROLE[],
+  router: Router,
+  auth: AuthService,
+  rbac: RbacService,
+): Promise<boolean | UrlTree> {
+  if (!allowed.length) {
     return true;
   }
+
+  await auth.ensureSessionLoaded();
+
+  if (rbac.hasAny(allowed)) {
+    return true;
+  }
+
+  if (rbac.isLoading()) {
+    try {
+      await rbac.waitUntilReady();
+    } catch {
+      return router.parseUrl('/auth');
+    }
+  }
+
+  if (rbac.hasAny(allowed)) {
+    return true;
+  }
+
+  if (isDevMode()) {
+    // eslint-disable-next-line no-console
+    console.warn('[RBAC][Front][DENY]', {
+      allowed,
+      current: rbac.getSnapshot(),
+    });
+  }
+
+  return router.parseUrl('/welcome');
 }
+
+export const roleCanMatch =
+  (allowed: ROLE[]): CanMatchFn =>
+  async () => {
+    const router = inject(Router);
+    const auth = inject(AuthService);
+    const rbac = inject(RbacService);
+    return resolveRolesGuard(allowed, router, auth, rbac);
+  };
+
+export const roleCanActivate =
+  (allowed: ROLE[]): CanActivateFn =>
+  async () => {
+    const router = inject(Router);
+    const auth = inject(AuthService);
+    const rbac = inject(RbacService);
+    return resolveRolesGuard(allowed, router, auth, rbac);
+  };

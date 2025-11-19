@@ -1,27 +1,19 @@
-# Etapa 1: build de la app
-FROM node:22-alpine AS build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --force
+RUN npm ci
 
 COPY . .
-# Build de producción (usa environment.prod.ts)
-RUN npm run build:prod
+ARG ANGULAR_CONFIGURATION=production
+RUN npm run build -- --configuration ${ANGULAR_CONFIGURATION}
 
-# Etapa 2: runtime con Node/Express sirviendo la carpeta dist
-FROM node:22-alpine
+FROM node:20-alpine
 WORKDIR /app
 
-# Solo dependencias de runtime (express ya está en deps)
-COPY package*.json ./
-RUN npm install --omit=dev --force
+RUN npm install -g serve@14
+COPY --from=builder /app/dist/front/browser ./dist
 
-# Copiamos el build y el servidor estático
-COPY --from=build /app/dist ./dist
-COPY ./server.js ./server.js
-
-# Railway inyecta $PORT; server.js lo respeta
 ENV NODE_ENV=production
 EXPOSE 4000
-CMD ["node", "server.js"]
+CMD ["serve", "-s", "dist", "-l", "4000"]

@@ -1,8 +1,5 @@
 {
-  "dependencies": {
-    "@nestjs/config": "^4.0.2"
-  },
-  "engines": {
-    "node": "20.19.0"
+  "scripts": {
+    "format": "npx prettier --write ."
   }
 }

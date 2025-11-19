@@ -5,6 +5,88 @@
     iconPos="left"
     (onClick)="back()"
   ></p-button>
+
+  <!-- Controles de acceso/estado del alumno -->
+  <div class="flex flex-row gap-3 align-items-center flex-wrap">
+    <div class="flex flex-column gap-1">
+      <span class="text-sm font-medium">Acceso</span>
+      <p-togglebutton
+        [ngModel]="canLogin()"
+        (ngModelChange)="onToggleCanLogin(!!$event)"
+        [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
+        onLabel="Habilitado"
+        offLabel="Bloqueado"
+        [onIcon]="'pi pi-lock-open'"
+        [offIcon]="'pi pi-lock'"
+        class="w-12rem text-sm"
+        [ngClass]="(canLogin() ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
+        ariaLabel="Cambiar acceso"
+      ></p-togglebutton>
+      <div
+        class="mt-1 text-xs text-color-secondary"
+        *ngIf="isActive() === false"
+      >
+        Inactivo: acceso bloqueado
+      </div>
+    </div>
+
+    <div class="flex flex-column gap-1">
+      <span class="text-sm font-medium">Estado</span>
+      <p-togglebutton
+        [ngModel]="isActive() !== false"
+        (onChange)="onToggleIsActive(!!$event.checked)"
+        [disabled]="saving() || !canToggleIsActive()"
+        onLabel="Activo"
+        offLabel="Inactivo"
+        [onIcon]="'pi pi-check'"
+        [offIcon]="'pi pi-times'"
+        class="w-10rem text-sm"
+        [ngClass]="((isActive() !== false) ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
+        ariaLabel="Cambiar estado"
+      ></p-togglebutton>
+    </div>
+  </div>
+
+  <!-- Diálogo para motivo de bloqueo del acceso -->
+  <p-dialog
+    header="Motivo del bloqueo"
+    [visible]="showReasonDialog()"
+    (visibleChange)="showReasonDialog.set($event)"
+    [modal]="true"
+    [style]="{ width: '28rem' }"
+    [closable]="!saving()"
+    [dismissableMask]="true"
+    (onHide)="onReasonDialogHide()"
+  >
+    <div class="flex flex-column gap-2">
+      <span class="text-sm text-color-secondary">
+        Podés ingresar un motivo para el bloqueo (opcional). Si lo dejás vacío,
+        se bloqueará igual.
+      </span>
+      <textarea
+        class="p-inputtext w-full"
+        rows="4"
+        [ngModel]="reasonDraft()"
+        (ngModelChange)="reasonDraft.set($event)"
+        placeholder="Motivo del bloqueo (opcional)..."
+      ></textarea>
+      <div class="flex justify-content-end gap-2 mt-2">
+        <p-button
+          label="Cancelar"
+          class="p-button-text"
+          (onClick)="cancelBlockAccess()"
+          [disabled]="saving()"
+        ></p-button>
+        <p-button
+          label="Bloquear"
+          icon="pi pi-lock"
+          (onClick)="confirmBlockAccessWithReason()"
+          [disabled]="saving()"
+        ></p-button>
+      </div>
+    </div>
+  </p-dialog>
+
   <h2>Datos personales del usuario</h2>
   <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
 </div>

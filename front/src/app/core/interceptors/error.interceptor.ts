@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
@@ -14,15 +20,17 @@ export interface ApiError {
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
-
-  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  intercept(
+    request: HttpRequest<any>,
+    next: HttpHandler,
+  ): Observable<HttpEvent<any>> {
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         const apiError = this.handleError(error, request);
-        
+
         // En desarrollo, mostrar detalles completos del error
         if (!environment.production) {
-          console.group('🚨 [Error Interceptor] HTTP Error Details');
+          console.groupCollapsed('🚨 [Error Interceptor] HTTP Error Details');
           console.error('Request URL:', request.url);
           console.error('Request Method:', request.method);
           console.error('Error Status:', error.status);
@@ -33,17 +41,20 @@ export class ErrorInterceptor implements HttpInterceptor {
         }
 
         return throwError(() => apiError);
-      })
+      }),
     );
   }
 
   /**
    * Procesa y normaliza errores HTTP
    */
-  private handleError(error: HttpErrorResponse, request: HttpRequest<any>): ApiError {
+  private handleError(
+    error: HttpErrorResponse,
+    request: HttpRequest<any>,
+  ): ApiError {
     const timestamp = new Date().toISOString();
     const path = request.url;
-    
+
     let message = 'Ha ocurrido un error inesperado';
     let details: any = null;
 
@@ -63,54 +74,61 @@ export class ErrorInterceptor implements HttpInterceptor {
     // Mensajes específicos por código de estado
     switch (error.status) {
       case 0:
-        message = 'No se puede conectar con el servidor. Verifica tu conexión a internet.';
+        message =
+          'No se puede conectar con el servidor. Verifica tu conexión a internet.';
         break;
-      
+
       case 400:
         message = message || 'Los datos enviados no son válidos.';
         break;
-      
+
       case 401:
-        message = 'No autorizado. Por favor, inicia sesión nuevamente.';
+        // Si el backend envió un mensaje específico, lo preservamos; si no, usamos el genérico
+        message =
+          message || 'No autorizado. Por favor, inicia sesión nuevamente.';
         break;
-      
+
       case 403:
         message = 'No tienes permisos para realizar esta acción.';
         break;
-      
+
       case 404:
         message = 'El recurso solicitado no fue encontrado.';
         break;
-      
+
       case 422:
-        message = message || 'Los datos enviados contienen errores de validación.';
+        message =
+          message || 'Los datos enviados contienen errores de validación.';
         break;
-      
+
       case 429:
         message = 'Demasiadas peticiones. Intenta nuevamente en unos momentos.';
         break;
-      
+
       case 500:
         message = 'Error interno del servidor. Intenta nuevamente más tarde.';
         break;
-      
+
       case 502:
         message = 'El servidor no está disponible temporalmente.';
         break;
-      
+
       case 503:
-        message = 'El servicio no está disponible. Intenta nuevamente más tarde.';
+        message =
+          'El servicio no está disponible. Intenta nuevamente más tarde.';
         break;
-      
+
       case 504:
-        message = 'Tiempo de espera agotado. El servidor tardó demasiado en responder.';
+        message =
+          'Tiempo de espera agotado. El servidor tardó demasiado en responder.';
         break;
-      
+
       default:
         if (error.status >= 500) {
           message = 'Error del servidor. Intenta nuevamente más tarde.';
         } else if (error.status >= 400) {
-          message = message || 'Error en la solicitud. Verifica los datos enviados.';
+          message =
+            message || 'Error en la solicitud. Verifica los datos enviados.';
         }
     }
 
@@ -119,7 +137,7 @@ export class ErrorInterceptor implements HttpInterceptor {
       status: error.status,
       timestamp,
       path,
-      details
+      details,
     };
   }
 }

@@ -6,12 +6,11 @@
     <li *ngFor="let aviso of noticesForHome()" class="mb-3">
       <i class="pi pi-bell text-yellow-500 mr-2"></i>
       <div>
-        <strong>{{ aviso.title }}</strong> —
+        <strong>{{ aviso.title }}</strong>
         <span [innerHTML]="aviso.content"></span>
         <br />
         <small class="text-gray-500">
-          Publicado por {{ aviso.createdBy }} ·
-          {{ aviso.createdAt | date:'short' }}
+          Publicado por {{ aviso.createdBy }} • {{ aviso.createdAt | date: 'dd/MM/yyyy' }}
         </small>
       </div>
     </li>
@@ -22,16 +21,16 @@
 
 <!-- Bienvenida -->
 <h2 class="mb-4 text-2xl font-semibold">
-  👋 Bienvenido, {{ rolesService.currentRole() | titlecase }}
-</h2>                                                                     
+  Bienvenido, {{ (userRole() || 'usuario') | titlecase }}
+</h2>
 
-<!-- Accesos rápidos -->
+<!-- Accesos rapidos -->
 <div class="grid">
   <div *ngFor="let acc of accesses()" class="col-12 sm:col-6 lg:col-3">
-    <p-card 
+    <p-card
       [header]="acc.label"
       [subheader]="acc.description"
-      [style]="{cursor:'pointer'}"
+      [style]="{ cursor: 'pointer' }"
       (click)="navigate(acc.route)"
       class="quick-card"
     >
@@ -45,7 +44,7 @@
 <!-- Resumen / Stats -->
 <div class="grid mt-4">
   <div class="col-12 sm:col-6 lg:col-3" *ngFor="let stat of stats">
-    <p-card [style]="{textAlign:'center'}" class="stat-card">
+    <p-card [style]="{ textAlign: 'center' }" class="stat-card">
       <h3 class="text-2xl font-bold">{{ stat.value }}</h3>
       <p class="text-sm text-gray-500">{{ stat.label }}</p>
     </p-card>

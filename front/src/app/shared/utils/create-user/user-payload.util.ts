@@ -37,21 +37,30 @@ export interface BuildPayloadArgs {
   base: BaseUserForm;
   userInfo?: UserInfoForm;
   commonData?: CommonDataForm;
-  address?: AddressForm;  // opcional y sólo si allowsAddress
-  isDirective?: boolean;  // sólo secretary
+  address?: AddressForm; // opcional y sólo si allowsAddress
+  isDirective?: boolean; // sólo secretary
+  studentLegajo?: string;
+  studentStartYear?: number;
+  commissionId?: number;
+  canLogin?: boolean;
+  isActive?: boolean;
 }
 
 export function hasAnyAddress(a?: AddressForm): boolean {
   if (!a) return false;
-  return Object.values(a).some(v => !!v);
+  return Object.values(a).some((v) => !!v);
 }
 
 export function endpointForRole(role: UserRole): string {
   switch (role) {
-    case 'secretary': return 'users/secretary';
-    case 'preceptor': return 'users/preceptor';
-    case 'teacher':   return 'users/teacher';
-    case 'student':   return 'users/student';
+    case 'secretary':
+      return 'users/secretary';
+    case 'preceptor':
+      return 'users/preceptor';
+    case 'teacher':
+      return 'users/teacher';
+    case 'student':
+      return 'users/student';
   }
 }
 
@@ -71,37 +80,47 @@ export function buildPayload(args: BuildPayloadArgs) {
   };
 
   if (base.role === 'secretary') {
-    return { endpoint: endpointForRole(base.role), payload: { ...basePayload, isDirective: !!isDirective } };
+    return {
+      endpoint: endpointForRole(base.role),
+      payload: { ...basePayload, isDirective: !!isDirective },
+    };
   }
 
   // userInfo requerido para preceptor/teacher/student
-  const userInfoPayload = req.needsUserInfo ? {
-    userInfo: {
-      documentType: userInfo?.documentType,
-      documentValue: userInfo?.documentValue,
-      phone: userInfo?.phone || undefined,
-      emergencyName: userInfo?.emergencyName || undefined,
-      emergencyPhone: userInfo?.emergencyPhone || undefined,
-    }
-  } : {};
+  const userInfoPayload = req.needsUserInfo
+    ? {
+        userInfo: {
+          documentType: userInfo?.documentType,
+          documentValue: userInfo?.documentValue,
+          phone: userInfo?.phone || undefined,
+          emergencyName: userInfo?.emergencyName || undefined,
+          emergencyPhone: userInfo?.emergencyPhone || undefined,
+        },
+      }
+    : {};
 
   // commonData requerido para teacher/student (address opcional)
-  const cd = req.needsCommonData ? {
-    commonData: {
-      sex: commonData?.sex,
-      birthDate: commonData?.birthDate,
-      birthPlace: commonData?.birthPlace,
-      nationality: commonData?.nationality,
-      address: (req.allowsAddress && hasAnyAddress(address)) ? {
-        street: address?.street || undefined,
-        number: address?.number || undefined,
-        locality: address?.locality || undefined,
-        province: address?.province || undefined,
-        country: address?.country || undefined,
-        postalCode: address?.postalCode || undefined,
-      } : undefined,
-    }
-  } : {};
+  const cd = req.needsCommonData
+    ? {
+        commonData: {
+          sex: commonData?.sex,
+          birthDate: commonData?.birthDate,
+          birthPlace: commonData?.birthPlace,
+          nationality: commonData?.nationality,
+          address:
+            req.allowsAddress && hasAnyAddress(address)
+              ? {
+                  street: address?.street || undefined,
+                  number: address?.number || undefined,
+                  locality: address?.locality || undefined,
+                  province: address?.province || undefined,
+                  country: address?.country || undefined,
+                  postalCode: address?.postalCode || undefined,
+                }
+              : undefined,
+        },
+      }
+    : {};
 
   return {
     endpoint: endpointForRole(base.role),
@@ -109,6 +128,22 @@ export function buildPayload(args: BuildPayloadArgs) {
       ...basePayload,
       ...userInfoPayload,
       ...cd,
-    }
+      ...(base.role === 'student'
+        ? {
+            // Requeridos para student
+            legajo:
+              args.studentLegajo ||
+              base.cuil ||
+              (userInfo?.documentValue ?? ''),
+            commissionId: args.commissionId ?? undefined,
+            canLogin: args.canLogin ?? true,
+            isActive: args.isActive ?? true,
+            studentStartYear:
+              args.studentStartYear && Number.isFinite(args.studentStartYear)
+                ? Number(args.studentStartYear)
+                : undefined,
+          }
+        : {}),
+    },
   };
 }

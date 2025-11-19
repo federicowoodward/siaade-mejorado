@@ -1,25 +1,22 @@
-import {
+﻿import {
+  APP_INITIALIZER,
   ApplicationConfig,
+  inject,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
-  APP_INITIALIZER,
-  inject,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
 import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import MyPreset from './mypreset';
 import { httpInterceptorProviders } from './core/interceptors';
-import { RolesService } from './core/services/role.service';
-
-// Precarga de roles antes de iniciar la app
-function initRolesFactory() {
-  const roles = inject(RolesService);
-  return () => roles.init?.() ?? Promise.resolve();
-}
+import { AuthService } from './core/services/auth.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,21 +24,27 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideAnimationsAsync(),
-    provideHttpClient(),
+    provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     ...httpInterceptorProviders,
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      useFactory: () => {
+        const auth = inject(AuthService);
+        return () =>
+          auth.ensureSessionLoaded().catch((error) => {
+            console.error('[APP_INITIALIZER] Failed to restore session', error);
+          });
+      },
+    },
     providePrimeNG({
       theme: {
         preset: MyPreset,
         options: {
-          darkModeSelector: false, // con esta variable cambia el mode dark
+          darkModeSelector: false,
         },
       },
     }),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initRolesFactory,
-      multi: true,
-    },
   ],
 };

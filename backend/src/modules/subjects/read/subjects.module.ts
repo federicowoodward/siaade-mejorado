@@ -1,17 +1,13 @@
-import { Module } from '@nestjs/common';
-import { SubjectsService } from './subjects.service';
-import { SubjectsController } from './subjects.controller';
-import { SubjectsAliasController } from './subjects.alias.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Subject } from '../../../entities/subjects.entity';
-import { AuthModule } from '../../users/auth/auth.module';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { Subject } from "@/entities/subjects/subject.entity";
+import { SubjectsReadService } from "./subjects.service";
+import { SubjectsReadController } from "./subjects.controller";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Subject]),
-    AuthModule, // Importar AuthModule para usar JwtStrategy
-  ],
-  controllers: [SubjectsController, SubjectsAliasController],
-  providers: [SubjectsService],
+  imports: [TypeOrmModule.forFeature([Subject])],
+  controllers: [SubjectsReadController],
+  providers: [SubjectsReadService],
+  exports: [SubjectsReadService],
 })
 export class SubjectsReadModule {}

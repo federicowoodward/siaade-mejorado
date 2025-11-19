@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  padding: 1rem 2rem;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  height: 220px;
+}
+
+.career-header {
+  text-align: center;
+}
+
+.header-row th {
+  font-size: 0.8rem;
+}
+.year-block {
+  margin-bottom: 2rem;
+}
+
+.cuatri-block {
+  margin-top: 0.5rem;
+}
+
+.cuatri-title {
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.muted {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  text-align: center;
+  background: #f5f5f5;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: center;
+}
+
+::ng-deep {
+  .p-divider-content {
+    background: transparent !important;
+  }
+}

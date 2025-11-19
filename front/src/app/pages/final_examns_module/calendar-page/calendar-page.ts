@@ -24,11 +24,15 @@ export class CalendarPage implements OnInit {
   ngOnInit(): void {
     this.table.set(this.svc.getTable(this.tableId));
     this.finals.set(
-      this.svc.listFinalsByTable(this.tableId).sort((a, b) => a.exam_date.localeCompare(b.exam_date))
+      this.svc
+        .listFinalsByTable(this.tableId)
+        .sort((a, b) => a.exam_date.localeCompare(b.exam_date)),
     );
   }
 
   back() {
-    this.router.navigate(['../table', this.tableId], { relativeTo: this.route });
+    this.router.navigate(['../table', this.tableId], {
+      relativeTo: this.route,
+    });
   }
 }

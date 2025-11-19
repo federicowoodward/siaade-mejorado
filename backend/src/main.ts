@@ -1,41 +1,59 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { buildCorsOptions } from './config/cors.config';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { ValidationPipe } from "@nestjs/common";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { buildCorsOptions } from "./config/cors.config";
+import { ensureRolesOnBoot } from "./shared/boot/ensure-roles.bootstrap";
+
+interface HotNodeModule extends NodeModule {
+  hot?: {
+    accept(path?: string, callback?: () => void): void;
+    dispose(callback: () => void): void;
+  };
+}
+
+declare const module: HotNodeModule;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Configurar CORS centralizado
+  await ensureRolesOnBoot(app);
+
   app.enableCors(buildCorsOptions());
 
-  // Usar un pipe global para validar los datos de entrada
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    })
+    }),
   );
 
-  // Establecer prefijo global para todas las rutas ANTES de configurar Swagger
   app.setGlobalPrefix("api");
 
-  // Configurar Swagger/OpenAPI
   const config = new DocumentBuilder()
     .setTitle("SIAADE API")
-    .setDescription("Sistema Integral de Administración Académica Educativa")
+    .setDescription("Sistema Integral de Administracion Academica Educativa")
     .setVersion("1.0")
     .addBearerAuth()
+    .addSecurity("cookieAuth", {
+      type: "apiKey",
+      in: "cookie",
+      name: "rt", // nombre real de la cookie
+    })
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api/docs", app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 SIAADE Backend running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`SIAADE Backend running on: 'http://localhost:${port}`);
+  console.log(`API Documentation: 'http://localhost:${port}/api/docs`);
+
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 }
 
 bootstrap();

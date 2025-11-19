@@ -1,7 +1,7 @@
 <div class="m-w-custom">
   <h2 class="my-3">Gestión de Usuarios</h2>
 
-  <div class="flex justify-content-end mb-3">
+  <div class="flex justify-content-end mb-3" *ngIf="canCreateUser()">
     <p-button
       (onClick)="goToNewUser()"
       icon="pi pi-plus"
@@ -11,10 +11,77 @@
   </div>
 
   <app-users-table
-    [viewerRole]="viewerRole"
+    [viewerRole]="viewerRole ?? ROLE.STUDENT"
     [context]="'default'"
     [rows]="rows()"
     (rowAction)="onRowAction($event)"
     (rowClick)="onRowClick($event)"
   />
+
+  <!-- Modal: Materias a cargo (Docente) -->
+  <p-dialog
+    [(visible)]="dialogTeacher().visible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '600px', maxWidth: '90vw' }"
+    [closable]="true"
+    (onHide)="closeTeacherDialog()"
+  >
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-book"></i>
+        <span>Materias a cargo</span>
+      </div>
+    </ng-template>
+
+    <ng-container *ngIf="dialogLoading(); else loaded">
+      <div class="p-3">Cargando...</div>
+    </ng-container>
+
+    <ng-template #loaded>
+      <ng-container *ngIf="!dialogError(); else errorTpl">
+        <ng-container *ngIf="dialogData() as data; else emptyTpl">
+          <div class="flex flex-column gap-3">
+            <div class="text-sm text-color-secondary" *ngIf="data.teacher">
+              Docente: <b>{{ data.teacher.name }}</b>
+              <span *ngIf="data.teacher.email">
+                — {{ data.teacher.email }}</span
+              >
+            </div>
+
+            <ng-container *ngIf="data.subjects.length > 0; else emptyTpl">
+              <div class="flex flex-column gap-2">
+                <div
+                  *ngFor="let s of data.subjects"
+                  class="p-2 border-round surface-50"
+                >
+                  <div class="font-medium">{{ s.subject.name }}</div>
+                  <div class="mt-1 text-sm">
+                    Comisiones:
+                    <span *ngFor="let c of s.commissions; let i = index">
+                      <b>{{ c.letter || ('ID ' + c.id) }}</b>{{ i <
+                      s.commissions.length - 1 ? ', ' : '' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+
+        <ng-template #emptyTpl>
+          <div class="p-3">Sin asignaciones.</div>
+        </ng-template>
+      </ng-container>
+
+      <ng-template #errorTpl>
+        <div class="p-3 text-red-600">{{ dialogError() }}</div>
+      </ng-template>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cerrar" (onClick)="closeTeacherDialog()"></p-button>
+    </ng-template>
+  </p-dialog>
 </div>

@@ -7,12 +7,17 @@ import { DataSource, QueryRunner, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import * as bcrypt from "bcryptjs";
 
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
-import { UserInfo } from "../../../entities/user_info.entity";
-import { CommonData } from "../../../entities/common_data.entity";
-import { AddressData } from "../../../entities/address_data.entity";
-import { Secretary } from "../../../entities/secretaries.entity";
+import { User } from "@/entities/users/user.entity";
+import { Role } from "@/entities/roles/role.entity";
+import { UserInfo } from "@/entities/users/user-info.entity";
+import { CommonData } from "@/entities/users/common-data.entity";
+import { AddressData } from "@/entities/users/address-data.entity";
+import { Secretary } from "@/entities/users/secretary.entity";
+import { normalizeRole } from "@/shared/rbac/roles.constants";
+import { Student } from "@/entities/users/student.entity";
+import { Teacher } from "@/entities/users/teacher.entity";
+import { Preceptor } from "@/entities/users/preceptor.entity";
+import { ROLE_IDS } from "@/shared/rbac/roles.constants";
 
 type FlatChanges = Record<string, any>;
 
@@ -29,13 +34,13 @@ export class UsersPatchService {
     @InjectRepository(AddressData)
     private readonly addressRepo: Repository<AddressData>,
     @InjectRepository(Secretary)
-    private readonly secretariesRepo: Repository<Secretary>
+    private readonly secretariesRepo: Repository<Secretary>,
   ) {}
 
   async patchUser(userId: string, changes: FlatChanges) {
     if (!changes || typeof changes !== "object") {
       throw new BadRequestException(
-        "Body debe ser un objeto con pares key:value"
+        "Body debe ser un objeto con pares key:value",
       );
     }
 
@@ -73,6 +78,21 @@ export class UsersPatchService {
         await this.applySecretaryFlag(qr, userId, !!changes.isDirective);
       }
 
+      // 6) STUDENT FLAGS (canLogin, isActive) via prefix "student."
+      if (this.hasAnyPrefix(changes, "student.")) {
+        await this.applyStudentFlags(qr, userId, changes);
+      }
+
+      // 7) TEACHER FLAGS via prefix "teacher."
+      if (this.hasAnyPrefix(changes, "teacher.")) {
+        await this.applyTeacherFlags(qr, userId, changes);
+      }
+
+      // 8) PRECEPTOR FLAGS via prefix "preceptor."
+      if (this.hasAnyPrefix(changes, "preceptor.")) {
+        await this.applyPreceptorFlags(qr, userId, changes);
+      }
+
       await qr.commitTransaction();
 
       // devuelve lo que tengas de lector unificado
@@ -93,7 +113,7 @@ export class UsersPatchService {
 
   private pickByPrefix(
     changes: FlatChanges,
-    prefix: string
+    prefix: string,
   ): Record<string, any> {
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(changes)) {
@@ -107,7 +127,7 @@ export class UsersPatchService {
   private async applyUserChanges(
     qr: QueryRunner,
     user: User,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const partial: Partial<User> = {};
     const assignIf = (key: keyof User, field: string) => {
@@ -134,7 +154,7 @@ export class UsersPatchService {
   private async applyRoleChange(
     qr: QueryRunner,
     user: User,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     let role: Role | null = null;
 
@@ -142,9 +162,20 @@ export class UsersPatchService {
       role = await qr.manager.findOne(Role, { where: { id: changes.roleId } });
       if (!role) throw new NotFoundException("Role not found");
     } else if (changes.roleName) {
-      role = await qr.manager.findOne(Role, {
-        where: { name: String(changes.roleName) },
-      });
+      const normalized = normalizeRole(changes.roleName);
+      if (!normalized) {
+        throw new NotFoundException("Role not found");
+      }
+
+      const targetId = ROLE_IDS[normalized];
+      if (targetId) {
+        role = await qr.manager.findOne(Role, { where: { id: targetId } });
+      }
+
+      if (!role) {
+        role = await qr.manager.findOne(Role, { where: { name: normalized } });
+      }
+
       if (!role) throw new NotFoundException("Role not found");
     }
 
@@ -155,7 +186,7 @@ export class UsersPatchService {
 
   private async ensureUserInfo(
     qr: QueryRunner,
-    userId: string
+    userId: string,
   ): Promise<UserInfo> {
     let ui = await qr.manager.findOne(UserInfo, { where: { userId } });
     if (!ui) {
@@ -168,7 +199,7 @@ export class UsersPatchService {
   private async applyUserInfoChanges(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const fields = this.pickByPrefix(changes, "userInfo.");
     if (!Object.keys(fields).length) return;
@@ -177,8 +208,6 @@ export class UsersPatchService {
     const patch: Partial<UserInfo> = {};
 
     const map: Record<string, keyof UserInfo> = {
-      documentType: "documentType",
-      documentValue: "documentValue",
       phone: "phone",
       emergencyName: "emergencyName",
       emergencyPhone: "emergencyPhone",
@@ -194,7 +223,7 @@ export class UsersPatchService {
 
   private async ensureCommonData(
     qr: QueryRunner,
-    userId: string
+    userId: string,
   ): Promise<CommonData> {
     let cd = await qr.manager.findOne(CommonData, { where: { userId } });
     if (!cd) {
@@ -206,7 +235,7 @@ export class UsersPatchService {
 
   private async ensureAddress(
     qr: QueryRunner,
-    cd: CommonData
+    cd: CommonData,
   ): Promise<AddressData> {
     if (cd.addressDataId) {
       const existing = await qr.manager.findOne(AddressData, {
@@ -219,7 +248,7 @@ export class UsersPatchService {
     await qr.manager.update(
       CommonData,
       { id: cd.id },
-      { addressDataId: addr.id }
+      { addressDataId: addr.id },
     );
     return addr;
   }
@@ -227,7 +256,7 @@ export class UsersPatchService {
   private async applyCommonDataChanges(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const cdFields = this.pickByPrefix(changes, "commonData.");
     if (!Object.keys(cdFields).length) return;
@@ -284,11 +313,90 @@ export class UsersPatchService {
   private async applySecretaryFlag(
     qr: QueryRunner,
     userId: string,
-    isDirective: boolean
+    isDirective: boolean,
   ) {
     // Sólo si el usuario realmente es secretary (si hay fila en secretaries)
     let sec = await qr.manager.findOne(Secretary, { where: { userId } });
     if (!sec) return; // ignore si no es secretary
     await qr.manager.update(Secretary, { id: sec.userId }, { isDirective });
+  }
+
+  private async applyStudentFlags(
+    qr: QueryRunner,
+    userId: string,
+    changes: FlatChanges,
+  ) {
+    const fields = this.pickByPrefix(changes, "student.");
+    if (!Object.keys(fields).length) return;
+
+    // Confirmar que exista fila en students
+    const student = await qr.manager.findOne(Student, { where: { userId } });
+    if (!student) return; // ignorar si no es alumno
+
+    const patch: Partial<Student> = {};
+    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
+      patch.canLogin = Boolean(fields.canLogin);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
+      patch.isActive = Boolean(fields.isActive);
+      // Regla: si isActive=false, forzar canLogin=false
+      if (patch.isActive === false) {
+        patch.canLogin = false;
+      }
+    }
+
+    if (Object.keys(patch).length) {
+      await qr.manager.update(Student, { userId }, patch);
+    }
+  }
+
+  private async applyTeacherFlags(
+    qr: QueryRunner,
+    userId: string,
+    changes: FlatChanges,
+  ) {
+    const fields = this.pickByPrefix(changes, "teacher.");
+    if (!Object.keys(fields).length) return;
+
+    const teacher = await qr.manager.findOne(Teacher, { where: { userId } });
+    if (!teacher) return;
+
+    const patch: Partial<Teacher> = {};
+    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
+      patch.canLogin = Boolean(fields.canLogin);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
+      patch.isActive = Boolean(fields.isActive);
+      if (patch.isActive === false) patch.canLogin = false;
+    }
+    if (Object.keys(patch).length) {
+      await qr.manager.update(Teacher, { userId }, patch);
+    }
+  }
+
+  private async applyPreceptorFlags(
+    qr: QueryRunner,
+    userId: string,
+    changes: FlatChanges,
+  ) {
+    const fields = this.pickByPrefix(changes, "preceptor.");
+    if (!Object.keys(fields).length) return;
+
+    const preceptor = await qr.manager.findOne(Preceptor, {
+      where: { userId },
+    });
+    if (!preceptor) return;
+
+    const patch: Partial<Preceptor> = {};
+    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
+      patch.canLogin = Boolean(fields.canLogin);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
+      patch.isActive = Boolean(fields.isActive);
+      if (patch.isActive === false) patch.canLogin = false;
+    }
+    if (Object.keys(patch).length) {
+      await qr.manager.update(Preceptor, { userId }, patch);
+    }
   }
 }

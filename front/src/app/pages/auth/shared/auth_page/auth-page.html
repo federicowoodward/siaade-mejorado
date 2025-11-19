@@ -1,15 +1,34 @@
 <p-toast></p-toast>
 
 <div class="flex justify-content-center align-items-center h-full">
-  <div class="auth-shell surface-card shadow-2 border-round p-0 relative overflow-hidden"
-       [class.login-mode]="loginMode()" [class.recover-mode]="!loginMode()"
-       [class.transitioning]="transitioning()" [class.expand-phase]="expandPhase()">
+  <div
+    class="auth-shell surface-card shadow-2 border-round p-0 relative overflow-hidden"
+    [class.login-mode]="loginMode()"
+    [class.recover-mode]="!loginMode()"
+    [class.transitioning]="transitioning()"
+    [class.expand-phase]="expandPhase()"
+  >
     <!-- Header móvil (solo phone) -->
     <div class="mobile-auth-header">
       <div class="m-tabs">
-        <button type="button" (click)="setMode('login')" [class.active]="loginMode()">Login</button>
-        <button type="button" (click)="setMode('recover')" [class.active]="!loginMode()">Recuperar</button>
-        <span class="pill" [style.transform]="loginMode() ? 'translateX(0%)' : 'translateX(100%)'"></span>
+        <button
+          type="button"
+          (click)="setMode('login')"
+          [class.active]="loginMode()"
+        >
+          Login
+        </button>
+        <button
+          type="button"
+          (click)="setMode('recover')"
+          [class.active]="!loginMode()"
+        >
+          Recuperar
+        </button>
+        <span
+          class="pill"
+          [style.transform]="loginMode() ? 'translateX(0%)' : 'translateX(100%)'"
+        ></span>
       </div>
       <div class="m-head" *ngIf="loginMode(); else recHeadM">
         <h2>Iniciar sesión</h2>
@@ -28,7 +47,13 @@
         <div class="cover-text">
           <h2 class="cover-title">¿Olvidaste tu contraseña?</h2>
           <p class="cover-desc">Podés recuperarla en segundos.</p>
-          <button pButton type="button" label="Recuperar" class="p-button-outlined p-button-rounded cover-btn" (click)="changeMode()"></button>
+          <button
+            pButton
+            type="button"
+            label="Recuperar"
+            class="p-button-outlined p-button-rounded cover-btn"
+            (click)="changeMode()"
+          ></button>
         </div>
       </div>
       <ng-template #recoverCta>
@@ -36,7 +61,13 @@
           <div class="cover-text">
             <h2 class="cover-title">Bienvenido de nuevo</h2>
             <p class="cover-desc">Iniciá sesión para continuar.</p>
-            <button pButton type="button" label="Iniciar sesión" class="p-button-outlined p-button-rounded cover-btn" (click)="changeMode()"></button>
+            <button
+              pButton
+              type="button"
+              label="Iniciar sesión"
+              class="p-button-outlined p-button-rounded cover-btn"
+              (click)="changeMode()"
+            ></button>
           </div>
         </div>
       </ng-template>
@@ -47,26 +78,77 @@
         <!-- Pane Recuperar (primer panel - izquierda) -->
         <div class="pane recover-pane" [attr.aria-hidden]="loginMode()">
           <h2 class="pane-title">Recuperar contraseña</h2>
-          <form [formGroup]="recoverForm" (ngSubmit)="submitRecover()" autocomplete="on" novalidate class="form-block center-form">
-            <label for="recover_identity" class="block mb-2 label-inline">Nombre, Email o CUIL</label>
-            <input id="recover_identity" type="text" pInputText formControlName="identity" class="w-full mb-3"
-              placeholder="Ej: juan@mail.com" autocomplete="username" />
-            <button type="submit" pButton label="Enviar instrucciones" class="w-full mb-3"
-              [disabled]="recoverForm.invalid || submittingRecover()"></button>
+          <form
+            [formGroup]="recoverForm"
+            (ngSubmit)="submitRecover()"
+            autocomplete="on"
+            novalidate
+            class="form-block center-form"
+          >
+            <label for="recover_identity" class="block mb-2 label-inline"
+              >Nombre, Email o CUIL</label
+            >
+            <input
+              id="recover_identity"
+              type="text"
+              pInputText
+              formControlName="identity"
+              class="w-full mb-3"
+              placeholder="Ej: juan@mail.com"
+              autocomplete="username"
+            />
+            <button
+              type="submit"
+              pButton
+              label="Enviar instrucciones"
+              class="w-full mb-3"
+              [disabled]="recoverForm.invalid || submittingRecover()"
+            ></button>
           </form>
         </div>
         <!-- Pane Login (segundo panel - derecha) -->
         <div class="pane login-pane" [attr.aria-hidden]="!loginMode()">
           <h2 class="pane-title">Iniciar sesión</h2>
-          <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" autocomplete="on" novalidate class="form-block center-form">
-            <label for="login_identity" class="block mb-2 label-inline">Nombre, Email o CUIL</label>
-            <input id="login_identity" type="text" pInputText formControlName="identity" class="w-full mb-3"
-              placeholder="Ej: juan@mail.com" autocomplete="username" />
-            <label for="login_password" class="block mb-2 label-inline">Contraseña</label>
-            <input id="login_password" type="password" pPassword formControlName="password" class="w-full mb-3"
-              autocomplete="current-password" />
-            <button type="submit" pButton label="Ingresar" class="w-full mb-3"
-              [disabled]="loginForm.invalid || submittingLogin()"></button>
+          <form
+            [formGroup]="loginForm"
+            (ngSubmit)="submitLogin()"
+            autocomplete="on"
+            novalidate
+            class="form-block center-form"
+          >
+            <label for="login_identity" class="block mb-2 label-inline"
+              >Nombre, Email o CUIL</label
+            >
+            <input
+              id="login_identity"
+              type="text"
+              pInputText
+              formControlName="identity"
+              class="w-full mb-3"
+              placeholder="Ej: juan@mail.com"
+              autocomplete="username"
+            />
+            <label for="login_password" class="block mb-2 label-inline"
+              >Contraseña</label
+            >
+            <p-password
+              [toggleMask]="true"
+              [feedback]="false"
+              formControlName="password"
+              inputId="login_password"
+              [inputStyleClass]="'w-full'"
+              styleClass="w-full mb-3"
+              placeholder="Ej: pass1234"
+              [autocomplete]="'new-password'"
+            >
+            </p-password>
+            <button
+              type="submit"
+              pButton
+              label="Ingresar"
+              class="w-full mb-3"
+              [disabled]="loginForm.invalid || submittingLogin()"
+            ></button>
           </form>
         </div>
       </div>

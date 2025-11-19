@@ -6,6 +6,9 @@ export interface UserProfileResult {
   email: string | null;
   cuil: string | null;
   role: { id: number; name: string } | null;
+  isBlocked?: boolean; // agregado para mostrar estado de bloqueo transversal
+  blockedReason?: string | null; // motivo visible mientras isBlocked=true
+  requiresPasswordChange?: boolean; // UI puede forzar rotación en primer login
 
   userInfo?: {
     id: number;
@@ -34,5 +37,29 @@ export interface UserProfileResult {
       postalCode: string | null;
       country: string | null;
     } | null;
+  } | null;
+
+  // Datos específicos de alumno (si el rol es STUDENT)
+  student?: {
+    userId: string;
+    legajo: string | null;
+    commissionId: number | null;
+    isActive: boolean | null;
+    canLogin: boolean | null;
+    studentStartYear: number | null;
+  } | null;
+
+  // Datos específicos de docente (si el rol es TEACHER)
+  teacher?: {
+    userId: string;
+    isActive: boolean | null;
+    canLogin: boolean | null;
+  } | null;
+
+  // Datos específicos de preceptor (si el rol es PRECEPTOR)
+  preceptor?: {
+    userId: string;
+    isActive: boolean | null;
+    canLogin: boolean | null;
   } | null;
 }

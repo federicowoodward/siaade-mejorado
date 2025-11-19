@@ -1,0 +1,141 @@
+<div class="m-w-custom">
+  <div class="pb-3 flex gap-2 flex-wrap">
+    <p-button (onClick)="goBack()"> Volver </p-button>
+    <p-button
+      label="Ver alumnos de la carrera"
+      icon="pi pi-users"
+      routerLink="../career-students"
+    ></p-button>
+  </div>
+
+  <p-card
+    *ngIf="!loading() && data().career; else loadingTpl"
+    class="career-header"
+  >
+    <h2>{{ data()!.career!.name }}</h2>
+    <p>
+      <strong>Preceptor:</strong>
+      {{ data()!.preceptor!.name }} {{ data()!.preceptor!.lastName }}
+      &nbsp;|&nbsp;
+      <strong>Email:</strong> {{ data()!.preceptor!.email }}
+    </p>
+  </p-card>
+
+  <ng-template #loadingTpl>
+    <div class="center">
+      <p-progressSpinner ariaLabel="Cargando"></p-progressSpinner>
+    </div>
+  </ng-template>
+
+  <div *ngIf="error() && !loading()" class="error">{{ error() }}</div>
+
+  <div *ngIf="data().academicPeriods.length">
+    <div
+      *ngFor="let period of data()!.academicPeriods; let i = index"
+      class="period-block py-2"
+    >
+      <p-divider
+        *ngIf="[0,3,6,9].includes(i)"
+        align="center"
+        type="dotted"
+        class="bg-custom"
+      >
+        <b>{{ period.academicPeriod.name.replace('anual', '').trim() }}</b>
+      </p-divider>
+      <h4 class="mb-2">{{ period.academicPeriod.name }}</h4>
+
+      <p-table
+        [value]="period.subjects"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-sm p-datatable-gridlines"
+      >
+        <ng-template pTemplate="header">
+          <tr class="header-row">
+            <th>N° de orden</th>
+            <th>Asignatura</th>
+            <th>Campo de formación</th>
+            <th>Forma</th>
+            <th>Hs. semanales</th>
+            <th>Hs. anuales</th>
+            <th>Correlativas</th>
+            <th style="width: 160px">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-s>
+          <tr>
+            <td>{{ s.careerOrdering.orderNo }}</td>
+            <td>{{ s.subjectName }}</td>
+            <td>{{ s.metadata.teacherFormation }}</td>
+            <td>{{ s.metadata.subjectFormat }}</td>
+            <td>{{ s.metadata.weeklyWorkload }}</td>
+            <td>{{ s.metadata.annualWorkload }}</td>
+            <td>
+              {{ s.prerequisites.length ? s.prerequisites.join(', ') : '-' }}
+            </td>
+            <td>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-sliders-h"
+                label="Editar"
+                size="small"
+                (click)="openPrereqDialog(s)"
+              ></button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <p-dialog
+    header="Actualizar correlativas"
+    [visible]="dialogVisible()"
+    [modal]="true"
+    [style]="{ width: '32rem', maxWidth: '95vw' }"
+    (visibleChange)="onDialogVisibleChange($event)"
+  >
+    <ng-container *ngIf="selectedSubject() as subj">
+      <p class="mb-2">
+        <strong>{{ subj.subjectName }}</strong>
+        <br />
+        <small>Orden {{ subj.orderNo }}</small>
+      </p>
+      <p-multiSelect
+        [options]="prereqOptions()"
+        [(ngModel)]="dialogPrereqsModel"
+        placeholder="Materias necesarias antes"
+        display="chip"
+        [showClear]="true"
+        class="w-full"
+        appendTo="body"
+      ></p-multiSelect>
+      <small class="text-600 block mt-2">
+        Solo se pueden elegir materias con número de orden menor.
+      </small>
+      <div *ngIf="!prereqOptions().length" class="text-500 mt-2">
+        No hay materias anteriores disponibles para seleccionar.
+      </div>
+    </ng-container>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Cancelar"
+        class="p-button-text"
+        (click)="closeDialog()"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="Guardar"
+        icon="pi pi-check"
+        [loading]="dialogSaving()"
+        (click)="savePrereqs()"
+      ></button>
+    </ng-template>
+  </p-dialog>
+</div>
+<p-toast position="bottom-right"></p-toast>

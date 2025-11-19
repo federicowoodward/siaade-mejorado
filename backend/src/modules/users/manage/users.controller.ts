@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Get,
+  Patch,
   HttpCode,
   HttpStatus,
   BadRequestException,
@@ -31,7 +32,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly usersPatchService: UsersPatchService,
-    private readonly userReader: UserProfileReaderService
+    private readonly userReader: UserProfileReaderService,
   ) {}
 
   @Post("secretary")
@@ -70,6 +71,55 @@ export class UsersController {
   @ApiResponse({ status: 201, description: "Student created" })
   createStudent(@Body() dto: CreateStudentDto) {
     return this.usersService.createStudent(dto);
+  }
+
+  // ---------------- BLOQUEO / DESBLOQUEO -----------------
+
+  @Patch(":id/block")
+  @ApiOperation({
+    summary: "Bloquea un usuario y (opcional) asigna motivo visible",
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: { reason: { type: "string", nullable: true } },
+    } as any,
+  })
+  async blockUser(
+    @Param("id") id: string,
+    @Body() body: { reason?: string | null },
+  ) {
+    const reason = (body?.reason ?? "").trim();
+    const data = await this.usersService.blockUser(id, reason);
+    return { data, message: "Usuario bloqueado" };
+  }
+
+  @Patch(":id/unblock")
+  @ApiOperation({ summary: "Desbloquea un usuario y limpia el motivo" })
+  async unblockUser(@Param("id") id: string) {
+    const data = await this.usersService.unblockUser(id);
+    return { data, message: "Usuario desbloqueado" };
+  }
+
+  // Activar/Inactivar (soft delete reversible)
+  @Patch(":id/activate")
+  @ApiOperation({
+    summary:
+      "Marca un usuario como ACTIVO (reversión de inactivo/eliminado lógico)",
+  })
+  async activateUser(@Param("id") id: string) {
+    const data = await this.usersService.setUserActiveState(id, true);
+    return { data, message: "Usuario activado" };
+  }
+
+  @Patch(":id/inactivate")
+  @ApiOperation({
+    summary:
+      "Marca un usuario como INACTIVO (equivalente a eliminado lógico, bloquea login)",
+  })
+  async inactivateUser(@Param("id") id: string) {
+    const data = await this.usersService.setUserActiveState(id, false);
+    return { data, message: "Usuario inactivado" };
   }
 
   // -----------------------------
@@ -119,8 +169,7 @@ export class UsersController {
     schema: {
       type: "object",
       additionalProperties: true,
-      example: { name: "Ana", "userInfo.documentType": "DNI" },
-    },
+    } as any,
   })
   async updateUser(@Param("id") id: string, @Body() body: Record<string, any>) {
     try {
@@ -135,25 +184,9 @@ export class UsersController {
   @Delete(":id")
   // @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete user" })
-  @ApiOkResponse({
-    description: "User deleted successfully",
-    schema: {
-      example: {
-        data: { deleted: true },
-        message: "User deleted successfully",
-      },
-    },
-  })
+  @ApiOkResponse({ description: "User deleted successfully" })
   @ApiConflictResponse({
     description: "User cannot be deleted due to linked subjects",
-    schema: {
-      example: {
-        statusCode: 409,
-        message:
-          "No se puede borrar el docente: existe al menos una materia vinculada.",
-        subject: { id: 12, subjectName: "Matemática I" },
-      },
-    },
   })
   async deleteUser(@Param("id") id: string) {
     await this.usersService.deleteTx(id);

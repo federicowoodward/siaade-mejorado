@@ -1,22 +1,30 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Subject } from '../../../entities/subjects.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Subject } from "@/entities/subjects/subject.entity";
 
 @Injectable()
-export class SubjectsService {
+export class SubjectsReadService {
   constructor(
     @InjectRepository(Subject)
-    private subjectsRepository: Repository<Subject>,
+    private readonly subjectRepo: Repository<Subject>,
   ) {}
 
-  async getSubjectInfo(id: number): Promise<Subject | null> {
-    return this.subjectsRepository.findOne({
-      where: { id }
-    });  // Buscar una materia por su ID
+  async getAll(): Promise<Array<{ id: number; subjectName: string }>> {
+    const rows = await this.subjectRepo.find({
+      select: { id: true, subjectName: true },
+      order: { subjectName: "ASC" },
+    });
+    return rows.map((s) => ({ id: s.id, subjectName: s.subjectName }));
   }
 
-  async getAllSubjects(): Promise<Subject[]> {
-    return this.subjectsRepository.find();  // Obtener todas las materias
+  async getOne(
+    id: number,
+  ): Promise<{ id: number; subjectName: string } | null> {
+    const found = await this.subjectRepo.findOne({
+      where: { id },
+      select: { id: true, subjectName: true },
+    });
+    return found ? { id: found.id, subjectName: found.subjectName } : null;
   }
 }

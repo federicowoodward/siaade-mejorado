@@ -1,5 +1,4 @@
 export interface Student {
-    userId: number;
-    legajo: string;
-  }
-  
+  userId: number;
+  legajo: string;
+}

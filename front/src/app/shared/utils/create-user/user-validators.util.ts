@@ -4,7 +4,7 @@ import { ROLE_REQUIREMENTS, UserRole } from './role-config';
 export function canCreateBase(
   role: UserRole | null,
   email: string,
-  cuil: string
+  cuil: string,
 ): boolean {
   return !!role && !!email && !!(cuil || 'pass1234');
 }
@@ -17,6 +17,7 @@ export function canCreateStep2(params: {
   birthDate: string;
   birthPlace: string;
   nationality: string;
+  legajo?: string;
 }): boolean {
   const {
     role,
@@ -26,6 +27,7 @@ export function canCreateStep2(params: {
     birthDate,
     birthPlace,
     nationality,
+    legajo,
   } = params;
   if (!role) return false;
   const req = ROLE_REQUIREMENTS[role];
@@ -35,6 +37,9 @@ export function canCreateStep2(params: {
   }
   if (req.needsCommonData) {
     if (!sex || !birthDate || !birthPlace || !nationality) return false;
+  }
+  if (role === 'student') {
+    if (!legajo || !String(legajo).trim()) return false;
   }
   return true;
 }

@@ -1,8 +1,9 @@
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, effect, inject, signal } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Menu } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
-import { RoleName, RolesService } from '../../../core/services/role.service';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE } from '../../../core/auth/roles';
 import { DrawerVisibility } from '../../../core/services/drawer_visibility.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -22,77 +23,77 @@ function addCommandToMenu(items: MenuItem[], command: () => void): MenuItem[] {
   standalone: true,
 })
 export class MenuComponent {
-  // Signal del menú actual
   menuItems = signal<MenuItem[]>([]);
-  private rolesService = inject(RolesService);
+  private permissions = inject(PermissionService);
   private drawerVisibility = inject(DrawerVisibility);
   private authService = inject(AuthService);
 
-  // menu para agregar elementos generales
   private readonly generalMenuItems: MenuItem[] = [];
 
-  /** Diccionario de menús por rol */
-private readonly menuByRole: Record<RoleName, MenuItem[]> = {
-  student: [
-    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-    {
-      label: 'Inscripciones',
-      icon: 'pi pi-pencil',
-      routerLink: ['/students/enrollments'],
-    },
-    {
-      label: 'Documentación',
-      icon: 'pi pi-calendar',
-      routerLink: ['/students/appointments-documents'],
-    },
-    {
-      label: 'Situación académica',
-      icon: 'pi pi-book',
-      routerLink: ['/students/academic-status'],
-    },
-    { label: 'Avisos', 
-      icon: 'pi pi-bell',
-      routerLink: ['/notices'] },
-  ],
-  teacher: [
-    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-    { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
-    { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
-    { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
-  ],
-  preceptor: [
-    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-    { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
-    { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
-    { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
-  ],
-  secretary: [
-    { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
-    { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
-    { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
-    { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-    { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
-  ],
-};
-
+  private readonly menuByRole: Record<ROLE, MenuItem[]> = {
+    [ROLE.STUDENT]: [
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      {
+        label: 'Inscripciones',
+        icon: 'pi pi-pencil',
+        routerLink: ['/alumno/mesas'],
+      },
+      {
+        label: 'Documentacion',
+        icon: 'pi pi-calendar',
+        routerLink: ['/students/appointments-documents'],
+      },
+      {
+        label: 'Situacion academica',
+        icon: 'pi pi-book',
+        routerLink: ['/alumno/situacion-academica'],
+      },
+    ],
+    [ROLE.TEACHER]: [
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+      { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
+    ],
+    [ROLE.PRECEPTOR]: [
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+      { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
+    ],
+    [ROLE.SECRETARY]: [
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+      { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
+    ],
+    [ROLE.EXECUTIVE_SECRETARY]: [
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
+      { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
+      { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
+      { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
+      { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
+    ],
+  };
 
   onMenuItemClick() {
     this.drawerVisibility.closeSidebar();
   }
 
-  private mergeWithGeneralMenu(role: RoleName): MenuItem[] {
-    const roleSpecific = this.menuByRole[role] ?? [];
+  private mergeWithGeneralMenu(role: ROLE | null): MenuItem[] {
+    const roleSpecific = role ? (this.menuByRole[role] ?? []) : [];
     return [...roleSpecific, ...this.generalMenuItems];
   }
 
   constructor() {
     effect(() => {
-      const role = this.rolesService.currentRole();
+      const role = this.permissions.role();
       const mergedMenu = this.mergeWithGeneralMenu(role);
       this.menuItems.set(
-        addCommandToMenu(mergedMenu, () => this.onMenuItemClick())
+        addCommandToMenu(mergedMenu, () => this.onMenuItemClick()),
       );
     });
   }

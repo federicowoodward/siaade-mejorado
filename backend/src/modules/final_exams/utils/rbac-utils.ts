@@ -1,9 +1,19 @@
-// src/modules/final_exams/utils/rbac-utils.ts
-// ranking simple para la regla de borrado "viejo"
-const RANK: Record<string, number> = {
-  PRECEPTOR: 1,
-  SECRETARIO: 2,
-  ADMIN_GENERAL: 3,
+﻿import { ROLE } from "@/shared/rbac/roles.constants";
+
+const RANK: Record<ROLE, number> = {
+  [ROLE.STUDENT]: 0,
+  [ROLE.TEACHER]: 0,
+  [ROLE.PRECEPTOR]: 1,
+  [ROLE.SECRETARY]: 2,
+  [ROLE.EXECUTIVE_SECRETARY]: 3,
 };
-export const hasRankAtLeast = (role: string, minRole: keyof typeof RANK) =>
-  (RANK[role] ?? 0) >= RANK[minRole];
+
+//por si necesito partial
+// const RANK: Partial<Record<ROLE, number>> = {
+//   [ROLE.PRECEPTOR]: 1,
+//   [ROLE.SECRETARY]: 2,
+//   [ROLE.EXECUTIVE_SECRETARY]: 3,
+// };
+
+export const hasRankAtLeast = (role: ROLE, minRole: ROLE) =>
+  (RANK[role] ?? 0) >= (RANK[minRole] ?? 0);

@@ -2,28 +2,26 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "../../../entities/users.entity";
-import { Role } from "../../../entities/roles.entity";
-import { UserInfo } from "../../../entities/user_info.entity";
-import { CommonData } from "../../../entities/common_data.entity";
-import { AddressData } from "@/entities/address_data.entity";
+import { User } from "@/entities/users/user.entity";
+import { UserInfo } from "@/entities/users/user-info.entity";
+import { CommonData } from "@/entities/users/common-data.entity";
+import { AddressData } from "@/entities/users/address-data.entity";
 import { UserProfileResult } from "./user-profile-reader.types";
 
-type RoleName = "student" | "teacher" | "preceptor" | "secretary";
+import { ROLE, normalizeRole } from "@/shared/rbac/roles.constants";
 
 @Injectable()
 export class UserProfileReaderService {
   constructor(
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
-    @InjectRepository(Role) private readonly rolesRepo: Repository<Role>,
     @InjectRepository(UserInfo)
     private readonly userInfoRepo: Repository<UserInfo>,
     @InjectRepository(CommonData)
     private readonly commonDataRepo: Repository<CommonData>,
     @InjectRepository(AddressData)
-    private readonly addressRepo: Repository<AddressData>
+    private readonly addressRepo: Repository<AddressData>,
   ) {}
-  
+
   // funcion que busca un perfil de usuario por id y devuelve todos sus datos relacionados.
   async findById(id: string): Promise<UserProfileResult> {
     const user = await this.usersRepo.findOne({
@@ -32,12 +30,13 @@ export class UserProfileReaderService {
         role: true,
         userInfo: true,
         commonData: { address: true },
+        student: true,
       },
     });
 
     if (!user) throw new NotFoundException("User not found");
 
-    const roleName = user.role?.name as RoleName | undefined;
+    const normalizedRole = normalizeRole(user.role?.name);
 
     const result: UserProfileResult = {
       id: user.id,
@@ -45,14 +44,20 @@ export class UserProfileReaderService {
       lastName: user.lastName ?? null,
       email: user.email ?? null,
       cuil: user.cuil ?? null,
-      role: user.role ? { id: user.role.id, name: user.role.name } : null,
+      role: user.role
+        ? {
+            id: user.role.id,
+            name: normalizedRole ?? user.role.name,
+          }
+        : null,
+      // Campos de bloqueo
+      isBlocked: (user as any).isBlocked ?? false,
+      blockedReason: (user as any).blockedReason ?? null,
     };
 
     const ui = user.userInfo
       ? {
           id: user.userInfo.id,
-          documentType: user.userInfo.documentType ?? null,
-          documentValue: user.userInfo.documentValue ?? null,
           phone: user.userInfo.phone ?? null,
           emergencyName: user.userInfo.emergencyName ?? null,
           emergencyPhone: user.userInfo.emergencyPhone ?? null,
@@ -83,16 +88,41 @@ export class UserProfileReaderService {
         }
       : null;
 
-    switch (roleName) {
-      case "student":
-      case "teacher":
-        result.userInfo = ui;
+    switch (normalizedRole) {
+      case ROLE.STUDENT:
         result.commonData = cd;
+        if (user.student) {
+          result.student = {
+            userId: user.student.userId,
+            legajo: user.student.legajo ?? null,
+            commissionId: user.student.commissionId ?? null,
+            isActive: user.student.isActive ?? null,
+            canLogin: user.student.canLogin ?? null,
+            studentStartYear: user.student.studentStartYear ?? null,
+          } as any;
+        }
         break;
-      case "preceptor":
-        result.userInfo = ui;
+      case ROLE.TEACHER:
+        result.commonData = cd;
+        if (user.teacher) {
+          (result as any).teacher = {
+            userId: user.teacher.userId,
+            isActive: (user.teacher as any).isActive ?? null,
+            canLogin: (user.teacher as any).canLogin ?? null,
+          };
+        }
         break;
-      case "secretary":
+      case ROLE.PRECEPTOR:
+        if (user.preceptor) {
+          (result as any).preceptor = {
+            userId: user.preceptor.userId,
+            isActive: (user.preceptor as any).isActive ?? null,
+            canLogin: (user.preceptor as any).canLogin ?? null,
+          };
+        }
+        break;
+      case ROLE.SECRETARY:
+      case ROLE.EXECUTIVE_SECRETARY:
       default:
         break;
     }

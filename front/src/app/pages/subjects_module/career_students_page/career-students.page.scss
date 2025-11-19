@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  padding: 1rem 2rem;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  height: 220px;
+}
+
+.error {
+  color: #ef4444;
+  font-weight: 600;
+  padding: 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background-color: #fee2e2;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+::ng-deep {
+  .tr-container td {
+    height: 3.5rem !important;
+    padding: 0 1rem !important;
+  }
+}

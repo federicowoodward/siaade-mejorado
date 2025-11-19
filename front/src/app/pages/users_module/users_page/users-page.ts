@@ -1,43 +1,93 @@
 import { Component, effect, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { UsersTableComponent } from '../../../shared/components/users-table/users-table.component';
 import { Button } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
-import { RolesService } from '../../../core/services/role.service';
-import { UserRow, Role } from '../../../core/models/users-table.models';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE, ROLE_BY_ID } from '../../../core/auth/roles';
+import { UserRow } from '../../../core/models/users-table.models';
 import { mapApiUserToRow } from '../../../shared/adapters/users.adapter';
+import { ApiCacheService } from '../../../core/cache/api-cache.service';
+import { environment as env } from 'environments/environment';
 
 @Component({
   selector: 'app-users-page',
   standalone: true,
-  imports: [UsersTableComponent, Button],
+  imports: [CommonModule, UsersTableComponent, Button, DialogModule],
   templateUrl: './users-page.html',
   styleUrl: './users-page.scss',
 })
 export class UsersPage {
   private router = inject(Router);
   private api = inject(ApiService);
-  private roles = inject(RolesService);
+  private permissions = inject(PermissionService);
+  private cache = inject(ApiCacheService);
 
-  // Role del usuario logueado (sácala de tu auth service)
-  viewerRole: Role = this.roles.currentRole() as Role; // ej: 'secretary'
+  public ROLE = ROLE;
+  viewerRole: ROLE | null = this.permissions.currentRole();
 
   rows = signal<UserRow[]>([]);
 
+  // Modal "Materias a cargo" (docente)
+  dialogTeacher = signal<{ visible: boolean; teacherId: string | null }>({
+    visible: false,
+    teacherId: null,
+  });
+  dialogLoading = signal(false);
+  dialogError = signal<string | null>(null);
+  dialogData = signal<{
+    teacher: {
+      id: string;
+      name: string;
+      email: string;
+      cuil: string | null;
+    } | null;
+    subjects: Array<{
+      subject: { id: number; name: string };
+      commissions: Array<{ id: number; letter: string | null }>;
+    }>;
+  } | null>(null);
+
   constructor() {
+    this.init();
+
+    effect(() => {
+      this.viewerRole = this.permissions.currentRole();
+    });
+  }
+
+  // Solo SECRETARIO o DIRECTIVO pueden crear usuarios
+  canCreateUser(): boolean {
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+  }
+
+  private async init() {
+    // Invalidar cache del endpoint de usuarios para evitar resultados viejos (TTL 30m)
+    const base = (env.apiBaseUrl || '').replace(/\/$/, '');
+    try {
+      if (base) {
+        await this.cache.invalidateByPrefix(`GET:${base}/users`);
+      } else {
+        await this.cache.invalidateByPrefix(`GET:`);
+      }
+    } catch {}
+
     this.api.getAll('users').subscribe((users) => {
       const mapped = users.map((u) =>
-        mapApiUserToRow(u, (id: number) => {
-          const roleName = this.roles.getRoleNameById(id);
-          return roleName === null ? undefined : roleName;
-        })
+        mapApiUserToRow(u, (id: number) => ROLE_BY_ID[id] ?? null),
       );
       this.rows.set(mapped);
     });
   }
 
   goToNewUser() {
-    this.router.navigate(['users/create']);
+    // Navegación absoluta para evitar /users/users/create
+    this.router.navigate(['/users/create']);
   }
 
   onRowAction(e: { actionId: string; row: UserRow }) {
@@ -47,18 +97,55 @@ export class UsersPage {
       this.router.navigate(['/users/user_detail', row.id]);
     }
     if (actionId === 'cert') {
-      // abrir modal desde acá o navegar a una ruta de certificados
       this.router.navigate(['/users/certificates', row.id]);
     }
     if (actionId === 'academic') {
       this.router.navigate(['/users/student_academic_status', row.id]);
     }
     if (actionId === 'teacher-subjects') {
-      this.router.navigate(['/users/teacher_subjects', row.id]);
+      this.openTeacherAssignments(row.id);
     }
   }
 
-  onRowClick(row: UserRow) {
-    // define comportamiento por defecto al click en la fila (opcional)
+  onRowClick(_row: UserRow) {}
+
+  // Abre y carga el modal de materias a cargo del docente
+  private openTeacherAssignments(teacherId: string) {
+    this.dialogTeacher.set({ visible: true, teacherId });
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
+
+    this.api
+      .request<{
+        teacher: {
+          id: string;
+          name: string;
+          email: string;
+          cuil: string | null;
+        } | null;
+        subjects: Array<{
+          subject: { id: number; name: string };
+          commissions: Array<{ id: number; letter: string | null }>;
+        }>;
+      }>('GET', `catalogs/teacher/${teacherId}/subject-commissions`)
+      .subscribe({
+        next: (data) => {
+          this.dialogData.set(data);
+          this.dialogLoading.set(false);
+        },
+        error: (err) => {
+          console.error(err);
+          this.dialogError.set('No se pudieron cargar las materias a cargo.');
+          this.dialogLoading.set(false);
+        },
+      });
+  }
+
+  closeTeacherDialog() {
+    this.dialogTeacher.set({ visible: false, teacherId: null });
+    this.dialogLoading.set(false);
+    this.dialogError.set(null);
+    this.dialogData.set(null);
   }
 }
