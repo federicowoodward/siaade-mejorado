@@ -36,8 +36,3 @@ import { Secretary } from "@/entities/users/secretary.entity";
   exports: [FinalExamTableService, FinalExamService],
 })
 export class FinalExamsModule {}
-
-
-
-
-

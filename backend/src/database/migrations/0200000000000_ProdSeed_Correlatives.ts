@@ -11,7 +11,7 @@ export class ProdSeedCorrelatives1762800000000 implements MigrationInterface {
     // career_id por nombre oficial
     const [{ id: careerId }] = await queryRunner.query(
       `SELECT id FROM careers WHERE career_name = $1 LIMIT 1`,
-      ["Tecnicatura de desarrollo en software"]
+      ["Tecnicatura de desarrollo en software"],
     );
     if (!careerId) throw new Error("Career not found for correlatives seed");
 
@@ -47,7 +47,7 @@ export class ProdSeedCorrelatives1762800000000 implements MigrationInterface {
         .join(",")}
       ON CONFLICT DO NOTHING
       `,
-        rows.flat()
+        rows.flat(),
       );
     }
   }

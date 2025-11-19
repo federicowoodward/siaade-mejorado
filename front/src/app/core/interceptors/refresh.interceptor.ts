@@ -1,4 +1,4 @@
-import { Injectable, inject } from "@angular/core";
+import { Injectable, inject } from '@angular/core';
 import {
   HttpContextToken,
   HttpErrorResponse,
@@ -6,26 +6,27 @@ import {
   HttpHandler,
   HttpInterceptor,
   HttpRequest,
-} from "@angular/common/http";
-import { Observable, from, throwError, firstValueFrom } from "rxjs";
-import { catchError, switchMap } from "rxjs/operators";
-import { environment } from "../../../environments/environment";
-import { AuthStateService } from "../services/auth/auth-state.service";
+} from '@angular/common/http';
+import { Observable, from, throwError, firstValueFrom } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { AuthStateService } from '../services/auth/auth-state.service';
 
 // Incluir reset-password endpoints para evitar intentos de refresh innecesarios
-const AUTH_ENDPOINT_REGEX = /\/auth\/(login|refresh|logout|reset-password(?:\/.*)?)$/i;
+const AUTH_ENDPOINT_REGEX =
+  /\/auth\/(login|refresh|logout|reset-password(?:\/.*)?)$/i;
 
 export const REFRESH_ATTEMPTED = new HttpContextToken<boolean>(() => false);
 
 @Injectable()
 export class RefreshInterceptor implements HttpInterceptor {
   private readonly authState = inject(AuthStateService);
-  private readonly apiBase = environment.apiBaseUrl.replace(/\/$/, "");
+  private readonly apiBase = environment.apiBaseUrl.replace(/\/$/, '');
   private refreshPromise: Promise<string> | null = null;
 
   intercept(
     request: HttpRequest<unknown>,
-    next: HttpHandler
+    next: HttpHandler,
   ): Observable<HttpEvent<unknown>> {
     return next.handle(request).pipe(
       catchError((error) => {
@@ -43,13 +44,11 @@ export class RefreshInterceptor implements HttpInterceptor {
           catchError((refreshError) => {
             this.authState.clearSession({ emit: true });
             return throwError(() =>
-              refreshError instanceof HttpErrorResponse
-                ? refreshError
-                : error
+              refreshError instanceof HttpErrorResponse ? refreshError : error,
             );
-          })
+          }),
         );
-      })
+      }),
     );
   }
 
@@ -71,7 +70,7 @@ export class RefreshInterceptor implements HttpInterceptor {
 
   private shouldAttemptRefresh(
     error: unknown,
-    request: HttpRequest<unknown>
+    request: HttpRequest<unknown>,
   ): boolean {
     if (!(error instanceof HttpErrorResponse)) {
       return false;
@@ -97,7 +96,7 @@ export class RefreshInterceptor implements HttpInterceptor {
   }
 
   private isAuthEndpoint(url: string): boolean {
-    const relative = url.replace(this.apiBase, "");
+    const relative = url.replace(this.apiBase, '');
     return AUTH_ENDPOINT_REGEX.test(relative);
   }
 }

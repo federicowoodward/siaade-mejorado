@@ -1,118 +1,122 @@
-<p-toast position="bottom-right"></p-toast>
-
 <div class="status-wrapper flex flex-column gap-4">
-  <div class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between">
+  <div
+    class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between"
+  >
     <div>
-      <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">Alumno / Situacion academica</p>
+      <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
+        Alumno / Situacion academica
+      </p>
       <h2 class="m-0 text-2xl font-semibold">Resumen academico</h2>
       <p class="text-color-secondary mt-1 mb-0">
-        Consulta tus parciales, asistencia y estado para cada materia. Las acciones se habilitan segun las ventanas oficiales.
+        Consulta tus parciales, asistencia y estado para cada materia. Las
+        acciones se habilitan segun las ventanas oficiales.
       </p>
     </div>
     <div class="flex gap-2 flex-wrap">
-      <p-button type="button" label="Ver mesas" icon="pi pi-calendar" (onClick)="goToMesas()" />
-      <p-button type="button" label="Actualizar" icon="pi pi-refresh" severity="secondary" (onClick)="reload()" />
+      <p-button
+        type="button"
+        label="Ver mesas"
+        icon="pi pi-calendar"
+        (onClick)="goToMesas()"
+      />
+      <p-button
+        type="button"
+        label="Actualizar"
+        icon="pi pi-refresh"
+        severity="secondary"
+        (onClick)="reload()"
+      />
     </div>
   </div>
 
-  <div class="surface-card shadow-1 border-round p-4" *ngIf="loading(); else statusContent">
+  <div
+    class="surface-card shadow-1 border-round p-4"
+    *ngIf="loading(); else statusContent"
+  >
     <div class="flex justify-content-center py-5">
       <p-progressSpinner strokeWidth="3"></p-progressSpinner>
     </div>
   </div>
 
   <ng-template #statusContent>
-    <div *ngIf="!groupedCards().length" class="surface-card shadow-1 border-round p-4 text-center text-color-secondary">
+    <div
+      *ngIf="!groupedCards().length"
+      class="surface-card shadow-1 border-round p-4 text-center text-color-secondary"
+    >
       No encontramos materias activas para tu legajo.
     </div>
 
-    <ng-container *ngFor="let group of groupedCards()">
-      <h3 class="text-lg font-semibold mt-3 mb-2">{{ group.year }}</h3>
-      <div class="flex flex-column gap-3">
-        <div class="subject-card surface-card border-round shadow-1 p-4" *ngFor="let card of group.subjects">
-          <div class="flex flex-column gap-2 md:flex-row md:justify-content-between md:align-items-center">
-            <div>
-              <h4 class="m-0 text-xl font-semibold">{{ card.subjectName }}</h4>
-              <p class="text-color-secondary mt-1 mb-0">
-                Comision {{ card.commissionLabel || 'sin asignar' }}
-              </p>
-            </div>
-            <p-chip
-              [label]="card.accreditation"
-              styleClass="uppercase text-sm font-semibold"
-              [tooltipOptions]="{ showDelay: 200 }"
-              pTooltip="{{ accreditationHelp }}"
-            ></p-chip>
-          </div>
-
-          <div class="grid mt-3">
-            <div class="col-12 md:col-4">
-              <p class="text-sm text-color-secondary m-0 flex align-items-center gap-1">
-                Parciales esperados
-                <i class="pi pi-info-circle text-color-secondary" pTooltip="{{ calcHelp }}" tooltipPosition="top"></i>
-              </p>
-              <div class="partial-list mt-1">
-                <span class="badge" *ngFor="let note of card.notes">
-                  {{ note.label }}: {{ note.value ?? '-' }}
-                </span>
-              </div>
-            </div>
-            <div class="col-6 md:col-2">
-              <p class="text-sm text-color-secondary m-0">Asistencia</p>
-              <p class="text-xl font-semibold">{{ card.attendancePct | number: '1.0-0' }}%</p>
-            </div>
-            <div class="col-6 md:col-2">
-              <p class="text-sm text-color-secondary m-0">Final</p>
-              <p class="text-xl font-semibold">{{ card.finalScore ?? '-' }}</p>
-            </div>
-            <div class="col-12 md:col-4">
-              <p class="text-sm text-color-secondary m-0">Detalle de calculo</p>
-              <p class="m-0 text-color">{{ card.finalExplanation }}</p>
-            </div>
-          </div>
-
-          <div class="flex gap-2 align-items-center mt-3 flex-wrap">
-            <p-tag [value]="card.condition || 'Sin estado'" [severity]="stateSeverity(card.condition)"></p-tag>
-          </div>
-
-          <div class="flex flex-column gap-2 mt-3">
-            <div class="flex gap-2 flex-wrap">
-              <p-button
-                *ngIf="card.actions.canEnrollCourse"
-                type="button"
-                label="Inscribirme al curso"
-                icon="pi pi-pencil"
-                severity="secondary"
-                (onClick)="onCourseEnroll(card)"
-              ></p-button>
-              <p-button
-                *ngIf="card.actions.canEnrollExam"
-                type="button"
-                label="Inscribirme a mesa"
-                icon="pi pi-book"
-                (onClick)="onExamEnroll(card)"
-              ></p-button>
-            </div>
-
-            <app-block-message
-              *ngIf="card.actions.courseReason && !card.actions.canEnrollCourse"
-              [title]="blockInfo(card.actions.courseReason)?.title || ''"
-              [message]="blockInfo(card.actions.courseReason)?.message || ''"
-              [variant]="blockInfo(card.actions.courseReason)?.variant || 'info'"
-              [reasonCode]="card.actions.courseReason || 'UNKNOWN'"
-            ></app-block-message>
-
-            <app-block-message
-              *ngIf="card.actions.examReason && !card.actions.canEnrollExam"
-              [title]="blockInfo(card.actions.examReason)?.title || ''"
-              [message]="blockInfo(card.actions.examReason)?.message || ''"
-              [variant]="blockInfo(card.actions.examReason)?.variant || 'info'"
-              [reasonCode]="card.actions.examReason || 'UNKNOWN'"
-              [actions]="blockActions(card)"
-            ></app-block-message>
-          </div>
+    <ng-container *ngFor="let group of groupedCards(); trackBy: trackGroup">
+      <div class="year-card surface-card shadow-1 border-round overflow-hidden">
+        <div class="year-card__header">
+          <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
+            {{ group.label }}
+          </p>
+          <h3 class="m-0 text-xl font-semibold">
+            {{ group.subjects.length }} {{ group.subjects.length === 1 ? 'materia' : 'materias' }}
+          </h3>
         </div>
+
+        <p-table
+          [value]="group.subjects"
+          [responsiveLayout]="'scroll'"
+          class="status-table"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Materia</th>
+              <th>Año</th>
+              <th>Comisión</th>
+              <th>Condición final</th>
+              <th>Nota final</th>
+              <th class="text-center">Acción</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>
+                <div class="subject-cell">
+                  <span class="subject-name">{{ row.subjectName }}</span>
+                  <small class="text-color-secondary"
+                    >Plan {{ row.studyPlan || "sin asignar" }}</small
+                  >
+                </div>
+              </td>
+              <td>{{ row.yearLabel }}</td>
+              <td>{{ row.commissionLabel || "Sin comisión" }}</td>
+              <td>
+                <p-tag
+                  [value]="row.accreditation || row.condition || 'Sin estado'"
+                  [severity]="stateSeverity(row.condition)"
+                ></p-tag>
+              </td>
+              <td class="text-center">
+                <span class="final-score">{{ row.finalScore ?? "-" }}</span>
+              </td>
+              <td class="text-center">
+                <div class="status-actions">
+                  <p-button
+                    type="button"
+                    size="small"
+                    label="Detalle"
+                    icon="pi pi-search"
+                    severity="secondary"
+                    (onClick)="openSubjectDetail(row)"
+                    ariaLabel="Ver detalle de {{ row.subjectName }}"
+                  ></p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
     </ng-container>
   </ng-template>
 </div>
+
+<app-subject-status-detail
+  [(visible)]="detailVisible"
+  [subject]="selectedSubject"
+  [studentName]="studentName()"
+  (closed)="onDetailClosed()"
+></app-subject-status-detail>

@@ -73,6 +73,55 @@ export class PrerequisitesService {
     };
   }
 
+  async updatePrereqsForOrder(
+    careerId: number,
+    orderNo: number,
+    prereqs: number[],
+  ): Promise<SubjectPrereqList> {
+    await this.ensureCareerExists(careerId);
+    await this.ensureSubjectOrderExists(careerId, orderNo);
+    const sanitized = Array.from(
+      new Set(
+        (prereqs ?? [])
+          .map((value) => Number(value))
+          .filter(
+            (value) =>
+              Number.isInteger(value) && value > 0 && value !== orderNo,
+          ),
+      ),
+    ).sort((a, b) => a - b);
+
+    // Validar que todos los orderNo existan en la misma carrera
+    for (const prereqOrder of sanitized) {
+      await this.ensureSubjectOrderExists(careerId, prereqOrder);
+    }
+
+    await this.prereqRepo.manager.transaction(async (trx) => {
+      await trx.delete(SubjectPrerequisiteByOrder, {
+        career_id: careerId,
+        subject_order_no: orderNo,
+      });
+
+      if (sanitized.length === 0) return;
+
+      const rows = sanitized.map((prereqOrder) => ({
+        career_id: careerId,
+        subject_order_no: orderNo,
+        prereq_order_no: prereqOrder,
+      }));
+
+      await trx
+        .createQueryBuilder()
+        .insert()
+        .into(SubjectPrerequisiteByOrder)
+        .values(rows)
+        .orIgnore()
+        .execute();
+    });
+
+    return this.listPrereqsByOrder(careerId, orderNo);
+  }
+
   async computeStudentApprovedOrders(
     careerId: number,
     studentId: string,
@@ -90,11 +139,7 @@ export class PrerequisitesService {
         "careerSubject.subject_id = commission.subject_id AND careerSubject.career_id = :careerId",
         { careerId },
       )
-      .innerJoin(
-        SubjectStatusType,
-        "status",
-        "status.id = progress.status_id",
-      )
+      .innerJoin(SubjectStatusType, "status", "status.id = progress.status_id")
       .where("progress.student_id = :studentId", { studentId })
       .andWhere("progress.status_id IS NOT NULL")
       .andWhere("LOWER(status.status_name) IN (:...approvedStatuses)", {

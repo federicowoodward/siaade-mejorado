@@ -14,4 +14,3 @@ export function isRoleAllowed(action: string, role: ROLE | null): boolean {
   if (!role) return false;
   return allowlist.includes(role);
 }
-

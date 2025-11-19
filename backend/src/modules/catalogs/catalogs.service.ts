@@ -56,7 +56,7 @@ export class CatalogsService {
     @InjectRepository(Teacher)
     private readonly teacherRepo: Repository<Teacher>,
     @InjectRepository(SubjectPrerequisiteByOrder)
-    private readonly subjectPrerequisiteByOrderRepo: Repository<SubjectPrerequisiteByOrder>
+    private readonly subjectPrerequisiteByOrderRepo: Repository<SubjectPrerequisiteByOrder>,
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -250,9 +250,25 @@ export class CatalogsService {
     };
   }
 
+  async findCareerYears(careerId: number): Promise<number[]> {
+    const careerSubjects = await this.careerSubjectRepo.find({
+      where: { careerId },
+      select: ["yearNo"],
+    });
+
+    const years = new Set<number>();
+    for (const cs of careerSubjects) {
+      if (cs.yearNo != null && cs.yearNo > 0) {
+        years.add(cs.yearNo);
+      }
+    }
+
+    return Array.from(years).sort((a, b) => a - b);
+  }
+
   async findCareerStudentsByCommission(
     careerId: number,
-    opts?: { studentStartYear?: number }
+    opts?: { studentStartYear?: number },
   ) {
     const career = await this.careerRepo.findOne({
       where: { id: careerId },
@@ -357,7 +373,7 @@ export class CatalogsService {
   }
 
   async getSubjectCommissionTeachers(
-    subjectId: number
+    subjectId: number,
   ): Promise<SubjectCommissionTeachersDto> {
     const subject = await this.subjectRepo.findOne({
       where: { id: subjectId },
@@ -406,7 +422,7 @@ export class CatalogsService {
         const teacherId = teacher.userId;
         if (!entry.teachers.some((t) => t.teacherId === teacherId)) {
           const nameParts = [user?.name, user?.lastName].filter(
-            (part): part is string => Boolean(part)
+            (part): part is string => Boolean(part),
           );
           entry.teachers.push({
             teacherId,
@@ -469,7 +485,7 @@ export class CatalogsService {
     return teachers.map((t) => {
       const user = t.user;
       const nameParts = [user?.name, user?.lastName].filter(
-        (p): p is string => !!p
+        (p): p is string => !!p,
       );
       return {
         teacherId: t.userId,
@@ -497,7 +513,7 @@ export class CatalogsService {
       });
       if (!commission) {
         throw new NotFoundException(
-          `Commission with id ${commissionId} was not found`
+          `Commission with id ${commissionId} was not found`,
         );
       }
       return { commission, subjects: [] };
@@ -675,7 +691,7 @@ export class CatalogsService {
 
     // Ordenar materias dentro de cada año por nombre
     Object.values(byYear).forEach((arr) =>
-      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
+      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)),
     );
 
     return { byYear };
@@ -715,7 +731,7 @@ export class CatalogsService {
 
     if (!student) {
       throw new NotFoundException(
-        `El usuario ${studentId} no es un estudiante o no existe.`
+        `El usuario ${studentId} no es un estudiante o no existe.`,
       );
     }
 
@@ -774,12 +790,12 @@ export class CatalogsService {
     const deriveCondition = (
       notes: Array<number | null | undefined>,
       attendance: number | null | undefined,
-      existing: string | null | undefined
+      existing: string | null | undefined,
     ): string => {
       if (existing && existing.trim()) return existing;
       const att = Number(attendance ?? 0);
       const valid = notes.filter(
-        (n): n is number => typeof n === "number" && !Number.isNaN(n)
+        (n): n is number => typeof n === "number" && !Number.isNaN(n),
       );
       if (valid.length === 0) return "Inscripto";
       const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
@@ -808,14 +824,14 @@ export class CatalogsService {
         condition: deriveCondition(
           [row.note1, row.note2, row.note3, row.note4],
           Number(row.attendancePercentage ?? 0) || 0,
-          row.condition ?? null
+          row.condition ?? null,
         ),
       });
     }
 
     // Ordenar materias dentro de cada año por nombre
     Object.values(byYear).forEach((arr) =>
-      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
+      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)),
     );
 
     return { studentId, byYear };
@@ -837,5 +853,26 @@ export class CatalogsService {
       map.get(r.subject_order_no)!.push(r.prereq_order_no);
     }
     return map;
+  }
+
+  async listSubjectCommissionsSimple() {
+    const rows = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.subject", "subject")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .orderBy("subject.subjectName", "ASC", "NULLS LAST")
+      .addOrderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("sc.id", "ASC")
+      .getMany();
+
+    return rows.map((row) => ({
+      id: row.id,
+      subjectId: row.subjectId,
+      subjectName: row.subject?.subjectName ?? `Materia ${row.subjectId}`,
+      commissionLetter: row.commission?.commissionLetter ?? null,
+      label: `${row.subject?.subjectName ?? "Materia"} · Comision ${
+        row.commission?.commissionLetter ?? row.id
+      }`,
+    }));
   }
 }

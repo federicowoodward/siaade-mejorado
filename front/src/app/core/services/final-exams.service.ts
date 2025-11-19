@@ -7,7 +7,7 @@ import { FinalExam } from '../models/final_exam.model';
 export class FinalExamsService {
   private base = 'finals/exam';
 
-  constructor(private api: ApiService) { }
+  constructor(private api: ApiService) {}
 
   private normalizeDate(d: string | Date | null | undefined): string {
     if (!d) return '';
@@ -44,7 +44,9 @@ export class FinalExamsService {
     aula?: string;
   }): Observable<FinalExam> {
     const dateOnly = this.normalizeDate(dto.exam_date);
-    const withTime = dto?.exam_time ? `${dateOnly}T${dto.exam_time}:00` : dateOnly;
+    const withTime = dto?.exam_time
+      ? `${dateOnly}T${dto.exam_time}:00`
+      : dateOnly;
     const payload: any = {
       exam_table_id: dto.final_exam_table_id,
       subject_id: dto.subject_id,
@@ -59,7 +61,7 @@ export class FinalExamsService {
 
   edit(
     id: number,
-    dto: Partial<{ subject_id: number; exam_date: string; aula?: string }>
+    dto: Partial<{ subject_id: number; exam_date: string; aula?: string }>,
   ): Observable<FinalExam> {
     const payload: any = {};
     if (dto.subject_id !== undefined) payload.subject_id = dto.subject_id;

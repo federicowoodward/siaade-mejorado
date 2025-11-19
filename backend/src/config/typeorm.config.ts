@@ -3,19 +3,20 @@ import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import * as path from "path";
 
 export function createTypeOrmConfig(
-  config: ConfigService
+  config: ConfigService,
 ): TypeOrmModuleOptions {
   const dbUrl = config.get<string>("DATABASE_URL");
   const useSsl = config.get<string>("DB_SSL") === "true";
+  const shouldSync = config.get<string>("TYPEORM_SYNC") === "true";
 
   const base: TypeOrmModuleOptions = {
     type: "postgres",
     entities: [
       path.join(__dirname, "..", "entities", "**", "*.entity{.ts,.js}"),
     ],
-    synchronize: false,
+    synchronize: shouldSync,
     logging: true,
-    ssl: useSsl ? { rejectUnauthorized: false } as any : undefined,
+    ssl: useSsl ? ({ rejectUnauthorized: false } as any) : undefined,
   };
 
   if (dbUrl) {

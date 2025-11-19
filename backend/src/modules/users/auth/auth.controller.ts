@@ -46,7 +46,7 @@ const REFRESH_COOKIE_PATH = "/api/auth/refresh";
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly rateLimit: RateLimitService
+    private readonly rateLimit: RateLimitService,
   ) {}
 
   @Public()
@@ -87,11 +87,10 @@ export class AuthController {
   })
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ): Promise<LoginSuccessResponse> {
-    const { accessToken, refreshToken, user } = await this.authService.login(
-      loginDto
-    );
+    const { accessToken, refreshToken, user } =
+      await this.authService.login(loginDto);
 
     this.setRefreshCookie(res, refreshToken);
 
@@ -125,7 +124,7 @@ export class AuthController {
   })
   async refresh(
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ): Promise<RefreshSuccessResponse> {
     const refreshToken = this.extractRefreshToken(req);
 
@@ -165,12 +164,16 @@ export class AuthController {
     status: 200,
     description: "Password reset email sent",
   })
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto, @Req() req: Request) {
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Req() req: Request,
+  ) {
     const max = Number(process.env.RESET_RATE_MAX ?? 10);
     const windowMs = Number(process.env.RESET_RATE_WINDOW_MS ?? 15 * 60 * 1000);
-    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    const ip =
+      (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
     // Fallback: usar identity como clave secundaria para mitigar flood por IP compartida
-    const id = (resetPasswordDto.identity || '').trim();
+    const id = (resetPasswordDto.identity || "").trim();
     this.rateLimit.check(`reset:${ip}`, max, windowMs);
     this.rateLimit.check(`reset-id:${id}`, max, windowMs);
     return this.authService.resetPassword(resetPasswordDto);
@@ -181,10 +184,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Confirm password reset with token" })
   @ApiResponse({ status: 200, description: "Password reset successful" })
-  async confirmReset(@Body() dto: ConfirmResetPasswordDto, @Req() req: Request) {
+  async confirmReset(
+    @Body() dto: ConfirmResetPasswordDto,
+    @Req() req: Request,
+  ) {
     const max = Number(process.env.RESET_CONFIRM_RATE_MAX ?? 10);
-    const windowMs = Number(process.env.RESET_CONFIRM_RATE_WINDOW_MS ?? 15 * 60 * 1000);
-    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    const windowMs = Number(
+      process.env.RESET_CONFIRM_RATE_WINDOW_MS ?? 15 * 60 * 1000,
+    );
+    const ip =
+      (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
     this.rateLimit.check(`reset-confirm:${ip}`, max, windowMs);
     return this.authService.confirmResetPassword(dto);
   }
@@ -196,9 +205,12 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Código verificado" })
   async verifyResetCode(@Body() dto: VerifyResetCodeDto, @Req() req: Request) {
     const max = Number(process.env.RESET_CODE_RATE_MAX ?? 10);
-    const windowMs = Number(process.env.RESET_CODE_RATE_WINDOW_MS ?? 15 * 60 * 1000);
-    const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
-    const id = (dto.identity || '').trim();
+    const windowMs = Number(
+      process.env.RESET_CODE_RATE_WINDOW_MS ?? 15 * 60 * 1000,
+    );
+    const ip =
+      (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
+    const id = (dto.identity || "").trim();
     this.rateLimit.check(`reset-verify:${ip}`, max, windowMs);
     this.rateLimit.check(`reset-verify-id:${id}`, max, windowMs);
     return this.authService.verifyResetCode(dto);
@@ -211,29 +223,36 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async forceChange(@Req() req: Request, @Body() body: { password: string }) {
-  const userId = (req as any).user?.sub || (req as any).user?.id; // payload de JWT
+    const userId = (req as any).user?.sub || (req as any).user?.id; // payload de JWT
     if (!userId) throw new UnauthorizedException("Missing user in request");
-    const pwd = (body?.password || '').trim();
-    if (!pwd) throw new BadRequestException('Password requerida');
+    const pwd = (body?.password || "").trim();
+    if (!pwd) throw new BadRequestException("Password requerida");
     return this.authService.forceChangePassword(userId, pwd);
   }
 
   // Solicitar código para cambio voluntario dentro de sesión
   @Post("password/request-change-code")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Solicita un código para cambio voluntario de contraseña" })
+  @ApiOperation({
+    summary: "Solicita un código para cambio voluntario de contraseña",
+  })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async requestChangeCode(@Req() req: Request) {
-  const userId = (req as any).user?.sub || (req as any).user?.id;
+    const userId = (req as any).user?.sub || (req as any).user?.id;
     if (!userId) throw new UnauthorizedException("Missing user in request");
     // Reutilizamos issueResetToken internamente a través de resetPassword(identity)
     const user = await this.authService.validateUser(userId);
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) throw new UnauthorizedException("User not found");
     // Llamamos a resetPassword con identidad segura (email)
-    const result = await this.authService.resetPassword({ identity: user.email } as any);
+    const result = await this.authService.resetPassword({
+      identity: user.email,
+    } as any);
     // En entorno dev/test exponemos el code y token para facilitar pruebas sin SMTP.
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    if (
+      process.env.NODE_ENV === "development" ||
+      process.env.NODE_ENV === "test"
+    ) {
       return {
         message: result.message,
         code: result.code ?? undefined, // si internamente lo devolviera
@@ -248,21 +267,36 @@ export class AuthController {
   // Cambio con código (flujo interno) - requiere currentPassword y code (token ya emitido)
   @Post("password/change-with-code")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Confirma cambio de contraseña con código dentro de sesión" })
+  @ApiOperation({
+    summary: "Confirma cambio de contraseña con código dentro de sesión",
+  })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async changeWithCode(@Req() req: Request, @Body() body: { code: string; currentPassword: string; newPassword: string }) {
-  const userId = (req as any).user?.sub || (req as any).user?.id;
+  async changeWithCode(
+    @Req() req: Request,
+    @Body()
+    body: { code: string; currentPassword: string; newPassword: string },
+  ) {
+    const userId = (req as any).user?.sub || (req as any).user?.id;
     if (!userId) throw new UnauthorizedException("Missing user in request");
     const { code, currentPassword, newPassword } = body || {};
-    if (!code || !/^[0-9]{6}$/.test(code)) throw new BadRequestException('Código inválido');
-    if (!currentPassword || !newPassword) throw new BadRequestException('Contraseñas requeridas');
+    if (!code || !/^[0-9]{6}$/.test(code))
+      throw new BadRequestException("Código inválido");
+    if (!currentPassword || !newPassword)
+      throw new BadRequestException("Contraseñas requeridas");
 
     // Verificar código generar token temporal luego confirmar con currentPassword
     const user = await this.authService.validateUser(userId);
-    if (!user) throw new UnauthorizedException('User not found');
-    const verify = await this.authService.verifyResetCode({ identity: user.email, code });
-    return this.authService.confirmResetPassword({ token: verify.token, currentPassword, password: newPassword });
+    if (!user) throw new UnauthorizedException("User not found");
+    const verify = await this.authService.verifyResetCode({
+      identity: user.email,
+      code,
+    });
+    return this.authService.confirmResetPassword({
+      token: verify.token,
+      currentPassword,
+      password: newPassword,
+    });
   }
 
   private extractRefreshToken(req: Request): string | null {

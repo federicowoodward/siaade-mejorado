@@ -6,20 +6,19 @@ export function rowsTrackBy(_: number, item: AcademicSituationRow): string {
 
 export function computeFinalForRow(
   row: AcademicSituationRow,
-  partialsCount?: number
+  partialsCount?: number,
 ): number | null {
   const usesFourPartials = partialsCount === 4;
-  const rawValues =
-    usesFourPartials
-      ? [row.note1, row.note2, row.note3, row.note4]
-      : [row.note1, row.note2];
+  const rawValues = usesFourPartials
+    ? [row.note1, row.note2, row.note3, row.note4]
+    : [row.note1, row.note2];
 
   const numericValues = rawValues.filter(
     (value): value is number =>
       typeof value === 'number' &&
       !Number.isNaN(value) &&
       value >= 0 &&
-      value <= 10
+      value <= 10,
   );
 
   if (numericValues.length === 0) {

@@ -9,7 +9,7 @@ export interface ExamTable {
   id: number;
   name: string;
   start_date: string;
-  end_date: string;  
-  created_by: string; 
-  created_by_user?: ExamTableUser; 
+  end_date: string;
+  created_by: string;
+  created_by_user?: ExamTableUser;
 }

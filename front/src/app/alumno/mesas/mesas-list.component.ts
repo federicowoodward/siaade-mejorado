@@ -6,12 +6,13 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ButtonModule } from 'primeng/button';
+import type { ButtonSeverity } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -32,7 +33,11 @@ import {
   BlockMessageVariant,
   BlockMessageAction,
 } from '../../shared/block-message/block-message.component';
-import { AuthService } from '../../core/services/auth.service';
+import { ExamTableSyncService } from '../../core/services/exam-table-sync.service';
+import {
+  StudentStatusService,
+  StudentSubjectCard,
+} from '../../core/services/student-status.service';
 
 interface ExamCallRow {
   mesaId: number;
@@ -43,11 +48,30 @@ interface ExamCallRow {
   call: StudentExamCall;
   windowState: StudentWindowState;
   windowRange: string;
-  quotaText: string;
+  enrollmentOpensAt: Date | null;
+  enrollmentClosesAt: Date | null;
+  enrollmentOpensLabel: string;
+  enrollmentClosesLabel: string;
   table: StudentExamTable;
 }
 
 type WindowFilter = StudentWindowState | 'all';
+
+interface CourseCardViewModel {
+  subjectId: number;
+  subjectName: string;
+  commissionLabel: string | null;
+  notes: { label: string; value: number | null }[];
+  attendancePct: number;
+  finalScore: number | null;
+  accreditation: string;
+  condition: string | null;
+  statusLabel: string;
+  statusSeverity: ButtonSeverity;
+  showEnrollCta: boolean;
+  isEnrolled: boolean;
+  raw: StudentSubjectCard;
+}
 
 const BLOCK_COPY: Record<
   StudentExamBlockReason | 'DEFAULT',
@@ -120,14 +144,39 @@ const BLOCK_COPY: Record<
 })
 export class MesasListComponent implements OnInit {
   private readonly inscriptions = inject(StudentInscriptionsService);
-  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messages = inject(MessageService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly sync = inject(ExamTableSyncService);
+  private readonly documentRef = inject(DOCUMENT, { optional: true });
+  private readonly studentStatus = inject(StudentStatusService);
+  private readonly shortDateFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
   readonly tables = this.inscriptions.tables;
   readonly loading = this.inscriptions.loading;
+  readonly courseLoading = this.studentStatus.loading;
+
+  private readonly studentSubjects = this.studentStatus.status;
+  private readonly courseEnrollmentsOptimistic = signal<Set<number>>(new Set());
+
+  readonly courseCardsVm = computed<CourseCardViewModel[]>(() => {
+    const optimistic = this.courseEnrollmentsOptimistic();
+    const tables = this.tables();
+    const subjectIds = new Set<number>(tables.map((table) => table.subjectId));
+    const subjects = this.studentSubjects();
+    const source =
+      subjectIds.size > 0
+        ? subjects.filter((card) => subjectIds.has(card.subjectId))
+        : subjects;
+    return source
+      .map((card) => this.mapCourseCard(card, optimistic))
+      .sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+  });
 
   readonly subjectOptions = computed(() => {
     const seen = new Map<number, string>();
@@ -157,10 +206,16 @@ export class MesasListComponent implements OnInit {
 
   dialogVisible = false;
   selectedRow: ExamCallRow | null = null;
+  dialogMode: 'enroll' | 'unenroll' = 'enroll';
   private lastActionTrigger: HTMLElement | null = null;
+  // Marca local optimista para evitar re-inscripciones mientras llega el refresh
+  private enrolledLocal = new Set<number>();
+  private get enrolledStorageKey() {
+    return 'mesas_enrolled_calls';
+  }
   readonly blockAlert = signal<{
     title: string;
-    message: string;
+    message: string | string[];
     variant: BlockMessageVariant;
     reasonCode: StudentExamBlockReason | string;
   } | null>(null);
@@ -174,25 +229,45 @@ export class MesasListComponent implements OnInit {
     {
       label: 'Actualizar mesas',
       icon: 'pi pi-refresh',
-      command: () => this.loadTables(),
+      command: () => this.loadTables(true),
     },
   ];
+  private readonly inscriptionsClosedMessage =
+    'Las inscripciones estan cerradas para esta mesa.';
 
   ngOnInit(): void {
     const subjectId = Number(
-      this.route.snapshot.queryParamMap.get('subjectId') ?? NaN
+      this.route.snapshot.queryParamMap.get('subjectId') ?? NaN,
     );
     if (Number.isFinite(subjectId)) {
       this.filters.subjectId = subjectId;
     }
-    this.loadTables();
+    // Cargar estado optimista persistido para esta sesión
+    try {
+      const raw = sessionStorage.getItem(this.enrolledStorageKey);
+      if (raw) {
+        const arr = JSON.parse(raw) as number[];
+        if (Array.isArray(arr))
+          arr.forEach((id) => this.enrolledLocal.add(Number(id)));
+      }
+    } catch {}
+    const needsForce = this.sync.consumePendingFlag();
+    if (needsForce) {
+      this.inscriptions.invalidateCache();
+    }
+    // Forzar refresh inicial para asegurar consistencia después de reload
+    // Esto evita mostrar datos stale cuando el preceptor inscribió desde otra pestaña
+    this.loadTables(true);
+    this.loadStudentSubjects();
+    this.observeSyncEvents();
+    this.setupVisibilityRefresh();
   }
 
-  loadTables(): void {
+  loadTables(force = false): void {
     this.inscriptions
-      .listExamTables(this.buildFilterPayload())
+      .listExamTables(this.buildFilterPayload(), { refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe();
+      .subscribe((tables) => this.reconcileLocalEnrollment(tables));
   }
 
   applyFilters(): void {
@@ -220,14 +295,56 @@ export class MesasListComponent implements OnInit {
     this.filters.windowState = value;
   }
 
+  reloadCourseStatus(): void {
+    this.loadStudentSubjects(true);
+  }
+
+  onCourseEnroll(card: CourseCardViewModel): void {
+    // TODO: Reemplazar mock por integracion con el endpoint oficial de inscripcion a cursado.
+    this.courseEnrollmentsOptimistic.update((current) => {
+      const next = new Set(current);
+      next.add(card.subjectId);
+      return next;
+    });
+    this.messages.add({
+      severity: 'info',
+      summary: 'Gestion pendiente',
+      detail: `${card.subjectName}: la confirmacion final se realizara cuando se conecte el endpoint oficial.`,
+      life: 4000,
+    });
+  }
+
+  onViewCourseTables(card: CourseCardViewModel): void {
+    if (this.filters.subjectId !== card.subjectId) {
+      this.filters.subjectId = card.subjectId;
+      this.applyFilters();
+    }
+    this.scrollToTables();
+  }
+
+  trackCourseCard(_: number, card: CourseCardViewModel): number {
+    return card.subjectId;
+  }
+
   onEnroll(row: ExamCallRow, event?: MouseEvent): void {
     this.lastActionTrigger = (event?.currentTarget as HTMLElement) ?? null;
     const validation = this.validateRow(row);
     if (validation.blocked) {
-      this.showBlock(validation.reason, validation.message);
+      this.showBlock(validation.reason, validation.message, row);
       this.audit(row, 'blocked', validation.reason);
       return;
     }
+    this.dialogMode = 'enroll';
+    this.selectedRow = row;
+    this.dialogVisible = true;
+  }
+
+  onUnenroll(row: ExamCallRow, event?: MouseEvent): void {
+    this.lastActionTrigger = (event?.currentTarget as HTMLElement) ?? null;
+    if (!this.isEnrolled(row)) {
+      return;
+    }
+    this.dialogMode = 'unenroll';
     this.selectedRow = row;
     this.dialogVisible = true;
   }
@@ -235,13 +352,22 @@ export class MesasListComponent implements OnInit {
   cancelDialog(): void {
     this.dialogVisible = false;
     this.selectedRow = null;
+    this.dialogMode = 'enroll';
     this.restoreFocus();
   }
 
-  confirmEnroll(): void {
+  confirmDialogAction(): void {
     const row = this.selectedRow;
     if (!row) return;
     this.dialogVisible = false;
+    if (this.dialogMode === 'unenroll') {
+      this.performUnenroll(row);
+    } else {
+      this.performEnroll(row);
+    }
+  }
+
+  private performEnroll(row: ExamCallRow): void {
     this.inscriptions
       .enroll({ mesaId: row.mesaId, callId: row.call.id })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -253,49 +379,128 @@ export class MesasListComponent implements OnInit {
             detail: `${row.subjectName} - ${row.call.label}`,
             life: 4000,
           });
+          // Optimista: marcar la materia como inscripta para esta mesa
+          try {
+            (row.table as any).duplicateEnrollment = true;
+          } catch {}
+          this.enrolledLocal.add(row.call.id);
+          this.persistEnrolledLocal();
           this.blockAlert.set(null);
           this.audit(row, 'success');
-          this.refreshData();
+          this.refreshData(true);
         } else {
           const reason =
             (response.reasonCode as StudentExamBlockReason) ?? 'UNKNOWN';
-          this.showBlock(reason, response.message ?? '');
+          this.showBlock(reason, response.message ?? '', row);
           this.audit(row, 'blocked', reason);
         }
         this.restoreFocus();
         this.selectedRow = null;
+        this.dialogMode = 'enroll';
       });
   }
 
-  private refreshData(): void {
+  private performUnenroll(row: ExamCallRow): void {
     this.inscriptions
-      .refresh()
+      .unenroll({ mesaId: row.mesaId, callId: row.call.id })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (response.ok) {
+          this.messages.add({
+            severity: 'info',
+            summary: 'Inscripcion cancelada',
+            detail: `${row.subjectName} - ${row.call.label}`,
+            life: 4000,
+          });
+          if (this.enrolledLocal.delete(row.call.id)) {
+            this.persistEnrolledLocal();
+          }
+          this.blockAlert.set(null);
+          this.refreshData(true);
+        } else {
+          const reason =
+            (response.reasonCode as StudentExamBlockReason) ?? 'UNKNOWN';
+          this.showBlock(reason, response.message ?? '', row);
+        }
+        this.restoreFocus();
+        this.selectedRow = null;
+        this.dialogMode = 'enroll';
+      });
+  }
+
+  private refreshData(force = false): void {
+    this.inscriptions
+      .refresh({ refresh: force })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tables) => this.reconcileLocalEnrollment(tables));
+  }
+
+  private reconcileLocalEnrollment(
+    tables: StudentExamTable[] | null | undefined,
+  ): void {
+    if (!tables || !tables.length) {
+      return;
+    }
+    const seen = new Set<number>();
+    tables.forEach((table) =>
+      table.availableCalls.forEach((call) => seen.add(call.id)),
+    );
+    if (!seen.size) {
+      return;
+    }
+    let changed = false;
+    const pending = Array.from(this.enrolledLocal.values());
+    for (const callId of pending) {
+      if (seen.has(callId)) {
+        this.enrolledLocal.delete(callId);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.persistEnrolledLocal();
+    }
+  }
+
+  private loadStudentSubjects(force = false): void {
+    if (force) {
+      this.courseEnrollmentsOptimistic.set(new Set());
+    }
+    this.studentStatus
+      .loadStatus()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
-    void this.auth.loadUserRoles();
   }
 
   private flattenRows(tables: StudentExamTable[]): ExamCallRow[] {
-    const formatter = new Intl.DateTimeFormat('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-    });
+    const formatter = this.shortDateFormatter;
     return tables.flatMap((table) =>
       table.availableCalls.map((call) => {
-        const opens = call.enrollmentWindow.opensAt;
-        const closes = call.enrollmentWindow.closesAt;
-        const windowRange =
-          opens && closes
-            ? `${formatter.format(new Date(opens))} - ${formatter.format(
-                new Date(closes)
-              )}`
-            : 'Sin rango publicado';
-        const quotaText =
-          call.quotaTotal && call.quotaUsed !== null
-            ? `${call.quotaUsed}/${call.quotaTotal}`
-            : call.quotaTotal
-            ? `Hasta ${call.quotaTotal}`
-            : 'Sin cupo publicado';
+        let opens = call.enrollmentWindow.opensAt;
+        let closes = call.enrollmentWindow.closesAt;
+        // Si el alumno está inscripto y la ventana no tiene rango publicado,
+        // asumir que la ventana corresponde al día del examen y cierra al día siguiente.
+        if (call.enrolled && (!opens || !closes) && call.examDate) {
+          opens = call.examDate;
+          const dt = new Date(call.examDate);
+          dt.setDate(dt.getDate() + 1);
+          closes = dt.toISOString().slice(0, 10);
+        }
+        const opensDate = opens ? new Date(opens) : null;
+        const closesDate = closes ? new Date(closes) : null;
+        const windowRange = this.describeWindowRange(opensDate, closesDate);
+        const opensLabel = opensDate
+          ? formatter.format(opensDate)
+          : 'Sin fecha';
+        const closesLabel = closesDate
+          ? formatter.format(closesDate)
+          : 'Sin fecha';
+        // Determine effective window state: prefer call.enrollmentWindow.state but
+        // if we forced opens/closes above for an enrolled call, treat it as 'open'.
+        const effectiveState =
+          call.enrollmentWindow.state === 'open' || (call.enrolled && opens && closes)
+            ? 'open'
+            : call.enrollmentWindow.state;
+
         return {
           mesaId: table.mesaId,
           callId: call.id,
@@ -303,18 +508,30 @@ export class MesasListComponent implements OnInit {
           subjectName: table.subjectName,
           commissionLabel: table.commissionLabel ?? null,
           call,
-          windowState: call.enrollmentWindow.state,
+          windowState: effectiveState as StudentWindowState,
           windowRange,
-          quotaText,
+          enrollmentOpensAt: opensDate,
+          enrollmentClosesAt: closesDate,
+          enrollmentOpensLabel: opensLabel,
+          enrollmentClosesLabel: closesLabel,
           table,
         };
-      })
+      }),
     );
   }
 
   private validateRow(
-    row: ExamCallRow
-  ): { blocked: false } | { blocked: true; reason: StudentExamBlockReason; message: string } {
+    row: ExamCallRow,
+  ):
+    | { blocked: false }
+    | { blocked: true; reason: StudentExamBlockReason; message: string } {
+    if (this.isEnrollmentClosed(row)) {
+      return {
+        blocked: true,
+        reason: 'WINDOW_CLOSED',
+        message: this.inscriptionsClosedMessage,
+      };
+    }
     const block = this.resolveBlock(row);
     if (!block) {
       return { blocked: false };
@@ -333,36 +550,100 @@ export class MesasListComponent implements OnInit {
     };
   }
 
+  private describeWindowRange(
+    opens: Date | null,
+    closes: Date | null,
+  ): string {
+    const formatter = this.shortDateFormatter;
+    if (opens && closes) {
+      return `${formatter.format(opens)} - ${formatter.format(closes)}`;
+    }
+    if (opens) {
+      return `Desde ${formatter.format(opens)}`;
+    }
+    if (closes) {
+      return `Hasta ${formatter.format(closes)}`;
+    }
+    return 'Sin rango publicado';
+  }
+
   private toIso(date: Date): string {
     return date.toISOString().slice(0, 10);
   }
 
   private showBlock(
     reason: StudentExamBlockReason | null,
-    customMessage?: string
+    customMessage?: string,
+    row?: ExamCallRow,
   ): void {
     const template = BLOCK_COPY[reason ?? 'DEFAULT'] ?? BLOCK_COPY.DEFAULT;
+
+    // Compose an official, accessible list when correlatives are missing
+    const msg: string | string[] =
+      reason === 'MISSING_REQUIREMENTS'
+        ? this.composeCorrelativeMessage(row, customMessage)
+        : customMessage?.trim()?.length
+          ? customMessage
+          : template.message;
+
     this.blockAlert.set({
       title: template.title,
       variant: template.variant,
-      message: customMessage?.trim()?.length ? customMessage : template.message,
+      message: msg,
       reasonCode: reason ?? 'UNKNOWN',
     });
+  }
+
+  private composeCorrelativeMessage(
+    row: ExamCallRow | null | undefined,
+    backendMessage?: string | null,
+  ): string[] {
+    const lines: string[] = [];
+    lines.push('Correlativas faltantes para inscribirte:');
+    // If backend provided a detailed message, split into readable lines
+    const raw = (backendMessage ?? row?.table.academicRequirement ?? '').trim();
+    if (raw) {
+      const parts = raw
+        .split(/\r?\n|;|\u2022|\-/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      if (parts.length) {
+        return lines.concat(parts);
+      }
+    }
+    // Fallback with subject context to keep it clear
+    const code = row?.table.subjectCode ? `(${row?.table.subjectCode}) ` : '';
+    const name = row?.table.subjectName ?? 'la materia seleccionada';
+    lines.push(
+      `${code}${name}: Debes tener Regularizada o Aprobada la(s) correlativa(s) establecida(s).`,
+    );
+    return lines;
   }
 
   private audit(
     row: ExamCallRow,
     outcome: 'success' | 'blocked' | 'error',
-    reasonCode?: StudentExamBlockReason
+    reasonCode?: StudentExamBlockReason,
   ): void {
+    const basePayload: any = {
+      context: 'enroll-exam',
+      mesaId: row.mesaId,
+      callId: row.call.id,
+      outcome,
+      reasonCode,
+      subjectId: row.subjectId,
+      subjectName: row.subjectName,
+      subjectCode: row.table.subjectCode ?? null,
+      timestamp: new Date().toISOString(),
+    };
+    if (reasonCode === 'MISSING_REQUIREMENTS') {
+      basePayload.missingCorrelativesText = this.composeCorrelativeMessage(
+        row,
+        row.table.academicRequirement,
+      );
+    }
     this.inscriptions
-      .logAudit({
-        context: 'enroll-exam',
-        mesaId: row.mesaId,
-        callId: row.call.id,
-        outcome,
-        reasonCode,
-      })
+      .logAudit(basePayload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
@@ -375,29 +656,75 @@ export class MesasListComponent implements OnInit {
     void this.router.navigate(['/alumno/situacion-academica']);
   }
 
-  isActionBlocked(row: ExamCallRow): boolean {
-    return !!this.resolveBlock(row);
-  }
-
   blockTooltip(row: ExamCallRow): string | undefined {
+    if (this.isEnrollmentClosed(row)) {
+      return this.inscriptionsClosedMessage;
+    }
     return this.resolveBlock(row)?.message || undefined;
   }
 
-  stateLabel(state: StudentWindowState): string {
-    switch (state) {
+  isEnrolled(row: ExamCallRow): boolean {
+    // Preferir estado por llamado (proporcionado por backend).
+    // Fallback a marca local optimista en esta sesión.
+    if (row.call?.enrolled !== undefined) {
+      return !!row.call.enrolled;
+    }
+    return this.enrolledLocal.has(row.call.id);
+  }
+
+  isActionBlocked(row: ExamCallRow): boolean {
+    // No permitir acción si ya quedó inscripto o con la ventana vencida
+    if (this.isEnrolled(row) || this.isEnrollmentClosed(row)) return true;
+    return !!this.resolveBlock(row);
+  }
+
+  private isEnrollmentClosed(row: ExamCallRow): boolean {
+    if (row.windowState === 'past' || row.windowState === 'closed') {
+      return true;
+    }
+    const closesAt = row.enrollmentClosesAt?.getTime() ?? null;
+    if (closesAt === null) {
+      return false;
+    }
+    return Date.now() > closesAt;
+  }
+
+  private persistEnrolledLocal(): void {
+    try {
+      sessionStorage.setItem(
+        this.enrolledStorageKey,
+        JSON.stringify(Array.from(this.enrolledLocal.values())),
+      );
+    } catch {}
+  }
+
+  windowLabel(row: ExamCallRow): string {
+    const base = this.windowStateLabel(row);
+    const status = this.isEnrolled(row) ? 'Inscripto' : 'No inscripto';
+    return `${base} · ${status}`;
+  }
+
+  private windowStateLabel(row: ExamCallRow): string {
+    if (this.isEnrollmentClosed(row)) {
+      return 'Ventana cerrada';
+    }
+    switch (row.windowState) {
       case 'open':
-        return 'Abierta';
+        return 'Ventana abierta';
       case 'upcoming':
-        return 'Proxima';
+        return 'Ventana proxima';
       case 'past':
-        return 'Finalizada';
+        return 'Ventana finalizada';
       default:
-        return 'Cerrada';
+        return 'Ventana cerrada';
     }
   }
 
-  stateSeverity(state: StudentWindowState): 'success' | 'info' | 'danger' {
-    switch (state) {
+  windowSeverity(row: ExamCallRow): 'success' | 'info' | 'danger' {
+    if (this.isEnrollmentClosed(row)) {
+      return 'danger';
+    }
+    switch (row.windowState) {
       case 'open':
         return 'success';
       case 'upcoming':
@@ -407,8 +734,63 @@ export class MesasListComponent implements OnInit {
     }
   }
 
+  private mapCourseCard(
+    card: StudentSubjectCard,
+    optimistic: Set<number>,
+  ): CourseCardViewModel {
+    const alreadyEnrolled =
+      this.hasOngoingEnrollment(card) || optimistic.has(card.subjectId);
+    return {
+      subjectId: card.subjectId,
+      subjectName: card.subjectName,
+      commissionLabel: card.commissionLabel,
+      notes: card.notes,
+      attendancePct: card.attendancePct,
+      finalScore: card.finalScore,
+      accreditation: card.accreditation,
+      condition: card.condition,
+      statusLabel: this.buildCourseStatus(card),
+      statusSeverity: this.resolveCourseSeverity(card),
+      showEnrollCta: !alreadyEnrolled && card.actions.canEnrollCourse,
+      isEnrolled: alreadyEnrolled,
+      raw: card,
+    };
+  }
+
+  private buildCourseStatus(card: StudentSubjectCard): string {
+    const base = card.accreditation || card.condition || 'Sin estado';
+    return base.toUpperCase();
+  }
+
+  private resolveCourseSeverity(card: StudentSubjectCard): ButtonSeverity {
+    const value = (card.accreditation || card.condition || '').toLowerCase();
+    if (value.includes('promo') || value.includes('apro')) return 'success';
+    if (value.includes('regular') || value.includes('curso')) return 'info';
+    if (value.includes('pend') || value.includes('libre')) return 'warn';
+    return 'secondary';
+  }
+
+  private hasOngoingEnrollment(card: StudentSubjectCard): boolean {
+    const keywords = ['curso', 'regular', 'promo', 'apro'];
+    const normalized = (card.condition || '').toLowerCase();
+    const accreditation = (card.accreditation || '').toLowerCase();
+    return keywords.some(
+      (keyword) =>
+        normalized.includes(keyword) || accreditation.includes(keyword),
+    );
+  }
+
+  private scrollToTables(): void {
+    const doc = this.documentRef;
+    if (!doc) return;
+    const anchor =
+      doc.getElementById('mesas-disponibles') ??
+      doc.querySelector('.mesas-disponibles');
+    anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   private resolveBlock(
-    row: ExamCallRow
+    row: ExamCallRow,
   ): { reason: StudentExamBlockReason; message: string } | null {
     const call = row.call;
     const table = row.table;
@@ -432,11 +814,7 @@ export class MesasListComponent implements OnInit {
     }
     const quotaTotal = call.quotaTotal ?? null;
     const quotaUsed = call.quotaUsed ?? null;
-    if (
-      quotaTotal !== null &&
-      quotaUsed !== null &&
-      quotaUsed >= quotaTotal
-    ) {
+    if (quotaTotal !== null && quotaUsed !== null && quotaUsed >= quotaTotal) {
       return {
         reason: 'QUOTA_FULL',
         message: 'El cupo informado fue alcanzado.',
@@ -444,4 +822,30 @@ export class MesasListComponent implements OnInit {
     }
     return null;
   }
+
+  private observeSyncEvents(): void {
+    this.sync.changes$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.inscriptions.invalidateCache();
+        this.refreshData(true);
+      });
+  }
+
+  private setupVisibilityRefresh(): void {
+    const doc = this.documentRef;
+    if (!doc) {
+      return;
+    }
+    const handler = () => {
+      if (doc.visibilityState === 'visible') {
+        this.refreshData(true);
+      }
+    };
+    doc.addEventListener('visibilitychange', handler);
+    this.destroyRef.onDestroy(() =>
+      doc.removeEventListener('visibilitychange', handler),
+    );
+  }
 }
+

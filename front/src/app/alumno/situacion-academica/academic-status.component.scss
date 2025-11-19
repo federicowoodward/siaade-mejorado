@@ -2,26 +2,57 @@
   width: 100%;
 }
 
-.subject-card {
+.year-card {
+  margin-top: 1.5rem;
   border: 1px solid var(--surface-border);
 }
 
-.partial-list {
+.year-card__header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--surface-border);
 }
 
-.badge {
-  display: inline-flex;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  background: var(--surface-200);
-  font-size: 0.85rem;
+.status-table {
+  width: 100%;
 }
 
-@media (max-width: 600px) {
-  .subject-card {
-    padding: 1.25rem;
+:host ::ng-deep .status-table .p-datatable-tbody > tr > td {
+  vertical-align: top;
+}
+
+.subject-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.subject-name {
+  font-weight: 600;
+}
+
+.final-score {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.status-actions {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .year-card__header {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .year-card__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 }

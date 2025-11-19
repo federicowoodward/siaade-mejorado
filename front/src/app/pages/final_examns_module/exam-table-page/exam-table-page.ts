@@ -12,6 +12,7 @@ import { ExamTablesService } from '../../../core/services/final-exam-tables.serv
 import { FinalExamsService } from '../../../core/services/final-exams.service';
 import { ExamTable } from '../../../core/models/exam_table.model';
 import { FinalExam } from '../../../core/models/final_exam.model';
+import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 
 @Component({
   selector: 'app-exam-table-page',
@@ -34,6 +35,7 @@ export class ExamTablePage implements OnInit {
   private tablesSvc = inject(ExamTablesService);
   private finalsSvc = inject(FinalExamsService);
   private messages = inject(MessageService);
+  private sync = inject(ExamTableSyncService);
 
   tableId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 
@@ -96,16 +98,30 @@ export class ExamTablePage implements OnInit {
         aula: payload.aula,
       })
       .subscribe({
-        next: () => {
+        next: (created) => {
           this.messages.add({ severity: 'success', summary: 'Final creado' });
+          // Optimista: insertar el nuevo examen en el listado inmediatamente
+          try {
+            const current = this.finals();
+            this.finals.set([
+              created,
+              ...current.filter((x) => x.id !== created.id),
+            ]);
+          } catch {}
+          // Sincronizar con backend por si cambia el orden/formato
           this.refreshFinals();
+          this.sync.notify({
+            action: 'updated',
+            mesaId: this.tableId,
+            subjectId: payload.subject_id,
+          });
           this.showCreate.set(false);
         },
         error: (e) => {
           const raw = e?.error?.message;
           const detail = Array.isArray(raw)
             ? raw.join(' • ')
-            : raw ?? 'Ver consola';
+            : (raw ?? 'Ver consola');
           this.messages.add({
             severity: 'error',
             summary: 'Error al crear',
@@ -125,6 +141,11 @@ export class ExamTablePage implements OnInit {
       next: () => {
         this.messages.add({ severity: 'success', summary: 'Final eliminado' });
         this.refreshFinals();
+        this.sync.notify({
+          action: 'updated',
+          mesaId: this.tableId,
+          subjectId: f.subject_id,
+        });
       },
       error: (e) =>
         this.messages.add({

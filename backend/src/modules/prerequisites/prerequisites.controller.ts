@@ -1,6 +1,15 @@
-import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Put,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -22,15 +31,14 @@ import {
   ValidateEnrollmentParamsDto,
   ValidateEnrollmentQueryDto,
 } from "./dto/validate-enrollment.dto";
+import { UpdateSubjectPrereqsDto } from "./dto/update-subject-prereqs.dto";
 
 @Controller("prerequisites")
 @ApiTags("prerequisites")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PrerequisitesController {
-  constructor(
-    private readonly prerequisitesService: PrerequisitesService,
-  ) {}
+  constructor(private readonly prerequisitesService: PrerequisitesService) {}
 
   @Get("careers/:careerId/subjects/:orderNo")
   @AllowRoles(
@@ -59,6 +67,34 @@ export class PrerequisitesController {
     return this.prerequisitesService.listPrereqsByOrder(
       params.careerId,
       params.orderNo,
+    );
+  }
+
+  @Put("careers/:careerId/subjects/:orderNo")
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
+  @ApiOperation({ summary: "Actualiza correlativas para un numero de orden" })
+  @ApiBody({ type: UpdateSubjectPrereqsDto })
+  @ApiOkResponse({
+    schema: {
+      type: "object",
+      properties: {
+        careerId: { type: "number" },
+        subjectOrderNo: { type: "number" },
+        prereqs: {
+          type: "array",
+          items: { type: "number" },
+        },
+      },
+    },
+  })
+  updateSubjectPrereqs(
+    @Param() params: GetSubjectPrereqsParamsDto,
+    @Body() body: UpdateSubjectPrereqsDto,
+  ): Promise<SubjectPrereqList> {
+    return this.prerequisitesService.updatePrereqsForOrder(
+      params.careerId,
+      params.orderNo,
+      body.prereqs ?? [],
     );
   }
 

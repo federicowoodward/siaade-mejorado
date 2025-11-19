@@ -17,11 +17,13 @@ import { NoticesModule } from "./modules/notices/notices.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
 import { SubjectsModule } from "./subjects/subjects.module";
 import { CareersModule } from "./modules/careers/careers.module";
+import { StudentInscriptionsModule } from "./modules/student_inscriptions/student-inscriptions.module";
 import { PrerequisitesModule } from "./modules/prerequisites/prerequisites.module";
 import { StudentsReadModule } from "./modules/students/read/students.module";
-
+import { PdfGeneratorModule } from "./modules/pdf-generator/pdf-generator.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
+
 @Module({
   imports: [
     ConfigModule,
@@ -46,9 +48,11 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     NoticesModule,
     CatalogsModule,
     CareersModule,
+    StudentInscriptionsModule,
     SubjectsModule,
     PrerequisitesModule,
     StudentsReadModule,
+    PdfGeneratorModule,
   ],
   providers: [
     {
@@ -61,4 +65,4 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

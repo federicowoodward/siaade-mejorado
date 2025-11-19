@@ -1,4 +1,11 @@
-import { Entity, PrimaryColumn, OneToOne, JoinColumn, OneToMany, Column } from "typeorm";
+import {
+  Entity,
+  PrimaryColumn,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+  Column,
+} from "typeorm";
 import { User } from "./user.entity";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 

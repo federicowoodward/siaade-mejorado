@@ -72,8 +72,7 @@ export class FirstPasswordChangeModalComponent {
 
   get mismatch(): boolean {
     return (
-      this.confirmValue.length > 0 &&
-      this.passwordValue !== this.confirmValue
+      this.confirmValue.length > 0 && this.passwordValue !== this.confirmValue
     );
   }
 
@@ -102,15 +101,22 @@ export class FirstPasswordChangeModalComponent {
     this.submitting.set(true);
 
     try {
-      await this.auth.forcePasswordChange(password!);
-      this.message.add({
-        severity: 'success',
-        summary: 'Contraseña actualizada',
-        detail: 'Tu contraseña ha sido cambiada exitosamente',
-      });
-      this.visible.set(false);
-      // Recargar la página o actualizar el estado del usuario
-      window.location.reload();
+      const ok = await this.auth.forcePasswordChange(password!);
+      if (ok) {
+        this.message.add({
+          severity: 'success',
+          summary: 'Contraseña actualizada',
+          detail: 'Tu contraseña ha sido cambiada exitosamente',
+        });
+        // Ocultar modal sin recargar toda la página (estado ya actualizado en AuthService)
+        this.visible.set(false);
+      } else {
+        this.message.add({
+          severity: 'warn',
+          summary: 'Sin cambios',
+          detail: 'No se pudo confirmar el cambio de contraseña',
+        });
+      }
     } catch (error: any) {
       const msg = error?.error?.message || 'Error al cambiar la contraseña';
       this.message.add({

@@ -7,11 +7,18 @@ import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { AuthService } from '../../../../core/services/auth.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-change-password-code',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule, ToastModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InputTextModule,
+    ButtonModule,
+    ToastModule,
+  ],
   providers: [MessageService],
   templateUrl: './change-password-code.html',
   styleUrl: './change-password-code.scss',
@@ -39,7 +46,7 @@ export class ChangePasswordCodePage implements OnDestroy {
         this.userEmail.set(user.email);
       }
     });
-    
+
     this.startCooldown();
   }
 
@@ -57,14 +64,21 @@ export class ChangePasswordCodePage implements OnDestroy {
     this.submitting.set(true);
 
     try {
-      // Para cambio voluntario, usamos el email del usuario actual
-      const response = await this.auth.verifyResetCode(this.userEmail(), code!).toPromise();
-      
-      if (!response?.token) {
+      const result = await firstValueFrom(
+        this.auth.verifyResetCode(this.userEmail(), code!),
+      );
+
+      if (!result.ok) {
+        const summary =
+          result.kind === 'network'
+            ? 'Sin conexión'
+            : result.kind === 'server'
+              ? 'Error de servidor'
+              : 'Código inválido';
         this.message.add({
-          severity: 'warn',
-          summary: 'Atención',
-          detail: 'No se pudo verificar el código.',
+          severity: result.kind === 'network' ? 'error' : 'warn',
+          summary,
+          detail: result.message || 'El código es incorrecto o venció.',
         });
         this.submitting.set(false);
         return;
@@ -76,9 +90,11 @@ export class ChangePasswordCodePage implements OnDestroy {
         detail: 'Ahora podés cambiar tu contraseña.',
       });
 
+      this.submitting.set(false);
+
       // Navegar al reset-password con mode=change
       this.router.navigate(['/auth/reset-password'], {
-        queryParams: { token: response.token, mode: 'change' }
+        queryParams: { token: result.token, mode: 'change' },
       });
     } catch (error) {
       this.message.add({
@@ -97,19 +113,29 @@ export class ChangePasswordCodePage implements OnDestroy {
     this.resendIn = 30;
 
     try {
-      await this.auth.requestPasswordChangeCode().toPromise();
-      this.message.add({
-        severity: 'success',
-        summary: 'Código reenviado',
-        detail: 'Revisá tu correo.',
-      });
-      this.startCooldown();
-    } catch (error) {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Atención',
-        detail: 'No pudimos reenviar el código aún.',
-      });
+      const result = await firstValueFrom(
+        this.auth.requestPasswordChangeCode(),
+      );
+      if (result.ok) {
+        this.message.add({
+          severity: 'success',
+          summary: 'Código reenviado',
+          detail: 'Revisá tu correo.',
+        });
+      } else {
+        const summary =
+          result.kind === 'network'
+            ? 'Sin conexión'
+            : result.kind === 'server'
+              ? 'Error de servidor'
+              : 'Atención';
+        this.message.add({
+          severity: result.kind === 'network' ? 'error' : 'warn',
+          summary,
+          detail: result.message || 'No pudimos reenviar el código aún.',
+        });
+      }
+    } finally {
       this.startCooldown();
     }
   }

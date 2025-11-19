@@ -9,14 +9,22 @@
 
 <ng-template #showTable>
   <div class="flex flex-column gap-4">
-    <div *ngIf="(subjectsByYear() | keyvalue).length === 0" class="text-center p-4">
+    <div
+      *ngIf="(subjectsByYear() | keyvalue).length === 0"
+      class="text-center p-4"
+    >
       <p>No hay materias registradas para este estudiante.</p>
     </div>
-    
+
     <ng-container *ngFor="let year of subjectsByYear() | keyvalue">
       <h4 class="mt-4">{{ year.key }}</h4>
 
-      <p-table [value]="year.value" [responsiveLayout]="'scroll'" class="shadow-2" stripedRows>
+      <p-table
+        [value]="year.value"
+        [responsiveLayout]="'scroll'"
+        class="shadow-2"
+        stripedRows
+      >
         <ng-template pTemplate="header">
           <tr>
             <th>Materia</th>

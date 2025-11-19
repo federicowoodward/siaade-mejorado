@@ -133,16 +133,21 @@ const chunkArray = <T>(values: T[], size: number): T[][] => {
   return result;
 };
 
-const buildStudentSeeds = (): Array<StudentSeed & { studentStartYear: number }> => {
-  const seeds: Array<StudentSeed & { studentStartYear: number }> = BASE_STUDENTS.map(
-    (seed) => ({
+const buildStudentSeeds = (): Array<
+  StudentSeed & { studentStartYear: number }
+> => {
+  const seeds: Array<StudentSeed & { studentStartYear: number }> =
+    BASE_STUDENTS.map((seed) => ({
       ...seed,
       studentStartYear: DEFAULT_STUDENT_START_YEAR,
-    })
-  );
+    }));
 
   if (seeds.length < MIN_DUMMY_STUDENTS) {
-    for (let index = seeds.length + 1; index <= MIN_DUMMY_STUDENTS; index += 1) {
+    for (
+      let index = seeds.length + 1;
+      index <= MIN_DUMMY_STUDENTS;
+      index += 1
+    ) {
       const padded = index.toString().padStart(4, "0");
       const legajo = `${LEGAJO_PREFIX}${padded}`;
       const email = `dummy${padded}${EMAIL_DOMAIN}`;
@@ -162,12 +167,16 @@ const buildStudentSeeds = (): Array<StudentSeed & { studentStartYear: number }> 
 };
 export class DummyDataMigration1761015167693 implements MigrationInterface {
   name = "DummyDataMigration1761015167693";
+  ALLOW_DUMMY_SEED = "true";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // En producción sólo se ejecuta si ALLOW_DUMMY_SEED=true (opt-in seguro e idempotente)
+    //variable temporal para forzar migraciones:
+
     if (process.env.NODE_ENV === "production") {
-      if (process.env.ALLOW_DUMMY_SEED !== "true") {
-        console.log("[DummyData] skipped in production (ALLOW_DUMMY_SEED != true)");
+      if (this.ALLOW_DUMMY_SEED !== "true") {
+        console.log(
+          "[DummyData] skipped in production (ALLOW_DUMMY_SEED != true)",
+        );
         return;
       }
       console.log("[DummyData] running in production (ALLOW_DUMMY_SEED=true)");
@@ -186,7 +195,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const careerStudentRepo = manager.getRepository(CareerStudent);
       const subjectCommissionRepo = manager.getRepository(SubjectCommission);
       const subjectStudentRepo = manager.getRepository(SubjectStudent);
-      const studentSubjectProgressRepo = manager.getRepository(StudentSubjectProgress);
+      const studentSubjectProgressRepo = manager.getRepository(
+        StudentSubjectProgress,
+      );
       const finalExamRepo = manager.getRepository(FinalExam);
       const finalExamStudentRepo = manager.getRepository(FinalExamsStudent);
 
@@ -214,7 +225,10 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const commissionByLetter = new Map<string, Commission>();
       existingCommissions.forEach((commission) => {
         if (commission.commissionLetter) {
-          commissionByLetter.set(commission.commissionLetter.toUpperCase(), commission);
+          commissionByLetter.set(
+            commission.commissionLetter.toUpperCase(),
+            commission,
+          );
         }
       });
 
@@ -238,7 +252,10 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       });
       refreshedCommissions.forEach((commission) => {
         if (commission.commissionLetter) {
-          commissionByLetter.set(commission.commissionLetter.toUpperCase(), commission);
+          commissionByLetter.set(
+            commission.commissionLetter.toUpperCase(),
+            commission,
+          );
         }
       });
 
@@ -251,7 +268,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       console.log(
         `[DummySeed] Commissions A/B -> created: ${counters.commissionsCreated}, reused: ${
           commissionByLetter.size - counters.commissionsCreated
-        }, total available: ${commissionByLetter.size}`
+        }, total available: ${commissionByLetter.size}`,
       );
 
       const teacherRole = await roleRepo.findOne({
@@ -259,7 +276,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       });
       if (!teacherRole) {
         throw new Error(
-          "Dummy seed: role 'teacher' is required but was not found"
+          "Dummy seed: role 'teacher' is required but was not found",
         );
       }
 
@@ -268,14 +285,16 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       });
       if (!studentRole) {
         throw new Error(
-          "Dummy seed: role 'student' is required but was not found"
+          "Dummy seed: role 'student' is required but was not found",
         );
       }
 
       let teachers = await teacherRepo.find();
       if (teachers.length === 0) {
         for (const seed of DEFAULT_TEACHERS) {
-          let teacherUser = await userRepo.findOne({ where: { email: seed.email } });
+          let teacherUser = await userRepo.findOne({
+            where: { email: seed.email },
+          });
           if (!teacherUser) {
             teacherUser = userRepo.create({
               name: seed.name,
@@ -315,21 +334,25 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       }
 
       if (teachers.length === 0) {
-        throw new Error("Dummy seed: there are no teachers available even after attempting to create defaults");
+        throw new Error(
+          "Dummy seed: there are no teachers available even after attempting to create defaults",
+        );
       }
 
       const teacherIds = teachers.map((teacher) => teacher.userId);
       console.log(
         `[DummySeed] Teachers -> created: ${counters.teachersCreated}, reused: ${
           teacherIds.length - counters.teachersCreated
-        }, total available: ${teacherIds.length}`
+        }, total available: ${teacherIds.length}`,
       );
       const careers = await careerRepo.find();
       let career: Career | null = null;
       if (careers.length === 1) {
         career = careers[0];
       } else {
-        career = careers.find((item) => item.careerName === TARGET_CAREER_NAME) ?? null;
+        career =
+          careers.find((item) => item.careerName === TARGET_CAREER_NAME) ??
+          null;
       }
       if (!career) {
         throw new Error("Dummy seed: target career not found, aborting");
@@ -351,14 +374,17 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           commissionId: In([commissionA.id, commissionB.id]),
         },
       });
-      const subjectCommissionMap = new Map<number, { A?: number; B?: number }>();
+      const subjectCommissionMap = new Map<
+        number,
+        { A?: number; B?: number }
+      >();
       existingSubjectCommissions.forEach((entry) => {
         const letter =
           entry.commissionId === commissionA.id
             ? "A"
             : entry.commissionId === commissionB.id
-            ? "B"
-            : null;
+              ? "B"
+              : null;
         if (!letter) {
           return;
         }
@@ -419,8 +445,8 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           entry.commissionId === commissionA.id
             ? "A"
             : entry.commissionId === commissionB.id
-            ? "B"
-            : null;
+              ? "B"
+              : null;
         if (!letter) {
           return;
         }
@@ -432,14 +458,16 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       for (const subjectId of subjectIds) {
         const mapping = subjectCommissionMap.get(subjectId);
         if (!mapping?.A || !mapping?.B) {
-          throw new Error(`Dummy seed: missing commission mapping for subject ${subjectId}`);
+          throw new Error(
+            `Dummy seed: missing commission mapping for subject ${subjectId}`,
+          );
         }
       }
 
       console.log(
         `[DummySeed] Subject commissions -> created: ${counters.subjectCommissionsCreated}, total mapped: ${
           subjectCommissionMap.size * 2
-        }`
+        }`,
       );
       const studentSeeds = buildStudentSeeds();
       const studentCommissionLetterByUserId = new Map<string, "A" | "B">();
@@ -449,7 +477,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         const seed = studentSeeds[index];
         const targetLetter: "A" | "B" = index % 2 === 0 ? "A" : "B";
 
-        let studentUser = await userRepo.findOne({ where: { email: seed.email } });
+        let studentUser = await userRepo.findOne({
+          where: { email: seed.email },
+        });
         if (!studentUser) {
           studentUser = userRepo.create({
             name: seed.name,
@@ -477,8 +507,11 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           }
         }
 
-        let studentRecord = await studentRepo.findOne({ where: { userId: studentUser.id } });
-        const targetCommissionId = targetLetter === "A" ? commissionA.id : commissionB.id;
+        let studentRecord = await studentRepo.findOne({
+          where: { userId: studentUser.id },
+        });
+        const targetCommissionId =
+          targetLetter === "A" ? commissionA.id : commissionB.id;
 
         if (!studentRecord) {
           studentRecord = studentRepo.create({
@@ -524,7 +557,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       }
 
       console.log(
-        `[DummySeed] Students -> usersCreated: ${counters.studentUsersCreated}, usersUpdated: ${counters.studentUsersUpdated}, studentRecordsCreated: ${counters.studentsCreated}, studentRecordsUpdated: ${counters.studentsUpdated}, total dummy students: ${dummyStudentIds.length}`
+        `[DummySeed] Students -> usersCreated: ${counters.studentUsersCreated}, usersUpdated: ${counters.studentUsersUpdated}, studentRecordsCreated: ${counters.studentsCreated}, studentRecordsUpdated: ${counters.studentsUpdated}, total dummy students: ${dummyStudentIds.length}`,
       );
 
       if (dummyStudentIds.length === 0) {
@@ -537,8 +570,14 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           studentId: In(dummyStudentIds),
         },
       });
-      const existingCareerStudentIds = new Set(existingCareerStudents.map((entry) => entry.studentId));
-      const careerStudentValues: Array<{ careerId: number; studentId: string; enrolledAt: Date }> = [];
+      const existingCareerStudentIds = new Set(
+        existingCareerStudents.map((entry) => entry.studentId),
+      );
+      const careerStudentValues: Array<{
+        careerId: number;
+        studentId: string;
+        enrolledAt: Date;
+      }> = [];
       for (const studentId of dummyStudentIds) {
         if (existingCareerStudentIds.has(studentId)) {
           continue;
@@ -564,7 +603,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       console.log(
         `[DummySeed] Career students -> inserted: ${counters.careerStudentsInserted}, total linked: ${
           existingCareerStudentIds.size + counters.careerStudentsInserted
-        }`
+        }`,
       );
       const subjectStudentEntities = await subjectStudentRepo.find({
         where: {
@@ -576,7 +615,8 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const existingSubjectStudentKeys = new Set<string>();
       subjectStudentEntities.forEach((entry) => {
         existingSubjectStudentKeys.add(`${entry.subjectId}|${entry.studentId}`);
-        const set = subjectStudentsBySubject.get(entry.subjectId) ?? new Set<string>();
+        const set =
+          subjectStudentsBySubject.get(entry.subjectId) ?? new Set<string>();
         set.add(entry.studentId);
         subjectStudentsBySubject.set(entry.subjectId, set);
       });
@@ -586,7 +626,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         studentId: string;
         commissionId: number | null;
         enrollmentDate: Date;
-        enrolledBy: 'system';
+        enrolledBy: "system";
       }> = [];
 
       if (ENROLL_ALL_SUBJECTS) {
@@ -598,7 +638,8 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
               continue;
             }
             const mapping = subjectCommissionMap.get(subjectId);
-            const preferredLetter = studentCommissionLetterByUserId.get(studentId) ?? "A";
+            const preferredLetter =
+              studentCommissionLetterByUserId.get(studentId) ?? "A";
             const commissionId =
               (preferredLetter === "B" ? mapping?.B : mapping?.A) ??
               mapping?.A ??
@@ -611,7 +652,8 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
               enrollmentDate: DUMMY_ENROLLMENT_DATE,
               enrolledBy: "system",
             });
-            const set = subjectStudentsBySubject.get(subjectId) ?? new Set<string>();
+            const set =
+              subjectStudentsBySubject.get(subjectId) ?? new Set<string>();
             set.add(studentId);
             subjectStudentsBySubject.set(subjectId, set);
           }
@@ -630,15 +672,16 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         }
       }
 
-      const expectedSubjectStudents = ENROLL_ALL_SUBJECTS ? subjectIds.length * dummyStudentIds.length : 0;
+      const expectedSubjectStudents = ENROLL_ALL_SUBJECTS
+        ? subjectIds.length * dummyStudentIds.length
+        : 0;
       console.log(
-        `[DummySeed] Subject students -> inserted: ${counters.subjectStudentsInserted}, skipped: ${counters.subjectStudentsSkipped}, expected combos: ${expectedSubjectStudents}`
+        `[DummySeed] Subject students -> inserted: ${counters.subjectStudentsInserted}, skipped: ${counters.subjectStudentsSkipped}, expected combos: ${expectedSubjectStudents}`,
       );
 
-      const subjectCommissionIds = Array.from(subjectCommissionMap.values()).flatMap((entry) => [
-        entry.A as number,
-        entry.B as number,
-      ]);
+      const subjectCommissionIds = Array.from(
+        subjectCommissionMap.values(),
+      ).flatMap((entry) => [entry.A as number, entry.B as number]);
 
       const existingProgressEntries = await studentSubjectProgressRepo.find({
         where: {
@@ -647,7 +690,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         },
       });
       const existingProgressKeys = new Set(
-        existingProgressEntries.map((entry) => `${entry.subjectCommissionId}|${entry.studentId}`)
+        existingProgressEntries.map(
+          (entry) => `${entry.subjectCommissionId}|${entry.studentId}`,
+        ),
       );
 
       const progressValues: Array<{
@@ -697,7 +742,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
 
       const expectedProgress = subjectIds.length * dummyStudentIds.length;
       console.log(
-        `[DummySeed] Subject progress -> inserted: ${counters.studentProgressInserted}, skipped: ${counters.studentProgressSkipped}, expected combos: ${expectedProgress}`
+        `[DummySeed] Subject progress -> inserted: ${counters.studentProgressInserted}, skipped: ${counters.studentProgressSkipped}, expected combos: ${expectedProgress}`,
       );
       if (PRELOAD_FINALS) {
         const finals = await finalExamRepo.find({
@@ -713,12 +758,17 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
             },
           });
           const existingFinalKeys = new Set(
-            existingFinalLinks.map((entry) => `${entry.finalExamId}|${entry.studentId}`)
+            existingFinalLinks.map(
+              (entry) => `${entry.finalExamId}|${entry.studentId}`,
+            ),
           );
 
-          const finalValues: Array<{ finalExamId: number; studentId: string }> = [];
+          const finalValues: Array<{ finalExamId: number; studentId: string }> =
+            [];
           for (const finalExam of finals) {
-            const studentSet = subjectStudentsBySubject.get(finalExam.subjectId);
+            const studentSet = subjectStudentsBySubject.get(
+              finalExam.subjectId,
+            );
             if (!studentSet || studentSet.size === 0) {
               continue;
             }
@@ -747,10 +797,12 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           }
 
           console.log(
-            `[DummySeed] Final exams -> linked: ${counters.finalsLinked}, finals found: ${finals.length}`
+            `[DummySeed] Final exams -> linked: ${counters.finalsLinked}, finals found: ${finals.length}`,
           );
         } else {
-          console.log("[DummySeed] Final exams -> no finals found, skipping preload");
+          console.log(
+            "[DummySeed] Final exams -> no finals found, skipping preload",
+          );
         }
       } else {
         console.log("[DummySeed] Final exams -> preload disabled");
@@ -762,7 +814,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       console.log(
         `[DummySeed] Check subject_commissions count=${totalSubjectCommissions}, expected >= ${
           subjectIds.length * 2
-        }`
+        }`,
       );
 
       if (ENROLL_ALL_SUBJECTS) {
@@ -775,7 +827,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         console.log(
           `[DummySeed] Check subject_students count=${totalSubjectStudents}, expected >= ${
             dummyStudentIds.length * subjectIds.length
-          }`
+          }`,
         );
       }
 
@@ -788,7 +840,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       console.log(
         `[DummySeed] Check student_subject_progress count=${totalProgress}, expected >= ${
           dummyStudentIds.length * subjectIds.length
-        }`
+        }`,
       );
 
       if (PRELOAD_FINALS) {
@@ -798,7 +850,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           },
         });
         console.log(
-          `[DummySeed] Check final_exams_students count=${totalFinalLinks} (dummy students only)`
+          `[DummySeed] Check final_exams_students count=${totalFinalLinks} (dummy students only)`,
         );
       }
 
@@ -808,7 +860,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         },
       });
       console.log(
-        `[DummySeed] Check career_students (career ${career.id}) count=${totalCareerStudents}, expected >= ${dummyStudentIds.length}`
+        `[DummySeed] Check career_students (career ${career.id}) count=${totalCareerStudents}, expected >= ${dummyStudentIds.length}`,
       );
 
       await queryRunner.commitTransaction();
@@ -830,7 +882,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const careerStudentRepo = manager.getRepository(CareerStudent);
       const subjectCommissionRepo = manager.getRepository(SubjectCommission);
       const subjectStudentRepo = manager.getRepository(SubjectStudent);
-      const studentSubjectProgressRepo = manager.getRepository(StudentSubjectProgress);
+      const studentSubjectProgressRepo = manager.getRepository(
+        StudentSubjectProgress,
+      );
       const finalExamStudentRepo = manager.getRepository(FinalExamsStudent);
 
       const commissions = await commissionRepo.find({
@@ -839,7 +893,10 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const commissionIdByLetter = new Map<string, number>();
       commissions.forEach((commission) => {
         if (commission.commissionLetter) {
-          commissionIdByLetter.set(commission.commissionLetter.toUpperCase(), commission.id);
+          commissionIdByLetter.set(
+            commission.commissionLetter.toUpperCase(),
+            commission.id,
+          );
         }
       });
       const commissionIds = Array.from(commissionIdByLetter.values());
@@ -849,18 +906,19 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       if (careers.length === 1) {
         career = careers[0];
       } else {
-        career = careers.find((item) => item.careerName === TARGET_CAREER_NAME) ?? null;
+        career =
+          careers.find((item) => item.careerName === TARGET_CAREER_NAME) ??
+          null;
       }
 
-      const subjectIds =
-        career?.id
-          ? (
-              await careerSubjectRepo.find({
-                where: { careerId: career.id },
-                select: ["subjectId"],
-              })
-            ).map((entry) => entry.subjectId)
-          : [];
+      const subjectIds = career?.id
+        ? (
+            await careerSubjectRepo.find({
+              where: { careerId: career.id },
+              select: ["subjectId"],
+            })
+          ).map((entry) => entry.subjectId)
+        : [];
 
       const subjectCommissions =
         subjectIds.length && commissionIds.length
@@ -878,7 +936,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         .createQueryBuilder("student")
         .leftJoinAndSelect("student.user", "user")
         .where("user.email LIKE :email", { email: `%${EMAIL_DOMAIN}` })
-        .andWhere("student.legajo LIKE :legajo", { legajo: `${LEGAJO_PREFIX}%` })
+        .andWhere("student.legajo LIKE :legajo", {
+          legajo: `${LEGAJO_PREFIX}%`,
+        })
         .getMany();
       const dummyStudentIds = dummyStudents.map((student) => student.userId);
 
@@ -887,7 +947,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           await studentSubjectProgressRepo
             .createQueryBuilder()
             .delete()
-            .where("student_id IN (:...studentIds)", { studentIds: dummyStudentIds })
+            .where("student_id IN (:...studentIds)", {
+              studentIds: dummyStudentIds,
+            })
             .andWhere("subject_commission_id IN (:...subjectCommissionIds)", {
               subjectCommissionIds,
             })
@@ -897,7 +959,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         await subjectStudentRepo
           .createQueryBuilder()
           .delete()
-          .where("student_id IN (:...studentIds)", { studentIds: dummyStudentIds })
+          .where("student_id IN (:...studentIds)", {
+            studentIds: dummyStudentIds,
+          })
           .andWhere("enrollment_date = :enrollmentDate", {
             enrollmentDate: DUMMY_ENROLLMENT_DATE.toISOString().slice(0, 10),
           })
@@ -908,22 +972,30 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
             .createQueryBuilder()
             .delete()
             .where("career_id = :careerId", { careerId: career.id })
-            .andWhere("student_id IN (:...studentIds)", { studentIds: dummyStudentIds })
+            .andWhere("student_id IN (:...studentIds)", {
+              studentIds: dummyStudentIds,
+            })
             .execute();
         }
 
         await finalExamStudentRepo
           .createQueryBuilder()
           .delete()
-          .where("student_id IN (:...studentIds)", { studentIds: dummyStudentIds })
+          .where("student_id IN (:...studentIds)", {
+            studentIds: dummyStudentIds,
+          })
           .execute();
       }
 
-      const dummyTeacherEmails = DEFAULT_TEACHERS.map((teacher) => teacher.email.toLowerCase());
+      const dummyTeacherEmails = DEFAULT_TEACHERS.map((teacher) =>
+        teacher.email.toLowerCase(),
+      );
       const dummyTeachers = await teacherRepo
         .createQueryBuilder("teacher")
         .leftJoinAndSelect("teacher.user", "user")
-        .where("LOWER(user.email) IN (:...emails)", { emails: dummyTeacherEmails })
+        .where("LOWER(user.email) IN (:...emails)", {
+          emails: dummyTeacherEmails,
+        })
         .getMany();
       const dummyTeacherIds = dummyTeachers.map((teacher) => teacher.userId);
 
@@ -964,7 +1036,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
         await userRepo
           .createQueryBuilder()
           .delete()
-          .where("id IN (:...userIds)", { userIds: Array.from(userIdsToDelete) })
+          .where("id IN (:...userIds)", {
+            userIds: Array.from(userIdsToDelete),
+          })
           .execute();
       }
 

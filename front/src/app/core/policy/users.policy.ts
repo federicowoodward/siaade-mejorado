@@ -1,5 +1,5 @@
-﻿import { ROLE } from "../auth/roles";
-import { RowAction, UsersTableContext } from "../models/users-table.models";
+﻿import { ROLE } from '../auth/roles';
+import { RowAction, UsersTableContext } from '../models/users-table.models';
 
 type VisibilityMatrix = Record<ROLE, Set<ROLE>>;
 
@@ -30,14 +30,18 @@ const VISIBILITY: VisibilityMatrix = {
 };
 
 const MANAGEMENT_ACTIONS: RowAction[] = [
-  { id: "view", label: "Ver usuario", icon: "pi pi-user" },
-  { id: "cert", label: "Certificados", icon: "pi pi-file-pdf" },
-  { id: "academic", label: "Situacion academica", icon: "pi pi-graduation-cap" },
-  { id: "teacher-subjects", label: "Materias a cargo", icon: "pi pi-book" },
+  { id: 'view', label: 'Ver usuario', icon: 'pi pi-user' },
+  { id: 'cert', label: 'Certificados', icon: 'pi pi-file-pdf' },
+  {
+    id: 'academic',
+    label: 'Situacion academica',
+    icon: 'pi pi-graduation-cap',
+  },
+  { id: 'teacher-subjects', label: 'Materias a cargo', icon: 'pi pi-book' },
 ];
 
 const TEACHER_ACTIONS: RowAction[] = [
-  { id: "view", label: "Ver usuario", icon: "pi pi-user" },
+  { id: 'view', label: 'Ver usuario', icon: 'pi pi-user' },
 ];
 
 export function canSee(viewer: ROLE, target: ROLE): boolean {
@@ -47,10 +51,14 @@ export function canSee(viewer: ROLE, target: ROLE): boolean {
 export function actionsFor(
   viewer: ROLE,
   target: ROLE,
-  ctx: UsersTableContext
+  ctx: UsersTableContext,
 ): RowAction[] {
   const base = (() => {
-    if (viewer === ROLE.PRECEPTOR || viewer === ROLE.SECRETARY || viewer === ROLE.EXECUTIVE_SECRETARY) {
+    if (
+      viewer === ROLE.PRECEPTOR ||
+      viewer === ROLE.SECRETARY ||
+      viewer === ROLE.EXECUTIVE_SECRETARY
+    ) {
       return MANAGEMENT_ACTIONS;
     }
     if (viewer === ROLE.TEACHER) return TEACHER_ACTIONS;
@@ -60,16 +68,16 @@ export function actionsFor(
   let actions = [...base];
 
   actions = actions.filter((a) => {
-    if (a.id === "academic") return target === ROLE.STUDENT;
-    if (a.id === "teacher-subjects") return target === ROLE.TEACHER;
+    if (a.id === 'academic') return target === ROLE.STUDENT;
+    if (a.id === 'teacher-subjects') return target === ROLE.TEACHER;
     return true;
   });
 
-  if (ctx === "readonly") {
-    actions = actions.filter((a) => a.id === "view");
+  if (ctx === 'readonly') {
+    actions = actions.filter((a) => a.id === 'view');
   }
-  if (ctx === "subject-students") {
-    actions = actions.filter((a) => a.id === "view" || a.id === "academic");
+  if (ctx === 'subject-students') {
+    actions = actions.filter((a) => a.id === 'view' || a.id === 'academic');
   }
 
   return actions;

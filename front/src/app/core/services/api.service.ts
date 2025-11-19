@@ -34,7 +34,7 @@ export class ApiService {
   constructor(
     private http: HttpClient,
     private cache: ApiCacheService,
-    private authState: AuthStateService
+    private authState: AuthStateService,
   ) {}
   private readonly LOG = (enviroment as any).debugApi === true;
 
@@ -43,7 +43,7 @@ export class ApiService {
     url: string,
     data?: any,
     params?: Record<string, any>,
-    headers?: HttpHeaders
+    headers?: HttpHeaders,
   ): Observable<T> {
     const base = enviroment.apiBaseUrl;
     const fullUrl = `${base}/${url}`;
@@ -52,9 +52,15 @@ export class ApiService {
     const finalHeaders =
       headers ?? new HttpHeaders({ 'Content-Type': 'application/json' });
 
-    const options: { headers: HttpHeaders; params: HttpParams; body?: any } = {
+    const options: {
+      headers: HttpHeaders;
+      params: HttpParams;
+      body?: any;
+      withCredentials: boolean;
+    } = {
       headers: finalHeaders,
       params: new HttpParams({ fromObject: params ?? {} }),
+      withCredentials: true,
     };
     if (data !== undefined) options.body = data;
 
@@ -152,14 +158,16 @@ export class ApiService {
             const messages = Array.isArray(server?.message)
               ? server.message
               : server?.message
-              ? [server.message]
-              : [err.message];
+                ? [server.message]
+                : [err.message];
 
             console.log('Status:', err.status, err.statusText);
             console.log('URL:', err.url);
             console.log('Server payload:', server);
             console.log('Messages:');
-            messages.forEach((m: any, i: number) => console.log(`  - [${i}]`, m));
+            messages.forEach((m: any, i: number) =>
+              console.log(`  - [${i}]`, m),
+            );
           } else {
             console.log('Unknown error object:', err);
           }
@@ -191,7 +199,7 @@ export class ApiService {
             console.groupEnd();
           }
         }
-      })
+      }),
     );
   }
 
@@ -200,10 +208,24 @@ export class ApiService {
     studentId: string;
     action: 'enroll' | 'unenroll';
   }): Observable<ToggleEnrollmentResponse> {
-    return this.request<ToggleEnrollmentResponse>('POST', 'subjects/enrollments/toggle', {
-      entity: 'subject',
-      ...payload,
-    });
+    return this.request<ToggleEnrollmentResponse>(
+      'POST',
+      'subjects/enrollments/toggle',
+      {
+        entity: 'subject',
+        ...payload,
+      },
+    ).pipe(
+      map((res) => {
+        const enrolled = !!res?.enrolled;
+        // Normalizar coherencia para el front: cuando queda inscripto, forzar condition falsy
+        // para que el template use el fallback por "enrolled". Al desinscribir, setear "No inscripto".
+        return {
+          ...res,
+          condition: enrolled ? '' : (res?.condition ?? 'No inscripto'),
+        } as ToggleEnrollmentResponse;
+      }),
+    );
   }
 
   toggleFinalEnrollment(payload: {
@@ -211,10 +233,14 @@ export class ApiService {
     studentId: string;
     action: 'enroll' | 'unenroll';
   }): Observable<ToggleEnrollmentResponse> {
-    return this.request<ToggleEnrollmentResponse>('POST', 'finals/exam/enrollments/toggle', {
-      entity: 'final_exam',
-      ...payload,
-    });
+    return this.request<ToggleEnrollmentResponse>(
+      'POST',
+      'finals/exam/enrollments/toggle',
+      {
+        entity: 'final_exam',
+        ...payload,
+      },
+    );
   }
 
   getAll<T = any>(table: string): Observable<T[]> {

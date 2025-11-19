@@ -32,7 +32,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly usersPatchService: UsersPatchService,
-    private readonly userReader: UserProfileReaderService
+    private readonly userReader: UserProfileReaderService,
   ) {}
 
   @Post("secretary")
@@ -75,35 +75,51 @@ export class UsersController {
 
   // ---------------- BLOQUEO / DESBLOQUEO -----------------
 
-  @Patch(':id/block')
-  @ApiOperation({ summary: 'Bloquea un usuario y (opcional) asigna motivo visible' })
-  @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string', nullable: true } } } as any })
-  async blockUser(@Param('id') id: string, @Body() body: { reason?: string | null }) {
-    const reason = (body?.reason ?? '').trim();
+  @Patch(":id/block")
+  @ApiOperation({
+    summary: "Bloquea un usuario y (opcional) asigna motivo visible",
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: { reason: { type: "string", nullable: true } },
+    } as any,
+  })
+  async blockUser(
+    @Param("id") id: string,
+    @Body() body: { reason?: string | null },
+  ) {
+    const reason = (body?.reason ?? "").trim();
     const data = await this.usersService.blockUser(id, reason);
-    return { data, message: 'Usuario bloqueado' };
+    return { data, message: "Usuario bloqueado" };
   }
 
-  @Patch(':id/unblock')
-  @ApiOperation({ summary: 'Desbloquea un usuario y limpia el motivo' })
-  async unblockUser(@Param('id') id: string) {
+  @Patch(":id/unblock")
+  @ApiOperation({ summary: "Desbloquea un usuario y limpia el motivo" })
+  async unblockUser(@Param("id") id: string) {
     const data = await this.usersService.unblockUser(id);
-    return { data, message: 'Usuario desbloqueado' };
+    return { data, message: "Usuario desbloqueado" };
   }
 
   // Activar/Inactivar (soft delete reversible)
-  @Patch(':id/activate')
-  @ApiOperation({ summary: 'Marca un usuario como ACTIVO (reversión de inactivo/eliminado lógico)' })
-  async activateUser(@Param('id') id: string) {
+  @Patch(":id/activate")
+  @ApiOperation({
+    summary:
+      "Marca un usuario como ACTIVO (reversión de inactivo/eliminado lógico)",
+  })
+  async activateUser(@Param("id") id: string) {
     const data = await this.usersService.setUserActiveState(id, true);
-    return { data, message: 'Usuario activado' };
+    return { data, message: "Usuario activado" };
   }
 
-  @Patch(':id/inactivate')
-  @ApiOperation({ summary: 'Marca un usuario como INACTIVO (equivalente a eliminado lógico, bloquea login)' })
-  async inactivateUser(@Param('id') id: string) {
+  @Patch(":id/inactivate")
+  @ApiOperation({
+    summary:
+      "Marca un usuario como INACTIVO (equivalente a eliminado lógico, bloquea login)",
+  })
+  async inactivateUser(@Param("id") id: string) {
     const data = await this.usersService.setUserActiveState(id, false);
-    return { data, message: 'Usuario inactivado' };
+    return { data, message: "Usuario inactivado" };
   }
 
   // -----------------------------
@@ -169,7 +185,9 @@ export class UsersController {
   // @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete user" })
   @ApiOkResponse({ description: "User deleted successfully" })
-  @ApiConflictResponse({ description: "User cannot be deleted due to linked subjects" })
+  @ApiConflictResponse({
+    description: "User cannot be deleted due to linked subjects",
+  })
   async deleteUser(@Param("id") id: string) {
     await this.usersService.deleteTx(id);
     return { data: { deleted: true }, message: "User deleted successfully" };

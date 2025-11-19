@@ -1,4 +1,12 @@
-import { BadRequestException, Injectable, UnauthorizedException, Logger, ForbiddenException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+  Logger,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, MoreThan, Repository } from "typeorm";
@@ -26,6 +34,7 @@ type AuthPayload = {
   role: ROLE;
   roleId: number;
   isDirective: boolean;
+  requiresPasswordChange?: boolean;
 };
 
 type AuthProfile = Awaited<ReturnType<UserProfileReaderService["findById"]>>;
@@ -50,7 +59,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     this.refreshSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -60,16 +69,48 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const userId = await this.userAuthValidator.validateUser(
-      loginDto.identity,
-      loginDto.password
-    );
-
-    if (!userId) {
-      throw new UnauthorizedException("Invalid credentials");
+    const identity = (loginDto.identity || "").trim();
+    if (!identity) {
+      throw this.buildInvalidCredentialsException();
     }
 
+    const user = await this.resolveUserByIdentity(identity);
+    if (!user) {
+      throw new NotFoundException({
+        code: "USER_NOT_FOUND",
+        message: "Usuario no existe",
+      });
+    }
+
+    if ((user as any).isActive === false) {
+      throw this.buildInvalidCredentialsException();
+    }
+
+    if ((user as any).isBlocked === true) {
+      const reason = (user as any).blockedReason ?? null;
+      throw this.buildUserBlockedException(reason);
+    }
+
+    const validationResult = await this.userAuthValidator.validateUser(
+      identity,
+      loginDto.password,
+    );
+
+    if (!validationResult) {
+      throw this.buildInvalidCredentialsException();
+    }
+
+    const userId = validationResult.id;
+    const isPlainTextPassword = validationResult.isPlainText;
+
     const { profile, payload } = await this.resolveProfileAndPayload(userId);
+    
+    // Si la contraseña es texto plano, forzar cambio de contraseña
+    if (isPlainTextPassword) {
+      payload.requiresPasswordChange = true;
+      (profile as any).requiresPasswordChange = true;
+    }
+    
     const { accessToken, refreshToken } = this.issueTokens(payload);
 
     return {
@@ -96,7 +137,7 @@ export class AuthService {
     }
 
     const { profile, payload } = await this.resolveProfileAndPayload(
-      incomingPayload.sub
+      incomingPayload.sub,
     );
 
     const { accessToken, refreshToken: rotatedRefreshToken } =
@@ -134,10 +175,13 @@ export class AuthService {
       return { message: "Si la cuenta existe, enviamos instrucciones" };
     }
 
-    const { token, expiresInSeconds, code, codeExpiresInSeconds } = await this.issueResetToken(user.id);
+    const { token, expiresInSeconds, code, codeExpiresInSeconds } =
+      await this.issueResetToken(user.id);
 
     // En modo seguro: no exponemos detalles en producción salvo que se habilite por bandera
-    const isProd = (this.configService.get<string>("NODE_ENV") || "").toLowerCase() === "production";
+    const isProd =
+      (this.configService.get<string>("NODE_ENV") || "").toLowerCase() ===
+      "production";
     // Permitir alias de variable por compatibilidad: RESET_DETAILS_EXPOSE_IN_RESPONSE o RESET_TOKEN_EXPOSE_IN_RESPONSE
     const exposeEnv =
       this.configService.get<string>("RESET_DETAILS_EXPOSE_IN_RESPONSE") ??
@@ -149,7 +193,13 @@ export class AuthService {
 
     // En dev/QA (o bandera habilitada), devolvemos detalles para facilitar el flujo sin correo
     this.logger.log(`DEV ONLY: Reset code for userId=${user.id} code=${code}`);
-    return { message: "Código generado", token, expiresInSeconds, code, codeExpiresInSeconds };
+    return {
+      message: "Código generado",
+      token,
+      expiresInSeconds,
+      code,
+      codeExpiresInSeconds,
+    };
   }
 
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
@@ -176,7 +226,9 @@ export class AuthService {
     }
 
     // Cargar usuario actual
-    const user = await this.userRepository.findOne({ where: { id: record.userId } });
+    const user = await this.userRepository.findOne({
+      where: { id: record.userId },
+    });
     if (!user) {
       throw new UnauthorizedException("User not found");
     }
@@ -194,7 +246,9 @@ export class AuthService {
     // No permitir reutilizar la contraseña vigente
     const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
     if (isSameAsCurrent) {
-      throw new BadRequestException("La nueva contraseña no puede ser igual a la actual");
+      throw new BadRequestException(
+        "La nueva contraseña no puede ser igual a la actual",
+      );
     }
 
     // No permitir reutilizar una contraseña histórica (últimas 10 por performance)
@@ -205,12 +259,17 @@ export class AuthService {
     });
     for (const entry of last10) {
       if (await bcrypt.compare(newPassword, entry.passwordHash)) {
-        throw new BadRequestException("Ya usaste esa contraseña anteriormente. Elegí una diferente.");
+        throw new BadRequestException(
+          "Ya usaste esa contraseña anteriormente. Elegí una diferente.",
+        );
       }
     }
 
     // Guardar la contraseña actual en historial antes de actualizar
-    await this.passwordHistoryRepo.insert({ userId: user.id, passwordHash: user.password } as any);
+    await this.passwordHistoryRepo.insert({
+      userId: user.id,
+      passwordHash: user.password,
+    } as any);
 
     // Actualizar contraseña del usuario (hash bcrypt)
     const hashed = await bcrypt.hash(newPassword, 10);
@@ -229,7 +288,9 @@ export class AuthService {
       .andWhere("id <> :id", { id: record.id })
       .execute();
 
-    this.logger.log(`Password reset confirm: userId=${record.userId} tokenHash=${tokenHash.substring(0,8)}...`);
+    this.logger.log(
+      `Password reset confirm: userId=${record.userId} tokenHash=${tokenHash.substring(0, 8)}...`,
+    );
 
     return { success: true };
   }
@@ -241,7 +302,9 @@ export class AuthService {
 
     // No permitir igual a actual
     if (await bcrypt.compare(newPassword, user.password)) {
-      throw new BadRequestException("La nueva contraseña no puede ser igual a la actual");
+      throw new BadRequestException(
+        "La nueva contraseña no puede ser igual a la actual",
+      );
     }
 
     // No permitir reutilizar última 10
@@ -252,11 +315,16 @@ export class AuthService {
     });
     for (const entry of last10) {
       if (await bcrypt.compare(newPassword, entry.passwordHash)) {
-        throw new BadRequestException("Ya usaste esa contraseña anteriormente. Elegí una diferente.");
+        throw new BadRequestException(
+          "Ya usaste esa contraseña anteriormente. Elegí una diferente.",
+        );
       }
     }
 
-    await this.passwordHistoryRepo.insert({ userId: user.id, passwordHash: user.password } as any);
+    await this.passwordHistoryRepo.insert({
+      userId: user.id,
+      passwordHash: user.password,
+    } as any);
     const hashed = await bcrypt.hash(newPassword, 10);
     await this.userRepository.update({ id: user.id }, { password: hashed });
     return { success: true };
@@ -293,7 +361,7 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
 
-  const roleFromProfile = normalizeRole(profile.role?.name);
+    const roleFromProfile = normalizeRole(profile.role?.name);
     const roleIdFromProfile = profile.role?.id ?? null;
     const roleFromEntity =
       normalizeRole(userEntity.role?.name) ?? getRoleById(userEntity.roleId);
@@ -311,26 +379,29 @@ export class AuthService {
     // Gating de acceso global: si el usuario está INACTIVO o BLOQUEADO, no puede loguear.
     // INACTIVO se trata como eliminado (401 genérico); BLOQUEADO devuelve 403 con motivo (si existe).
     if ((userEntity as any).isActive === false) {
-      throw new UnauthorizedException("Usuario inactivo o eliminado");
+      throw this.buildInvalidCredentialsException();
     }
     if ((userEntity as any).isBlocked === true) {
       const reason = (userEntity as any).blockedReason ?? null;
-      const message = reason ? `Tu usuario está bloqueado: ${reason}` : "Tu usuario está bloqueado";
-      throw new ForbiddenException({ error: 'USER_BLOCKED', message, reason });
+      throw this.buildUserBlockedException(reason);
     }
 
     // Gating adicional para alumnos: isActive=false bloquea siempre; si isActive=true pero canLogin=false, también bloquea login.
     if (role === ROLE.STUDENT) {
       // Traer flags del alumno; como las columnas pueden ser null, sólo bloqueamos si son estrictamente false
-      const student = await this.studentRepository.findOne({ where: { userId } });
+      const student = await this.studentRepository.findOne({
+        where: { userId },
+      });
       if (!student) {
-        throw new UnauthorizedException("Student record not found");
+        throw this.buildInvalidCredentialsException();
       }
       if (student.isActive === false) {
-        throw new UnauthorizedException("Usuario inactivo o eliminado");
+        throw this.buildInvalidCredentialsException();
       }
       if (student.canLogin === false) {
-        throw new ForbiddenException({ error: 'STUDENT_LOGIN_DISABLED', message: "El acceso está deshabilitado para este alumno" });
+        throw this.buildUserBlockedException(
+          "El acceso está deshabilitado para este alumno",
+        );
       }
     }
 
@@ -352,9 +423,23 @@ export class AuthService {
     // Calcular si la contraseña es "default" (CUIL o "pass1234")
     try {
       const bcrypt = await import("bcryptjs");
-      const isPass1234 = await bcrypt.compare("pass1234", userEntity.password);
-      const isCuil = userEntity.cuil ? await bcrypt.compare(userEntity.cuil, userEntity.password) : false;
-      (profile as any).requiresPasswordChange = Boolean(isPass1234 || isCuil);
+      let requires = false;
+      try {
+        const isPass1234 = await bcrypt.compare(
+          "pass1234",
+          userEntity.password,
+        );
+        const isCuil = userEntity.cuil
+          ? await bcrypt.compare(userEntity.cuil, userEntity.password)
+          : false;
+        requires = Boolean(isPass1234 || isCuil);
+      } catch {}
+      const looksHashed = /^\$2[aby]\$/.test(userEntity.password || "");
+      // Si no parece hash (texto plano importado), forzar cambio siempre
+      if (!requires && !looksHashed) {
+        requires = true;
+      }
+      (profile as any).requiresPasswordChange = requires;
     } catch {}
 
     return { profile: profile as any, payload };
@@ -394,12 +479,14 @@ export class AuthService {
   }> {
     const token = this.generateToken();
     const tokenHash = this.sha256(token);
-    const ttl = this.configService.get<number>("RESET_TOKEN_TTL_SECONDS") ?? 30 * 60; // 30 min por defecto
+    const ttl =
+      this.configService.get<number>("RESET_TOKEN_TTL_SECONDS") ?? 30 * 60; // 30 min por defecto
     const expiresAt = new Date(Date.now() + ttl * 1000);
     // Generar código de 6 dígitos para flujo alternativo
-    const code = (Math.floor(100000 + Math.random() * 900000)).toString();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = this.sha256(code);
-    const codeTtl = this.configService.get<number>("RESET_CODE_TTL_SECONDS") ?? 10 * 60; // 10 min por defecto
+    const codeTtl =
+      this.configService.get<number>("RESET_CODE_TTL_SECONDS") ?? 10 * 60; // 10 min por defecto
     const codeExpiresAt = new Date(Date.now() + codeTtl * 1000);
 
     const entity = this.prtRepository.create({
@@ -412,9 +499,16 @@ export class AuthService {
     });
     await this.prtRepository.save(entity);
 
-    this.logger.log(`Password reset token issued: userId=${userId} tokenHash=${tokenHash.substring(0,8)}... ttl=${ttl}s`);
+    this.logger.log(
+      `Password reset token issued: userId=${userId} tokenHash=${tokenHash.substring(0, 8)}... ttl=${ttl}s`,
+    );
 
-    return { token, expiresInSeconds: ttl, code, codeExpiresInSeconds: codeTtl };
+    return {
+      token,
+      expiresInSeconds: ttl,
+      code,
+      codeExpiresInSeconds: codeTtl,
+    };
   }
 
   private generateToken(size = 32): string {
@@ -442,7 +536,7 @@ export class AuthService {
           .createQueryBuilder("u")
           .where(
             "LOWER(CONCAT(TRIM(u.name), ' ', TRIM(u.last_name))) = :full",
-            { full }
+            { full },
           )
           .getOne();
       }
@@ -450,7 +544,27 @@ export class AuthService {
     return user;
   }
 
-  async verifyResetCode(dto: VerifyResetCodeDto): Promise<{ token: string; expiresInSeconds: number }> {
+  private buildInvalidCredentialsException(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: "INVALID_CREDENTIALS",
+      message: "Credenciales incorrectas",
+    });
+  }
+
+  private buildUserBlockedException(reason?: string | null): HttpException {
+    return new HttpException(
+      {
+        code: "USER_BLOCKED",
+        message: "Usuario bloqueado",
+        reason: reason ?? null,
+      },
+      HttpStatus.LOCKED,
+    );
+  }
+
+  async verifyResetCode(
+    dto: VerifyResetCodeDto,
+  ): Promise<{ token: string; expiresInSeconds: number }> {
     const identity = (dto.identity || "").trim();
     const code = (dto.code || "").trim();
     if (!identity || !/^\d{6}$/.test(code)) {
@@ -474,7 +588,13 @@ export class AuthService {
       order: { createdAt: "DESC" },
     });
 
-    if (!record || !record.codeHash || record.codeHash !== codeHash || !record.codeExpiresAt || record.codeExpiresAt <= now) {
+    if (
+      !record ||
+      !record.codeHash ||
+      record.codeHash !== codeHash ||
+      !record.codeExpiresAt ||
+      record.codeExpiresAt <= now
+    ) {
       throw new UnauthorizedException("Código inválido o expirado");
     }
 
@@ -483,7 +603,9 @@ export class AuthService {
 
     // Emitir un nuevo token one-time para el reseteo
     const { token, expiresInSeconds } = await this.issueResetToken(user.id);
-    this.logger.log(`Reset code verificado: userId=${user.id} codeHash=${codeHash.substring(0,8)}...`);
+    this.logger.log(
+      `Reset code verificado: userId=${user.id} codeHash=${codeHash.substring(0, 8)}...`,
+    );
     return { token, expiresInSeconds };
   }
 }

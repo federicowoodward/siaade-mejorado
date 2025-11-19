@@ -9,7 +9,7 @@ export class PermissionService {
   readonly role = this.roleSignal.asReadonly();
   readonly roleId = this.roleIdSignal.asReadonly();
   readonly isExecutive = computed(
-    () => this.roleSignal() === ROLE.EXECUTIVE_SECRETARY
+    () => this.roleSignal() === ROLE.EXECUTIVE_SECRETARY,
   );
 
   currentRole(): ROLE | null {
@@ -17,8 +17,7 @@ export class PermissionService {
   }
 
   setRole(role: ROLE | null, roleId?: number | null): void {
-    const resolvedRoleId =
-      roleId ?? (role ? ROLE_IDS[role] ?? null : null);
+    const resolvedRoleId = roleId ?? (role ? (ROLE_IDS[role] ?? null) : null);
     this.roleSignal.set(role);
     this.roleIdSignal.set(resolvedRoleId ?? null);
   }

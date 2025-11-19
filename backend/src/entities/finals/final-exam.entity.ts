@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from "typeorm";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { FinalExamsStudent } from "./final-exams-student.entity";
 import { ExamTable } from "./exam-table.entity";

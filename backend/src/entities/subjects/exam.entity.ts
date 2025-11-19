@@ -1,24 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Subject } from './subject.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { Subject } from "./subject.entity";
 
-@Entity('exams')
+@Entity("exams")
 export class Exam {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'subject_id' })
+  @Column({ name: "subject_id" })
   subjectId: number;
 
-  @ManyToOne(() => Subject, (s) => s.exams, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'subject_id' })
+  @ManyToOne(() => Subject, (s) => s.exams, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "subject_id" })
   subject: Subject;
 
   @Column({ nullable: true })
   title: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: "date", nullable: true })
   date: Date;
 
-  @Column({ name: 'is_valid', default: true })
+  @Column({ name: "is_valid", default: true })
   isValid: boolean;
 }

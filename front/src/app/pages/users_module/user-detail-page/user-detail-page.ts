@@ -16,12 +16,19 @@ import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.s
 @Component({
   selector: 'app-user-detail-page',
   standalone: true,
-  imports: [PersonalDataComponent, CommonModule, Button, FormsModule, ToggleButtonModule, DialogModule],
+  imports: [
+    PersonalDataComponent,
+    CommonModule,
+    Button,
+    FormsModule,
+    ToggleButtonModule,
+    DialogModule,
+  ],
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
 })
 export class UserDetailPage implements OnInit {
-  private goBack = inject(GoBackService)
+  private goBack = inject(GoBackService);
   private api = inject(ApiService);
   private permissions = inject(PermissionService);
   private cache = inject(UserFlagsCacheService);
@@ -38,7 +45,10 @@ export class UserDetailPage implements OnInit {
   reasonDraft = signal('');
   private dialogCloseMode: 'none' | 'confirm' | 'cancel' = 'none';
 
-  constructor(private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -58,7 +68,8 @@ export class UserDetailPage implements OnInit {
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
     ]);
-    const targetOk = (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
+    const targetOk =
+      (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
     return actorOk && targetOk;
   }
 
@@ -67,7 +78,8 @@ export class UserDetailPage implements OnInit {
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
     ]);
-    const targetOk = (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
+    const targetOk =
+      (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
     return actorOk && targetOk;
   }
 
@@ -86,11 +98,12 @@ export class UserDetailPage implements OnInit {
 
     try {
       const resp: any = await firstValueFrom(
-        this.api.request('GET', `users/${id}`)
+        this.api.request('GET', `users/${id}`),
       );
       const data = resp?.data ?? resp;
       const roleName: ROLE | null = (data?.role?.name as ROLE) ?? null;
-      const roleId: number | null = Number(data?.role?.id) || (roleName ? ROLE_IDS[roleName] : null);
+      const roleId: number | null =
+        Number(data?.role?.id) || (roleName ? ROLE_IDS[roleName] : null);
       this.targetRole.set(roleName);
       this.targetRoleId.set(roleId);
       const student = data?.student ?? data?.students ?? null;
@@ -111,8 +124,10 @@ export class UserDetailPage implements OnInit {
         });
       } else if (roleName === ROLE.TEACHER && data?.teacher) {
         this.isStudent.set(false);
-        const isActive = data.teacher?.isActive ?? data.teacher?.is_active ?? true;
-        const canLogin = data.teacher?.canLogin ?? data.teacher?.can_login ?? true;
+        const isActive =
+          data.teacher?.isActive ?? data.teacher?.is_active ?? true;
+        const canLogin =
+          data.teacher?.canLogin ?? data.teacher?.can_login ?? true;
         this.isActive.set(isActive === null ? null : !!isActive);
         this.canLogin.set(canLogin === null ? null : !!canLogin);
         this.cache.set(id, {
@@ -124,8 +139,10 @@ export class UserDetailPage implements OnInit {
         });
       } else if (roleName === ROLE.PRECEPTOR && data?.preceptor) {
         this.isStudent.set(false);
-        const isActive = data.preceptor?.isActive ?? data.preceptor?.is_active ?? true;
-        const canLogin = data.preceptor?.canLogin ?? data.preceptor?.can_login ?? true;
+        const isActive =
+          data.preceptor?.isActive ?? data.preceptor?.is_active ?? true;
+        const canLogin =
+          data.preceptor?.canLogin ?? data.preceptor?.can_login ?? true;
         this.isActive.set(isActive === null ? null : !!isActive);
         this.canLogin.set(canLogin === null ? null : !!canLogin);
         this.cache.set(id, {
@@ -193,10 +210,12 @@ export class UserDetailPage implements OnInit {
       this.saving.set(true);
       console.debug('[UserDetail] Enabling access...');
       await firstValueFrom(
-        this.api.update('users', this.userId, { [`${prefix}canLogin`]: true })
+        this.api.update('users', this.userId, { [`${prefix}canLogin`]: true }),
       );
       // Limpia motivo si existía
-      await firstValueFrom(this.api.request('PATCH', `users/${this.userId}/unblock`));
+      await firstValueFrom(
+        this.api.request('PATCH', `users/${this.userId}/unblock`),
+      );
       this.canLogin.set(true);
       this.cache.update(this.userId, { canLogin: true });
       console.debug('[UserDetail] Access enabled and reason cleared');
@@ -219,7 +238,10 @@ export class UserDetailPage implements OnInit {
       await firstValueFrom(this.api.update('users', this.userId, payload));
       this.isActive.set(!!next);
       if (next === false) this.canLogin.set(false);
-      this.cache.update(this.userId, { isActive: !!next, canLogin: next ? this.canLogin() : false });
+      this.cache.update(this.userId, {
+        isActive: !!next,
+        canLogin: next ? this.canLogin() : false,
+      });
     } catch (e) {
       // noop
     } finally {
@@ -237,11 +259,11 @@ export class UserDetailPage implements OnInit {
       console.debug('[UserDetail] Confirming block with reason=', reason);
       // 1) Cortar acceso
       await firstValueFrom(
-        this.api.update('users', this.userId, { [`${prefix}canLogin`]: false })
+        this.api.update('users', this.userId, { [`${prefix}canLogin`]: false }),
       );
       // 2) Registrar motivo global
       await firstValueFrom(
-        this.api.request('PATCH', `users/${this.userId}/block`, { reason })
+        this.api.request('PATCH', `users/${this.userId}/block`, { reason }),
       );
       this.canLogin.set(false);
       this.cache.update(this.userId, { canLogin: false });

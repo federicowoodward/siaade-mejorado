@@ -1,10 +1,4 @@
-import {
-  IsOptional,
-  IsNumber,
-  Min,
-  Max,
-  ValidateIf,
-} from "class-validator";
+import { IsOptional, IsNumber, Min, Max, ValidateIf } from "class-validator";
 
 type NullableNumber = number | null;
 
@@ -58,4 +52,3 @@ export class UpdateSubjectGradeDto {
   @Max(10)
   final?: NullableNumber;
 }
-

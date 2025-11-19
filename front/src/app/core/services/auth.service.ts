@@ -1,19 +1,17 @@
-import { Injectable, inject } from "@angular/core";
-import { Router } from "@angular/router";
-import { Observable, firstValueFrom, of } from "rxjs";
-import { catchError } from "rxjs/operators";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { PermissionService } from "../auth/permission.service";
-import { RbacService } from "../rbac/rbac.service";
+import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { Observable, firstValueFrom, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PermissionService } from '../auth/permission.service';
+import { RbacService } from '../rbac/rbac.service';
+import { ROLE, ROLE_BY_ID, ROLE_IDS, normalizeRole } from '../auth/roles';
+import { ApiService } from './api.service';
+import { AuthStateService } from './auth/auth-state.service';
 import {
-  ROLE,
-  ROLE_BY_ID,
-  ROLE_IDS,
-  normalizeRole,
-} from "../auth/roles";
-import { ApiService } from "./api.service";
-import { AuthApiService } from "./auth/auth-api.service";
-import { AuthStateService } from "./auth/auth-state.service";
+  NormalizedApiError,
+  normalizeApiError,
+} from '../http/error-normalizer';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -28,16 +26,69 @@ export interface LocalUser {
   role: ROLE | null;
   roleId?: number;
   isExecutive?: boolean;
-    requiresPasswordChange?: boolean;
+  requiresPasswordChange?: boolean;
   [key: string]: unknown;
 }
 
-@Injectable({ providedIn: "root" })
+type LoginDto = { identity: string; password: string };
+type LoginResponseDto = { accessToken: string; user: AnyRecord };
+type PasswordResetResponse = {
+  message?: string;
+  token?: string | null;
+  expiresInSeconds?: number | null;
+  code?: string | null;
+  devIdentity?: string | null;
+};
+type VerifyCodeResponse = { token: string; expiresInSeconds?: number | null };
+
+type ApiFailureResult = {
+  ok: false;
+  kind: NormalizedApiError['kind'];
+  status: number | 0;
+  message: string;
+  code?: string | null;
+  reason?: string | null;
+};
+
+export type LoginResult =
+  | { ok: true; token: string; user?: AnyRecord }
+  | ApiFailureResult;
+
+export type PasswordRecoveryResult =
+  | {
+      ok: true;
+      message?: string | null;
+      token?: string | null;
+      expiresInSeconds?: number | null;
+      code?: string | null;
+    }
+  | ApiFailureResult;
+
+export type VerifyResetCodeResult =
+  | {
+      ok: true;
+      token: string;
+      expiresInSeconds?: number | null;
+    }
+  | ApiFailureResult;
+
+export type PasswordChangeCodeResult =
+  | {
+      ok: true;
+      message?: string | null;
+      code?: string | null;
+      devIdentity?: string | null;
+      expiresInSeconds?: number | null;
+    }
+  | ApiFailureResult;
+
+export type ConfirmPasswordResetResult = { ok: true } | ApiFailureResult;
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
   private readonly rbac = inject(RbacService);
-  private readonly authApi = inject(AuthApiService);
   private readonly authState = inject(AuthStateService);
   private readonly api = inject(ApiService);
 
@@ -49,30 +100,16 @@ export class AuthService {
       .pipe(takeUntilDestroyed())
       .subscribe((user) => this.applyRolesFromUser(user));
 
-    this.authState.refreshFailed$
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (!this.router.url.startsWith("/auth")) {
-          void this.router.navigate(["/auth"], { replaceUrl: true });
-        }
-      });
+    this.authState.refreshFailed$.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (!this.router.url.startsWith('/auth')) {
+        void this.router.navigate(['/auth'], { replaceUrl: true });
+      }
+    });
   }
 
-  async login(credentials: { identity: string; password: string }): Promise<boolean> {
-    const response = await firstValueFrom(
-      this.authApi.login(credentials)
-    );
-
-    if (!response?.accessToken || !response?.user) {
-      return false;
-    }
-
-    const userLocal = this.buildLocalUser(response.user);
-    this.authState.setCurrentUser(userLocal, { persist: true });
-    this.authState.setAccessToken(response.accessToken, { persist: true });
-    const resolved = this.resolveRole(userLocal);
-    this.applyResolvedRole(resolved);
-
+  async login(credentials: LoginDto): Promise<boolean> {
+    const response = await firstValueFrom(this.loginRequest(credentials));
+    this.applyLoginResponse(response);
     return true;
   }
 
@@ -91,70 +128,202 @@ export class AuthService {
     }
   }
 
-  async loginWithReason(credentials: { identity: string; password: string }): Promise<{ ok: boolean; blocked?: boolean; blockedReason?: string | null; inactive?: boolean; message?: string }> {
-    try {
-      const ok = await this.login(credentials);
-      return { ok };
-    } catch (error: any) {
-      const msg: string = (error?.error?.message || error?.message || '').toLowerCase();
-      const raw = error?.error?.message || error?.message || '';
-      let blocked = false;
-      let inactive = false;
-      let blockedReason: string | null = null;
-      if (msg.includes('inactivo') || msg.includes('eliminado')) inactive = true;
-      if (msg.includes('bloqueado')) {
-        blocked = true;
-        // Extraer motivo después de ':' si existe
-        const colonIdx = raw.indexOf(':');
-        if (colonIdx >= 0) {
-          blockedReason = raw.slice(colonIdx + 1).trim() || null;
-        }
-      }
-      return { ok: false, blocked, blockedReason, inactive, message: raw };
-    }
+  loginWithReason(payload: LoginDto): Observable<LoginResult> {
+    return this.loginRequest(payload).pipe(
+      map((resp) => {
+        const { token, user } = this.applyLoginResponse(resp);
+        return { ok: true as const, token, user };
+      }),
+      catchError((err) => of(this.asFailure(err))),
+    );
   }
 
-  requestPasswordRecovery(identity: string) {
-    return this.authApi.requestPasswordReset(identity);
-  }
-
-  confirmPasswordReset(token: string, password: string, currentPassword?: string) {
-    return this.authApi.confirmPasswordReset({ token, password, currentPassword });
-  }
-
-  verifyResetCode(identity: string, code: string) {
-    return this.authApi.verifyResetCode(identity, code);
-  }
-
-    async forcePasswordChange(password: string): Promise<boolean> {
-      const result = await firstValueFrom(this.authApi.forcePasswordChange(password));
-      return result.success;
-    }
-
-    requestPasswordChangeCode() {
-      const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
-      const email = user?.email || '';
-      return this.authApi.requestPasswordChangeCode().pipe(
-        catchError((err) => {
-          // Compatibilidad: si el backend no tiene /password/request-change-code aún, caer al flujo de reset-password
-          if ((err?.status === 404 || err?.status === 405) && email) {
-            return this.authApi.requestPasswordReset(email);
-          }
-          throw err;
-        })
+  requestPasswordRecovery(
+    identity: string,
+  ): Observable<PasswordRecoveryResult> {
+    return this.api
+      .request<PasswordResetResponse>('POST', 'auth/reset-password', {
+        identity,
+      })
+      .pipe(
+        map((resp) => ({
+          ok: true as const,
+          message: resp?.message ?? null,
+          token: resp?.token ?? null,
+          expiresInSeconds: resp?.expiresInSeconds ?? null,
+          code: resp?.code ?? null,
+        })),
+        catchError((err) => of(this.asFailure(err))),
       );
+  }
+
+  confirmPasswordReset(
+    token: string,
+    password: string,
+    currentPassword?: string,
+  ): Observable<ConfirmPasswordResetResult> {
+    return this.api
+      .request<{ success: boolean }>('POST', 'auth/reset-password/confirm', {
+        token,
+        password,
+        currentPassword,
+      })
+      .pipe(
+        map(() => ({ ok: true as const })),
+        catchError((err) => of(this.asFailure(err))),
+      );
+  }
+
+  verifyResetCode(
+    identity: string,
+    code: string,
+  ): Observable<VerifyResetCodeResult> {
+    return this.api
+      .request<VerifyCodeResponse>('POST', 'auth/reset-password/verify-code', {
+        identity,
+        code,
+      })
+      .pipe(
+        map((resp) => ({
+          ok: true as const,
+          token: resp.token,
+          expiresInSeconds: resp?.expiresInSeconds ?? null,
+        })),
+        catchError((err) => of(this.asFailure(err))),
+      );
+  }
+
+  async forcePasswordChange(password: string): Promise<boolean> {
+    const result = await firstValueFrom(
+      this.api.request<{ success: boolean }>(
+        'POST',
+        'auth/password/force-change',
+        { password },
+      ),
+    );
+    if (result?.success) {
+      // Actualizar el usuario local para que deje de pedir cambio de contraseña
+      const current =
+        this.authState.getCurrentUserSnapshot() as LocalUser | null;
+      if (current) {
+        const updated: LocalUser = {
+          ...current,
+          requiresPasswordChange: false,
+        };
+        this.authState.setCurrentUser(updated, { persist: true });
+      }
+    }
+    return !!result?.success;
+  }
+
+  requestPasswordChangeCode(): Observable<PasswordChangeCodeResult> {
+    const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
+    const email = user?.email || '';
+    return this.api
+      .request<PasswordResetResponse>(
+        'POST',
+        'auth/password/request-change-code',
+        {},
+      )
+      .pipe(
+        map((resp) => ({
+          ok: true as const,
+          message: resp?.message ?? null,
+          code: resp?.code ?? null,
+          devIdentity: resp?.devIdentity ?? null,
+          expiresInSeconds: resp?.expiresInSeconds ?? null,
+        })),
+        catchError((err) => {
+          const normalized = normalizeApiError(err);
+          if (
+            (normalized.status === 404 || normalized.status === 405) &&
+            email
+          ) {
+            return this.requestPasswordRecovery(email).pipe(
+              map((fallback) =>
+                fallback.ok
+                  ? {
+                      ok: true as const,
+                      message:
+                        fallback.message ??
+                        'Te enviamos un código a tu correo.',
+                      code: fallback.code ?? null,
+                      devIdentity: email,
+                      expiresInSeconds: fallback.expiresInSeconds ?? null,
+                    }
+                  : fallback,
+              ),
+            );
+          }
+          return of(this.fromNormalized(normalized));
+        }),
+      );
+  }
+
+  changePasswordWithCode(
+    code: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    return this.api.request<{ success: boolean }>(
+      'POST',
+      'auth/password/change-with-code',
+      {
+        code,
+        currentPassword,
+        newPassword,
+      },
+    );
+  }
+
+  private loginRequest(payload: LoginDto) {
+    const response = this.api.request<LoginResponseDto>(
+      'POST',
+      'auth/login',
+      payload,
+    );
+    return response;
+  }
+
+  private applyLoginResponse(response: LoginResponseDto): {
+    token: string;
+    user: AnyRecord;
+  } {
+    if (!response?.accessToken || !response?.user) {
+      throw new Error('Respuesta de login inválida');
     }
 
-    changePasswordWithCode(code: string, currentPassword: string, newPassword: string) {
-      return this.authApi.changePasswordWithCode({ code, currentPassword, newPassword });
-    }
+    const userLocal = this.buildLocalUser(response.user);
+    this.authState.setCurrentUser(userLocal, { persist: true });
+    this.authState.setAccessToken(response.accessToken, { persist: true });
+    const resolved = this.resolveRole(userLocal);
+    this.applyResolvedRole(resolved);
 
-    needsPasswordChange(): boolean {
-      const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
-      if (!user) return false;
-      // Verificar si el usuario tiene una propiedad que indique que necesita cambiar contraseña
-      return (user as any).requiresPasswordChange === true;
-    }
+    return { token: response.accessToken, user: response.user };
+  }
+
+  private asFailure(err: unknown): ApiFailureResult {
+    console.log('AuthService.asFailure error:', err);
+    return this.fromNormalized(normalizeApiError(err));
+  }
+
+  private fromNormalized(err: NormalizedApiError): ApiFailureResult {
+    return {
+      ok: false as const,
+      kind: err.kind,
+      status: err.status,
+      message: err.message,
+      code: err.code ?? null,
+      reason: err.reason ?? null,
+    };
+  }
+
+  needsPasswordChange(): boolean {
+    const user = this.authState.getCurrentUserSnapshot() as LocalUser | null;
+    if (!user) return false;
+    // Verificar si el usuario tiene una propiedad que indique que necesita cambiar contraseña
+    return (user as any).requiresPasswordChange === true;
+  }
 
   async ensureSessionLoaded(options?: { force?: boolean }): Promise<void> {
     const force = options?.force === true;
@@ -216,9 +385,9 @@ export class AuthService {
 
   async logout(options?: { redirect?: boolean }): Promise<void> {
     await firstValueFrom(
-      this.authApi.logout().pipe(
-        catchError(() => of(void 0))
-      )
+      this.api
+        .request<void>('POST', 'auth/logout', {})
+        .pipe(catchError(() => of(void 0))),
     );
 
     this.authState.clearSession();
@@ -228,8 +397,8 @@ export class AuthService {
       return;
     }
 
-    if (!this.router.url.startsWith("/auth")) {
-      await this.router.navigate(["/auth"], { replaceUrl: true });
+    if (!this.router.url.startsWith('/auth')) {
+      await this.router.navigate(['/auth'], { replaceUrl: true });
     }
   }
 
@@ -253,27 +422,42 @@ export class AuthService {
       return [];
     }
 
-    this.rbac.markLoading("loadUserRoles");
+    this.rbac.markLoading('loadUserRoles');
 
     try {
-      const profile = await firstValueFrom(this.api.getById<any>("users", userId));
-      const normalized = this.buildLocalUser(profile);
-      this.authState.setCurrentUser(normalized, { persist: true });
+      const profile = await firstValueFrom(
+        this.api.getById<any>('users', userId),
+      );
+      let normalized = this.buildLocalUser(profile);
+      // Si el perfil leído no trae el flag de cambio obligatorio, conservar el que ya teníamos
+      const current =
+        this.authState.getCurrentUserSnapshot() as LocalUser | null;
+      const incomingFlag = (normalized as any)?.requiresPasswordChange;
+      const existingFlag = (current as any)?.requiresPasswordChange;
+      if (incomingFlag === undefined && existingFlag !== undefined) {
+        normalized = {
+          ...normalized,
+          requiresPasswordChange: existingFlag,
+        } as LocalUser;
+      }
+      this.authState.setCurrentUser(normalized as LocalUser, { persist: true });
       const resolved = this.resolveRole(normalized);
       this.applyResolvedRole(resolved);
       return resolved.role ? [resolved.role] : [];
     } catch (error) {
-      console.error("[AuthService] No se pudieron cargar los roles del usuario", error);
-      this.permissions.reset();
-      this.rbac.reset();
-      return [];
+      console.error(
+        '[AuthService] No se pudieron cargar los roles del usuario',
+        error,
+      );
+      // No derribar la sesión si falla este fetch: conservar estado previo
+      const prev = this.rbac.getSnapshot();
+      return Array.isArray(prev) ? (prev as ROLE[]) : [];
     }
   }
 
   getUserId(): string | null {
-    const snapshot = this.authState.getCurrentUserSnapshot() as
-      | LocalUser
-      | null;
+    const snapshot =
+      this.authState.getCurrentUserSnapshot() as LocalUser | null;
     return snapshot?.id ?? null;
   }
 
@@ -281,44 +465,43 @@ export class AuthService {
     const extracted = this.resolveRole(user);
 
     return {
-      id: String(user?.["id"] ?? ""),
-      username: (user?.["email"] as string) ?? null,
-      email: (user?.["email"] as string) ?? null,
-      name: (user?.["name"] as string) ?? null,
-      lastName: (user?.["lastName"] as string) ?? null,
-      isBlocked: Boolean(user?.["isBlocked"] ?? false),
-      blockedReason: (user?.["blockedReason"] as string) ?? null,
+      id: String(user?.['id'] ?? ''),
+      username: (user?.['email'] as string) ?? null,
+      email: (user?.['email'] as string) ?? null,
+      name: (user?.['name'] as string) ?? null,
+      lastName: (user?.['lastName'] as string) ?? null,
+      isBlocked: Boolean(user?.['isBlocked'] ?? false),
+      blockedReason: (user?.['blockedReason'] as string) ?? null,
       role: extracted.role,
       roleId: extracted.roleId ?? undefined,
       isExecutive: extracted.role === ROLE.EXECUTIVE_SECRETARY,
-        requiresPasswordChange: Boolean(user?.["requiresPasswordChange"] ?? false),
+      requiresPasswordChange: Boolean(
+        user?.['requiresPasswordChange'] ?? false,
+      ),
     };
   }
 
-  private resolveRole(
-    userOrRole: AnyRecord | ROLE | null
-  ): { role: ROLE | null; roleId: number | null } {
+  private resolveRole(userOrRole: AnyRecord | ROLE | null): {
+    role: ROLE | null;
+    roleId: number | null;
+  } {
     if (!userOrRole) {
       return { role: null, roleId: null };
     }
 
-    if (typeof userOrRole === "string") {
+    if (typeof userOrRole === 'string') {
       const normalized = normalizeRole(userOrRole);
       return {
         role: normalized,
-        roleId: normalized ? ROLE_IDS[normalized] ?? null : null,
+        roleId: normalized ? (ROLE_IDS[normalized] ?? null) : null,
       };
     }
 
-    if (typeof userOrRole === "object") {
+    if (typeof userOrRole === 'object') {
       const candidateUser = userOrRole as AnyRecord;
-      const rawRole = candidateUser["role"] as unknown;
+      const rawRole = candidateUser['role'] as unknown;
 
-      if (
-        rawRole &&
-        typeof rawRole === "object" &&
-        rawRole !== null
-      ) {
+      if (rawRole && typeof rawRole === 'object' && rawRole !== null) {
         const candidate = rawRole as { name?: unknown; id?: unknown };
         const normalized = normalizeRole(candidate.name);
         const explicitId = Number(candidate.id ?? NaN);
@@ -327,15 +510,15 @@ export class AuthService {
           roleId: Number.isFinite(explicitId)
             ? explicitId
             : normalized
-            ? ROLE_IDS[normalized]
-            : null,
+              ? ROLE_IDS[normalized]
+              : null,
         };
       }
 
       const normalized = normalizeRole(rawRole);
       const fallbackRole =
         normalized ??
-        ROLE_BY_ID[Number(candidateUser["roleId"] ?? NaN)] ??
+        ROLE_BY_ID[Number(candidateUser['roleId'] ?? NaN)] ??
         null;
 
       return {
@@ -358,7 +541,10 @@ export class AuthService {
     this.applyResolvedRole(resolved);
   }
 
-  private applyResolvedRole(resolved: { role: ROLE | null; roleId: number | null }): void {
+  private applyResolvedRole(resolved: {
+    role: ROLE | null;
+    roleId: number | null;
+  }): void {
     if (resolved.role) {
       this.permissions.setRole(resolved.role, resolved.roleId ?? null);
       this.rbac.setRoles([resolved.role]);

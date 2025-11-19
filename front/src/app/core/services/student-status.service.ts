@@ -27,6 +27,7 @@ export interface StudentSubjectCard {
   subjectId: number;
   subjectName: string;
   yearLabel: string;
+  yearNumber: number | null;
   commissionLabel: string | null;
   partialsExpected: 2 | 4;
   notes: StudentSubjectNote[];
@@ -35,6 +36,8 @@ export interface StudentSubjectCard {
   attendancePct: number;
   condition: string | null;
   accreditation: string;
+  studyPlan: string | null;
+  pedagogicalMessage: string | null;
   actions: SubjectActionAvailability;
 }
 
@@ -53,7 +56,13 @@ type RawContextResponse = {
     course?: any;
     exam?: any;
   };
-  correlatives?: Array<{ subjectId?: number; subject_id?: number; ok?: boolean; met?: boolean; satisfied?: boolean }>;
+  correlatives?: Array<{
+    subjectId?: number;
+    subject_id?: number;
+    ok?: boolean;
+    met?: boolean;
+    satisfied?: boolean;
+  }>;
   duplicates?: Array<string | number>;
   duplicateSubjects?: Array<string | number>;
   quotaFull?: Array<string | number>;
@@ -88,7 +97,7 @@ export class StudentStatusService {
       context: this.fetchContext(effectiveStudentId),
     }).pipe(
       map(({ subjects, context }) =>
-        this.mapCards(subjects, context, effectiveStudentId)
+        this.mapCards(subjects, context, effectiveStudentId),
       ),
       tap((cards) => this.statusSignal.set(cards)),
       catchError((error) => {
@@ -96,18 +105,20 @@ export class StudentStatusService {
         this.statusSignal.set([]);
         return of([]);
       }),
-      finalize(() => this.loadingSignal.set(false))
+      finalize(() => this.loadingSignal.set(false)),
     );
   }
 
-  private fetchStatus(studentId?: string | null): Observable<RawStatusResponse> {
+  private fetchStatus(
+    studentId?: string | null,
+  ): Observable<RawStatusResponse> {
     const params = studentId ? { studentId } : undefined;
     return this.api
       .request<RawStatusResponse>(
         'GET',
         'students/status/subjects',
         undefined,
-        params
+        params,
       )
       .pipe(
         catchError((error) => {
@@ -116,15 +127,15 @@ export class StudentStatusService {
           }
           console.warn(
             '[StudentStatus] Falling back to catalogs endpoint',
-            error
+            error,
           );
           return this.api
             .request<any>(
               'GET',
-              `catalogs/student/${studentId}/academic-status`
+              `catalogs/student/${studentId}/academic-status`,
             )
             .pipe(map((legacy) => this.legacyToNew(legacy, studentId)));
-        })
+        }),
       );
   }
 
@@ -135,25 +146,29 @@ export class StudentStatusService {
         'GET',
         'students/status/action-context',
         undefined,
-        params
+        params,
       )
       .pipe(
         map((payload) => this.mapContext(payload)),
         catchError((error) => {
           console.warn('[StudentStatus] context endpoint unavailable', error);
           return of(this.buildFallbackContext());
-        })
+        }),
       );
   }
 
   private mapCards(
     raw: RawStatusResponse,
     context: ActionContext,
-    studentId?: string | null
+    studentId?: string | null,
   ): StudentSubjectCard[] {
     const subjects = raw?.subjects ?? [];
     if (!subjects.length && raw?.byYear) {
-      return this.mapCards(this.legacyToNew(raw, studentId), context, studentId);
+      return this.mapCards(
+        this.legacyToNew(raw, studentId),
+        context,
+        studentId,
+      );
     }
     return subjects
       .map((row: any) => this.mapCard(row, context))
@@ -167,13 +182,17 @@ export class StudentStatusService {
   private mapCard(row: any, context: ActionContext): StudentSubjectCard {
     const partials = this.resolvePartials(row.partials);
     const notes = this.buildNotes(row, partials);
-    const attendance = this.toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
+    const attendance =
+      this.toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
     const finalScore = this.toNumber(row.final ?? row.finalScore);
+    const yearNumber = this.resolveYearNumber(row);
+    const yearLabel = this.resolveYearLabel(row, yearNumber);
     return {
       subjectId: Number(row.subjectId ?? row.id ?? 0),
       subjectName:
         row.subjectName ?? row.subject_name ?? row.name ?? 'Materia sin nombre',
-      yearLabel: this.resolveYearLabel(row),
+      yearLabel,
+      yearNumber,
       commissionLabel:
         row.commissionLetter ??
         row.commission_label ??
@@ -187,6 +206,8 @@ export class StudentStatusService {
       attendancePct: attendance,
       condition: row.condition ?? row.status ?? null,
       accreditation: this.deriveAccreditation(row),
+      studyPlan: this.resolveStudyPlan(row),
+      pedagogicalMessage: this.resolvePedagogicalMessage(row),
       actions: this.buildActions(row, context),
     };
   }
@@ -214,7 +235,7 @@ export class StudentStatusService {
   private buildFinalExplanation(
     partials: 2 | 4,
     notes: StudentSubjectNote[],
-    attendance: number
+    attendance: number,
   ): string {
     const validNotes = notes
       .map((n) => n.value)
@@ -242,7 +263,10 @@ export class StudentStatusService {
     return 'En curso';
   }
 
-  private buildActions(row: any, context: ActionContext): SubjectActionAvailability {
+  private buildActions(
+    row: any,
+    context: ActionContext,
+  ): SubjectActionAvailability {
     const subjectId = Number(row.subjectId ?? row.id ?? 0);
     const correlativesMet =
       context.correlatives[subjectId] ?? context.correlatives[0] ?? true;
@@ -268,7 +292,8 @@ export class StudentStatusService {
     const examReady = this.isExamReady(row);
     let examReason: StudentExamBlockReason | null = null;
     if (!examWindowOpen) examReason = 'WINDOW_CLOSED';
-    else if (!examReady || !correlativesMet) examReason = 'MISSING_REQUIREMENTS';
+    else if (!examReady || !correlativesMet)
+      examReason = 'MISSING_REQUIREMENTS';
     else if (duplicate) examReason = 'DUPLICATE';
     else if (quotaFull) examReason = 'QUOTA_FULL';
 
@@ -286,17 +311,65 @@ export class StudentStatusService {
 
   private isExamReady(row: any): boolean {
     const condition = String(row.condition ?? '').toLowerCase();
-    if (condition.includes('promo') || condition.includes('regular')) return true;
+    if (condition.includes('promo') || condition.includes('regular'))
+      return true;
     if (condition.includes('aprob')) return true;
     const finalScore = this.toNumber(row.final ?? row.finalScore);
     return typeof finalScore === 'number' && finalScore >= 4;
   }
 
-  private resolveYearLabel(row: any): string {
-    if (row.yearLabel) return row.yearLabel;
-    const year = row.year ?? row.yearNo ?? row.year_no ?? null;
-    if (!year) return 'Sin ano';
-    return `${year} Ano`;
+  private resolveYearNumber(row: any): number | null {
+    const explicit = this.toNumber(
+      row.year ?? row.yearNo ?? row.year_no ?? row.yearNumber,
+    );
+    if (typeof explicit === 'number') {
+      return explicit;
+    }
+    return this.extractYearFromLabel(row.yearLabel ?? row.year_name);
+  }
+
+  private resolveYearLabel(row: any, yearNumber?: number | null): string {
+    if (typeof row.yearLabel === 'string' && row.yearLabel.trim().length) {
+      return row.yearLabel;
+    }
+    if (typeof yearNumber === 'number' && Number.isFinite(yearNumber)) {
+      return `${yearNumber}º Año`;
+    }
+    return 'Sin ano';
+  }
+
+  private extractYearFromLabel(label: unknown): number | null {
+    if (typeof label !== 'string') return null;
+    const match = label.match(/\d+/);
+    if (!match) return null;
+    const numeric = Number(match[0]);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  private resolveStudyPlan(row: any): string | null {
+    const plan =
+      row.studyPlan ??
+      row.plan ??
+      row.planName ??
+      row.plan_label ??
+      row.planLabel ??
+      null;
+    if (plan === null || plan === undefined) return null;
+    const text = String(plan).trim();
+    return text.length ? text : null;
+  }
+
+  private resolvePedagogicalMessage(row: any): string | null {
+    const message =
+      row.pedagogicalMessage ??
+      row.pedagogicalFileMessage ??
+      row.pedagogicalNote ??
+      row.pedagogical_file ??
+      row.pedagogica ??
+      null;
+    if (typeof message !== 'string') return null;
+    const trimmed = message.trim();
+    return trimmed.length ? trimmed : null;
   }
 
   private mapContext(payload: RawContextResponse): ActionContext {
@@ -311,18 +384,18 @@ export class StudentStatusService {
     (payload?.correlatives ?? []).forEach((row) => {
       const subjectId = Number(row.subjectId ?? row.subject_id ?? 0);
       correlatives[subjectId] = Boolean(
-        row.ok ?? row.met ?? row.satisfied ?? false
+        row.ok ?? row.met ?? row.satisfied ?? false,
       );
     });
     const duplicates = new Set<number>(
       (payload?.duplicates ?? payload?.duplicateSubjects ?? []).map((value) =>
-        Number(value)
-      )
+        Number(value),
+      ),
     );
     const quotaFull = new Set<number>(
       (payload?.quotaFull ?? payload?.quotaBlockedSubjects ?? []).map((value) =>
-        Number(value)
-      )
+        Number(value),
+      ),
     );
     return {
       courseWindow: courseWindow ? this.normalizeWindow(courseWindow) : null,
@@ -334,8 +407,12 @@ export class StudentStatusService {
   }
 
   private normalizeWindow(window: any): StudentActionWindow {
-    const opensAt = this.normalizeDate(window?.opensAt ?? window?.start ?? window?.from);
-    const closesAt = this.normalizeDate(window?.closesAt ?? window?.end ?? window?.to);
+    const opensAt = this.normalizeDate(
+      window?.opensAt ?? window?.start ?? window?.from,
+    );
+    const closesAt = this.normalizeDate(
+      window?.closesAt ?? window?.end ?? window?.to,
+    );
     return {
       id: window?.id ?? window?.windowId,
       label: window?.label ?? window?.name ?? 'Ventana',
@@ -343,11 +420,16 @@ export class StudentStatusService {
       closesAt,
       state: this.resolveWindowState(opensAt, closesAt),
       message: window?.message ?? null,
-      isAdditional: Boolean(window?.isAdditional ?? window?.additional ?? false),
+      isAdditional: Boolean(
+        window?.isAdditional ?? window?.additional ?? false,
+      ),
     };
   }
 
-  private resolveWindowState(opensAt?: string | null, closesAt?: string | null): StudentWindowState {
+  private resolveWindowState(
+    opensAt?: string | null,
+    closesAt?: string | null,
+  ): StudentWindowState {
     if (!opensAt || !closesAt) return 'closed';
     const now = Date.now();
     const start = Date.parse(opensAt);
@@ -375,7 +457,10 @@ export class StudentStatusService {
     };
   }
 
-  private legacyToNew(input: any, studentId?: string | null): RawStatusResponse {
+  private legacyToNew(
+    input: any,
+    studentId?: string | null,
+  ): RawStatusResponse {
     const subjects: any[] = [];
     const byYear = input?.byYear ?? {};
     Object.entries(byYear).forEach(([yearLabel, rows]) => {

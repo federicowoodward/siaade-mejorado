@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
-import { FileLoggerService } from './file-logger.service';
+import { Global, Module } from "@nestjs/common";
+import { FileLoggerService } from "./file-logger.service";
 
-@Global() 
+@Global()
 @Module({
   providers: [FileLoggerService],
   exports: [FileLoggerService],

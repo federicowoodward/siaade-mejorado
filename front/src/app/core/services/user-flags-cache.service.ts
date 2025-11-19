@@ -1,5 +1,5 @@
-import { Injectable } from "@angular/core";
-import { ROLE } from "../auth/roles";
+import { Injectable } from '@angular/core';
+import { ROLE } from '../auth/roles';
 
 export type UserFlagsCacheEntry = {
   role: ROLE | null; // rol del usuario destino
@@ -9,9 +9,9 @@ export type UserFlagsCacheEntry = {
   updatedAt: number;
 };
 
-const STORAGE_KEY = "userFlagsCache:v1";
+const STORAGE_KEY = 'userFlagsCache:v1';
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class UserFlagsCacheService {
   private mem = new Map<string, UserFlagsCacheEntry>();
   private loadedFromStorage = false;
@@ -24,7 +24,7 @@ export class UserFlagsCacheService {
       if (!raw) return;
       const parsed = JSON.parse(raw) as Record<string, UserFlagsCacheEntry>;
       for (const [k, v] of Object.entries(parsed)) {
-        if (v && typeof v === "object") {
+        if (v && typeof v === 'object') {
           this.mem.set(k, v);
         }
       }
@@ -49,7 +49,10 @@ export class UserFlagsCacheService {
   }
 
   set(userId: string, entry: UserFlagsCacheEntry): void {
-    this.mem.set(userId, { ...entry, updatedAt: entry.updatedAt ?? Date.now() });
+    this.mem.set(userId, {
+      ...entry,
+      updatedAt: entry.updatedAt ?? Date.now(),
+    });
     this.persist();
   }
 

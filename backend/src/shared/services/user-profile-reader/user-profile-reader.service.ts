@@ -19,7 +19,7 @@ export class UserProfileReaderService {
     @InjectRepository(CommonData)
     private readonly commonDataRepo: Repository<CommonData>,
     @InjectRepository(AddressData)
-    private readonly addressRepo: Repository<AddressData>
+    private readonly addressRepo: Repository<AddressData>,
   ) {}
 
   // funcion que busca un perfil de usuario por id y devuelve todos sus datos relacionados.

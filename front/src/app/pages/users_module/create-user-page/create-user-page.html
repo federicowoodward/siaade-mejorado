@@ -281,24 +281,63 @@
                     <div class="grid">
                       <div class="col-12 md:col-4">
                         <label class="block mb-2">Legajo *</label>
-                        <input pInputText class="w-full" [(ngModel)]="studentLegajo" placeholder="Identificador de legajo" />
-                        <small class="text-color-secondary block mt-1">Si lo dejás vacío, se usará el CUIL o el documento.</small>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [(ngModel)]="studentLegajo"
+                          placeholder="Identificador de legajo"
+                        />
+                        <small class="text-color-secondary block mt-1"
+                          >Si lo dejás vacío, se usará el CUIL o el
+                          documento.</small
+                        >
                       </div>
                       <div class="col-12 md:col-3">
                         <label class="block mb-2">Año de inicio</label>
-                        <input type="number" class="w-full p-inputtext p-component" [(ngModel)]="studentStartYear" placeholder="YYYY" />
+                        <input
+                          type="number"
+                          class="w-full p-inputtext p-component"
+                          [(ngModel)]="studentStartYear"
+                          placeholder="YYYY"
+                        />
                       </div>
                       <div class="col-12 md:col-2">
                         <label class="block mb-2">Puede ingresar</label>
-                        <input type="checkbox" [(ngModel)]="canLogin" [disabled]="canLoginDisabled" />
-                        <small *ngIf="!canEditCanLogin" class="text-color-secondary block mt-1">Solo Preceptor o Secretaría pueden editarlo</small>
-                        <small *ngIf="canEditCanLogin && isActive === false" class="text-color-secondary block mt-1">Deshabilitado porque el alumno está inactivo</small>
+                        <input
+                          type="checkbox"
+                          [(ngModel)]="canLogin"
+                          [disabled]="canLoginDisabled"
+                        />
+                        <small
+                          *ngIf="!canEditCanLogin"
+                          class="text-color-secondary block mt-1"
+                          >Solo Preceptor o Secretaría pueden editarlo</small
+                        >
+                        <small
+                          *ngIf="canEditCanLogin && isActive === false"
+                          class="text-color-secondary block mt-1"
+                          >Deshabilitado porque el alumno está inactivo</small
+                        >
                       </div>
                       <div class="col-12 md:col-2">
                         <label class="block mb-2">Activo</label>
-                        <input type="checkbox" [(ngModel)]="isActive" (ngModelChange)="onIsActiveChange($event)" [disabled]="!canEditIsActive" />
-                        <small *ngIf="!canEditIsActive" class="text-color-secondary block mt-1">Solo Secretaría puede editarlo</small>
-                        <small *ngIf="canEditIsActive" class="text-color-secondary block mt-1">Al desactivar, no podrá ingresar aunque "Puede ingresar" esté activo</small>
+                        <input
+                          type="checkbox"
+                          [(ngModel)]="isActive"
+                          (ngModelChange)="onIsActiveChange($event)"
+                          [disabled]="!canEditIsActive"
+                        />
+                        <small
+                          *ngIf="!canEditIsActive"
+                          class="text-color-secondary block mt-1"
+                          >Solo Secretaría puede editarlo</small
+                        >
+                        <small
+                          *ngIf="canEditIsActive"
+                          class="text-color-secondary block mt-1"
+                          >Al desactivar, no podrá ingresar aunque "Puede
+                          ingresar" esté activo</small
+                        >
                       </div>
                     </div>
                   </div>

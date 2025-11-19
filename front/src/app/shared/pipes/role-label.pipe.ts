@@ -6,8 +6,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class RoleLabelPipe implements PipeTransform {
   private roleMap: Record<string, string> = {
-    student:   'Alumno',
-    teacher:   'Docente',
+    student: 'Alumno',
+    teacher: 'Docente',
     preceptor: 'Preceptor',
     secretary: 'Secretario',
     executive_secretary: 'Secretario directivo',

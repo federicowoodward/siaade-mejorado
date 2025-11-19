@@ -1,23 +1,32 @@
 <div class="m-w-custom">
-    <div class="flex justify-content-between align-items-center mb-3">
-        <h2 class="m-0">Calendario • {{ table()?.name }}</h2>
-        <p-button label="Volver" icon="pi pi-arrow-left" severity="secondary" (onClick)="back()"></p-button>
-    </div>
+  <div class="flex justify-content-between align-items-center mb-3">
+    <h2 class="m-0">Calendario • {{ table()?.name }}</h2>
+    <p-button
+      label="Volver"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      (onClick)="back()"
+    ></p-button>
+  </div>
 
-    <p-table [value]="finals()" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '52rem' }">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>Fecha</th>
-                <th>Materia</th>
-                <th>Aula</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-row>
-            <tr>
-                <td class="font-medium">{{ row.exam_date }}</td>
-                <td>{{ row.subject_name }}</td>
-                <td>{{ row.aula || '—' }}</td>
-            </tr>
-        </ng-template>
-    </p-table>
+  <p-table
+    [value]="finals()"
+    responsiveLayout="scroll"
+    [tableStyle]="{ 'min-width': '52rem' }"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Fecha</th>
+        <th>Materia</th>
+        <th>Aula</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td class="font-medium">{{ row.exam_date | date:'dd/MM/yyyy' }}</td>
+        <td>{{ row.subject_name }}</td>
+        <td>{{ row.aula || '—' }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
 </div>

@@ -35,17 +35,17 @@ export class AcademicStatus implements OnInit, OnChanges {
   subjectsByYear = signal<Record<string, any[]>>({});
   loading = signal(true);
   user = signal<{ name: string; cuil: string } | undefined>(undefined);
-  
+
   private studentSignal = signal<StudentMinimal | undefined>(undefined);
 
   private api = inject(ApiService);
   private auth = inject(AuthService);
-  
+
   constructor() {
     // Effect que reacciona cuando studentSignal cambia
     effect(() => {
       const s = this.studentSignal();
-      
+
       if (s && s.id) {
         this.loading.set(true);
         this.subjectsByYear.set({});
@@ -54,7 +54,7 @@ export class AcademicStatus implements OnInit, OnChanges {
     });
   }
 
-  ngOnInit() {    
+  ngOnInit() {
     // Si no hay student Input, cargar usuario logueado
     if (!this.student) {
       this.auth.getUser().subscribe((u) => {
@@ -65,9 +65,9 @@ export class AcademicStatus implements OnInit, OnChanges {
     }
   }
 
-  ngOnChanges(changes: SimpleChanges) {    
-    if (changes["student"]) {
-      const current = changes["student"].currentValue;
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['student']) {
+      const current = changes['student'].currentValue;
       if (current && current.id) {
         // Actualizar el signal para disparar el effect
         this.studentSignal.set(current);
@@ -75,13 +75,13 @@ export class AcademicStatus implements OnInit, OnChanges {
     }
   }
 
-  private loadData(s: any) {    
+  private loadData(s: any) {
     if (!s || !s.id) {
       console.error('[AcademicStatus] Student sin ID válido:', s);
       this.loading.set(false);
       return;
     }
-    
+
     this.user.set({
       name: `${s.name} ${s.lastName}`,
       cuil: s.cuil,
@@ -92,12 +92,11 @@ export class AcademicStatus implements OnInit, OnChanges {
 
   getAcademicStatus(studentId: string): void {
     this.loading.set(true);
-    
+
     this.api
-      .request<{ byYear: Record<string, any[]> }>(
-        'GET',
-        `catalogs/student/${studentId}/academic-status`
-      )
+      .request<{
+        byYear: Record<string, any[]>;
+      }>('GET', `catalogs/student/${studentId}/academic-status`)
       .subscribe({
         next: (payload) => {
           this.subjectsByYear.set(payload?.byYear ?? {});

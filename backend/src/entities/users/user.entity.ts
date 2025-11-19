@@ -60,14 +60,14 @@ export class User {
   secretary?: Secretary;
 
   // Bloqueo lógico transversal (no elimina la cuenta). Si isBlocked=true se puede limitar acciones (ej: inscripciones) y mostrar blockedReason.
-  @Column({ name: 'is_blocked', type: 'bool', nullable: false, default: false })
+  @Column({ name: "is_blocked", type: "bool", nullable: false, default: false })
   isBlocked: boolean;
 
-  @Column({ name: 'blocked_reason', type: 'text', nullable: true })
+  @Column({ name: "blocked_reason", type: "text", nullable: true })
   blockedReason: string | null;
 
   // Nuevo flag de actividad reversible (INACTIVO se comporta como borrado lógico para login y listados).
   // NOTA: Se añade vía migración posterior; si todavía no existe la columna, TypeORM la agregará.
-  @Column({ name: 'is_active', type: 'bool', nullable: false, default: true })
+  @Column({ name: "is_active", type: "bool", nullable: false, default: true })
   isActive: boolean;
 }

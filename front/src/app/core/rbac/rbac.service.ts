@@ -107,9 +107,7 @@ export class RbacService {
 
       if (timeoutMs > 0) {
         waiter.timer = setTimeout(() => {
-          waiter.reject(
-            new Error(`RBAC wait timeout after ${timeoutMs}ms`)
-          );
+          waiter.reject(new Error(`RBAC wait timeout after ${timeoutMs}ms`));
         }, timeoutMs);
       }
 
@@ -128,12 +126,14 @@ export class RbacService {
     }
   }
 
-  private normalizeInput(value: RoleLike[] | RoleLike | null | undefined): ROLE[] {
+  private normalizeInput(
+    value: RoleLike[] | RoleLike | null | undefined,
+  ): ROLE[] {
     const arr = Array.isArray(value)
       ? value
       : value === null || value === undefined
-      ? []
-      : [value];
+        ? []
+        : [value];
     const normalized = arr
       .map((role) => this.normalizeRoleValue(role))
       .filter((role): role is ROLE => !!role);

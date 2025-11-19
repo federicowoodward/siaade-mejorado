@@ -1,10 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-} from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -42,11 +37,7 @@ export class SubjectMoveCommissionDialog {
   }
 
   get isMoveDisabled(): boolean {
-    return (
-      this.loading ||
-      this.disableMove ||
-      !this.selectedNewCommission
-    );
+    return this.loading || this.disableMove || !this.selectedNewCommission;
   }
 
   handleHide(): void {

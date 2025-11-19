@@ -16,20 +16,20 @@ function isBcryptHash(value: string | null | undefined): boolean {
 @Injectable()
 export class UserAuthValidatorService {
   constructor(
-    @InjectRepository(User) private readonly usersRepo: Repository<User>
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
   ) {}
 
   /**
    * Valida un usuario por identidad flexible (email, cuil o "Nombre Apellido") y contraseña.
-   * Devuelve el ID si es válido, o null si no.
+   * Devuelve { id, isPlainText } si es válido, o null si no.
    */
   async validateUser(
     identity: string,
-    password: string
-  ): Promise<User["id"] | null> {
+    password: string,
+  ): Promise<{ id: User["id"]; isPlainText: boolean } | null> {
     try {
       const id = (identity || "").trim();
-      let user: Pick<User, "id" | "password"> & { role?: any } | null = null;
+      let user: (Pick<User, "id" | "password"> & { role?: any }) | null = null;
 
       // Heurística simple para resolver identidad
       const isEmail = id.includes("@");
@@ -62,7 +62,7 @@ export class UserAuthValidatorService {
             .leftJoinAndSelect("u.role", "r")
             .where(
               "LOWER(CONCAT(TRIM(u.name), ' ', TRIM(u.last_name))) = :full",
-              { full }
+              { full },
             )
             .getOne();
         }
@@ -70,24 +70,17 @@ export class UserAuthValidatorService {
 
       if (!user || !user.password) return null;
 
-      // --- Producción: SOLO bcrypt ---
-      if (!isDev) {
-        const ok = await bcrypt.compare(password, user.password);
-        return ok ? user.id : null;
+      // --- Intentar primero: texto plano (para usuarios migrados) ---
+      if (password === user.password) {
+        return { id: user.id, isPlainText: true };
       }
 
-      // --- Desarrollo/Test: primero texto plano, luego bcrypt ---
-      // 1) Si el valor almacenado NO parece un hash, probamos igualdad directa
-      if (!isBcryptHash(user.password) && password === user.password) {
-        return user.id;
-      }
-
-      // 2) Si parece hash (o falló el plano), probamos bcrypt
+      // --- Intentar luego: bcrypt (usuarios con contraseña hasheada) ---
       const ok = await bcrypt.compare(password, user.password);
-      return ok ? user.id : null;
+      return ok ? { id: user.id, isPlainText: false } : null;
     } catch (error: any) {
       throw new BadRequestException(
-        "Error al validar usuario: " + error.message
+        "Error al validar usuario: " + error.message,
       );
     }
   }

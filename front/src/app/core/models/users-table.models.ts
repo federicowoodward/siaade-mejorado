@@ -1,4 +1,4 @@
-﻿import { ROLE } from "../auth/roles";
+﻿import { ROLE } from '../auth/roles';
 
 export type Role = ROLE;
 
@@ -12,9 +12,9 @@ export interface UserRow {
 }
 
 export type UsersTableContext =
-  | "default" // gestion general
-  | "subject-students" // listado de alumnos por materia (docente)
-  | "readonly"; // listados sin acciones (ej. profesor)
+  | 'default' // gestion general
+  | 'subject-students' // listado de alumnos por materia (docente)
+  | 'readonly'; // listados sin acciones (ej. profesor)
 
 export interface RowAction {
   id: string;

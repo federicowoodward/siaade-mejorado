@@ -1,4 +1,14 @@
-import { Directive, inject, Input, Renderer2, ElementRef, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Directive,
+  inject,
+  Input,
+  Renderer2,
+  ElementRef,
+  OnInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { Subscription, map } from 'rxjs';
 
@@ -14,7 +24,9 @@ import { Subscription, map } from 'rxjs';
 })
 export class BlockedActionDirective implements OnInit, OnDestroy, OnChanges {
   private enabled: boolean = true;
-  @Input('blockedAction') set blockedAction(value: boolean | string | null | undefined) {
+  @Input('blockedAction') set blockedAction(
+    value: boolean | string | null | undefined,
+  ) {
     this.enabled = this.coerceToBoolean(value);
     this.updateVisuals();
   }
@@ -25,10 +37,13 @@ export class BlockedActionDirective implements OnInit, OnDestroy, OnChanges {
   private lastBlocked = false;
 
   ngOnInit() {
-    this.sub = this.auth.getUser().pipe(map(u => !!u?.isBlocked)).subscribe(isBlocked => {
-      this.lastBlocked = isBlocked;
-      this.updateVisuals();
-    });
+    this.sub = this.auth
+      .getUser()
+      .pipe(map((u) => !!u?.isBlocked))
+      .subscribe((isBlocked) => {
+        this.lastBlocked = isBlocked;
+        this.updateVisuals();
+      });
   }
 
   ngOnChanges(_: SimpleChanges): void {
@@ -61,7 +76,11 @@ export class BlockedActionDirective implements OnInit, OnDestroy, OnChanges {
     this.renderer.setAttribute(native, 'data-blocked', 'true');
     // Si tiene pTooltip no lo sobrescribimos; si no, agregamos título simple
     if (!native.getAttribute('pTooltip') && !native.getAttribute('title')) {
-      this.renderer.setAttribute(native, 'title', 'Acción deshabilitada: cuenta bloqueada');
+      this.renderer.setAttribute(
+        native,
+        'title',
+        'Acción deshabilitada: cuenta bloqueada',
+      );
     }
     this.renderer.addClass(native, 'blocked-action');
   }
@@ -70,7 +89,10 @@ export class BlockedActionDirective implements OnInit, OnDestroy, OnChanges {
     const native = this.el.nativeElement;
     if (native.getAttribute('data-blocked')) {
       this.renderer.removeAttribute(native, 'data-blocked');
-      if (native.getAttribute('title') === 'Acción deshabilitada: cuenta bloqueada') {
+      if (
+        native.getAttribute('title') ===
+        'Acción deshabilitada: cuenta bloqueada'
+      ) {
         this.renderer.removeAttribute(native, 'title');
       }
       this.renderer.removeClass(native, 'blocked-action');

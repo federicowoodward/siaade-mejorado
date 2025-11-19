@@ -45,17 +45,23 @@
           <div class="flex flex-column gap-3">
             <div class="text-sm text-color-secondary" *ngIf="data.teacher">
               Docente: <b>{{ data.teacher.name }}</b>
-              <span *ngIf="data.teacher.email"> — {{ data.teacher.email }}</span>
+              <span *ngIf="data.teacher.email">
+                — {{ data.teacher.email }}</span
+              >
             </div>
 
             <ng-container *ngIf="data.subjects.length > 0; else emptyTpl">
               <div class="flex flex-column gap-2">
-                <div *ngFor="let s of data.subjects" class="p-2 border-round surface-50">
+                <div
+                  *ngFor="let s of data.subjects"
+                  class="p-2 border-round surface-50"
+                >
                   <div class="font-medium">{{ s.subject.name }}</div>
                   <div class="mt-1 text-sm">
                     Comisiones:
                     <span *ngFor="let c of s.commissions; let i = index">
-                      <b>{{ c.letter || ('ID ' + c.id) }}</b>{{ i < s.commissions.length - 1 ? ', ' : '' }}
+                      <b>{{ c.letter || ('ID ' + c.id) }}</b>{{ i <
+                      s.commissions.length - 1 ? ', ' : '' }}
                     </span>
                   </div>
                 </div>

@@ -19,24 +19,47 @@ import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
 @Module({
   imports: [
     ConfigModule,
-  TypeOrmModule.forFeature([User, Role, Student, PasswordResetToken, PasswordHistory]),
+    TypeOrmModule.forFeature([
+      User,
+      Role,
+      Student,
+      PasswordResetToken,
+      PasswordHistory,
+    ]),
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>("JWT_ACCESS_SECRET"),
-        signOptions: {
-          expiresIn: config.get<string>("JWT_ACCESS_TTL") || "15m",
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const secret =
+          config.get<string>("JWT_ACCESS_SECRET") ??
+          config.get<string>("JWT_SECRET");
+        if (!secret) {
+          throw new Error(
+            "Missing JWT access secret. Define JWT_ACCESS_SECRET or JWT_SECRET.",
+          );
+        }
+        const expiresIn =
+          config.get<string>("JWT_ACCESS_TTL") ??
+          config.get<string>("JWT_EXPIRES_IN") ??
+          "15m";
+        return {
+          secret,
+          signOptions: {
+            expiresIn,
+          },
+        };
+      },
     }),
     UserAuthValidatorModule,
     UserProfileReaderModule,
   ],
-  providers: [AuthService, JwtStrategy, RateLimitService, PasswordResetCleanupService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RateLimitService,
+    PasswordResetCleanupService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
-
-

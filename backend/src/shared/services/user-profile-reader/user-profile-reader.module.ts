@@ -16,5 +16,3 @@ import { UserProfileReaderService } from "./user-profile-reader.service";
   exports: [UserProfileReaderService],
 })
 export class UserProfileReaderModule {}
-
-

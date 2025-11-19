@@ -18,7 +18,9 @@ export class SubjectsReadService {
     return rows.map((s) => ({ id: s.id, subjectName: s.subjectName }));
   }
 
-  async getOne(id: number): Promise<{ id: number; subjectName: string } | null> {
+  async getOne(
+    id: number,
+  ): Promise<{ id: number; subjectName: string } | null> {
     const found = await this.subjectRepo.findOne({
       where: { id },
       select: { id: true, subjectName: true },

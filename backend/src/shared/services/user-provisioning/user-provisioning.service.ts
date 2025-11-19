@@ -47,7 +47,7 @@ export class UserProvisioningService {
     @InjectRepository(Preceptor)
     private readonly preceptorsRepo: Repository<Preceptor>,
     @InjectRepository(Secretary)
-    private readonly secretariesRepo: Repository<Secretary>
+    private readonly secretariesRepo: Repository<Secretary>,
   ) {}
 
   async createStudent(dto: CreateStudentUserDto) {
@@ -65,12 +65,14 @@ export class UserProvisioningService {
       const startYear = Number(rawStartYear);
 
       if (!Number.isInteger(startYear)) {
-        throw new BadRequestException("studentStartYear must be an integer year");
+        throw new BadRequestException(
+          "studentStartYear must be an integer year",
+        );
       }
 
       if (startYear < 1990 || startYear > 2100) {
         throw new BadRequestException(
-          "studentStartYear must be between 1990 and 2100"
+          "studentStartYear must be between 1990 and 2100",
         );
       }
 
@@ -161,7 +163,7 @@ export class UserProvisioningService {
   private async resolveRole(
     qr: QueryRunner,
     userDto: CreateUserBaseDto,
-    fallback: RoleLiteral
+    fallback: RoleLiteral,
   ): Promise<Role> {
     // Asegura que roleName sea del literal correcto si no vino
     if (!userDto.roleId && !userDto.roleName) {
@@ -197,7 +199,7 @@ export class UserProvisioningService {
   private async createUser(
     qr: QueryRunner,
     dto: CreateUserBaseDto,
-    roleId: number
+    roleId: number,
   ): Promise<User> {
     // Crear con DeepPartial para seleccionar el overload correcto (no el de arrays)
     const toCreate: DeepPartial<User> = {
@@ -218,7 +220,7 @@ export class UserProvisioningService {
   private async maybeCreateUserInfo(
     qr: QueryRunner,
     userId: string,
-    dto?: CreateUserInfoDto | null
+    dto?: CreateUserInfoDto | null,
   ): Promise<UserInfo | void> {
     if (!dto) return;
 
@@ -236,7 +238,7 @@ export class UserProvisioningService {
   private async maybeCreateCommonData(
     qr: QueryRunner,
     userId: string,
-    dto?: CreateCommonDataDto | null
+    dto?: CreateCommonDataDto | null,
   ): Promise<CommonData | void> {
     if (!dto) return;
 
@@ -270,5 +272,3 @@ export class UserProvisioningService {
     return await qr.manager.save(CommonData, cdEntity);
   }
 }
-
-

@@ -37,6 +37,12 @@ export type SubjectCommissionTeachersDto = {
   }>;
 };
 
+export type SubjectPrereqListDto = {
+  careerId: number;
+  subjectOrderNo: number;
+  prereqs: number[];
+};
+
 @Injectable({ providedIn: 'root' })
 export class CareerCatalogService {
   private api = inject(ApiService);
@@ -52,8 +58,13 @@ export class CareerCatalogService {
   periods = () => this._raw()?.academicPeriods ?? [];
   basicSubjects = () => this._basicSubjects();
 
-  loadCareer(careerId: number): Observable<void> {
-    if (this._raw() && this._careerId() === careerId) return of(void 0);
+  loadCareer(
+    careerId: number,
+    options?: { force?: boolean },
+  ): Observable<void> {
+    if (!options?.force && this._raw() && this._careerId() === careerId) {
+      return of(void 0);
+    }
 
     return this.api
       .request<ApiResponse>('GET', `catalogs/career-full-data/${careerId}`)
@@ -85,7 +96,7 @@ export class CareerCatalogService {
 
           this._basicSubjects.set(subjects);
         }),
-        map(() => void 0)
+        map(() => void 0),
       );
   }
 
@@ -104,7 +115,19 @@ export class CareerCatalogService {
   getSubjectCommissionTeachers(subjectId: number) {
     return this.api.request<SubjectCommissionTeachersDto>(
       'GET',
-      `catalogs/subject/${subjectId}/commission-teachers`
+      `catalogs/subject/${subjectId}/commission-teachers`,
+    );
+  }
+
+  updateSubjectPrereqs(
+    careerId: number,
+    subjectOrderNo: number,
+    prereqs: number[],
+  ) {
+    return this.api.request<SubjectPrereqListDto>(
+      'PUT',
+      `prerequisites/careers/${careerId}/subjects/${subjectOrderNo}`,
+      { prereqs },
     );
   }
 }

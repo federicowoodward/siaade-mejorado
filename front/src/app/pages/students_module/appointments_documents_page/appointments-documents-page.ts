@@ -10,7 +10,7 @@ import { DocumentsService } from '../../../core/services/documents_generations.s
 })
 export class AppointmentsDocumentsPage {
   private documentsService = inject(DocumentsService);
-  
+
   downloadCertificate() {
     this.documentsService.downloadStudentCertificate();
   }

@@ -25,7 +25,7 @@ export class SubjectsFilterComponent {
   private readonly courseLettersAll = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   private readonly yearsAll = Array.from(
     { length: new Date().getFullYear() - 2010 + 1 },
-    (_, i) => String(2010 + i)
+    (_, i) => String(2010 + i),
   );
 
   courseNums = [...this.courseNumsAll];

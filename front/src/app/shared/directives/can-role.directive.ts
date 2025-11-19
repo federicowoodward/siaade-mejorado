@@ -7,12 +7,12 @@ import {
   TemplateRef,
   ViewContainerRef,
   effect,
-} from "@angular/core";
-import { PermissionService } from "../../core/auth/permission.service";
-import { ROLE, normalizeRole } from "../../core/auth/roles";
+} from '@angular/core';
+import { PermissionService } from '../../core/auth/permission.service';
+import { ROLE, normalizeRole } from '../../core/auth/roles';
 
 @Directive({
-  selector: "[canRole]",
+  selector: '[canRole]',
   standalone: true,
 })
 export class CanRoleDirective implements OnInit, OnDestroy {
@@ -26,7 +26,7 @@ export class CanRoleDirective implements OnInit, OnDestroy {
   constructor(
     tpl: TemplateRef<unknown>,
     vcr: ViewContainerRef,
-    permissions: PermissionService
+    permissions: PermissionService,
   ) {
     this.tpl = tpl;
     this.vcr = vcr;
@@ -56,4 +56,3 @@ export class CanRoleDirective implements OnInit, OnDestroy {
     }
   }
 }
-

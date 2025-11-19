@@ -22,7 +22,10 @@ describe('AcademicStatusComponent', () => {
       providers: [
         { provide: StudentStatusService, useClass: StatusStub },
         { provide: MessageService, useValue: { add: () => undefined } },
-        { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
+        {
+          provide: Router,
+          useValue: { navigate: () => Promise.resolve(true) },
+        },
       ],
     }).compileComponents();
 

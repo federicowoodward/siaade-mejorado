@@ -6,7 +6,7 @@ import { ROLE, getRoleById, isRole } from "@/shared/rbac/roles.constants";
 @Injectable()
 export class HierarchyGuard extends JwtAuthGuard implements CanActivate {
   canActivate(
-    context: ExecutionContext
+    context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -46,4 +46,3 @@ export class HierarchyGuard extends JwtAuthGuard implements CanActivate {
     return null;
   }
 }
-

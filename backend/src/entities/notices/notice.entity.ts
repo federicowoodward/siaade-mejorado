@@ -6,39 +6,47 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-} from 'typeorm';
-import { Role } from '@/entities/roles/role.entity';
-import { User } from '@/entities/users/user.entity';
+} from "typeorm";
+import { Role } from "@/entities/roles/role.entity";
+import { User } from "@/entities/users/user.entity";
 
-@Entity('notices')
+@Entity("notices")
 export class Notice {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text', default: '' })
+  @Column({ type: "text", default: "" })
   title: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   content: string;
 
   // Si es null => visible para TODOS
-  @Column({ name: 'visible_role_id', type: 'int', nullable: true })
+  @Column({ name: "visible_role_id", type: "int", nullable: true })
   visibleRoleId: number | null;
 
-  @ManyToOne(() => Role, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'visible_role_id' })
+  @ManyToOne(() => Role, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "visible_role_id" })
   visibleRole?: Role | null;
 
-  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  @Column({ name: "created_by", type: "uuid", nullable: true })
   createdByUserId: string | null;
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'created_by' })
+  @ManyToOne(() => User, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "created_by" })
   createdBy?: User | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  // Array de subject_commission_id en JSON
+  @Column({ name: "subject_commission_ids", type: "jsonb", default: "[]" })
+  subjectCommissionIds: number[];
+
+  // Array de números de año (1, 2, 3, etc.) para filtrar por año de carrera
+  @Column({ name: "year_numbers", type: "jsonb", default: "[]" })
+  yearNumbers: number[];
+
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt: Date;
 }

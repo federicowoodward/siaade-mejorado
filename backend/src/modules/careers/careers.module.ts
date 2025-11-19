@@ -11,4 +11,3 @@ import { CareerStudentsService } from "./career-students.service";
   providers: [CareerStudentsService],
 })
 export class CareersModule {}
-

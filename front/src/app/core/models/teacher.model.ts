@@ -1,4 +1,3 @@
 export interface Teacher {
-    userId: string;
-  }
-  
+  userId: string;
+}

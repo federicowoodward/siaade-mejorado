@@ -34,13 +34,13 @@ export class UsersPatchService {
     @InjectRepository(AddressData)
     private readonly addressRepo: Repository<AddressData>,
     @InjectRepository(Secretary)
-    private readonly secretariesRepo: Repository<Secretary>
+    private readonly secretariesRepo: Repository<Secretary>,
   ) {}
 
   async patchUser(userId: string, changes: FlatChanges) {
     if (!changes || typeof changes !== "object") {
       throw new BadRequestException(
-        "Body debe ser un objeto con pares key:value"
+        "Body debe ser un objeto con pares key:value",
       );
     }
 
@@ -113,7 +113,7 @@ export class UsersPatchService {
 
   private pickByPrefix(
     changes: FlatChanges,
-    prefix: string
+    prefix: string,
   ): Record<string, any> {
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(changes)) {
@@ -127,7 +127,7 @@ export class UsersPatchService {
   private async applyUserChanges(
     qr: QueryRunner,
     user: User,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const partial: Partial<User> = {};
     const assignIf = (key: keyof User, field: string) => {
@@ -154,7 +154,7 @@ export class UsersPatchService {
   private async applyRoleChange(
     qr: QueryRunner,
     user: User,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     let role: Role | null = null;
 
@@ -186,7 +186,7 @@ export class UsersPatchService {
 
   private async ensureUserInfo(
     qr: QueryRunner,
-    userId: string
+    userId: string,
   ): Promise<UserInfo> {
     let ui = await qr.manager.findOne(UserInfo, { where: { userId } });
     if (!ui) {
@@ -199,7 +199,7 @@ export class UsersPatchService {
   private async applyUserInfoChanges(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const fields = this.pickByPrefix(changes, "userInfo.");
     if (!Object.keys(fields).length) return;
@@ -223,7 +223,7 @@ export class UsersPatchService {
 
   private async ensureCommonData(
     qr: QueryRunner,
-    userId: string
+    userId: string,
   ): Promise<CommonData> {
     let cd = await qr.manager.findOne(CommonData, { where: { userId } });
     if (!cd) {
@@ -235,7 +235,7 @@ export class UsersPatchService {
 
   private async ensureAddress(
     qr: QueryRunner,
-    cd: CommonData
+    cd: CommonData,
   ): Promise<AddressData> {
     if (cd.addressDataId) {
       const existing = await qr.manager.findOne(AddressData, {
@@ -248,7 +248,7 @@ export class UsersPatchService {
     await qr.manager.update(
       CommonData,
       { id: cd.id },
-      { addressDataId: addr.id }
+      { addressDataId: addr.id },
     );
     return addr;
   }
@@ -256,7 +256,7 @@ export class UsersPatchService {
   private async applyCommonDataChanges(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const cdFields = this.pickByPrefix(changes, "commonData.");
     if (!Object.keys(cdFields).length) return;
@@ -313,7 +313,7 @@ export class UsersPatchService {
   private async applySecretaryFlag(
     qr: QueryRunner,
     userId: string,
-    isDirective: boolean
+    isDirective: boolean,
   ) {
     // Sólo si el usuario realmente es secretary (si hay fila en secretaries)
     let sec = await qr.manager.findOne(Secretary, { where: { userId } });
@@ -324,7 +324,7 @@ export class UsersPatchService {
   private async applyStudentFlags(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const fields = this.pickByPrefix(changes, "student.");
     if (!Object.keys(fields).length) return;
@@ -353,7 +353,7 @@ export class UsersPatchService {
   private async applyTeacherFlags(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const fields = this.pickByPrefix(changes, "teacher.");
     if (!Object.keys(fields).length) return;
@@ -377,12 +377,14 @@ export class UsersPatchService {
   private async applyPreceptorFlags(
     qr: QueryRunner,
     userId: string,
-    changes: FlatChanges
+    changes: FlatChanges,
   ) {
     const fields = this.pickByPrefix(changes, "preceptor.");
     if (!Object.keys(fields).length) return;
 
-    const preceptor = await qr.manager.findOne(Preceptor, { where: { userId } });
+    const preceptor = await qr.manager.findOne(Preceptor, {
+      where: { userId },
+    });
     if (!preceptor) return;
 
     const patch: Partial<Preceptor> = {};
