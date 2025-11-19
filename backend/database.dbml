@@ -84,7 +84,6 @@ Table "subjects" {
   "subject_name" text [not null]
   "academic_period_id" int4
   "order_no" int4
-  "correlative" text
   "teacher_formation" text
   "subject_format" text
   "annual_workload" text
@@ -280,9 +279,29 @@ Table "notices" {
   "content" text [not null]
   "visible_role_id" int4
   "created_by" uuid
-  "subject_commission_ids" jsonb [not null, default: '[]']
   "created_at" timestamptz [not null, default: `now()`]
   "updated_at" timestamptz [not null, default: `now()`]
+}
+
+Table "student_inscription_audits" {
+  "id" int4 [pk, not null, increment]
+  "created_at" timestamptz [not null, default: `now()`]
+  "student_id" uuid [not null]
+  "context" text [not null]
+  "mesa_id" int4
+  "call_id" int4
+  "outcome" text [not null]
+  "reason_code" text
+  "subject_id" int4
+  "subject_order_no" int4
+  "subject_name" text
+  "missing_correlatives" jsonb
+  "ip" text
+  "user_agent" text
+
+  Indexes {
+    student_id [type: btree, name: "idx_sia_student"]
+  }
 }
 
 Ref "FK_3dddb847f5033682c672a973199":"careers"."id" < "career_students"."career_id" [delete: cascade]
