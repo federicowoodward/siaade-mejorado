@@ -36,15 +36,18 @@ export class PdfGeneratorService {
   }
 
   async getStudentCertificatePdf(studentId: string | number): Promise<Buffer> {
-    const student = await this.loadStudent(studentId);
-    const payload: StudentCertificatePayload = {
-      lastname: student.user.lastName,
-      name: student.user.name,
-      dni: student.user.cuil,
-      careerName: CAREER_NAME,
-      schoolName: SCHOOL_NAME,
-    };
+    const payload = await this.buildStudentCertificatePayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
+      "student-certificate",
+      payload,
+    );
+  }
+
+  async getStudentCertificateHtml(
+    studentId: string | number,
+  ): Promise<string> {
+    const payload = await this.buildStudentCertificatePayload(studentId);
+    return this.pdfEngineService.renderTemplateToHtml(
       "student-certificate",
       payload,
     );
@@ -53,16 +56,20 @@ export class PdfGeneratorService {
   async getExamRegistrationReceiptPdf(
     studentId: string | number,
   ): Promise<Buffer> {
-    const student = await this.loadStudent(studentId);
-    const commonData = student.user.commonData;
-    const payload: ExamRegistrationReceiptPayload = {
-      lastname: student.user.lastName,
-      name: student.user.name,
-      dni: student.user.cuil,
-      sex: commonData?.sex ?? "",
-      birth_date: this.formatDate(commonData?.birthDate),
-    };
+    const payload =
+      await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
+      "exam-registration-receipt",
+      payload,
+    );
+  }
+
+  async getExamRegistrationReceiptHtml(
+    studentId: string | number,
+  ): Promise<string> {
+    const payload =
+      await this.buildExamRegistrationReceiptPayload(studentId);
+    return this.pdfEngineService.renderTemplateToHtml(
       "exam-registration-receipt",
       payload,
     );
@@ -71,6 +78,53 @@ export class PdfGeneratorService {
   async getAcademicPerformancePdf(
     studentId: string | number,
   ): Promise<Buffer> {
+    const payload = await this.buildAcademicPerformancePayload(studentId);
+    return this.pdfEngineService.generatePdfFromTemplate(
+      "academic-performance",
+      payload,
+    );
+  }
+
+  async getAcademicPerformanceHtml(
+    studentId: string | number,
+  ): Promise<string> {
+    const payload = await this.buildAcademicPerformancePayload(studentId);
+    return this.pdfEngineService.renderTemplateToHtml(
+      "academic-performance",
+      payload,
+    );
+  }
+
+  private async buildStudentCertificatePayload(
+    studentId: string | number,
+  ): Promise<StudentCertificatePayload> {
+    const student = await this.loadStudent(studentId);
+    return {
+      lastname: student.user.lastName,
+      name: student.user.name,
+      dni: student.user.cuil,
+      careerName: CAREER_NAME,
+      schoolName: SCHOOL_NAME,
+    };
+  }
+
+  private async buildExamRegistrationReceiptPayload(
+    studentId: string | number,
+  ): Promise<ExamRegistrationReceiptPayload> {
+    const student = await this.loadStudent(studentId);
+    const commonData = student.user.commonData;
+    return {
+      lastname: student.user.lastName,
+      name: student.user.name,
+      dni: student.user.cuil,
+      sex: commonData?.sex ?? "",
+      birth_date: this.formatDate(commonData?.birthDate),
+    };
+  }
+
+  private async buildAcademicPerformancePayload(
+    studentId: string | number,
+  ): Promise<AcademicPerformancePayload> {
     const student = await this.loadStudent(studentId);
     const commonData = student.user.commonData;
     // TODO(PDF-GENERATOR): revisar campo 'born_year' en la entidad Student o entidad relacionada.
@@ -78,7 +132,7 @@ export class PdfGeneratorService {
       ? String(commonData.birthDate.getUTCFullYear())
       : "";
     // TODO(PDF-GENERATOR): validar si existe un campo 'legajoId' especifico o si debe usarse 'legajo'.
-    const payload: AcademicPerformancePayload = {
+    return {
       lastname: student.user.lastName,
       name: student.user.name,
       dni: student.user.cuil,
@@ -87,10 +141,6 @@ export class PdfGeneratorService {
       born_place: commonData?.birthPlace ?? "",
       legajoId: student.legajo,
     };
-    return this.pdfEngineService.generatePdfFromTemplate(
-      "academic-performance",
-      payload,
-    );
   }
 }
 

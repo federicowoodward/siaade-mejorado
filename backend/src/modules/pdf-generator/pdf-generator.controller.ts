@@ -52,6 +52,37 @@ export class PdfGeneratorController {
     return this.sendPdf(res, pdf, `student-certificate-${studentId}.pdf`);
   }
 
+  @Get("preview/student-certificate/:studentId")
+  @ApiOperation({
+    summary: "Preview Student Certificate HTML",
+    description:
+      "Dev endpoint that renders the Student Certificate Handlebars template as HTML for live preview.",
+  })
+  @ApiParam({
+    name: "studentId",
+    type: String,
+    description: "ID of the student",
+    example: "123",
+  })
+  @ApiProduces("text/html")
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "HTML preview rendered successfully",
+    content: {
+      "text/html": {
+        schema: { type: "string" },
+      },
+    },
+  })
+  async previewStudentCertificateHtml(
+    @Param("studentId") studentId: string,
+    @Res() res: Response,
+  ) {
+    const html =
+      await this.pdfGeneratorService.getStudentCertificateHtml(studentId);
+    return this.sendHtml(res, html);
+  }
+
   // ---------------------------------------------------------
   // EXAM REGISTRATION RECEIPT
   // ---------------------------------------------------------
@@ -88,6 +119,39 @@ export class PdfGeneratorController {
     const pdf =
       await this.pdfGeneratorService.getExamRegistrationReceiptPdf(studentId);
     return this.sendPdf(res, pdf, `exam-registration-receipt-${studentId}.pdf`);
+  }
+
+  @Get("preview/exam-registration-receipt/:studentId")
+  @ApiOperation({
+    summary: "Preview Exam Registration Receipt HTML",
+    description:
+      "Dev endpoint that renders the Exam Registration Receipt template as HTML.",
+  })
+  @ApiParam({
+    name: "studentId",
+    type: String,
+    description: "ID of the student",
+    example: "123",
+  })
+  @ApiProduces("text/html")
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "HTML preview rendered successfully",
+    content: {
+      "text/html": {
+        schema: { type: "string" },
+      },
+    },
+  })
+  async previewExamRegistrationReceiptHtml(
+    @Param("studentId") studentId: string,
+    @Res() res: Response,
+  ) {
+    const html =
+      await this.pdfGeneratorService.getExamRegistrationReceiptHtml(
+        studentId,
+      );
+    return this.sendHtml(res, html);
   }
 
   // ---------------------------------------------------------
@@ -128,6 +192,37 @@ export class PdfGeneratorController {
     return this.sendPdf(res, pdf, `academic-performance-${studentId}.pdf`);
   }
 
+  @Get("preview/academic-performance/:studentId")
+  @ApiOperation({
+    summary: "Preview Academic Performance HTML",
+    description:
+      "Dev endpoint for rendering the Academic Performance template as HTML.",
+  })
+  @ApiParam({
+    name: "studentId",
+    type: String,
+    description: "ID of the student",
+    example: "123",
+  })
+  @ApiProduces("text/html")
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "HTML preview rendered successfully",
+    content: {
+      "text/html": {
+        schema: { type: "string" },
+      },
+    },
+  })
+  async previewAcademicPerformanceHtml(
+    @Param("studentId") studentId: string,
+    @Res() res: Response,
+  ) {
+    const html =
+      await this.pdfGeneratorService.getAcademicPerformanceHtml(studentId);
+    return this.sendHtml(res, html);
+  }
+
   // ---------------------------------------------------------
   // SEND PDF HELPER
   // ---------------------------------------------------------
@@ -135,5 +230,10 @@ export class PdfGeneratorController {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     return res.send(buffer);
+  }
+
+  private sendHtml(res: Response, html: string) {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(html);
   }
 }

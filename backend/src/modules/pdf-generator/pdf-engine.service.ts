@@ -39,13 +39,14 @@ export class PdfEngineService {
     return this.templateCache.get(templateName)!;
   }
 
-  async generatePdfFromTemplate(
+  async renderTemplateToHtml(
     templateName: string,
     data: Record<string, unknown>,
-    options?: PDFOptions,
-  ): Promise<Buffer> {
+  ): Promise<string> {
     this.logger.debug(
-      `Generating PDF using template "${templateName}" with data keys: ${Object.keys(data || {}).join(", ")}`,
+      `Rendering template "${templateName}" with data keys: ${Object.keys(
+        data || {},
+      ).join(", ")}`,
     );
     for (const [key, value] of Object.entries(data || {})) {
       if (value === undefined) {
@@ -56,7 +57,15 @@ export class PdfEngineService {
     }
 
     const template = this.getCompiledTemplate(templateName);
-    const html = template(data);
+    return template(data);
+  }
+
+  async generatePdfFromTemplate(
+    templateName: string,
+    data: Record<string, unknown>,
+    options?: PDFOptions,
+  ): Promise<Buffer> {
+    const html = await this.renderTemplateToHtml(templateName, data);
 
     const browser = await puppeteer.launch({
       headless: true,
