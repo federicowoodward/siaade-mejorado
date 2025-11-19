@@ -24,11 +24,24 @@
     ></p-editor>
 
     <label class="mt-2">Visible para:</label>
-    <select [(ngModel)]="newNotice.visibleFor">
+    <select [(ngModel)]="newNotice.visibleFor" (ngModelChange)="onVisibleForChange()">
       <option value="all">Todos</option>
       <option value="student">Alumnos</option>
       <option value="teacher">Profesores</option>
     </select>
+
+    <div class="year-selector" *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0">
+      <label>Años destino</label>
+      <select multiple [(ngModel)]="selectedYearNumbers">
+        <option
+          *ngFor="let year of availableYears()"
+          [ngValue]="year"
+        >
+          {{ year }}° año
+        </option>
+      </select>
+      <small>Si no seleccionás ningún año se publicará para todos los años.</small>
+    </div>
 
     <div class="commission-selector" *ngIf="segmentByCommission()">
       <label>comisiones destino</label>

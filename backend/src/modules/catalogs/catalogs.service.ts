@@ -250,6 +250,22 @@ export class CatalogsService {
     };
   }
 
+  async findCareerYears(careerId: number): Promise<number[]> {
+    const careerSubjects = await this.careerSubjectRepo.find({
+      where: { careerId },
+      select: ["yearNo"],
+    });
+
+    const years = new Set<number>();
+    for (const cs of careerSubjects) {
+      if (cs.yearNo != null && cs.yearNo > 0) {
+        years.add(cs.yearNo);
+      }
+    }
+
+    return Array.from(years).sort((a, b) => a - b);
+  }
+
   async findCareerStudentsByCommission(
     careerId: number,
     opts?: { studentStartYear?: number },

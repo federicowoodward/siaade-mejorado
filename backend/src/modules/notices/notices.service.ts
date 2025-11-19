@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, In } from "typeorm";
 import { Notice } from "@/entities/notices/notice.entity";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { Role } from "@/entities/roles/role.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
+import { CareerSubject } from "@/entities/registration/career-subject.entity";
+import { CareerStudent } from "@/entities/registration/career-student.entity";
 import { CreateNoticeDto } from "./dto/create-notice.dto";
 import { UpdateNoticeDto } from "./dto/update-notice.dto";
 import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
@@ -23,6 +25,10 @@ export class NoticesService {
     private readonly subjectCommissionRepo: Repository<SubjectCommission>,
     @InjectRepository(SubjectStudent)
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
+    @InjectRepository(CareerSubject)
+    private readonly careerSubjectRepo: Repository<CareerSubject>,
+    @InjectRepository(CareerStudent)
+    private readonly careerStudentRepo: Repository<CareerStudent>,
     @InjectRepository(Role)
     private readonly rolesRepo: Repository<Role>,
   ) {}
@@ -38,6 +44,7 @@ export class NoticesService {
       visibleRoleId: this.resolveVisibleRoleId(dto.visibleFor),
       createdByUserId: createdByUserId ?? null,
       subjectCommissionIds: dto.commissionIds ?? [],
+      yearNumbers: dto.yearNumbers ?? [],
     });
     const saved = await this.repo.save(notice);
     return this.findOneForReturn(saved.id);
@@ -53,6 +60,9 @@ export class NoticesService {
     }
     if (dto.commissionIds !== undefined) {
       existing.subjectCommissionIds = dto.commissionIds;
+    }
+    if (dto.yearNumbers !== undefined) {
+      existing.yearNumbers = dto.yearNumbers;
     }
     await this.repo.save(existing);
     return this.findOneForReturn(id);
@@ -106,6 +116,23 @@ export class NoticesService {
       } else {
         qb.andWhere(
           `(n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)`,
+        );
+      }
+    }
+
+    if (audience === "student" && user?.id) {
+      const studentYears = await this.resolveStudentYears(user.id);
+      if (studentYears.length > 0) {
+        qb.andWhere(
+          `
+            (n.year_numbers IS NULL OR jsonb_array_length(n.year_numbers) = 0)
+            OR n.year_numbers && to_jsonb(:studentYears::int[])
+          `,
+          { studentYears: JSON.stringify(studentYears) },
+        );
+      } else {
+        qb.andWhere(
+          `(n.year_numbers IS NULL OR jsonb_array_length(n.year_numbers) = 0)`,
         );
       }
     }
@@ -201,5 +228,49 @@ export class NoticesService {
       throw new NotFoundException(`Role for '${audience}' not found`);
     }
     return role.id;
+  }
+
+  private async resolveStudentYears(studentId: string): Promise<number[]> {
+    const careerStudent = await this.careerStudentRepo.findOne({
+      where: { studentId },
+    });
+
+    if (!careerStudent) {
+      return [];
+    }
+
+    const subjectStudents = await this.subjectStudentRepo.find({
+      where: { studentId },
+      select: ["subjectId"],
+    });
+
+    if (subjectStudents.length === 0) {
+      return [];
+    }
+
+    const subjectIds = subjectStudents
+      .map((ss) => ss.subjectId)
+      .filter((id) => id != null);
+
+    if (subjectIds.length === 0) {
+      return [];
+    }
+
+    const careerSubjects = await this.careerSubjectRepo.find({
+      where: {
+        careerId: careerStudent.careerId,
+        subjectId: In(subjectIds),
+      },
+      select: ["yearNo"],
+    });
+
+    const years = new Set<number>();
+    for (const cs of careerSubjects) {
+      if (cs.yearNo != null && cs.yearNo > 0) {
+        years.add(cs.yearNo);
+      }
+    }
+
+    return Array.from(years).sort((a, b) => a - b);
   }
 }

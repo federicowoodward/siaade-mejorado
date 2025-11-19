@@ -38,4 +38,15 @@ export class CreateNoticeDto {
   @ArrayUnique()
   @IsInt({ each: true })
   commissionIds?: number[];
+
+  @ApiPropertyOptional({
+    description:
+      "Números de año de carrera (1, 2, 3, etc.) para filtrar avisos por año. Vacío = todos los años.",
+    type: [Number],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  yearNumbers?: number[];
 }
