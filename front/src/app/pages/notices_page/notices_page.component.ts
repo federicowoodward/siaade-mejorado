@@ -1,9 +1,13 @@
-import { Component, inject, computed, NgZone, OnInit } from '@angular/core';
+import { Component, inject, computed, NgZone, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
-import { NoticesService, Notice } from '../../core/services/notices.service';
+import {
+  NoticesService,
+  Notice,
+  NoticeCommissionTarget,
+} from '../../core/services/notices.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { ROLE, VisibleRole } from '../../core/auth/roles';
 import { CanAnyRoleDirective } from '../../shared/directives/can-any-role.directive';
@@ -30,6 +34,8 @@ export class NoticesPageComponent implements OnInit {
   protected readonly ROLE = ROLE;
 
   notices = this.noticesSrv.notices;
+  segmentByCommission = this.noticesSrv.segmentByCommission;
+  commissionOptions = this.noticesSrv.commissionOptions;
 
   canManage = computed(() =>
     this.permissions.hasAnyRole([
@@ -39,11 +45,24 @@ export class NoticesPageComponent implements OnInit {
     ]),
   );
 
-  newNotice: Partial<Notice> = {
+  newNotice: Partial<Notice> &
+    Pick<Notice, 'visibleFor'> & {
+      commissionTargets?: NoticeCommissionTarget[];
+    } = {
     title: '',
     content: '',
     visibleFor: ROLE.STUDENT as VisibleRole,
+    commissionTargets: [],
   };
+  selectedCommissionIds: number[] = [];
+
+  constructor() {
+    effect(() => {
+      if (this.segmentByCommission()) {
+        void this.noticesSrv.ensureCommissionOptionsLoaded();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.zone.runOutsideAngular(() => {
@@ -60,13 +79,18 @@ export class NoticesPageComponent implements OnInit {
         title: this.newNotice.title?.trim(),
         content: this.newNotice.content!,
         visibleFor: (this.newNotice.visibleFor as VisibleRole | 'all') ?? 'all',
+        commissionIds: this.segmentByCommission()
+          ? this.selectedCommissionIds
+          : undefined,
       });
 
       this.newNotice = {
         title: '',
         content: '',
         visibleFor: ROLE.STUDENT as VisibleRole,
+        commissionTargets: [],
       };
+      this.selectedCommissionIds = [];
     } catch (e: any) {
       alert(String(e?.message ?? 'No se pudo publicar el aviso.'));
     }

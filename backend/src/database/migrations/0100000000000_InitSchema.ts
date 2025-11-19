@@ -211,6 +211,15 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "notices" ("id" SERIAL NOT NULL, "title" text NOT NULL DEFAULT '', "content" text NOT NULL, "visible_role_id" integer, "created_by" uuid, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_3eb18c29da25d6935fcbe584237" PRIMARY KEY ("id"))`,
     );
+    await queryRunner.query(
+      `CREATE TABLE "notice_commissions" ("id" SERIAL NOT NULL, "notice_id" integer NOT NULL, "subject_commission_id" integer NOT NULL, CONSTRAINT "PK_8865412408ccaa62643724ff7bb" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_notice_commission_notice" ON "notice_commissions" ("notice_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_notice_commission_subject" ON "notice_commissions" ("subject_commission_id")`,
+    );
     // Auditar intentos de inscripción de alumnos (histórico)
     await queryRunner.query(
       `CREATE TABLE "student_inscription_audits" (
@@ -695,6 +704,13 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       `DROP INDEX IF EXISTS "idx_subject_grade_audits_commission"`,
     );
     await queryRunner.query(`DROP TABLE IF EXISTS "subject_grade_audits"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_notice_commission_subject"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_notice_commission_notice"`,
+    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "notice_commissions"`);
     await queryRunner.query(`DROP TABLE "notices"`);
     await queryRunner.query(`DROP TABLE "career_students"`);
     await queryRunner.query(

@@ -157,7 +157,9 @@ export class QuickAccessComponent {
     ) {
       return all;
     }
-    return all.filter((n) => n.visibleFor === role);
+    return all.filter(
+      (n) => n.visibleFor === 'all' || n.visibleFor === role,
+    );
   });
 
   stats = [

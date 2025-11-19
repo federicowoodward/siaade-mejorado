@@ -6,9 +6,11 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from "typeorm";
 import { Role } from "@/entities/roles/role.entity";
 import { User } from "@/entities/users/user.entity";
+import { NoticeCommission } from "./notice-commission.entity";
 
 @Entity("notices")
 export class Notice {
@@ -41,4 +43,9 @@ export class Notice {
 
   @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt: Date;
+
+  @OneToMany(() => NoticeCommission, (nc) => nc.notice, {
+    cascade: true,
+  })
+  noticeCommissions?: NoticeCommission[];
 }

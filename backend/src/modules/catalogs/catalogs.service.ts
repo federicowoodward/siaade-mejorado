@@ -838,4 +838,25 @@ export class CatalogsService {
     }
     return map;
   }
+
+  async listSubjectCommissionsSimple() {
+    const rows = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.subject", "subject")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .orderBy("subject.subjectName", "ASC", "NULLS LAST")
+      .addOrderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("sc.id", "ASC")
+      .getMany();
+
+    return rows.map((row) => ({
+      id: row.id,
+      subjectId: row.subjectId,
+      subjectName: row.subject?.subjectName ?? `Materia ${row.subjectId}`,
+      commissionLetter: row.commission?.commissionLetter ?? null,
+      label: `${row.subject?.subjectName ?? "Materia"} · Comision ${
+        row.commission?.commissionLetter ?? row.id
+      }`,
+    }));
+  }
 }

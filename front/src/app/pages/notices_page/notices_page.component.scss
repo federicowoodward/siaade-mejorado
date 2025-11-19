@@ -22,6 +22,20 @@
       margin: 0.5rem 0;
       padding: 0.5rem;
     }
+
+    .commission-selector {
+      margin-top: 0.75rem;
+
+      select {
+        min-height: 120px;
+      }
+
+      small {
+        display: block;
+        color: #6b7280;
+        font-size: 0.8rem;
+      }
+    }
   }
 
   .notices-list {
@@ -41,6 +55,26 @@
     .meta {
       color: #666;
       font-size: 0.85rem;
+    }
+
+    .commission-targets {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+
+      .commission-chip {
+        background: #e5e7eb;
+        color: #1f2937;
+        border-radius: 999px;
+        padding: 0.15rem 0.75rem;
+        font-size: 0.75rem;
+
+        &--all {
+          background: #dbeafe;
+          color: #1d4ed8;
+        }
+      }
     }
   }
 }

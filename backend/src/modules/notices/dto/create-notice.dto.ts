@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  ArrayUnique,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 export class CreateNoticeDto {
   @ApiProperty({ description: "Título del aviso" })
@@ -19,4 +27,15 @@ export class CreateNoticeDto {
   @IsString()
   @IsIn(["student", "teacher", "all"])
   visibleFor?: "student" | "teacher" | "all";
+
+  @ApiPropertyOptional({
+    description:
+      "IDs de subject_commissions a los que aplica el aviso. Vacío = todas las comisiones.",
+    type: [Number],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  commissionIds?: number[];
 }

@@ -281,4 +281,16 @@ export class CatalogsController {
   getStudentAcademicStatus(@Param("studentId") studentId: string) {
     return this.service.getStudentAcademicStatus(studentId);
   }
+
+  @Get("subject-commissions")
+  @ApiOperation({
+    summary:
+      "Listado simple de comisiones publicadas (para segmentar avisos u otros usos)",
+  })
+  @ApiOkResponse({
+    description: "Listado de comisiones con su materia asociada",
+  })
+  listSubjectCommissionsSimple() {
+    return this.service.listSubjectCommissionsSimple();
+  }
 }
