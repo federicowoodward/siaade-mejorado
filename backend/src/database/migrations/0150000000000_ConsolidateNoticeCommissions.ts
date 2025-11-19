@@ -9,29 +9,40 @@ export class ConsolidateNoticeCommissions1699560000000
       `ALTER TABLE "notices" ADD COLUMN IF NOT EXISTS "subject_commission_ids" jsonb DEFAULT '[]'`
     );
 
-    // 2. Migrar datos de la tabla notice_commissions a la columna JSON
-    await queryRunner.query(`
-      UPDATE "notices" n
-      SET "subject_commission_ids" = (
-        SELECT jsonb_agg(nc.subject_commission_id)
-        FROM "notice_commissions" nc
-        WHERE nc.notice_id = n.id
-      )
-      WHERE EXISTS (
-        SELECT 1 FROM "notice_commissions" nc WHERE nc.notice_id = n.id
+    // 2. Verificar si la tabla notice_commissions existe antes de migrar datos
+    const tableExists = await queryRunner.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'notice_commissions'
       )
     `);
 
-    // 3. Eliminar índices de la tabla notice_commissions
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_notice_commission_notice"`
-    );
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_notice_commission_subject"`
-    );
+    if (tableExists[0]?.exists) {
+      // Migrar datos de la tabla notice_commissions a la columna JSON
+      await queryRunner.query(`
+        UPDATE "notices" n
+        SET "subject_commission_ids" = (
+          SELECT jsonb_agg(nc.subject_commission_id)
+          FROM "notice_commissions" nc
+          WHERE nc.notice_id = n.id
+        )
+        WHERE EXISTS (
+          SELECT 1 FROM "notice_commissions" nc WHERE nc.notice_id = n.id
+        )
+      `);
 
-    // 4. Eliminar la tabla notice_commissions
-    await queryRunner.query(`DROP TABLE IF EXISTS "notice_commissions"`);
+      // Eliminar índices de la tabla notice_commissions
+      await queryRunner.query(
+        `DROP INDEX IF EXISTS "IDX_notice_commission_notice"`
+      );
+      await queryRunner.query(
+        `DROP INDEX IF EXISTS "IDX_notice_commission_subject"`
+      );
+
+      // Eliminar la tabla notice_commissions
+      await queryRunner.query(`DROP TABLE IF EXISTS "notice_commissions"`);
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
