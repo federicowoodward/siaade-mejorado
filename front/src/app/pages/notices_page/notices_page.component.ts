@@ -91,6 +91,20 @@ export class NoticesPageComponent implements OnInit {
     }
   }
 
+  onYearSelectionChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const selectedValues: number[] = [];
+    const available = this.availableYears();
+    
+    // Leer los valores seleccionados usando el índice para obtener el valor real del array
+    for (let i = 0; i < select.options.length; i++) {
+      if (select.options[i].selected && i < available.length) {
+        selectedValues.push(available[i]);
+      }
+    }
+    this.selectedYearNumbers = selectedValues;
+  }
+
   async loadAvailableYears() {
     this.loadingYears.set(true);
     try {

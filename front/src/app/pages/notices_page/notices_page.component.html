@@ -32,7 +32,7 @@
 
     <div class="year-selector" *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0">
       <label>Años destino</label>
-      <select multiple [(ngModel)]="selectedYearNumbers">
+      <select multiple [(ngModel)]="selectedYearNumbers" (change)="onYearSelectionChange($event)">
         <option
           *ngFor="let year of availableYears()"
           [ngValue]="year"
