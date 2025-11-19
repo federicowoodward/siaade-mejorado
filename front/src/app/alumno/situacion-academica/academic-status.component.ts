@@ -1,11 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
@@ -17,8 +10,6 @@ import {
   StudentStatusService,
   StudentSubjectCard,
 } from '../../core/services/student-status.service';
-import { AuthService } from '../../core/services/auth.service';
-import { SubjectStatusDetailComponent } from './subject-status-detail/subject-status-detail.component';
 
 type YearGroup = { label: string; order: number; subjects: StudentSubjectCard[] };
 
@@ -31,7 +22,6 @@ type YearGroup = { label: string; order: number; subjects: StudentSubjectCard[] 
     TagModule,
     ProgressSpinnerModule,
     TableModule,
-    SubjectStatusDetailComponent,
   ],
   templateUrl: './academic-status.component.html',
   styleUrl: './academic-status.component.scss',
@@ -40,7 +30,6 @@ export class AcademicStatusComponent implements OnInit {
   private readonly statusService = inject(StudentStatusService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  private readonly auth = inject(AuthService);
 
   readonly cards = this.statusService.status;
   readonly loading = this.statusService.loading;
@@ -88,30 +77,8 @@ export class AcademicStatusComponent implements OnInit {
     return Math.min(highest, 3);
   }
 
-  readonly studentName = signal<string | null>(null);
-  selectedSubject: StudentSubjectCard | null = null;
-  detailVisible = false;
-
   ngOnInit(): void {
     this.reload();
-    this.auth
-      .getUser()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((user) => {
-        if (!user) {
-          this.studentName.set(null);
-          return;
-        }
-        const segments = [
-          typeof user['name'] === 'string' ? user['name'] : null,
-          typeof user['lastName'] === 'string' ? user['lastName'] : null,
-        ].filter(
-          (value): value is string =>
-            typeof value === 'string' && value.trim().length > 0,
-        );
-        const fullName = segments.join(' ').trim();
-        this.studentName.set(fullName.length ? fullName : user['username'] ?? null);
-      });
   }
 
   reload(): void {
@@ -137,14 +104,8 @@ export class AcademicStatusComponent implements OnInit {
     void this.router.navigate(['/alumno/mesas'], { queryParams });
   }
 
-  openSubjectDetail(card: StudentSubjectCard): void {
-    this.selectedSubject = card;
-    this.detailVisible = true;
-  }
-
-  onDetailClosed(): void {
-    this.detailVisible = false;
-    this.selectedSubject = null;
+  viewSubjectDetail(card: StudentSubjectCard): void {
+    void this.router.navigate(['/alumno/situacion-academica', card.subjectId]);
   }
 
   private getYearOrder(card: StudentSubjectCard): number {
