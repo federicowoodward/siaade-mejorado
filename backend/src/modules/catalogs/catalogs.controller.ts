@@ -67,6 +67,22 @@ export class CatalogsController {
     return this.service.findCareerFullData(careerId);
   }
 
+  @Get("career-years/:careerId")
+  @ApiOperation({
+    summary: "Obtener años disponibles de una carrera",
+  })
+  @ApiParam({ name: "careerId" })
+  @ApiOkResponse({
+    description: "Lista de años disponibles en la carrera",
+    schema: {
+      type: "array",
+      items: { type: "number" },
+    },
+  })
+  async findCareerYears(@Param("careerId", ParseIntPipe) careerId: number) {
+    return this.service.findCareerYears(careerId);
+  }
+
   @Get("career-students-by-commission/:careerId")
   @ApiOperation({
     summary: "Listar alumnos de una carrera agrupados por comisión",
@@ -280,5 +296,17 @@ export class CatalogsController {
   })
   getStudentAcademicStatus(@Param("studentId") studentId: string) {
     return this.service.getStudentAcademicStatus(studentId);
+  }
+
+  @Get("subject-commissions")
+  @ApiOperation({
+    summary:
+      "Listado simple de comisiones publicadas (para segmentar avisos u otros usos)",
+  })
+  @ApiOkResponse({
+    description: "Listado de comisiones con su materia asociada",
+  })
+  listSubjectCommissionsSimple() {
+    return this.service.listSubjectCommissionsSimple();
   }
 }

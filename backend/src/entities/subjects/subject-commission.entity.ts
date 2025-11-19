@@ -43,4 +43,18 @@ export class SubjectCommission {
 
   @Column({ name: "active", type: "boolean", default: true })
   active: boolean;
+
+  @Column({
+    name: "grade_window_opened_at",
+    type: "timestamptz",
+    nullable: true,
+  })
+  gradeWindowOpenedAt: Date | null;
+
+  @Column({
+    name: "grade_window_expires_at",
+    type: "timestamptz",
+    nullable: true,
+  })
+  gradeWindowExpiresAt: Date | null;
 }

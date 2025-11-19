@@ -250,6 +250,22 @@ export class CatalogsService {
     };
   }
 
+  async findCareerYears(careerId: number): Promise<number[]> {
+    const careerSubjects = await this.careerSubjectRepo.find({
+      where: { careerId },
+      select: ["yearNo"],
+    });
+
+    const years = new Set<number>();
+    for (const cs of careerSubjects) {
+      if (cs.yearNo != null && cs.yearNo > 0) {
+        years.add(cs.yearNo);
+      }
+    }
+
+    return Array.from(years).sort((a, b) => a - b);
+  }
+
   async findCareerStudentsByCommission(
     careerId: number,
     opts?: { studentStartYear?: number },
@@ -837,5 +853,26 @@ export class CatalogsService {
       map.get(r.subject_order_no)!.push(r.prereq_order_no);
     }
     return map;
+  }
+
+  async listSubjectCommissionsSimple() {
+    const rows = await this.subjectCommissionRepo
+      .createQueryBuilder("sc")
+      .leftJoinAndSelect("sc.subject", "subject")
+      .leftJoinAndSelect("sc.commission", "commission")
+      .orderBy("subject.subjectName", "ASC", "NULLS LAST")
+      .addOrderBy("commission.commissionLetter", "ASC", "NULLS LAST")
+      .addOrderBy("sc.id", "ASC")
+      .getMany();
+
+    return rows.map((row) => ({
+      id: row.id,
+      subjectId: row.subjectId,
+      subjectName: row.subject?.subjectName ?? `Materia ${row.subjectId}`,
+      commissionLetter: row.commission?.commissionLetter ?? null,
+      label: `${row.subject?.subjectName ?? "Materia"} · Comision ${
+        row.commission?.commissionLetter ?? row.id
+      }`,
+    }));
   }
 }

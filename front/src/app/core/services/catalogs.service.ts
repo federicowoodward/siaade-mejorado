@@ -64,4 +64,11 @@ export class CatalogsService {
       params,
     );
   }
+
+  getCareerYears(careerId: number): Observable<number[]> {
+    return this.api.request<number[]>(
+      'GET',
+      `catalogs/career-years/${careerId}`,
+    );
+  }
 }

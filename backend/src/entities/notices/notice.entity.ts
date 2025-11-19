@@ -36,6 +36,14 @@ export class Notice {
   @JoinColumn({ name: "created_by" })
   createdBy?: User | null;
 
+  // Array de subject_commission_id en JSON
+  @Column({ name: "subject_commission_ids", type: "jsonb", default: "[]" })
+  subjectCommissionIds: number[];
+
+  // Array de números de año (1, 2, 3, etc.) para filtrar por año de carrera
+  @Column({ name: "year_numbers", type: "jsonb", default: "[]" })
+  yearNumbers: number[];
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 

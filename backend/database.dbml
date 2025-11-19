@@ -280,6 +280,7 @@ Table "notices" {
   "content" text [not null]
   "visible_role_id" int4
   "created_by" uuid
+  "subject_commission_ids" jsonb [not null, default: '[]']
   "created_at" timestamptz [not null, default: `now()`]
   "updated_at" timestamptz [not null, default: `now()`]
 }

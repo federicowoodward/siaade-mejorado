@@ -33,6 +33,7 @@ import { RbacService } from '@/core/rbac/rbac.service';
 import {
   AcademicSituationApiResponse,
   AcademicSituationRow,
+  TeacherWindowState,
 } from './subject-academic-situation.types';
 import { SubjectMoveCommissionDialog } from './subject-move-commission.dialog';
 import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
@@ -104,6 +105,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   );
   readonly saving = signal(false);
   readonly enrollmentLoading = signal<string | null>(null);
+  private readonly shortDateFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
   subjectId = Number(this.route.snapshot.paramMap.get('subjectId') ?? 0);
   // =======================
@@ -114,6 +120,88 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   rows = computed(() => this.data()?.rows ?? []);
   readonly rowsTrackBy = rowsTrackByFn;
   readonly finalClass = finalClassUtil;
+  private readonly teacherBypassRoles = [
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY,
+  ];
+  readonly teacherHasRestrictions = computed(
+    () =>
+      this.rbac.has(ROLE.TEACHER) &&
+      !this.rbac.hasAny(this.teacherBypassRoles),
+  );
+  readonly commissionWindows = computed(() => {
+    const map = new Map<number, TeacherWindowState | null>();
+    (this.data()?.commissions ?? []).forEach((commission) => {
+      map.set(commission.id, commission.teacherWindow ?? null);
+    });
+    return map;
+  });
+  readonly teacherWindowCards = computed(() => {
+    const base = this.data()?.commissions ?? [];
+    return base.map((entry) => ({
+      id: entry.id,
+      label: entry.letter ?? `Comision ${entry.id}`,
+      status: entry.teacherWindow?.status ?? 'open',
+      closesAt: entry.teacherWindow?.closesAt ?? null,
+    }));
+  });
+  readonly teacherWindowNotice = computed(() => {
+    if (!this.teacherHasRestrictions()) {
+      return null;
+    }
+    const closed = this.teacherWindowCards().filter(
+      (card) => card.status === 'closed',
+    );
+    if (!closed.length) {
+      return null;
+    }
+    return 'El plazo de edicion de notas esta cerrado para algunas comisiones. Para modificaciones adicionales debes contactar a Secretaria.';
+  });
+  canEditRow(row: AcademicSituationRow): boolean {
+    return this.canEditCommission(row?.commissionId ?? null);
+  }
+
+  teacherWindowTooltip(row: AcademicSituationRow): string {
+    if (this.canEditRow(row)) {
+      return 'Editar notas/asistencia';
+    }
+    const state = this.commissionWindows().get(row.commissionId);
+    const date =
+      state?.closesAt && state.closesAt.length
+        ? this.formatWindowDate(state.closesAt)
+        : null;
+    const when = date ? ` Cerró el ${date}.` : '';
+    return `Plazo cerrado para docentes.${when} Gestioná el cambio con Secretaría.`;
+  }
+
+  private canEditCommission(
+    commissionId: number | null | undefined,
+  ): boolean {
+    if (!this.teacherHasRestrictions()) {
+      return true;
+    }
+    if (!commissionId) {
+      return false;
+    }
+    const state = this.commissionWindows().get(commissionId);
+    return !state || state.status === 'open';
+  }
+
+  private formatWindowDate(value: string): string {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? value
+      : this.shortDateFormatter.format(parsed);
+  }
+
+  private showWindowClosedWarning(row?: AcademicSituationRow): void {
+    this.messages.add({
+      severity: 'warn',
+      summary: 'Plazo cerrado',
+      detail:
+        'El plazo del docente para esta comisión ya está cerrado. Contacta a Secretaría para registrar cambios.',
+    });
+  }
 
   readonly ROLE = ROLE;
   canMoveStudents = computed(() =>
@@ -177,10 +265,18 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   });
 
   commissionSelectItems = computed(() =>
-    this.commissionOptions().map((option) => ({
-      label: option.letter ?? `Comision ${option.id}`,
-      value: option.id,
-    })),
+    this.commissionOptions().map((option) => {
+      if (option.id === 0) {
+        return { label: option.letter ?? 'Todas', value: option.id };
+      }
+      const window = this.commissionWindows().get(option.id);
+      const suffix =
+        window?.status === 'closed' ? ' · Plazo cerrado' : '';
+      return {
+        label: `${option.letter ?? `Comision ${option.id}`}${suffix}`,
+        value: option.id,
+      };
+    }),
   );
 
   private readonly filtersEffect = effect(() => {
@@ -300,11 +396,19 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     if (!row?.studentId) {
       return;
     }
+    if (!this.canEditRow(row)) {
+      this.showWindowClosedWarning(row);
+      return;
+    }
     this.clonedRows.set(row.studentId, { ...row });
   }
 
   onRowEditSave(row: AcademicSituationRow): void {
     if (!row?.studentId) {
+      return;
+    }
+    if (!this.canEditRow(row)) {
+      this.showWindowClosedWarning(row);
       return;
     }
 
@@ -786,3 +890,9 @@ type CommissionPayload = {
   body: { rows: CommissionPayloadRow[] };
   studentIds: string[];
 };
+
+
+
+
+
+
