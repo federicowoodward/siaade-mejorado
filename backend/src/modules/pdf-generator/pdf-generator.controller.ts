@@ -12,7 +12,7 @@ import {
 @ApiTags("PDF Generator")
 @Controller("generatePdf")
 export class PdfGeneratorController {
-  constructor(private readonly pdfGeneratorService: PdfGeneratorService) {}
+  constructor(private readonly pdfGeneratorService: PdfGeneratorService) { }
 
   // ---------------------------------------------------------
   // STUDENT CERTIFICATE
@@ -234,6 +234,12 @@ export class PdfGeneratorController {
 
   private sendHtml(res: Response, html: string) {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
+
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     return res.send(html);
   }
+
 }

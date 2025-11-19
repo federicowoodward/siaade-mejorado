@@ -5,6 +5,15 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { buildCorsOptions } from "./config/cors.config";
 import { ensureRolesOnBoot } from "./shared/boot/ensure-roles.bootstrap";
 
+interface HotNodeModule extends NodeModule {
+  hot?: {
+    accept(path?: string, callback?: () => void): void;
+    dispose(callback: () => void): void;
+  };
+}
+
+declare const module: HotNodeModule;
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -40,6 +49,11 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`SIAADE Backend running on: 'http://localhost:${port}`);
   console.log(`API Documentation: 'http://localhost:${port}/api/docs`);
+
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 }
 
 bootstrap();
