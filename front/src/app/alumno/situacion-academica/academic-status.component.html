@@ -1,69 +1,76 @@
 ﻿<div class="status-wrapper flex flex-column gap-4">
   <div
-    class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between"
+    class="surface-card shadow-2 border-round p-4 flex flex-column gap-4 md:flex-row md:align-items-start md:justify-content-between"
   >
-    <div class="flex-1">
-      <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
-        Alumno / Situacion academica
-      </p>
-      <h2 class="m-0 text-2xl font-semibold">Resumen academico</h2>
-      <p class="text-color-secondary mt-1 mb-0">
-        Consulta tus parciales, asistencia y estado para cada materia. Las
-        acciones se habilitan segun las ventanas oficiales.
-      </p>
-    </div>
-    <div class="flex gap-2 flex-wrap">
-      <p-button
-        type="button"
-        label="Ver mesas"
-        icon="pi pi-calendar"
-        (onClick)="goToMesas()"
-      />
-      <p-button
-        type="button"
-        label="Actualizar"
-        icon="pi pi-refresh"
-        severity="secondary"
-        (onClick)="reload()"
-      />
+    <div class="flex flex-column gap-3 md:flex-1">
+      <div>
+        <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
+          Alumno / Situación académica
+        </p>
+        <h2 class="m-0 text-2xl font-semibold">Resumen académico</h2>
+        <p class="text-color-secondary mt-1 mb-0">
+          Consultá tus parciales, asistencia y estado académico por materia.
+          <br />
+          Las acciones se habilitan según las fechas oficiales.
+        </p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <p-button
+          type="button"
+          label="Ver mesas"
+          icon="pi pi-calendar"
+          (onClick)="goToMesas()"
+        />
+        <p-button
+          type="button"
+          label="Actualizar"
+          icon="pi pi-refresh"
+          severity="secondary"
+          (onClick)="reload()"
+        />
+      </div>
     </div>
     <div
-      class="w-full border-top-1 surface-border pt-3 flex flex-column gap-2"
+      class="surface-ground border-1 surface-border border-round p-3 flex flex-column gap-2 md:w-4"
     >
-      <div>
-        <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
-          Datos del alumno
-        </p>
-        <h3 class="m-0 text-xl font-semibold">
-          {{ summary()?.fullName || 'Alumno sin nombre' }}
-        </h3>
+      <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
+        Datos del alumno
+      </p>
+      <h3 class="m-0 text-xl font-semibold">Datos del alumno</h3>
+      <div class="flex flex-column gap-1 text-sm">
+        <span>
+          Alumno:
+          <strong>
+            {{ summary()?.fullName || 'Sin nombre' }}
+          </strong>
+        </span>
+        <span>
+          Documento:
+          <strong>
+            {{ summary()?.documentNumber || 'Sin documento' }}
+          </strong>
+        </span>
+        <span *ngIf="studentPlan() as plan">
+          Plan de estudios:
+          <strong>{{ plan }}</strong>
+        </span>
       </div>
-      <div
-        class="flex flex-column gap-2 text-sm text-color-secondary md:flex-row md:align-items-center md:justify-content-between"
-      >
-        <div class="flex gap-3 flex-wrap">
-          <span>
-            Documento:
-            <strong>
-              {{ summary()?.documentNumber || 'Sin documento' }}
-            </strong>
-          </span>
-        </div>
-        <div class="flex gap-3 flex-wrap">
-          <span>
-            Registrado desde:
-            <strong>
-              {{ formatRegisteredSince(summary()?.registrationDate) }}
-            </strong>
-          </span>
-          <span>
-            Año actual:
-            <strong>
-              {{ academicYearText(summary()?.academicYear) }}
-            </strong>
-          </span>
-        </div>
-      </div>
+    </div>
+    <div
+      class="flex flex-column gap-2 text-sm text-color-secondary text-right md:w-3"
+    >
+      <span>
+        Registrado desde:
+        <strong class="text-color">
+          {{ formatRegisteredSince(summary()?.registrationDate) }}
+        </strong>
+      </span>
+      <span>
+        Año académico actual:
+        <strong class="text-color">
+          {{ academicYearText(summary()?.academicYear) }}
+        </strong>
+      </span>
     </div>
   </div>
 
@@ -110,9 +117,9 @@
             <tr>
               <th>Materia</th>
               <th>Año</th>
-              <th>Comisión</th>
-              <th>Condición final</th>
-              <th>Nota final</th>
+              <th>Curso/Div.</th>
+              <th>Cond. Final</th>
+              <th>Examen/es</th>
               <th class="text-center">Acción</th>
             </tr>
           </ng-template>
@@ -129,8 +136,15 @@
                   [severity]="stateSeverity(row.condition)"
                 ></p-tag>
               </td>
-              <td class="text-center">
-                <span class="final-score">{{ row.finalScore ?? '-' }}</span>
+              <td>
+                <div class="flex flex-column">
+                  <span class="font-semibold">
+                    {{ row.finalScore ?? '-' }}
+                  </span>
+                  <small class="text-color-secondary">
+                    {{ row.finalExplanation || '-' }}
+                  </small>
+                </div>
               </td>
               <td class="text-center">
                 <div class="status-actions">

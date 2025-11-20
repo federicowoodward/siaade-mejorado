@@ -52,6 +52,7 @@ export interface StudentStatusSummary {
   studentStartYear: number | null;
   academicYear: number | null;
   registrationDate: string | null;
+  planName: string | null;
 }
 
 type RawStatusResponse = {
@@ -282,6 +283,12 @@ export class StudentStatusService {
       studentStartYear: this.toNumber(payload?.studentStartYear),
       academicYear: this.toNumber(payload?.academicYear),
       registrationDate: this.normalizeSummaryDate(payload?.registrationDate),
+      planName:
+        typeof payload?.planName === 'string'
+          ? payload.planName
+          : typeof payload?.studyPlan === 'string'
+            ? payload.studyPlan
+            : null,
     };
   }
 

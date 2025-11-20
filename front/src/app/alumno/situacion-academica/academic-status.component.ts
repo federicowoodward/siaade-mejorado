@@ -34,6 +34,13 @@ export class AcademicStatusComponent implements OnInit {
   readonly cards = this.statusService.status;
   readonly loading = this.statusService.loading;
   readonly summary = this.statusService.summary;
+  readonly studentPlan = computed(() => {
+    const summaryPlan = this.summary()?.planName;
+    if (summaryPlan && summaryPlan.trim().length) return summaryPlan.trim();
+    const cardPlan = this.cards().find((card) => card.studyPlan)?.studyPlan;
+    if (cardPlan && cardPlan.trim().length) return cardPlan.trim();
+    return null;
+  });
 
   private readonly yearGroups = computed<YearGroup[]>(() => {
     const map = new Map<string, YearGroup>();
