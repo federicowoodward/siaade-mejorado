@@ -12,6 +12,9 @@ import { SubjectStudent } from "../../entities/subjects/subject-student.entity";
 import { StudentSubjectProgress } from "../../entities/subjects/student-subject-progress.entity";
 import { FinalExam } from "../../entities/finals/final-exam.entity";
 import { FinalExamsStudent } from "../../entities/finals/final-exams-student.entity";
+import { CommonData } from "../../entities/users/common-data.entity";
+import { AddressData } from "../../entities/users/address-data.entity";
+import { Preceptor } from "../../entities/users/preceptor.entity";
 
 /**
  * DUMMY DEV SEED - SIAADE
@@ -116,6 +119,69 @@ const BASE_STUDENTS: StudentSeed[] = [
     legajo: "A0006",
   },
 ];
+const RANDOM_STREETS = ["San Martín", "Belgrano", "Rivadavia", "Sarmiento"];
+const RANDOM_NEIGHBORHOODS = ["Centro", "Norte", "Sur", "Este", "Oeste"];
+const RANDOM_LOCALITIES = ["Córdoba", "Villa María", "Río Cuarto", "Alta Gracia"];
+const RANDOM_PROVINCES = ["Córdoba", "Buenos Aires", "Santa Fe", "Mendoza"];
+const RANDOM_COUNTRIES = ["Argentina"];
+const RANDOM_SEX = ["F", "M", "X"];
+const RANDOM_BIRTH_PLACES = ["Córdoba", "Buenos Aires", "Rosario", "Mendoza"];
+const RANDOM_NATIONALITIES = ["Argentina", "Argentina - naturalizado"];
+
+type RandomCommonData = {
+  sex: string | null;
+  birthDate: Date | null;
+  birthPlace: string | null;
+  nationality: string | null;
+};
+
+type RandomAddressData = {
+  street: string | null;
+  number: string | null;
+  floor: string | null;
+  apartment: string | null;
+  neighborhood: string | null;
+  locality: string | null;
+  province: string | null;
+  postalCode: string | null;
+  country: string | null;
+};
+
+const randomItem = <T>(items: T[]): T =>
+  items[Math.floor(Math.random() * items.length)];
+
+const buildRandomAddressData = (): RandomAddressData => {
+  return {
+    street: randomItem(RANDOM_STREETS),
+    number: Math.floor(Math.random() * 4000 + 1).toString(),
+    floor:
+      Math.random() > 0.7
+        ? (Math.floor(Math.random() * 10) + 1).toString()
+        : null,
+    apartment:
+      Math.random() > 0.7
+        ? String.fromCharCode(65 + Math.floor(Math.random() * 5))
+        : null,
+    neighborhood: randomItem(RANDOM_NEIGHBORHOODS),
+    locality: randomItem(RANDOM_LOCALITIES),
+    province: randomItem(RANDOM_PROVINCES),
+    postalCode: (5000 + Math.floor(Math.random() * 500)).toString(),
+    country: randomItem(RANDOM_COUNTRIES),
+  };
+};
+
+const buildRandomCommonData = (): RandomCommonData => {
+  const start = new Date("1970-01-01").getTime();
+  const end = new Date("2005-12-31").getTime();
+  const randomTime = start + Math.random() * (end - start);
+
+  return {
+    sex: randomItem(RANDOM_SEX),
+    birthDate: new Date(randomTime),
+    birthPlace: randomItem(RANDOM_BIRTH_PLACES),
+    nationality: randomItem(RANDOM_NATIONALITIES),
+  };
+};
 
 const ROLE_SLUGS = {
   STUDENT: "student",
@@ -200,6 +266,9 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       );
       const finalExamRepo = manager.getRepository(FinalExam);
       const finalExamStudentRepo = manager.getRepository(FinalExamsStudent);
+      const commonDataRepo = manager.getRepository(CommonData);
+      const addressDataRepo = manager.getRepository(AddressData);
+      const preceptorRepo = manager.getRepository(Preceptor);
 
       const counters = {
         commissionsCreated: 0,
@@ -807,6 +876,89 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       } else {
         console.log("[DummySeed] Final exams -> preload disabled");
       }
+
+      const studentUserIds = (
+        await studentRepo.find({
+          select: ["userId"],
+        })
+      ).map((student) => student.userId);
+      const teacherUserIds = (
+        await teacherRepo.find({
+          select: ["userId"],
+        })
+      ).map((teacher) => teacher.userId);
+      const preceptorUserIds = (
+        await preceptorRepo.find({
+          select: ["userId"],
+        })
+      ).map((preceptor) => preceptor.userId);
+
+      const targetUserIdSet = new Set<string>();
+      studentUserIds.forEach((userId) => {
+        if (userId) {
+          targetUserIdSet.add(userId);
+        }
+      });
+      teacherUserIds.forEach((userId) => {
+        if (userId) {
+          targetUserIdSet.add(userId);
+        }
+      });
+      preceptorUserIds.forEach((userId) => {
+        if (userId) {
+          targetUserIdSet.add(userId);
+        }
+      });
+
+      const targetUserIds = Array.from(targetUserIdSet);
+      let existingCommonDataUserIds = new Set<string>();
+      if (targetUserIds.length > 0) {
+        const existingCommonData = await commonDataRepo.find({
+          select: ["userId"],
+          where: {
+            userId: In(targetUserIds),
+          },
+        });
+        existingCommonDataUserIds = new Set(
+          existingCommonData.map((entry) => entry.userId),
+        );
+      }
+
+      const usersWithoutCommonData = targetUserIds.filter(
+        (userId) => !existingCommonDataUserIds.has(userId),
+      );
+      const commonDataToInsert: CommonData[] = [];
+
+      for (const chunk of chunkArray(usersWithoutCommonData, CHUNK_SIZE)) {
+        const addressEntities: AddressData[] = [];
+        for (const userId of chunk) {
+          const address = addressDataRepo.create(buildRandomAddressData());
+          addressEntities.push(address);
+        }
+
+        const savedAddresses = await addressDataRepo.save(addressEntities);
+        savedAddresses.forEach((address, index) => {
+          const userId = chunk[index];
+          const randomCommon = buildRandomCommonData();
+          const common = commonDataRepo.create({
+            userId,
+            addressDataId: address.id,
+            sex: randomCommon.sex,
+            birthDate: randomCommon.birthDate,
+            birthPlace: randomCommon.birthPlace,
+            nationality: randomCommon.nationality,
+          });
+          commonDataToInsert.push(common);
+        });
+      }
+
+      if (commonDataToInsert.length > 0) {
+        await commonDataRepo.save(commonDataToInsert);
+      }
+
+      console.log(
+        `[DummySeed] Common data -> usersWithoutCommonData=${usersWithoutCommonData.length}, inserted=${commonDataToInsert.length}`,
+      );
 
       const totalSubjectCommissions = await subjectCommissionRepo.count({
         where: { subjectId: In(subjectIds) },

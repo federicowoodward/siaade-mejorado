@@ -6,9 +6,9 @@ export interface UserProfileResult {
   email: string | null;
   cuil: string | null;
   role: { id: number; name: string } | null;
-  isBlocked?: boolean; // agregado para mostrar estado de bloqueo transversal
-  blockedReason?: string | null; // motivo visible mientras isBlocked=true
-  requiresPasswordChange?: boolean; // UI puede forzar rotación en primer login
+  isBlocked?: boolean; 
+  blockedReason?: string | null; 
+  requiresPasswordChange?: boolean; 
 
   userInfo?: {
     id: number;
