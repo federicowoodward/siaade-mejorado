@@ -46,7 +46,10 @@ export class NoticesService {
       else if (role === ROLE.TEACHER) params['audience'] = 'teacher';
       else params['audience'] = 'all';
       const payload = await this.api
-        .request<{ data?: any[]; meta?: any }>('GET', 'notices', undefined, params)
+        .request<{
+          data?: any[];
+          meta?: any;
+        }>('GET', 'notices', undefined, params)
         .toPromise();
       const rows = Array.isArray(payload?.data)
         ? payload?.data
@@ -177,7 +180,8 @@ export class NoticesService {
         : [],
       hasCommissionFilter: Boolean(
         r.hasCommissionFilter ??
-          (Array.isArray(r.commissionTargets) && r.commissionTargets.length > 0),
+          (Array.isArray(r.commissionTargets) &&
+            r.commissionTargets.length > 0),
       ),
     };
   }

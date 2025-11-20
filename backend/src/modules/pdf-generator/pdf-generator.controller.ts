@@ -12,7 +12,7 @@ import {
 @ApiTags("PDF Generator")
 @Controller("generatePdf")
 export class PdfGeneratorController {
-  constructor(private readonly pdfGeneratorService: PdfGeneratorService) { }
+  constructor(private readonly pdfGeneratorService: PdfGeneratorService) {}
 
   // ---------------------------------------------------------
   // STUDENT CERTIFICATE
@@ -45,7 +45,7 @@ export class PdfGeneratorController {
   })
   async getStudentCertificate(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const pdf =
       await this.pdfGeneratorService.getStudentCertificatePdf(studentId);
@@ -114,7 +114,7 @@ export class PdfGeneratorController {
   })
   async getExamRegistrationReceipt(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const pdf =
       await this.pdfGeneratorService.getExamRegistrationReceiptPdf(studentId);
@@ -148,9 +148,7 @@ export class PdfGeneratorController {
     @Res() res: Response,
   ) {
     const html =
-      await this.pdfGeneratorService.getExamRegistrationReceiptHtml(
-        studentId,
-      );
+      await this.pdfGeneratorService.getExamRegistrationReceiptHtml(studentId);
     return this.sendHtml(res, html);
   }
 
@@ -185,7 +183,7 @@ export class PdfGeneratorController {
   })
   async getAcademicPerformance(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const pdf =
       await this.pdfGeneratorService.getAcademicPerformancePdf(studentId);
@@ -241,5 +239,4 @@ export class PdfGeneratorController {
 
     return res.send(html);
   }
-
 }

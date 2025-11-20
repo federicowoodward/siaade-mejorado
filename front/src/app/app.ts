@@ -29,14 +29,12 @@ export class App {
 
   // Observable para estado de bloqueo
   blocked$: Observable<{ blocked: boolean; reason: string | null }> =
-    this.authService
-      .getUser()
-      .pipe(
-        map((u) => ({
-          blocked: !!u?.isBlocked,
-          reason: (u as any)?.blockedReason ?? null,
-        })),
-      );
+    this.authService.getUser().pipe(
+      map((u) => ({
+        blocked: !!u?.isBlocked,
+        reason: (u as any)?.blockedReason ?? null,
+      })),
+    );
 
   get sidebarVisible() {
     return this.drawerVisibility.sidebarVisible();

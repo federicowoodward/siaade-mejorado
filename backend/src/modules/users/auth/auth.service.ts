@@ -104,13 +104,13 @@ export class AuthService {
     const isPlainTextPassword = validationResult.isPlainText;
 
     const { profile, payload } = await this.resolveProfileAndPayload(userId);
-    
+
     // Si la contraseña es texto plano, forzar cambio de contraseña
     if (isPlainTextPassword) {
       payload.requiresPasswordChange = true;
       (profile as any).requiresPasswordChange = true;
     }
-    
+
     const { accessToken, refreshToken } = this.issueTokens(payload);
 
     return {

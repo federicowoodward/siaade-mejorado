@@ -7,7 +7,10 @@ import puppeteer, { PDFOptions } from "puppeteer";
 @Injectable()
 export class PdfEngineService {
   private readonly logger = new Logger(PdfEngineService.name);
-  private readonly templateCache = new Map<string, HandlebarsTemplateDelegate>();
+  private readonly templateCache = new Map<
+    string,
+    HandlebarsTemplateDelegate
+  >();
   private readonly isProduction = process.env.NODE_ENV === "production";
 
   /**
@@ -50,7 +53,9 @@ export class PdfEngineService {
     return Handlebars.compile(templateSource);
   }
 
-  private getCompiledTemplate(templateName: string): HandlebarsTemplateDelegate {
+  private getCompiledTemplate(
+    templateName: string,
+  ): HandlebarsTemplateDelegate {
     if (!this.isProduction) {
       return this.compileTemplate(templateName);
     }

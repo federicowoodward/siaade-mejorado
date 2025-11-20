@@ -497,7 +497,8 @@ export class MesasListComponent implements OnInit {
         // Determine effective window state: prefer call.enrollmentWindow.state but
         // if we forced opens/closes above for an enrolled call, treat it as 'open'.
         const effectiveState =
-          call.enrollmentWindow.state === 'open' || (call.enrolled && opens && closes)
+          call.enrollmentWindow.state === 'open' ||
+          (call.enrolled && opens && closes)
             ? 'open'
             : call.enrollmentWindow.state;
 
@@ -550,10 +551,7 @@ export class MesasListComponent implements OnInit {
     };
   }
 
-  private describeWindowRange(
-    opens: Date | null,
-    closes: Date | null,
-  ): string {
+  private describeWindowRange(opens: Date | null, closes: Date | null): string {
     const formatter = this.shortDateFormatter;
     if (opens && closes) {
       return `${formatter.format(opens)} - ${formatter.format(closes)}`;
@@ -848,4 +846,3 @@ export class MesasListComponent implements OnInit {
     );
   }
 }
-

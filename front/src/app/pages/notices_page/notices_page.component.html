@@ -24,23 +24,32 @@
     ></p-editor>
 
     <label class="mt-2">Visible para:</label>
-    <select [(ngModel)]="newNotice.visibleFor" (ngModelChange)="onVisibleForChange()">
+    <select
+      [(ngModel)]="newNotice.visibleFor"
+      (ngModelChange)="onVisibleForChange()"
+    >
       <option value="all">Todos</option>
       <option value="student">Alumnos</option>
       <option value="teacher">Profesores</option>
     </select>
 
-    <div class="year-selector" *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0">
+    <div
+      class="year-selector"
+      *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0"
+    >
       <label>Años destino</label>
-      <select multiple [(ngModel)]="selectedYearNumbers" (change)="onYearSelectionChange($event)">
-        <option
-          *ngFor="let year of availableYears()"
-          [ngValue]="year"
-        >
+      <select
+        multiple
+        [(ngModel)]="selectedYearNumbers"
+        (change)="onYearSelectionChange($event)"
+      >
+        <option *ngFor="let year of availableYears()" [ngValue]="year">
           {{ year }}° año
         </option>
       </select>
-      <small>Si no seleccionás ningún año se publicará para todos los años.</small>
+      <small
+        >Si no seleccionás ningún año se publicará para todos los años.</small
+      >
     </div>
 
     <div class="commission-selector" *ngIf="segmentByCommission()">
@@ -74,13 +83,13 @@
         <small class="meta">
           Destinatarios:
           {{
-            n.visibleFor === 'student'
-              ? 'Alumnos'
-              : n.visibleFor === 'teacher'
-                ? 'Docentes'
-                : 'Todos'
+            n.visibleFor === "student"
+              ? "Alumnos"
+              : n.visibleFor === "teacher"
+                ? "Docentes"
+                : "Todos"
           }}
-          · {{ n.createdBy }} · {{ n.createdAt | date: 'dd/MM/yyyy' }}
+          · {{ n.createdBy }} · {{ n.createdAt | date: "dd/MM/yyyy" }}
         </small>
         <div class="commission-targets" *ngIf="segmentByCommission()">
           <ng-container *ngIf="n.hasCommissionFilter; else allCommissionsTpl">
@@ -99,7 +108,11 @@
         </div>
 
         <button
-          *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]"
+          *appCanAnyRole="[
+            ROLE.SECRETARY,
+            ROLE.PRECEPTOR,
+            ROLE.EXECUTIVE_SECRETARY,
+          ]"
           pButton
           type="button"
           label="Eliminar"
@@ -111,4 +124,3 @@
     </li>
   </ul>
 </div>
-

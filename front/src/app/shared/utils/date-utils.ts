@@ -1,4 +1,6 @@
-export function formatDDMMYYYY(value: string | number | Date | null | undefined): string {
+export function formatDDMMYYYY(
+  value: string | number | Date | null | undefined,
+): string {
   if (value === null || value === undefined || value === '') return '';
   try {
     const d = value instanceof Date ? value : new Date(value);
@@ -11,4 +13,3 @@ export function formatDDMMYYYY(value: string | number | Date | null | undefined)
     return '';
   }
 }
-

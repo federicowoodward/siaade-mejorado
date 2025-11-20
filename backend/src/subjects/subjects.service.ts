@@ -60,7 +60,11 @@ type GradeAuditChange = {
 type CommissionWithRole = {
   commission: Pick<
     SubjectCommission,
-    "id" | "subjectId" | "teacherId" | "gradeWindowOpenedAt" | "gradeWindowExpiresAt"
+    | "id"
+    | "subjectId"
+    | "teacherId"
+    | "gradeWindowOpenedAt"
+    | "gradeWindowExpiresAt"
   >;
   role: ROLE;
   gradeWindow: GradeWindowState;
@@ -79,14 +83,14 @@ export class SubjectsService {
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
     @InjectRepository(Subject)
     private readonly subjectRepo: Repository<Subject>,
-  @InjectRepository(SubjectGradesView)
-  private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
-  @InjectRepository(User)
-  private readonly userRepo: Repository<User>,
-  @InjectRepository(SubjectGradeAudit)
-  private readonly gradeAuditRepo: Repository<SubjectGradeAudit>,
-  private readonly dataSource: DataSource,
-) {}
+    @InjectRepository(SubjectGradesView)
+    private readonly subjectGradesViewRepo: Repository<SubjectGradesView>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(SubjectGradeAudit)
+    private readonly gradeAuditRepo: Repository<SubjectGradeAudit>,
+    private readonly dataSource: DataSource,
+  ) {}
 
   private readonly teacherGradeWindowDays = Math.max(
     Number(process.env.TEACHER_GRADE_EDIT_WINDOW_DAYS ?? 10),
@@ -708,9 +712,7 @@ export class SubjectsService {
     let expiresAt = commission.gradeWindowExpiresAt ?? null;
 
     const shouldAutoStart =
-      options?.autoStart &&
-      this.teacherGradeWindowDays > 0 &&
-      !openedAt;
+      options?.autoStart && this.teacherGradeWindowDays > 0 && !openedAt;
 
     if (shouldAutoStart) {
       openedAt = new Date();

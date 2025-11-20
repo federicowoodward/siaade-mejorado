@@ -50,7 +50,9 @@ export class AcademicStatusComponent implements OnInit {
   readonly loading = this.statusService.loading;
   readonly summary = this.statusService.summary;
 
-  private readonly legacyYearGroups = computed(() => this.buildLegacyYearGroups());
+  private readonly legacyYearGroups = computed(() =>
+    this.buildLegacyYearGroups(),
+  );
 
   readonly headerVm = computed<HeaderViewModel>(() => this.buildHeaderVm());
   private readonly summaryYearBlocks = computed<YearBlock[]>(() =>
@@ -64,7 +66,9 @@ export class AcademicStatusComponent implements OnInit {
     // When the summary endpoint cannot provide grouped years we fall back to the
     // legacy card grouping so the UI remains usable.
     const summaryBlocks = this.summaryYearBlocks();
-    const blocks = summaryBlocks.length ? summaryBlocks : this.fallbackYearBlocks();
+    const blocks = summaryBlocks.length
+      ? summaryBlocks
+      : this.fallbackYearBlocks();
     const limit = this.summary()?.currentAcademicYear ?? null;
     if (!limit || limit <= 0) return blocks;
     return blocks.filter((block) => block.year <= limit);
@@ -81,7 +85,9 @@ export class AcademicStatusComponent implements OnInit {
       .subscribe();
   }
 
-  stateSeverity(condition: string | null): 'success' | 'info' | 'danger' | 'warning' {
+  stateSeverity(
+    condition: string | null,
+  ): 'success' | 'info' | 'danger' | 'warning' {
     if (!condition) return 'warning';
     const value = condition.toLowerCase();
     if (value.includes('promo') || value.includes('apro')) return 'success';
@@ -118,7 +124,9 @@ export class AcademicStatusComponent implements OnInit {
       fullName: normalizedName,
       documentNumber,
       careerPlanName: this.normalizeText(summary?.careerPlanName),
-      registeredSinceLabel: this.formatRegisteredSince(summary?.registeredSince),
+      registeredSinceLabel: this.formatRegisteredSince(
+        summary?.registeredSince,
+      ),
       currentYearLabel: this.academicYearText(summary?.currentAcademicYear),
       currentYearNumber: summary?.currentAcademicYear ?? null,
     };
@@ -134,13 +142,17 @@ export class AcademicStatusComponent implements OnInit {
       .sort((a, b) => a.year - b.year);
   }
 
-  private toYearBlocksFromCards(groups: Array<{
-    label: string;
-    order: number;
-    subjects: StudentSubjectCard[];
-  }>): YearBlock[] {
+  private toYearBlocksFromCards(
+    groups: Array<{
+      label: string;
+      order: number;
+      subjects: StudentSubjectCard[];
+    }>,
+  ): YearBlock[] {
     return groups.map((group) => ({
-      year: Number.isFinite(group.order) ? group.order : Number.POSITIVE_INFINITY,
+      year: Number.isFinite(group.order)
+        ? group.order
+        : Number.POSITIVE_INFINITY,
       label: group.label,
       subjects: group.subjects.map((card) => ({
         id: card.subjectId,
@@ -158,11 +170,18 @@ export class AcademicStatusComponent implements OnInit {
     order: number;
     subjects: StudentSubjectCard[];
   }> {
-    const map = new Map<string, { label: string; order: number; subjects: StudentSubjectCard[] }>();
+    const map = new Map<
+      string,
+      { label: string; order: number; subjects: StudentSubjectCard[] }
+    >();
     this.cards().forEach((card) => {
       const key = card.yearLabel;
       if (!map.has(key)) {
-        map.set(key, { label: key, order: this.getYearOrder(card), subjects: [] });
+        map.set(key, {
+          label: key,
+          order: this.getYearOrder(card),
+          subjects: [],
+        });
       }
       map.get(key)!.subjects.push(card);
     });
@@ -173,11 +192,16 @@ export class AcademicStatusComponent implements OnInit {
   }
 
   private sortSubjects(subjects: StudentSubjectCard[]): StudentSubjectCard[] {
-    return [...subjects].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+    return [...subjects].sort((a, b) =>
+      a.subjectName.localeCompare(b.subjectName),
+    );
   }
 
   private getYearOrder(card: StudentSubjectCard): number {
-    if (typeof card.yearNumber === 'number' && Number.isFinite(card.yearNumber)) {
+    if (
+      typeof card.yearNumber === 'number' &&
+      Number.isFinite(card.yearNumber)
+    ) {
       return card.yearNumber;
     }
     const match = card.yearLabel.match(/\d+/);
@@ -203,11 +227,7 @@ export class AcademicStatusComponent implements OnInit {
   }
 
   private academicYearText(value: number | null | undefined): string {
-    if (
-      typeof value !== 'number' ||
-      !Number.isFinite(value) ||
-      value <= 0
-    ) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
       return '-';
     }
     return `${value}.º año`;
@@ -216,7 +236,9 @@ export class AcademicStatusComponent implements OnInit {
   private composeFallbackName(): string | null {
     const snapshot = this.cards();
     if (!snapshot.length) return null;
-    const names = new Set(snapshot.map((card) => card?.subjectName ?? '').filter(Boolean));
+    const names = new Set(
+      snapshot.map((card) => card?.subjectName ?? '').filter(Boolean),
+    );
     if (!names.size) return null;
     return Array.from(names)[0];
   }

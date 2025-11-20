@@ -119,7 +119,8 @@ export class FinalExamCreateDialogComponent implements OnChanges {
         this.messages.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'No se pudieron cargar las materias. Por favor, intenta nuevamente.',
+          detail:
+            'No se pudieron cargar las materias. Por favor, intenta nuevamente.',
         });
       },
     });

@@ -126,8 +126,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   ];
   readonly teacherHasRestrictions = computed(
     () =>
-      this.rbac.has(ROLE.TEACHER) &&
-      !this.rbac.hasAny(this.teacherBypassRoles),
+      this.rbac.has(ROLE.TEACHER) && !this.rbac.hasAny(this.teacherBypassRoles),
   );
   readonly commissionWindows = computed(() => {
     const map = new Map<number, TeacherWindowState | null>();
@@ -174,9 +173,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     return `Plazo cerrado para docentes.${when} Gestioná el cambio con Secretaría.`;
   }
 
-  private canEditCommission(
-    commissionId: number | null | undefined,
-  ): boolean {
+  private canEditCommission(commissionId: number | null | undefined): boolean {
     if (!this.teacherHasRestrictions()) {
       return true;
     }
@@ -270,8 +267,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         return { label: option.letter ?? 'Todas', value: option.id };
       }
       const window = this.commissionWindows().get(option.id);
-      const suffix =
-        window?.status === 'closed' ? ' · Plazo cerrado' : '';
+      const suffix = window?.status === 'closed' ? ' · Plazo cerrado' : '';
       return {
         label: `${option.letter ?? `Comision ${option.id}`}${suffix}`,
         value: option.id,
@@ -890,9 +886,3 @@ type CommissionPayload = {
   body: { rows: CommissionPayloadRow[] };
   studentIds: string[];
 };
-
-
-
-
-
-

@@ -3,7 +3,8 @@
     <h2 class="m-0">
       {{ table()?.name || 'Mesa' }}
       <small class="text-color-secondary block">
-        {{ table()?.start_date | date:'dd/MM/yyyy' }} → {{ table()?.end_date | date:'dd/MM/yyyy' }}
+        {{ table()?.start_date | date:'dd/MM/yyyy' }} → {{ table()?.end_date |
+        date:'dd/MM/yyyy' }}
       </small>
     </h2>
 
@@ -86,4 +87,3 @@
   [maxDate]="maxDate"
   (submit)="handleCreate($event)"
 ></app-final-exam-create-dialog>
-

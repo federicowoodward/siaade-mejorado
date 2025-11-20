@@ -5,7 +5,9 @@
   >
     <div class="flex flex-column gap-3 md:flex-1">
       <div>
-        <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
+        <p
+          class="text-sm text-color-secondary m-0 text-uppercase tracking-wide"
+        >
           Alumno / Situación académica
         </p>
         <h2 class="m-0 text-2xl font-semibold">Resumen académico</h2>
@@ -86,20 +88,24 @@
       No encontramos materias activas para tu legajo.
     </div>
 
-    <ng-container *ngFor="let block of visibleYearBlocks(); trackBy: trackYearBlock">
+    <ng-container
+      *ngFor="let block of visibleYearBlocks(); trackBy: trackYearBlock"
+    >
       <div class="surface-card shadow-1 border-round p-3">
         <div
           class="flex flex-column gap-2 mb-3 md:flex-row md:align-items-center md:justify-content-between"
         >
           <div>
-            <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
+            <p
+              class="m-0 text-sm text-color-secondary text-uppercase tracking-wide"
+            >
               Año académico
             </p>
             <h3 class="m-0 text-xl font-semibold">{{ block.label }}</h3>
           </div>
           <span class="text-sm text-color-secondary">
             {{ block.subjects.length }}
-            {{ block.subjects.length === 1 ? 'materia' : 'materias' }}
+            {{ block.subjects.length === 1 ? "materia" : "materias" }}
           </span>
         </div>
 
@@ -123,8 +129,8 @@
               <td class="subject-cell">
                 <span class="subject-name">{{ row.name }}</span>
               </td>
-              <td>{{ row.calendarYear ?? '-' }}</td>
-              <td>{{ row.division || 'Sin división' }}</td>
+              <td>{{ row.calendarYear ?? "-" }}</td>
+              <td>{{ row.division || "Sin división" }}</td>
               <td>
                 <p-tag
                   [value]="row.finalCondition || 'Sin estado'"
@@ -132,7 +138,7 @@
                 ></p-tag>
               </td>
               <td>
-                <span class="text-sm">{{ row.lastExamSummary || '-' }}</span>
+                <span class="text-sm">{{ row.lastExamSummary || "-" }}</span>
               </td>
               <td class="text-center">
                 <div class="status-actions">

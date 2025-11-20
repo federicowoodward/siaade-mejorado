@@ -43,9 +43,7 @@ export class PdfGeneratorService {
     );
   }
 
-  async getStudentCertificateHtml(
-    studentId: string | number,
-  ): Promise<string> {
+  async getStudentCertificateHtml(studentId: string | number): Promise<string> {
     const payload = await this.buildStudentCertificatePayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "student-certificate",
@@ -56,8 +54,7 @@ export class PdfGeneratorService {
   async getExamRegistrationReceiptPdf(
     studentId: string | number,
   ): Promise<Buffer> {
-    const payload =
-      await this.buildExamRegistrationReceiptPayload(studentId);
+    const payload = await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
       "exam-registration-receipt",
       payload,
@@ -67,17 +64,14 @@ export class PdfGeneratorService {
   async getExamRegistrationReceiptHtml(
     studentId: string | number,
   ): Promise<string> {
-    const payload =
-      await this.buildExamRegistrationReceiptPayload(studentId);
+    const payload = await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "exam-registration-receipt",
       payload,
     );
   }
 
-  async getAcademicPerformancePdf(
-    studentId: string | number,
-  ): Promise<Buffer> {
+  async getAcademicPerformancePdf(studentId: string | number): Promise<Buffer> {
     const payload = await this.buildAcademicPerformancePayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
       "academic-performance",

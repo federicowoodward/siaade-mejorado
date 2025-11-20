@@ -5,8 +5,6 @@ import { CommonModule } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
 
-
-
 import { TableModule } from 'primeng/table';
 
 import { Button } from 'primeng/button';
@@ -25,36 +23,24 @@ import { BlockedActionDirective } from '../../../shared/directives/blocked-actio
 
 import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
 
-
-
 import { ActivatedRoute, Router } from '@angular/router';
 
 import {
-
   FinalExamStudentsService,
-
   FinalExamDetailDto,
-
   FinalExamStudentDto,
-
 } from '../../../core/services/final-exam-students.service';
 
 import {
-
   ApiService,
-
   ToggleEnrollmentResponse,
-
 } from '../../../core/services/api.service';
 
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 
 import { MessageService } from 'primeng/api';
 
-
-
 type Row = {
-
   id: number;
 
   student_id: string;
@@ -68,19 +54,14 @@ type Row = {
   score: number | null;
 
   notes: string;
-
 };
 
-
-
 @Component({
-
   selector: 'app-final-exam-page',
 
   standalone: true,
 
   imports: [
-
     CommonModule,
 
     FormsModule,
@@ -102,7 +83,6 @@ type Row = {
     ToastModule,
 
     CanAnyRoleDirective,
-
   ],
 
   templateUrl: './final-exam-page.html',
@@ -110,11 +90,8 @@ type Row = {
   styleUrls: ['./final-exam-page.scss'],
 
   providers: [MessageService],
-
 })
-
 export class FinalExamPage implements OnInit {
-
   private route = inject(ActivatedRoute);
 
   private router = inject(Router);
@@ -127,17 +104,11 @@ export class FinalExamPage implements OnInit {
 
   private syncService = inject(ExamTableSyncService);
 
-
-
   examId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
-
-
 
   // header del examen
 
   exam = signal<FinalExamDetailDto | null>(null);
-
-
 
   // filas de alumnos (derivadas del DTO)
 
@@ -149,44 +120,27 @@ export class FinalExamPage implements OnInit {
 
   error = signal<string | null>(null);
 
-
-
   // flags para edición futura (por ahora inputs deshabilitados)
 
   canEditScores = signal<boolean>(false);
 
   canEditNotes = signal<boolean>(false);
 
-
-
   ngOnInit(): void {
-
     this.fetch();
-
   }
 
-
-
   private fetch() {
-
     this.loading.set(true);
 
     this.error.set(null);
 
-
-
     this.svc.getExamDetail(this.examId).subscribe({
-
       next: (data) => {
-
         this.exam.set(data);
 
-
-
         const mapped: Row[] = (data.students ?? []).map(
-
           (s: FinalExamStudentDto) => ({
-
             id: s.id,
 
             student_id: s.student_id,
@@ -200,51 +154,35 @@ export class FinalExamPage implements OnInit {
             score: s.score,
 
             notes: s.notes ?? '',
-
-          })
-
+          }),
         );
 
         this.rows.set(mapped);
 
         this.loading.set(false);
-
       },
 
       error: (e) => {
-
         console.error('[FinalExamPage] load error', e);
 
         this.error.set(e?.error?.message ?? 'No se pudo cargar el examen');
 
         this.loading.set(false);
-
       },
-
     });
-
   }
 
-
-
   back() {
-
     const tableId = this.exam()?.table_id ?? 0;
 
     this.router.navigate(['../../table', tableId], { relativeTo: this.route });
-
   }
 
-
-
   onToggleExamEnrollment(row: Row, action: 'enroll' | 'unenroll') {
-
     const exam = this.exam();
 
     if (!exam) {
-
       return;
-
     }
 
     this.loadingRow.set(row.student_id);
@@ -254,37 +192,28 @@ export class FinalExamPage implements OnInit {
     this.api
 
       .toggleFinalEnrollment({
-
         finalExamId: exam.id,
 
         studentId: row.student_id,
 
         action,
-
       })
 
       .subscribe({
-
         next: (res: ToggleEnrollmentResponse) => {
-
           const enrolled = !!res?.enrolled;
 
           row.enrolled = enrolled;
 
-          row.enrolled_at = enrolled ? res?.enrolled_at ?? null : null;
+          row.enrolled_at = enrolled ? (res?.enrolled_at ?? null) : null;
 
           const dateLabel = res?.enrolled_at
-
             ? formatDDMMYYYY(res.enrolled_at)
             : '';
           this.toastOk(
-
             enrolled
-
               ? `Alumno inscripto${dateLabel ? ` (${dateLabel})` : ''}`
-
-              : 'Alumno desinscripto'
-
+              : 'Alumno desinscripto',
           );
 
           // Notificar cambios a través del ExamTableSyncService
@@ -295,63 +224,39 @@ export class FinalExamPage implements OnInit {
               mesaId: this.exam()?.table_id,
             });
           }
-
         },
 
         error: (err: unknown) => {
-
           console.error('Error toggling exam enrollment', err);
 
           this.toastErr('No se pudo actualizar la inscripción');
 
           finalize();
-
         },
 
         complete: finalize,
-
       });
-
   }
-
-
 
   private toastOk(summary: string) {
-
     this.messages.add({ severity: 'success', summary });
-
   }
-
-
 
   private toastErr(detail: string) {
-
     this.messages.add({ severity: 'error', summary: 'Error', detail });
-
   }
-
-
 
   // helpers para el tag de estado
 
   isAprobado(r: Row) {
-
     return r.score != null && r.score >= 6;
-
   }
 
   isDesaprobado(r: Row) {
-
     return r.score != null && r.score < 6;
-
   }
 
   isInscripto(r: Row) {
-
     return r.score == null && !!r.enrolled_at;
-
   }
-
 }
-
-

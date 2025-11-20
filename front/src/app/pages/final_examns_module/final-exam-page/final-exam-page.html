@@ -4,8 +4,8 @@
     <h2 class="m-0">
       Examen • {{ exam()?.subject_name || 'Materia' }}
       <small class="text-color-secondary block">
-        Fecha: {{ exam()?.exam_date | date:'dd/MM/yyyy' }} • Hora: {{ exam()?.exam_time }} • Aula:
-        {{ exam()?.aula || '—' }}
+        Fecha: {{ exam()?.exam_date | date:'dd/MM/yyyy' }} • Hora: {{
+        exam()?.exam_time }} • Aula: {{ exam()?.aula || '—' }}
       </small>
     </h2>
 
@@ -133,4 +133,3 @@
     ></p-button>
   </div>
 </div>
-

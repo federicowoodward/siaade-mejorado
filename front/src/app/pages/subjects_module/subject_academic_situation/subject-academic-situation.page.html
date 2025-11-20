@@ -42,10 +42,7 @@
       {{ notice }}
     </div>
 
-    <div
-      class="grade-window-status"
-      *ngIf="teacherWindowCards().length > 0"
-    >
+    <div class="grade-window-status" *ngIf="teacherWindowCards().length > 0">
       <div
         class="grade-window-status__card"
         *ngFor="let card of teacherWindowCards()"
@@ -58,8 +55,8 @@
           ></p-tag>
         </div>
         <small *ngIf="card.closesAt">
-          {{ card.status === 'open' ? 'Cierra' : 'Cerró' }}:
-          {{ card.closesAt | date: 'dd/MM/yyyy' }}
+          {{ card.status === 'open' ? 'Cierra' : 'Cerró' }}: {{ card.closesAt |
+          date: 'dd/MM/yyyy' }}
         </small>
       </div>
     </div>

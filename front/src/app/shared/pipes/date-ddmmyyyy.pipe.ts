@@ -11,4 +11,3 @@ export class DateDdmmyyyyPipe implements PipeTransform {
     return formatDDMMYYYY(value);
   }
 }
-

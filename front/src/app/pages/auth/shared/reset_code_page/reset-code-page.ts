@@ -159,9 +159,7 @@ export class ResetCodePage implements OnDestroy {
       const result =
         this.mode === 'change'
           ? await firstValueFrom(this.auth.requestPasswordChangeCode())
-          : await firstValueFrom(
-              this.auth.requestPasswordRecovery(identity!),
-            );
+          : await firstValueFrom(this.auth.requestPasswordRecovery(identity!));
 
       if (result.ok) {
         this.message.add({

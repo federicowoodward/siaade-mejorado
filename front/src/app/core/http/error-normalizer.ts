@@ -43,9 +43,10 @@ function extractMessages(payload: any): string[] {
   return [];
 }
 
-function coercePayload(
-  error: unknown,
-): { payload: any; rawMessage: string | null } {
+function coercePayload(error: unknown): {
+  payload: any;
+  rawMessage: string | null;
+} {
   if (!error) {
     return { payload: {}, rawMessage: null };
   }
@@ -89,10 +90,7 @@ function normalizeFromPayload(
   const details = payload?.details ?? null;
   const code: string | null = payload?.code ?? details?.code ?? null;
   const reason: string | null = payload?.reason ?? details?.reason ?? null;
-  const messages = [
-    ...extractMessages(details),
-    ...extractMessages(payload),
-  ];
+  const messages = [...extractMessages(details), ...extractMessages(payload)];
   const fallbackMsg =
     messages[0] || rawMessage || fallbackMessage || 'Error desconocido';
   const resolvedMessage = messages[0] || fallbackMsg;

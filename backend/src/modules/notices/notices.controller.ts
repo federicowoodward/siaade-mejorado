@@ -53,10 +53,7 @@ export class NoticesController {
   @Patch(":id")
   @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @ApiOperation({ summary: "Editar aviso/post" })
-  update(
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: UpdateNoticeDto,
-  ) {
+  update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateNoticeDto) {
     return this.service.update(id, dto);
   }
 

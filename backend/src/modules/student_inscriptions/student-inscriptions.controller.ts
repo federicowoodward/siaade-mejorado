@@ -73,7 +73,9 @@ export class StudentInscriptionsController {
     description: "Exámenes donde hay inscripción activa (enrolledAt != null)",
   })
   async listEnrolledExamTables(@Req() req: Request) {
-    const studentId = ((req.user as any)?.id ?? (req.user as any)?.sub ?? (req.user as any)?.userId) as string | undefined;
+    const studentId = ((req.user as any)?.id ??
+      (req.user as any)?.sub ??
+      (req.user as any)?.userId) as string | undefined;
     if (!studentId) {
       return { data: [] };
     }
@@ -120,8 +122,10 @@ export class StudentInscriptionsController {
       const group = groups.get(key);
       // Calculate default opens/closes using examDate when table dates are missing
       const examDay = fe.examDate?.toISOString?.().split("T")[0] ?? null;
-      const defaultOpens = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay;
-      let defaultCloses = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+      const defaultOpens =
+        fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay;
+      let defaultCloses =
+        fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
       if (!defaultCloses && examDay) {
         const tmp = new Date(examDay);
         tmp.setDate(tmp.getDate() + 1);
@@ -174,8 +178,10 @@ export class StudentInscriptionsController {
     @Query("to") to?: string,
     @Query("windowState") windowState: WindowState | "all" = "open",
   ) {
-    const studentId = ((req.user as any)?.id ?? (req.user as any)?.sub ?? (req.user as any)?.userId) as string | undefined;
-    
+    const studentId = ((req.user as any)?.id ??
+      (req.user as any)?.sub ??
+      (req.user as any)?.userId) as string | undefined;
+
     // PASO 1: Obtener TODOS los exámenes disponibles (con filtros opcionales)
     const qb = this.finalRepo
       .createQueryBuilder("f")
@@ -271,8 +277,12 @@ export class StudentInscriptionsController {
         const key = `${fe.examTableId}:${fe.subjectId}`;
         if (!enrolledGroups.has(key)) {
           // Use examDate as fallback for table dates; ensure closesAt defaults to next day
-          const tableOpens = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? fe.examDate?.toISOString?.().split("T")[0] ?? null;
-          let tableCloses = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+          const tableOpens =
+            fe.examTable.startDate?.toISOString?.().split("T")[0] ??
+            fe.examDate?.toISOString?.().split("T")[0] ??
+            null;
+          let tableCloses =
+            fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
           if (!tableCloses && fe.examDate) {
             const tmp = new Date(fe.examDate.toISOString().split("T")[0]);
             tmp.setDate(tmp.getDate() + 1);
@@ -303,8 +313,10 @@ export class StudentInscriptionsController {
         const group = enrolledGroups.get(key);
         // Ensure each available call also inherits the table defaults with examDate fallback
         const examDay2 = fe.examDate?.toISOString?.().split("T")[0] ?? null;
-        const opens2 = fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay2;
-        let closes2 = fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
+        const opens2 =
+          fe.examTable.startDate?.toISOString?.().split("T")[0] ?? examDay2;
+        let closes2 =
+          fe.examTable.endDate?.toISOString?.().split("T")[0] ?? null;
         if (!closes2 && examDay2) {
           const tmp2 = new Date(examDay2);
           tmp2.setDate(tmp2.getDate() + 1);
@@ -332,12 +344,12 @@ export class StudentInscriptionsController {
       // Mezclar: los inscritos tienen prioridad (no filtrados por ventana)
       // pero mantenemos los disponibles también
       const merged = new Map<string, any>();
-      
+
       // Primero agrega los inscritos (SIN filtro de ventana)
       for (const [key, group] of enrolledGroups) {
         merged.set(key, group);
       }
-      
+
       // Luego agrega los disponibles que no están en inscritos
       for (const group of result) {
         const key = `${group.mesaId}:${group.subjectId}`;
@@ -366,24 +378,26 @@ export class StudentInscriptionsController {
         for (const g of result) {
           let any = false;
           g.availableCalls = g.availableCalls.map((c: any) => {
-              const enrolled = enrolledByFinal.has(Number(c.id));
-              if (enrolled) any = true;
-              // If student is enrolled and the call/window doesn't have a closesAt,
-              // assume the window lasts the exam day and closes the next day.
-              const examDateStr = c.examDate ?? null;
-              const enrollmentWindow = c.enrollmentWindow ? { ...c.enrollmentWindow } : { id: null, label: null, opensAt: null, closesAt: null };
-              if (enrolled) {
-                if (!enrollmentWindow.opensAt && examDateStr) {
-                  enrollmentWindow.opensAt = examDateStr;
-                }
-                if (!enrollmentWindow.closesAt && examDateStr) {
-                  const dt = new Date(examDateStr);
-                  dt.setDate(dt.getDate() + 1);
-                  enrollmentWindow.closesAt = dt.toISOString().split("T")[0];
-                }
+            const enrolled = enrolledByFinal.has(Number(c.id));
+            if (enrolled) any = true;
+            // If student is enrolled and the call/window doesn't have a closesAt,
+            // assume the window lasts the exam day and closes the next day.
+            const examDateStr = c.examDate ?? null;
+            const enrollmentWindow = c.enrollmentWindow
+              ? { ...c.enrollmentWindow }
+              : { id: null, label: null, opensAt: null, closesAt: null };
+            if (enrolled) {
+              if (!enrollmentWindow.opensAt && examDateStr) {
+                enrollmentWindow.opensAt = examDateStr;
               }
-              return { ...c, enrolled, enrollmentWindow };
-            });
+              if (!enrollmentWindow.closesAt && examDateStr) {
+                const dt = new Date(examDateStr);
+                dt.setDate(dt.getDate() + 1);
+                enrollmentWindow.closesAt = dt.toISOString().split("T")[0];
+              }
+            }
+            return { ...c, enrolled, enrollmentWindow };
+          });
           g.duplicateEnrollment = any;
         }
       }
@@ -440,7 +454,7 @@ export class StudentInscriptionsController {
       if (now.getTime() > end) return "past";
       return "open";
     };
-    
+
     const filtered =
       windowState && windowState !== "all"
         ? result.filter((g) => {
@@ -561,7 +575,8 @@ export class StudentInscriptionsController {
       // Detectar si es preceptor o estudiante
       const currentUser = req.user as any;
       const userRole = currentUser?.role;
-      (link as any).enrolledBy = userRole === ROLE.PRECEPTOR ? "preceptor" : "student";
+      (link as any).enrolledBy =
+        userRole === ROLE.PRECEPTOR ? "preceptor" : "student";
       await this.linkRepo.save(link as any);
 
       await this.auditSafeSave({

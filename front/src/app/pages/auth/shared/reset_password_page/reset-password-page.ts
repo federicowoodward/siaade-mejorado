@@ -184,9 +184,7 @@ export class ResetPasswordPage {
     }
   }
 
-  private handleResetError(
-    failure?: ConfirmPasswordResetResult,
-  ): void {
+  private handleResetError(failure?: ConfirmPasswordResetResult): void {
     if (!failure || failure.ok) {
       this.serverError = 'No se pudo actualizar la contraseña.';
       this.message.add({
@@ -197,8 +195,7 @@ export class ResetPasswordPage {
       return;
     }
 
-    const detail =
-      failure.message || 'No se pudo actualizar la contraseña.';
+    const detail = failure.message || 'No se pudo actualizar la contraseña.';
 
     if (failure.kind === 'invalid_credentials') {
       this.currentError = detail;

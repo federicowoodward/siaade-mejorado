@@ -293,15 +293,12 @@ export class StudentStatusService {
       lastName,
       fullName: this.composeFullName(firstName, lastName, providedFullName),
       documentType:
-        typeof payload?.documentType === 'string'
-          ? payload.documentType
-          : null,
+        typeof payload?.documentType === 'string' ? payload.documentType : null,
       documentNumber:
         typeof payload?.documentNumber === 'string'
           ? payload.documentNumber
           : null,
-      legajo:
-        typeof payload?.legajo === 'string' ? payload.legajo : null,
+      legajo: typeof payload?.legajo === 'string' ? payload.legajo : null,
       studentStartYear: this.toNumber(payload?.studentStartYear),
       careerPlanName:
         typeof payload?.careerPlanName === 'string'
@@ -357,8 +354,7 @@ export class StudentStatusService {
       id: Number.isFinite(subject?.id) ? Number(subject.id) : null,
       name: typeof subject?.name === 'string' ? subject.name : 'Materia',
       calendarYear: this.toNumber(subject?.calendarYear),
-      division:
-        typeof subject?.division === 'string' ? subject.division : null,
+      division: typeof subject?.division === 'string' ? subject.division : null,
       finalCondition:
         typeof subject?.finalCondition === 'string'
           ? subject.finalCondition

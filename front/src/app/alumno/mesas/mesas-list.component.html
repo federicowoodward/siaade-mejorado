@@ -6,7 +6,9 @@
       class="flex flex-column gap-2 md:flex-row md:align-items-center md:justify-content-between"
     >
       <div>
-        <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
+        <p
+          class="text-sm text-color-secondary m-0 text-uppercase tracking-wide"
+        >
           Materias con mesas abiertas
         </p>
         <h2 class="m-0 text-2xl font-semibold">Inscripciones disponibles</h2>
@@ -25,7 +27,10 @@
       </div>
     </div>
 
-    <div *ngIf="courseLoading(); else courseCards" class="flex justify-content-center py-5">
+    <div
+      *ngIf="courseLoading(); else courseCards"
+      class="flex justify-content-center py-5"
+    >
       <p-progressSpinner strokeWidth="3"></p-progressSpinner>
     </div>
 
@@ -44,7 +49,9 @@
         >
           <div class="flex flex-column gap-1 flex-1">
             <span class="course-label">Nombre</span>
-            <div class="course-name-field border-1 surface-border border-round px-3 py-2">
+            <div
+              class="course-name-field border-1 surface-border border-round px-3 py-2"
+            >
               <p class="m-0 text-lg font-semibold">
                 {{ card.subjectName }}
               </p>
@@ -53,7 +60,9 @@
               </small>
             </div>
           </div>
-          <div class="course-actions flex gap-2 flex-wrap md:justify-content-end">
+          <div
+            class="course-actions flex gap-2 flex-wrap md:justify-content-end"
+          >
             <p-button
               type="button"
               size="small"
@@ -222,9 +231,7 @@
   [dismissableMask]="true"
   [style]="{ width: '420px' }"
   [header]="
-    dialogMode === 'enroll'
-      ? 'Confirmar inscripcion'
-      : 'Cancelar inscripcion'
+    dialogMode === 'enroll' ? 'Confirmar inscripcion' : 'Cancelar inscripcion'
   "
   [(visible)]="dialogVisible"
   (onHide)="cancelDialog()"
