@@ -33,6 +33,7 @@ export class AcademicStatusComponent implements OnInit {
 
   readonly cards = this.statusService.status;
   readonly loading = this.statusService.loading;
+  readonly summary = this.statusService.summary;
 
   private readonly yearGroups = computed<YearGroup[]>(() => {
     const map = new Map<string, YearGroup>();
@@ -56,7 +57,11 @@ export class AcademicStatusComponent implements OnInit {
 
   readonly groupedCards = computed<YearGroup[]>(() => {
     const groups = this.yearGroups();
-    const limit = this.resolveVisibleYearLimit(groups);
+    const summary = this.summary();
+    const limit = this.resolveVisibleYearLimit(
+      groups,
+      summary?.academicYear ?? null,
+    );
     if (!limit) return groups;
     return groups.filter((group) => {
       if (!Number.isFinite(group.order) || group.order <= 0) return true;
@@ -68,7 +73,19 @@ export class AcademicStatusComponent implements OnInit {
     return [...subjects].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
   }
 
-  private resolveVisibleYearLimit(groups: YearGroup[]): number | null {
+  private resolveVisibleYearLimit(
+    groups: YearGroup[],
+    preferredLimit?: number | null,
+  ): number | null {
+    if (
+      typeof preferredLimit === 'number' &&
+      Number.isFinite(preferredLimit)
+    ) {
+      const normalized = Math.floor(preferredLimit);
+      if (normalized > 0) {
+        return Math.min(normalized, 3);
+      }
+    }
     const validOrders = groups
       .map((group) => group.order)
       .filter((order) => Number.isFinite(order) && order > 0);
@@ -122,6 +139,26 @@ export class AcademicStatusComponent implements OnInit {
 
   trackGroup(_: number, group: YearGroup): string {
     return `${group.label}-${group.order}`;
+  }
+
+  formatRegisteredSince(value: string | null | undefined): string {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    const day = `${date.getDate()}`.padStart(2, '0');
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    return `${day}/${month}/${date.getFullYear()}`;
+  }
+
+  academicYearText(value: number | null | undefined): string {
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
+      return '-';
+    }
+    return `${value}º año`;
   }
 
 }

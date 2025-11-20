@@ -41,6 +41,19 @@ export interface StudentSubjectCard {
   actions: SubjectActionAvailability;
 }
 
+export interface StudentStatusSummary {
+  studentId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  fullName: string | null;
+  documentType: string | null;
+  documentNumber: string | null;
+  legajo: string | null;
+  studentStartYear: number | null;
+  academicYear: number | null;
+  registrationDate: string | null;
+}
+
 type RawStatusResponse = {
   studentId?: string;
   subjects?: any[];
@@ -84,9 +97,11 @@ export class StudentStatusService {
 
   private readonly statusSignal = signal<StudentSubjectCard[]>([]);
   private readonly loadingSignal = signal(false);
+  private readonly summarySignal = signal<StudentStatusSummary | null>(null);
 
   readonly status = this.statusSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
+  readonly summary = this.summarySignal.asReadonly();
 
   loadStatus(studentId?: string | null): Observable<StudentSubjectCard[]> {
     this.loadingSignal.set(true);
@@ -95,14 +110,21 @@ export class StudentStatusService {
     return forkJoin({
       subjects: this.fetchStatus(effectiveStudentId),
       context: this.fetchContext(effectiveStudentId),
+      summary: this.fetchStudentSummary(effectiveStudentId),
     }).pipe(
-      map(({ subjects, context }) =>
-        this.mapCards(subjects, context, effectiveStudentId),
-      ),
-      tap((cards) => this.statusSignal.set(cards)),
+      map(({ subjects, context, summary }) => ({
+        cards: this.mapCards(subjects, context, effectiveStudentId),
+        summary,
+      })),
+      tap(({ cards, summary }) => {
+        this.statusSignal.set(cards);
+        this.summarySignal.set(summary);
+      }),
+      map(({ cards }) => cards),
       catchError((error) => {
         console.error('[StudentStatus] loadStatus failed', error);
         this.statusSignal.set([]);
+        this.summarySignal.set(null);
         return of([]);
       }),
       finalize(() => this.loadingSignal.set(false)),
@@ -155,6 +177,25 @@ export class StudentStatusService {
           return of(this.buildFallbackContext());
         }),
       );
+  }
+
+  private fetchStudentSummary(
+    studentId?: string | null,
+  ): Observable<StudentStatusSummary | null> {
+    const currentUserId = this.auth.getUserId();
+    const shouldUseSelfEndpoint =
+      !studentId || (currentUserId !== null && studentId === currentUserId);
+    const endpoint = shouldUseSelfEndpoint
+      ? 'students/read/me/summary'
+      : `students/read/${studentId}/summary`;
+
+    return this.api.request<any>('GET', endpoint).pipe(
+      map((payload) => this.mapSummary(payload)),
+      catchError((error) => {
+        console.warn('[StudentStatus] summary endpoint unavailable', error);
+        return of(null);
+      }),
+    );
   }
 
   private mapCards(
@@ -210,6 +251,60 @@ export class StudentStatusService {
       pedagogicalMessage: this.resolvePedagogicalMessage(row),
       actions: this.buildActions(row, context),
     };
+  }
+
+  private mapSummary(payload: any): StudentStatusSummary | null {
+    if (!payload) return null;
+    const firstName =
+      typeof payload?.firstName === 'string' ? payload.firstName : null;
+    const lastName =
+      typeof payload?.lastName === 'string' ? payload.lastName : null;
+    const fallbackFullName =
+      typeof payload?.fullName === 'string' ? payload.fullName : null;
+    return {
+      studentId:
+        typeof payload?.studentId === 'string'
+          ? payload.studentId
+          : payload?.userId ?? null,
+      firstName,
+      lastName,
+      fullName: this.composeFullName(firstName, lastName, fallbackFullName),
+      documentType:
+        typeof payload?.documentType === 'string'
+          ? payload.documentType
+          : null,
+      documentNumber:
+        typeof payload?.documentNumber === 'string'
+          ? payload.documentNumber
+          : null,
+      legajo:
+        typeof payload?.legajo === 'string' ? payload.legajo : null,
+      studentStartYear: this.toNumber(payload?.studentStartYear),
+      academicYear: this.toNumber(payload?.academicYear),
+      registrationDate: this.normalizeSummaryDate(payload?.registrationDate),
+    };
+  }
+
+  private composeFullName(
+    firstName: string | null,
+    lastName: string | null,
+    fallback?: string | null,
+  ): string | null {
+    const parts = [firstName, lastName]
+      .map((value) => (value ?? '').trim())
+      .filter((value) => value.length > 0);
+    if (parts.length) {
+      return parts.join(' ');
+    }
+    const fallbackTrimmed = (fallback ?? '').trim();
+    return fallbackTrimmed.length ? fallbackTrimmed : null;
+  }
+
+  private normalizeSummaryDate(
+    value: string | Date | null | undefined,
+  ): string | null {
+    const normalized = this.normalizeDate(value);
+    return normalized.length ? normalized : null;
   }
 
   private resolvePartials(value: unknown): 2 | 4 {

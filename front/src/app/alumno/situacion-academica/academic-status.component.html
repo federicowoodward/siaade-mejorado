@@ -2,7 +2,7 @@
   <div
     class="surface-card shadow-2 border-round p-4 flex flex-column gap-3 md:flex-row md:align-items-center md:justify-content-between"
   >
-    <div>
+    <div class="flex-1">
       <p class="text-sm text-color-secondary m-0 text-uppercase tracking-wide">
         Alumno / Situacion academica
       </p>
@@ -26,6 +26,44 @@
         severity="secondary"
         (onClick)="reload()"
       />
+    </div>
+    <div
+      class="w-full border-top-1 surface-border pt-3 flex flex-column gap-2"
+    >
+      <div>
+        <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
+          Datos del alumno
+        </p>
+        <h3 class="m-0 text-xl font-semibold">
+          {{ summary()?.fullName || 'Alumno sin nombre' }}
+        </h3>
+      </div>
+      <div
+        class="flex flex-column gap-2 text-sm text-color-secondary md:flex-row md:align-items-center md:justify-content-between"
+      >
+        <div class="flex gap-3 flex-wrap">
+          <span>
+            Documento:
+            <strong>
+              {{ summary()?.documentNumber || 'Sin documento' }}
+            </strong>
+          </span>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+          <span>
+            Registrado desde:
+            <strong>
+              {{ formatRegisteredSince(summary()?.registrationDate) }}
+            </strong>
+          </span>
+          <span>
+            Año actual:
+            <strong>
+              {{ academicYearText(summary()?.academicYear) }}
+            </strong>
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 
