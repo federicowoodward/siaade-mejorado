@@ -275,12 +275,22 @@ export class StudentStatusService {
 
   private mapSummary(payload: any): StudentStatusSummary | null {
     if (!payload) return null;
+    const coerceText = (value: any): string | null => {
+      if (typeof value === 'string') return value;
+      if (typeof value === 'number' && Number.isFinite(value))
+        return String(value);
+      return null;
+    };
     const firstName =
-      typeof payload?.firstName === 'string' ? payload.firstName : null;
+      coerceText(payload?.firstName) ??
+      coerceText(payload?.name) ??
+      coerceText(payload?.first_name);
     const lastName =
-      typeof payload?.lastName === 'string' ? payload.lastName : null;
+      coerceText(payload?.lastName) ??
+      coerceText(payload?.last_name) ??
+      coerceText(payload?.surname);
     const providedFullName =
-      typeof payload?.fullName === 'string' ? payload.fullName : null;
+      coerceText(payload?.fullName) ?? coerceText(payload?.full_name);
     const idValue =
       typeof payload?.id === 'string'
         ? payload.id
@@ -296,25 +306,23 @@ export class StudentStatusService {
       documentType:
         typeof payload?.documentType === 'string' ? payload.documentType : null,
       documentNumber:
-        typeof payload?.documentNumber === 'string'
-          ? payload.documentNumber
-          : null,
+        coerceText(payload?.documentNumber) ??
+        coerceText(payload?.document_value) ??
+        coerceText(payload?.document),
       legajo: typeof payload?.legajo === 'string' ? payload.legajo : null,
       studentStartYear: this.toNumber(payload?.studentStartYear),
       careerPlanName:
-        typeof payload?.careerPlanName === 'string'
-          ? payload.careerPlanName
-          : typeof payload?.planName === 'string'
-            ? payload.planName
-            : null,
+        coerceText(payload?.careerPlanName) ??
+        coerceText(payload?.career_plan_name) ??
+        coerceText(payload?.planName) ??
+        coerceText(payload?.studyPlan),
       planName:
-        typeof payload?.planName === 'string'
-          ? payload.planName
-          : typeof payload?.studyPlan === 'string'
-            ? payload.studyPlan
-            : null,
+        coerceText(payload?.planName) ?? coerceText(payload?.studyPlan),
       registeredSince: this.normalizeSummaryDate(
-        payload?.registeredSince ?? payload?.registrationDate,
+        payload?.registeredSince ??
+          payload?.registered_since ??
+          payload?.registrationDate ??
+          payload?.registration_date,
       ),
       currentAcademicYear: this.toNumber(
         payload?.currentAcademicYear ?? payload?.academicYear,
