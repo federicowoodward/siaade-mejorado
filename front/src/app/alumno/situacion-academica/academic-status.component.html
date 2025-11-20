@@ -1,73 +1,47 @@
-<div class="status-wrapper flex flex-column gap-4">
+<div class="m-w-custom status-wrapper flex flex-column gap-4">
   <div
-    class="surface-card shadow-2 border-round p-4 flex flex-column gap-4 md:flex-row md:align-items-start md:justify-content-between"
+    class="surface-card shadow-2 border-round p-4 flex flex-column gap-3"
     *ngIf="headerVm() as header"
   >
-    <div class="flex flex-column gap-3 md:flex-1">
-      <div>
-        <p
-          class="text-sm text-color-secondary m-0 text-uppercase tracking-wide"
-        >
-          Alumno / Situación académica
-        </p>
-        <h2 class="m-0 text-2xl font-semibold">Resumen académico</h2>
-        <p class="text-color-secondary mt-1 mb-0">
-          Consultá tus parciales, asistencia y estado académico por materia.
-          <br />
-          Las acciones se habilitan según las fechas oficiales.
-        </p>
-      </div>
-      <div class="flex gap-2 flex-wrap">
-        <p-button
-          type="button"
-          label="Ver mesas"
-          icon="pi pi-calendar"
-          (onClick)="goToMesas()"
-        />
-        <p-button
-          type="button"
-          label="Actualizar"
-          icon="pi pi-refresh"
-          severity="secondary"
-          (onClick)="reload()"
-        />
-      </div>
+    <div class="flex flex-column gap-2">
+      <h2 class="m-0 text-2xl font-semibold">Resumen académico</h2>
+      <p class="text-color-secondary mt-1 mb-0">
+        Consultá tus parciales, asistencia y estado académico por materia.
+        <br />
+        Las acciones se habilitan según las fechas oficiales.
+      </p>
     </div>
 
-    <div
-      class="surface-ground border-1 surface-border border-round p-3 flex flex-column gap-2 md:w-4"
-    >
+    <div class="flex flex-column gap-2">
       <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
         Datos del alumno
       </p>
-      <h3 class="m-0 text-xl font-semibold">Datos del alumno</h3>
-      <div class="flex flex-column gap-1 text-sm">
-        <span>
+      <div class="flex flex-wrap gap-3 md:gap-4 align-items-center">
+        <span class="text-sm text-color-secondary">
           Alumno:
-          <strong>{{ header.fullName }}</strong>
+          <strong class="text-color font-semibold">{{
+            header.fullName
+          }}</strong>
         </span>
-        <span>
+        <span class="text-sm text-color-secondary">
           Documento:
-          <strong>{{ header.documentNumber }}</strong>
+          <strong class="text-color font-semibold">{{
+            header.documentNumber
+          }}</strong>
         </span>
-        <span *ngIf="header.careerPlanName as plan">
-          Plan de estudios:
-          <strong>{{ plan }}</strong>
+        <span class="text-sm text-color-secondary">
+          Registrado desde:
+          <strong class="text-color font-semibold">{{
+            header.registeredSinceFormatted
+          }}</strong>
+        </span>
+        <span class="text-sm text-color-secondary">
+          Año académico actual:
+          <strong class="text-color font-semibold">{{
+            header.currentYearLabel
+          }}</strong>
         </span>
       </div>
-    </div>
-
-    <div
-      class="flex flex-column gap-2 text-sm text-color-secondary text-right md:w-3"
-    >
-      <span>
-        Registrado desde:
-        <strong class="text-color">{{ header.registeredSinceLabel }}</strong>
-      </span>
-      <span>
-        Año académico actual:
-        <strong class="text-color">{{ header.currentYearLabel }}</strong>
-      </span>
     </div>
   </div>
 
@@ -91,9 +65,9 @@
     <ng-container
       *ngFor="let block of visibleYearBlocks(); trackBy: trackYearBlock"
     >
-      <div class="surface-card shadow-1 border-round p-3">
+      <div class="surface-card shadow-1 border-round p-3 flex flex-column gap-3">
         <div
-          class="flex flex-column gap-2 mb-3 md:flex-row md:align-items-center md:justify-content-between"
+          class="flex flex-column gap-2 mb-2 md:flex-row md:align-items-center md:justify-content-between"
         >
           <div>
             <p
@@ -117,8 +91,7 @@
           <ng-template pTemplate="header">
             <tr>
               <th>Materia</th>
-              <th>Año</th>
-              <th>Curso/Div.</th>
+              <th>Curso</th>
               <th>Cond. Final</th>
               <th>Examen/es</th>
               <th class="text-center">Acción</th>
@@ -129,8 +102,7 @@
               <td class="subject-cell">
                 <span class="subject-name">{{ row.name }}</span>
               </td>
-              <td>{{ row.calendarYear ?? "-" }}</td>
-              <td>{{ row.division || "Sin división" }}</td>
+              <td>{{ row.courseLabel }}</td>
               <td>
                 <p-tag
                   [value]="row.finalCondition || 'Sin estado'"
@@ -138,7 +110,7 @@
                 ></p-tag>
               </td>
               <td>
-                <span class="text-sm">{{ row.lastExamSummary || "-" }}</span>
+                <span class="text-sm">{{ row.examsText }}</span>
               </td>
               <td class="text-center">
                 <div class="status-actions">
@@ -157,7 +129,7 @@
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center text-color-secondary py-4">
+              <td colspan="5" class="text-center text-color-secondary py-4">
                 No hay materias registradas para este año.
               </td>
             </tr>

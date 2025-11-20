@@ -13,19 +13,23 @@ import {
   StudentSummaryYear,
 } from '../../core/services/student-status.service';
 
+type SubjectRow = StudentSummarySubject & {
+  courseLabel: string;
+  examsText: string;
+  hasGrades: boolean;
+};
+
 type YearBlock = {
   year: number;
   label: string;
-  subjects: StudentSummarySubject[];
+  subjects: SubjectRow[];
 };
 
 type HeaderViewModel = {
   fullName: string;
   documentNumber: string;
-  careerPlanName: string | null;
-  registeredSinceLabel: string;
+  registeredSinceFormatted: string;
   currentYearLabel: string;
-  currentYearNumber: number | null;
 };
 
 @Component({
@@ -63,8 +67,6 @@ export class AcademicStatusComponent implements OnInit {
   );
 
   readonly visibleYearBlocks = computed<YearBlock[]>(() => {
-    // When the summary endpoint cannot provide grouped years we fall back to the
-    // legacy card grouping so the UI remains usable.
     const summaryBlocks = this.summaryYearBlocks();
     const blocks = summaryBlocks.length
       ? summaryBlocks
@@ -112,23 +114,19 @@ export class AcademicStatusComponent implements OnInit {
 
   private buildHeaderVm(): HeaderViewModel {
     const summary = this.summary();
-    const fallbackName = this.composeFallbackName();
     const normalizedName =
       this.normalizeText(summary?.fullName) ??
       this.composeFullName(summary?.firstName, summary?.lastName) ??
-      fallbackName ??
       'Sin nombre';
     const documentNumber =
       this.normalizeText(summary?.documentNumber) ?? 'Sin documento';
     return {
       fullName: normalizedName,
       documentNumber,
-      careerPlanName: this.normalizeText(summary?.careerPlanName),
-      registeredSinceLabel: this.formatRegisteredSince(
+      registeredSinceFormatted: this.formatRegisteredSince(
         summary?.registeredSince,
       ),
       currentYearLabel: this.academicYearText(summary?.currentAcademicYear),
-      currentYearNumber: summary?.currentAcademicYear ?? null,
     };
   }
 
@@ -137,7 +135,9 @@ export class AcademicStatusComponent implements OnInit {
       .map((year) => ({
         year: year.year,
         label: this.yearLabel(year.year),
-        subjects: year.subjects ?? [],
+        subjects: (year.subjects ?? []).map((subject) =>
+          this.mapSubjectRow(subject),
+        ),
       }))
       .sort((a, b) => a.year - b.year);
   }
@@ -154,15 +154,30 @@ export class AcademicStatusComponent implements OnInit {
         ? group.order
         : Number.POSITIVE_INFINITY,
       label: group.label,
-      subjects: group.subjects.map((card) => ({
-        id: card.subjectId,
-        name: card.subjectName,
-        calendarYear: card.yearNumber,
-        division: card.commissionLabel,
-        finalCondition: card.condition ?? card.accreditation ?? null,
-        lastExamSummary: card.finalExplanation ?? null,
-      })),
+      subjects: group.subjects
+        .map((card) => ({
+          id: card.subjectId,
+          name: card.subjectName,
+          calendarYear: card.yearNumber,
+          division: card.commissionLabel,
+          finalCondition: card.condition ?? card.accreditation ?? null,
+          lastExamSummary: card.finalExplanation ?? null,
+          hasGrades: this.hasLegacyGrades(card),
+        }))
+        .map((subject) => this.mapSubjectRow(subject)),
     }));
+  }
+
+  private mapSubjectRow(subject: StudentSummarySubject): SubjectRow {
+    const hasGrades = this.resolveHasGrades(subject);
+    return {
+      ...subject,
+      hasGrades,
+      courseLabel: this.buildCourseLabel(subject.calendarYear, subject.division),
+      examsText: hasGrades
+        ? subject.lastExamSummary ?? '-'
+        : this.missingGradesText(),
+    };
   }
 
   private buildLegacyYearGroups(): Array<{
@@ -233,14 +248,44 @@ export class AcademicStatusComponent implements OnInit {
     return `${value}.º año`;
   }
 
-  private composeFallbackName(): string | null {
-    const snapshot = this.cards();
-    if (!snapshot.length) return null;
-    const names = new Set(
-      snapshot.map((card) => card?.subjectName ?? '').filter(Boolean),
-    );
-    if (!names.size) return null;
-    return Array.from(names)[0];
+  private buildCourseLabel(
+    calendarYear: number | null,
+    division: string | null,
+  ): string {
+    const yearPart =
+      typeof calendarYear === 'number' && Number.isFinite(calendarYear)
+        ? String(calendarYear)
+        : null;
+    if (yearPart && division) return `${yearPart} ${division}`;
+    if (yearPart) return yearPart;
+    if (division) return division;
+    return '-';
+  }
+
+  private resolveHasGrades(subject: StudentSummarySubject): boolean {
+    if (typeof subject.hasGrades === 'boolean') return subject.hasGrades;
+    const hasSummary =
+      typeof subject.lastExamSummary === 'string' &&
+      subject.lastExamSummary.trim().length > 0 &&
+      subject.lastExamSummary.trim() !== '(Insc.)';
+    const hasCondition =
+      typeof subject.finalCondition === 'string' &&
+      subject.finalCondition.trim().length > 0;
+    return hasSummary || hasCondition;
+  }
+
+  private hasLegacyGrades(card: StudentSubjectCard): boolean {
+    const hasScore = typeof card.finalScore === 'number';
+    const hasCondition =
+      typeof card.condition === 'string' && card.condition.trim().length > 0;
+    const hasAccreditation =
+      typeof card.accreditation === 'string' &&
+      card.accreditation.trim().length > 0;
+    return hasScore || hasCondition || hasAccreditation;
+  }
+
+  private missingGradesText(): string {
+    return 'Se requieren 4 parciales para calcular la nota final.';
   }
 
   private composeFullName(
