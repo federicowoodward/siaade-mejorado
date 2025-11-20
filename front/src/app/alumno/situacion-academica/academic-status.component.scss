@@ -12,6 +12,7 @@
 
 :host ::ng-deep .status-table .p-datatable-tbody > tr > td {
   vertical-align: top;
+  border-bottom: 1px solid var(--surface-border);
 }
 
 .subject-cell {
@@ -47,4 +48,13 @@
   .year-section {
     padding: 0.5rem 0;
   }
+}
+
+.m-w-custom {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+:host ::ng-deep .status-table .p-datatable-tbody > tr:last-child > td {
+  border-bottom: none;
 }

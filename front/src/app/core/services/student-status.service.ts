@@ -48,6 +48,7 @@ export interface StudentSummarySubject {
   division: string | null;
   finalCondition: string | null;
   lastExamSummary: string | null;
+  hasGrades?: boolean | null;
 }
 
 export interface StudentSummaryYear {
@@ -363,6 +364,7 @@ export class StudentStatusService {
         typeof subject?.lastExamSummary === 'string'
           ? subject.lastExamSummary
           : null,
+      hasGrades: this.deriveHasGrades(subject),
     }));
   }
 
@@ -663,5 +665,18 @@ export class StudentStatusService {
   private toNumber(value: unknown): number | null {
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  private deriveHasGrades(raw: any): boolean {
+    if (typeof raw?.hasGrades === 'boolean') return raw.hasGrades;
+    const hasScore =
+      this.toNumber(raw?.final ?? raw?.finalScore ?? raw?.score) !== null;
+    const hasCondition =
+      typeof raw?.finalCondition === 'string' && raw.finalCondition.trim().length > 0;
+    const hasSummary =
+      typeof raw?.lastExamSummary === 'string' &&
+      raw.lastExamSummary.trim().length > 0 &&
+      raw.lastExamSummary.trim() !== '(Insc.)';
+    return hasScore || hasCondition || hasSummary;
   }
 }
