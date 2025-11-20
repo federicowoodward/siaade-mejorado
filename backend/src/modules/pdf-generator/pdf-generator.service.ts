@@ -37,8 +37,33 @@ export class PdfGeneratorService {
 
   async getStudentCertificatePdf(studentId: string | number): Promise<Buffer> {
     const payload = await this.buildStudentCertificatePayload(studentId);
+    const templateName = "student-certificate";
+    // Validaciones específicas para los campos utilizados por la plantilla student-certificate.
+    const requiredFields = [
+      "name",
+      "lastname",
+      "dni",
+      "careerName",
+      "day",
+      "month",
+      "year",
+    ];
+    const payloadRecord = payload as Record<string, unknown>;
+    for (const field of requiredFields) {
+      const value = payloadRecord[field];
+      if (
+        value === undefined ||
+        value === null ||
+        (typeof value === "string" && value.trim() === "")
+      ) {
+        throw new Error(
+          `Missing required field '${field}' for template '${templateName}'`,
+        );
+      }
+    }
+
     return this.pdfEngineService.generatePdfFromTemplate(
-      "student-certificate",
+      templateName,
       payload,
     );
   }
@@ -93,12 +118,19 @@ export class PdfGeneratorService {
     studentId: string | number,
   ): Promise<StudentCertificatePayload> {
     const student = await this.loadStudent(studentId);
+    const issuanceDate = new Date();
+    const day = String(issuanceDate.getUTCDate()).padStart(2, "0");
+    const month = issuanceDate.toLocaleString("es-AR", { month: "long" });
+    const year = String(issuanceDate.getUTCFullYear());
     return {
       lastname: student.user.lastName,
       name: student.user.name,
       dni: student.user.cuil,
       careerName: CAREER_NAME,
       schoolName: SCHOOL_NAME,
+      day,
+      month,
+      year,
     };
   }
 
@@ -144,6 +176,9 @@ interface StudentCertificatePayload extends Record<string, string> {
   dni: string;
   careerName: string;
   schoolName: string;
+  day: string;
+  month: string;
+  year: string;
 }
 
 interface ExamRegistrationReceiptPayload extends Record<string, string> {

@@ -12,7 +12,7 @@ import {
 @ApiTags("PDF Generator")
 @Controller("generatePdf")
 export class PdfGeneratorController {
-  constructor(private readonly pdfGeneratorService: PdfGeneratorService) {}
+  constructor(private readonly pdfGeneratorService: PdfGeneratorService) { }
 
   // ---------------------------------------------------------
   // STUDENT CERTIFICATE
@@ -49,7 +49,7 @@ export class PdfGeneratorController {
   ) {
     const pdf =
       await this.pdfGeneratorService.getStudentCertificatePdf(studentId);
-    return this.sendPdf(res, pdf, `student-certificate-${studentId}.pdf`);
+    return this.sendPdf(res, pdf, `certificado-estudiante.pdf`);
   }
 
   @Get("preview/student-certificate/:studentId")
