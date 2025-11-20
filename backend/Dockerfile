@@ -2,13 +2,15 @@
 FROM node:20 AS builder
 WORKDIR /app
 
+# Instalar deps primero (cache)
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 # Usamos npm install (no-ci) en la etapa de build para evitar fallos por
-# desincronización menor del lockfile con dependencias de desarrollo.
+# desincronizaciï¿½n menor del lockfile con dependencias de desarrollo.
 RUN npm install
 
+# Copiar el resto y compilar
 COPY . .
 RUN rm -rf dist && npm run build
 
@@ -17,12 +19,14 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Copiar manifests y script de entrypoint
 COPY package*.json ./
 # TODO(PDF-GENERATOR): instalar dependencias del sistema para Chromium/Puppeteer en Alpine.
 # En runtime instalamos solo dependencias de prod sin exigir lock estricto
-# para evitar el error de desincronización en CI.
+# para evitar el error de desincronizaciï¿½n en CI.
 RUN npm install --omit=dev
 
+# Copiar build y env
 COPY --from=builder /app/dist ./dist
 COPY ./docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh

@@ -1,5 +1,7 @@
 # Visibilidad por roles (frontend)
 
+Esta guia ayuda a entender el servicio construido en el frontend para facilitar la habilitación o inhabilitación de funcionalidades segun los roles del usuario.
+
 ## Roles productivos
 
 Los nombres salen de la migración productiva `0200000000000_ProdReadyAdjustmentsAndSeeds.ts` y del `ROLE` del backend (`src/shared/rbac/roles.constants.ts`). Se usan tal cual en el front:

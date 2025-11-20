@@ -1,7 +1,7 @@
 # SIAADE Docs
 
 ## Descripcion breve
-Repositorio mono con backend NestJS 11 + TypeORM/PostgreSQL 15 y frontend Angular 20 + PrimeNG. El objetivo es centralizar la administracion academica (usuarios, materias, correlativas, mesas finales, avisos y portal del alumno) y documentar los flujos de despliegue e instalacion.
+Repositorio con backend NestJS 11 + TypeORM/PostgreSQL 15 y frontend Angular 20 + PrimeNG. El objetivo es centralizar la administracion academica (usuarios, materias, correlativas, mesas finales, avisos y portal del alumno) y documentar los flujos de despliegue e instalacion.
 
 ## Estructura general
 - **Backend**: `backend/` con modulos Auth, Users, Catalogs, Subjects, Final Exams, Student Inscriptions y servicios compartidos (guards, interceptors, scripts smoke). Expone Swagger en `/api/docs`.
