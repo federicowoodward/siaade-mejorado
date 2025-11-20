@@ -41,18 +41,36 @@ export interface StudentSubjectCard {
   actions: SubjectActionAvailability;
 }
 
+export interface StudentSummarySubject {
+  id: number | null;
+  name: string;
+  calendarYear: number | null;
+  division: string | null;
+  finalCondition: string | null;
+  lastExamSummary: string | null;
+}
+
+export interface StudentSummaryYear {
+  year: number;
+  subjects: StudentSummarySubject[];
+}
+
 export interface StudentStatusSummary {
-  studentId: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  id: string | null;
   fullName: string | null;
-  documentType: string | null;
   documentNumber: string | null;
-  legajo: string | null;
-  studentStartYear: number | null;
-  academicYear: number | null;
-  registrationDate: string | null;
-  planName: string | null;
+  careerPlanName: string | null;
+  registeredSince: string | null;
+  currentAcademicYear: number | null;
+  years: StudentSummaryYear[];
+  // Legacy metadata preserved to avoid breaking other consumers
+  studentId?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  documentType?: string | null;
+  legajo?: string | null;
+  studentStartYear?: number | null;
+  planName?: string | null;
 }
 
 type RawStatusResponse = {
@@ -260,16 +278,20 @@ export class StudentStatusService {
       typeof payload?.firstName === 'string' ? payload.firstName : null;
     const lastName =
       typeof payload?.lastName === 'string' ? payload.lastName : null;
-    const fallbackFullName =
+    const providedFullName =
       typeof payload?.fullName === 'string' ? payload.fullName : null;
-    return {
-      studentId:
-        typeof payload?.studentId === 'string'
+    const idValue =
+      typeof payload?.id === 'string'
+        ? payload.id
+        : typeof payload?.studentId === 'string'
           ? payload.studentId
-          : payload?.userId ?? null,
+          : null;
+    return {
+      id: idValue,
+      studentId: idValue,
       firstName,
       lastName,
-      fullName: this.composeFullName(firstName, lastName, fallbackFullName),
+      fullName: this.composeFullName(firstName, lastName, providedFullName),
       documentType:
         typeof payload?.documentType === 'string'
           ? payload.documentType
@@ -281,14 +303,25 @@ export class StudentStatusService {
       legajo:
         typeof payload?.legajo === 'string' ? payload.legajo : null,
       studentStartYear: this.toNumber(payload?.studentStartYear),
-      academicYear: this.toNumber(payload?.academicYear),
-      registrationDate: this.normalizeSummaryDate(payload?.registrationDate),
+      careerPlanName:
+        typeof payload?.careerPlanName === 'string'
+          ? payload.careerPlanName
+          : typeof payload?.planName === 'string'
+            ? payload.planName
+            : null,
       planName:
         typeof payload?.planName === 'string'
           ? payload.planName
           : typeof payload?.studyPlan === 'string'
             ? payload.studyPlan
             : null,
+      registeredSince: this.normalizeSummaryDate(
+        payload?.registeredSince ?? payload?.registrationDate,
+      ),
+      currentAcademicYear: this.toNumber(
+        payload?.currentAcademicYear ?? payload?.academicYear,
+      ),
+      years: this.mapSummaryYears(payload?.years),
     };
   }
 
@@ -305,6 +338,36 @@ export class StudentStatusService {
     }
     const fallbackTrimmed = (fallback ?? '').trim();
     return fallbackTrimmed.length ? fallbackTrimmed : null;
+  }
+
+  private mapSummaryYears(input: unknown): StudentSummaryYear[] {
+    if (!Array.isArray(input)) return [];
+    return input
+      .map((year: any) => ({
+        year: Number(year?.year) || 0,
+        subjects: this.mapSummarySubjects(year?.subjects),
+      }))
+      .filter((year) => year.year > 0)
+      .sort((a, b) => a.year - b.year);
+  }
+
+  private mapSummarySubjects(input: unknown): StudentSummarySubject[] {
+    if (!Array.isArray(input)) return [];
+    return input.map((subject: any) => ({
+      id: Number.isFinite(subject?.id) ? Number(subject.id) : null,
+      name: typeof subject?.name === 'string' ? subject.name : 'Materia',
+      calendarYear: this.toNumber(subject?.calendarYear),
+      division:
+        typeof subject?.division === 'string' ? subject.division : null,
+      finalCondition:
+        typeof subject?.finalCondition === 'string'
+          ? subject.finalCondition
+          : null,
+      lastExamSummary:
+        typeof subject?.lastExamSummary === 'string'
+          ? subject.lastExamSummary
+          : null,
+    }));
   }
 
   private normalizeSummaryDate(

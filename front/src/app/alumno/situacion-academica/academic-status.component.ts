@@ -1,17 +1,32 @@
-import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Router } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import {
   StudentStatusService,
   StudentSubjectCard,
+  StudentSummarySubject,
+  StudentSummaryYear,
 } from '../../core/services/student-status.service';
 
-type YearGroup = { label: string; order: number; subjects: StudentSubjectCard[] };
+type YearBlock = {
+  year: number;
+  label: string;
+  subjects: StudentSummarySubject[];
+};
+
+type HeaderViewModel = {
+  fullName: string;
+  documentNumber: string;
+  careerPlanName: string | null;
+  registeredSinceLabel: string;
+  currentYearLabel: string;
+  currentYearNumber: number | null;
+};
 
 @Component({
   selector: 'app-academic-status-student',
@@ -34,72 +49,26 @@ export class AcademicStatusComponent implements OnInit {
   readonly cards = this.statusService.status;
   readonly loading = this.statusService.loading;
   readonly summary = this.statusService.summary;
-  readonly studentPlan = computed(() => {
-    const summaryPlan = this.summary()?.planName;
-    if (summaryPlan && summaryPlan.trim().length) return summaryPlan.trim();
-    const cardPlan = this.cards().find((card) => card.studyPlan)?.studyPlan;
-    if (cardPlan && cardPlan.trim().length) return cardPlan.trim();
-    return null;
+
+  private readonly legacyYearGroups = computed(() => this.buildLegacyYearGroups());
+
+  readonly headerVm = computed<HeaderViewModel>(() => this.buildHeaderVm());
+  private readonly summaryYearBlocks = computed<YearBlock[]>(() =>
+    this.toYearBlocks(this.summary()?.years ?? []),
+  );
+  private readonly fallbackYearBlocks = computed<YearBlock[]>(() =>
+    this.toYearBlocksFromCards(this.legacyYearGroups()),
+  );
+
+  readonly visibleYearBlocks = computed<YearBlock[]>(() => {
+    // When the summary endpoint cannot provide grouped years we fall back to the
+    // legacy card grouping so the UI remains usable.
+    const summaryBlocks = this.summaryYearBlocks();
+    const blocks = summaryBlocks.length ? summaryBlocks : this.fallbackYearBlocks();
+    const limit = this.summary()?.currentAcademicYear ?? null;
+    if (!limit || limit <= 0) return blocks;
+    return blocks.filter((block) => block.year <= limit);
   });
-
-  private readonly yearGroups = computed<YearGroup[]>(() => {
-    const map = new Map<string, YearGroup>();
-    this.cards().forEach((card) => {
-      const key = card.yearLabel;
-      if (!map.has(key)) {
-        map.set(key, { label: key, order: this.getYearOrder(card), subjects: [] });
-      }
-      map.get(key)!.subjects.push(card);
-    });
-    return Array.from(map.values())
-      .map((group) => ({
-        ...group,
-        subjects: this.sortSubjects(group.subjects),
-      }))
-      .sort((a, b) => {
-        if (a.order !== b.order) return a.order - b.order;
-        return a.label.localeCompare(b.label);
-      });
-  });
-
-  readonly groupedCards = computed<YearGroup[]>(() => {
-    const groups = this.yearGroups();
-    const summary = this.summary();
-    const limit = this.resolveVisibleYearLimit(
-      groups,
-      summary?.academicYear ?? null,
-    );
-    if (!limit) return groups;
-    return groups.filter((group) => {
-      if (!Number.isFinite(group.order) || group.order <= 0) return true;
-      return group.order <= limit;
-    });
-  });
-
-  private sortSubjects(subjects: StudentSubjectCard[]): StudentSubjectCard[] {
-    return [...subjects].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
-  }
-
-  private resolveVisibleYearLimit(
-    groups: YearGroup[],
-    preferredLimit?: number | null,
-  ): number | null {
-    if (
-      typeof preferredLimit === 'number' &&
-      Number.isFinite(preferredLimit)
-    ) {
-      const normalized = Math.floor(preferredLimit);
-      if (normalized > 0) {
-        return Math.min(normalized, 3);
-      }
-    }
-    const validOrders = groups
-      .map((group) => group.order)
-      .filter((order) => Number.isFinite(order) && order > 0);
-    if (!validOrders.length) return null;
-    const highest = Math.max(...validOrders);
-    return Math.min(highest, 3);
-  }
 
   ngOnInit(): void {
     this.reload();
@@ -112,9 +81,7 @@ export class AcademicStatusComponent implements OnInit {
       .subscribe();
   }
 
-  stateSeverity(
-    condition: string | null,
-  ): 'success' | 'info' | 'danger' | 'warning' {
+  stateSeverity(condition: string | null): 'success' | 'info' | 'danger' | 'warning' {
     if (!condition) return 'warning';
     const value = condition.toLowerCase();
     if (value.includes('promo') || value.includes('apro')) return 'success';
@@ -128,8 +95,85 @@ export class AcademicStatusComponent implements OnInit {
     void this.router.navigate(['/alumno/mesas'], { queryParams });
   }
 
-  viewSubjectDetail(card: StudentSubjectCard): void {
-    void this.router.navigate(['/alumno/situacion-academica', card.subjectId]);
+  viewSummarySubject(subject: StudentSummarySubject): void {
+    if (!subject?.id) return;
+    void this.router.navigate(['/alumno/situacion-academica', subject.id]);
+  }
+
+  trackYearBlock(_: number, block: YearBlock): string {
+    return `${block.year}-${block.label}`;
+  }
+
+  private buildHeaderVm(): HeaderViewModel {
+    const summary = this.summary();
+    const fallbackName = this.composeFallbackName();
+    const normalizedName =
+      this.normalizeText(summary?.fullName) ??
+      this.composeFullName(summary?.firstName, summary?.lastName) ??
+      fallbackName ??
+      'Sin nombre';
+    const documentNumber =
+      this.normalizeText(summary?.documentNumber) ?? 'Sin documento';
+    return {
+      fullName: normalizedName,
+      documentNumber,
+      careerPlanName: this.normalizeText(summary?.careerPlanName),
+      registeredSinceLabel: this.formatRegisteredSince(summary?.registeredSince),
+      currentYearLabel: this.academicYearText(summary?.currentAcademicYear),
+      currentYearNumber: summary?.currentAcademicYear ?? null,
+    };
+  }
+
+  private toYearBlocks(years: StudentSummaryYear[]): YearBlock[] {
+    return years
+      .map((year) => ({
+        year: year.year,
+        label: this.yearLabel(year.year),
+        subjects: year.subjects ?? [],
+      }))
+      .sort((a, b) => a.year - b.year);
+  }
+
+  private toYearBlocksFromCards(groups: Array<{
+    label: string;
+    order: number;
+    subjects: StudentSubjectCard[];
+  }>): YearBlock[] {
+    return groups.map((group) => ({
+      year: Number.isFinite(group.order) ? group.order : Number.POSITIVE_INFINITY,
+      label: group.label,
+      subjects: group.subjects.map((card) => ({
+        id: card.subjectId,
+        name: card.subjectName,
+        calendarYear: card.yearNumber,
+        division: card.commissionLabel,
+        finalCondition: card.condition ?? card.accreditation ?? null,
+        lastExamSummary: card.finalExplanation ?? null,
+      })),
+    }));
+  }
+
+  private buildLegacyYearGroups(): Array<{
+    label: string;
+    order: number;
+    subjects: StudentSubjectCard[];
+  }> {
+    const map = new Map<string, { label: string; order: number; subjects: StudentSubjectCard[] }>();
+    this.cards().forEach((card) => {
+      const key = card.yearLabel;
+      if (!map.has(key)) {
+        map.set(key, { label: key, order: this.getYearOrder(card), subjects: [] });
+      }
+      map.get(key)!.subjects.push(card);
+    });
+    return Array.from(map.values()).map((group) => ({
+      ...group,
+      subjects: this.sortSubjects(group.subjects),
+    }));
+  }
+
+  private sortSubjects(subjects: StudentSubjectCard[]): StudentSubjectCard[] {
+    return [...subjects].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
   }
 
   private getYearOrder(card: StudentSubjectCard): number {
@@ -144,11 +188,12 @@ export class AcademicStatusComponent implements OnInit {
     return Number.POSITIVE_INFINITY;
   }
 
-  trackGroup(_: number, group: YearGroup): string {
-    return `${group.label}-${group.order}`;
+  private yearLabel(year: number): string {
+    if (!Number.isFinite(year) || year <= 0) return 'Sin año';
+    return `${year}.º año`;
   }
 
-  formatRegisteredSince(value: string | null | undefined): string {
+  private formatRegisteredSince(value: string | null | undefined): string {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
@@ -157,7 +202,7 @@ export class AcademicStatusComponent implements OnInit {
     return `${day}/${month}/${date.getFullYear()}`;
   }
 
-  academicYearText(value: number | null | undefined): string {
+  private academicYearText(value: number | null | undefined): string {
     if (
       typeof value !== 'number' ||
       !Number.isFinite(value) ||
@@ -165,7 +210,31 @@ export class AcademicStatusComponent implements OnInit {
     ) {
       return '-';
     }
-    return `${value}º año`;
+    return `${value}.º año`;
   }
 
+  private composeFallbackName(): string | null {
+    const snapshot = this.cards();
+    if (!snapshot.length) return null;
+    const names = new Set(snapshot.map((card) => card?.subjectName ?? '').filter(Boolean));
+    if (!names.size) return null;
+    return Array.from(names)[0];
+  }
+
+  private composeFullName(
+    firstName?: string | null,
+    lastName?: string | null,
+  ): string | null {
+    const parts = [firstName, lastName]
+      .map((value) => (value ?? '').trim())
+      .filter((value) => value.length);
+    if (!parts.length) return null;
+    return parts.join(' ');
+  }
+
+  private normalizeText(value?: string | null): string | null {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+  }
 }

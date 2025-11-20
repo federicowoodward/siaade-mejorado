@@ -1,6 +1,7 @@
-﻿<div class="status-wrapper flex flex-column gap-4">
+<div class="status-wrapper flex flex-column gap-4">
   <div
     class="surface-card shadow-2 border-round p-4 flex flex-column gap-4 md:flex-row md:align-items-start md:justify-content-between"
+    *ngIf="headerVm() as header"
   >
     <div class="flex flex-column gap-3 md:flex-1">
       <div>
@@ -30,6 +31,7 @@
         />
       </div>
     </div>
+
     <div
       class="surface-ground border-1 surface-border border-round p-3 flex flex-column gap-2 md:w-4"
     >
@@ -40,36 +42,29 @@
       <div class="flex flex-column gap-1 text-sm">
         <span>
           Alumno:
-          <strong>
-            {{ summary()?.fullName || 'Sin nombre' }}
-          </strong>
+          <strong>{{ header.fullName }}</strong>
         </span>
         <span>
           Documento:
-          <strong>
-            {{ summary()?.documentNumber || 'Sin documento' }}
-          </strong>
+          <strong>{{ header.documentNumber }}</strong>
         </span>
-        <span *ngIf="studentPlan() as plan">
+        <span *ngIf="header.careerPlanName as plan">
           Plan de estudios:
           <strong>{{ plan }}</strong>
         </span>
       </div>
     </div>
+
     <div
       class="flex flex-column gap-2 text-sm text-color-secondary text-right md:w-3"
     >
       <span>
         Registrado desde:
-        <strong class="text-color">
-          {{ formatRegisteredSince(summary()?.registrationDate) }}
-        </strong>
+        <strong class="text-color">{{ header.registeredSinceLabel }}</strong>
       </span>
       <span>
         Año académico actual:
-        <strong class="text-color">
-          {{ academicYearText(summary()?.academicYear) }}
-        </strong>
+        <strong class="text-color">{{ header.currentYearLabel }}</strong>
       </span>
     </div>
   </div>
@@ -85,14 +80,14 @@
 
   <ng-template #statusContent>
     <div
-      *ngIf="!groupedCards().length"
+      *ngIf="!visibleYearBlocks().length"
       class="surface-card shadow-1 border-round p-4 text-center text-color-secondary"
     >
       No encontramos materias activas para tu legajo.
     </div>
 
-    <ng-container *ngFor="let group of groupedCards(); trackBy: trackGroup">
-      <div class="surface-card shadow-1 border-round p-3 year-section">
+    <ng-container *ngFor="let block of visibleYearBlocks(); trackBy: trackYearBlock">
+      <div class="surface-card shadow-1 border-round p-3">
         <div
           class="flex flex-column gap-2 mb-3 md:flex-row md:align-items-center md:justify-content-between"
         >
@@ -100,16 +95,16 @@
             <p class="m-0 text-sm text-color-secondary text-uppercase tracking-wide">
               Año académico
             </p>
-            <h3 class="m-0 text-xl font-semibold">{{ group.label }}</h3>
+            <h3 class="m-0 text-xl font-semibold">{{ block.label }}</h3>
           </div>
           <span class="text-sm text-color-secondary">
-            {{ group.subjects.length }}
-            {{ group.subjects.length === 1 ? 'materia' : 'materias' }}
+            {{ block.subjects.length }}
+            {{ block.subjects.length === 1 ? 'materia' : 'materias' }}
           </span>
         </div>
 
         <p-table
-          [value]="group.subjects"
+          [value]="block.subjects"
           [responsiveLayout]="'scroll'"
           class="status-table"
         >
@@ -126,25 +121,18 @@
           <ng-template pTemplate="body" let-row>
             <tr>
               <td class="subject-cell">
-                <span class="subject-name">{{ row.subjectName }}</span>
+                <span class="subject-name">{{ row.name }}</span>
               </td>
-              <td>{{ row.yearLabel }}</td>
-              <td>{{ row.commissionLabel || 'Sin comisión' }}</td>
+              <td>{{ row.calendarYear ?? '-' }}</td>
+              <td>{{ row.division || 'Sin división' }}</td>
               <td>
                 <p-tag
-                  [value]="row.accreditation || row.condition || 'Sin estado'"
-                  [severity]="stateSeverity(row.condition)"
+                  [value]="row.finalCondition || 'Sin estado'"
+                  [severity]="stateSeverity(row.finalCondition)"
                 ></p-tag>
               </td>
               <td>
-                <div class="flex flex-column">
-                  <span class="font-semibold">
-                    {{ row.finalScore ?? '-' }}
-                  </span>
-                  <small class="text-color-secondary">
-                    {{ row.finalExplanation || '-' }}
-                  </small>
-                </div>
+                <span class="text-sm">{{ row.lastExamSummary || '-' }}</span>
               </td>
               <td class="text-center">
                 <div class="status-actions">
@@ -153,10 +141,18 @@
                     icon="pi pi-search"
                     severity="secondary"
                     styleClass="p-button-rounded p-button-text action-icon"
-                    (onClick)="viewSubjectDetail(row)"
-                    [ariaLabel]="'Ver detalle de ' + row.subjectName"
+                    (onClick)="viewSummarySubject(row)"
+                    [disabled]="!row.id"
+                    [ariaLabel]="'Ver detalle de ' + row.name"
                   ></p-button>
                 </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center text-color-secondary py-4">
+                No hay materias registradas para este año.
               </td>
             </tr>
           </ng-template>
