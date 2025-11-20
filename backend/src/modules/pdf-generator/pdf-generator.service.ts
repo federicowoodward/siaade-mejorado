@@ -13,7 +13,7 @@ export class PdfGeneratorService {
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
     private readonly pdfEngineService: PdfEngineService,
-  ) {}
+  ) { }
 
   private formatDate(date?: Date | null): string {
     if (!date) return "";
@@ -118,10 +118,14 @@ export class PdfGeneratorService {
     studentId: string | number,
   ): Promise<StudentCertificatePayload> {
     const student = await this.loadStudent(studentId);
+    const commonData = student.user.commonData;
     const issuanceDate = new Date();
     const day = String(issuanceDate.getUTCDate()).padStart(2, "0");
     const month = issuanceDate.toLocaleString("es-AR", { month: "long" });
     const year = String(issuanceDate.getUTCFullYear());
+    const bornYear = commonData?.birthDate
+      ? String(commonData.birthDate.getUTCFullYear())
+      : "";
     return {
       lastname: student.user.lastName,
       name: student.user.name,
@@ -131,6 +135,7 @@ export class PdfGeneratorService {
       day,
       month,
       year,
+      born_year: bornYear,
     };
   }
 
@@ -155,7 +160,7 @@ export class PdfGeneratorService {
     const commonData = student.user.commonData;
     // TODO(PDF-GENERATOR): revisar campo 'born_year' en la entidad Student o entidad relacionada.
     const bornYear = commonData?.birthDate
-      ? String(commonData.birthDate.getUTCFullYear())
+      ? String(commonData.birthDate)
       : "";
     // TODO(PDF-GENERATOR): validar si existe un campo 'legajoId' especifico o si debe usarse 'legajo'.
     return {
@@ -179,6 +184,7 @@ interface StudentCertificatePayload extends Record<string, string> {
   day: string;
   month: string;
   year: string;
+  born_year: string;
 }
 
 interface ExamRegistrationReceiptPayload extends Record<string, string> {
