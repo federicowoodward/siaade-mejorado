@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
-import { catchError, finalize, map, tap } from 'rxjs/operators';
+import { catchError, finalize, map, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import {
@@ -208,14 +208,62 @@ export class StudentStatusService {
     const endpoint = shouldUseSelfEndpoint
       ? 'students/read/me/summary'
       : `students/read/${studentId}/summary`;
+    const targetId = studentId ?? currentUserId ?? null;
 
     return this.api.request<any>('GET', endpoint).pipe(
       map((payload) => this.mapSummary(payload)),
+      switchMap((summary) => {
+        if (summary) return of(summary);
+        if (!targetId) return of(null);
+        return this.fetchSummaryFallback(targetId);
+      }),
       catchError((error) => {
         console.warn('[StudentStatus] summary endpoint unavailable', error);
-        return of(null);
+        if (!targetId) {
+          return of(null);
+        }
+        return this.fetchSummaryFallback(targetId);
       }),
     );
+  }
+
+  private fetchSummaryFallback(
+    targetId: string,
+  ): Observable<StudentStatusSummary | null> {
+    return this.api
+      .request<any>('GET', `students/read/${targetId}/full`)
+      .pipe(
+        map((full) =>
+          this.mapSummary(this.buildSummaryFallbackPayload(full, targetId)),
+        ),
+        catchError((fallbackError) => {
+          console.warn(
+            '[StudentStatus] fallback full endpoint unavailable',
+            fallbackError,
+          );
+          return of(null);
+        }),
+      );
+  }
+
+  private buildSummaryFallbackPayload(
+    full: any,
+    studentId: string,
+  ): Record<string, unknown> | null {
+    if (!full) return null;
+    const academicStatus = full?.academicStatus;
+    const years = this.buildYearsFromAcademicStatus(academicStatus);
+    return {
+      id: full?.student?.userId ?? studentId,
+      studentId: full?.student?.userId ?? studentId,
+      firstName: full?.user?.name ?? null,
+      lastName: full?.user?.lastName ?? null,
+      fullName: this.composeFullName(full?.user?.name, full?.user?.lastName),
+      documentNumber: full?.user?.cuil ?? null,
+      registeredSince: this.coerceStartYearToDate(full?.student?.studentStartYear),
+      currentAcademicYear: this.resolveCurrentAcademicYearFromYears(years),
+      years,
+    };
   }
 
   private mapCards(
@@ -381,6 +429,71 @@ export class StudentStatusService {
   ): string | null {
     const normalized = this.normalizeDate(value);
     return normalized.length ? normalized : null;
+  }
+
+  private buildYearsFromAcademicStatus(
+    academicStatus: any,
+  ): StudentSummaryYear[] {
+    const byYear = academicStatus?.byYear ?? {};
+    const years: StudentSummaryYear[] = [];
+    Object.entries(byYear).forEach(([label, rows]) => {
+      const subjects = Array.isArray(rows) ? rows : [];
+      const yearNumeric = this.extractYearFromLabel(label) ?? 0;
+      years.push({
+        year: yearNumeric,
+        subjects: subjects.map((row: any) => ({
+          id: this.toNumber(row?.subjectId),
+          name:
+            typeof row?.subjectName === 'string'
+              ? row.subjectName
+              : 'Materia',
+          calendarYear: this.toNumber(row?.year),
+          division:
+            typeof row?.commissionLetter === 'string'
+              ? row.commissionLetter
+              : null,
+          finalCondition:
+            typeof row?.condition === 'string' ? row.condition : null,
+          lastExamSummary: this.buildSummaryExamText(row),
+          hasGrades: this.deriveHasGrades(row),
+        })),
+      });
+    });
+    return years.filter((y) => y.year > 0).sort((a, b) => a.year - b.year);
+  }
+
+  private buildSummaryExamText(row: any): string | null {
+    const parts: string[] = [];
+    const notes = [row?.note1, row?.note2, row?.note3, row?.note4].filter(
+      (n): n is number => typeof n === 'number',
+    );
+    if (notes.length) parts.push(`Parciales: ${notes.join(', ')}`);
+    if (typeof row?.final === 'number') parts.push(`Final: ${row.final}`);
+    const attendance = this.toNumber(row?.attendancePercentage);
+    if (attendance !== null) parts.push(`Asist.: ${attendance}%`);
+    if (typeof row?.condition === 'string' && row.condition.trim().length) {
+      parts.push(row.condition);
+    }
+    if (!parts.length) return null;
+    return parts.join(' • ');
+  }
+
+  private coerceStartYearToDate(year: unknown): string | null {
+    const numeric = this.toNumber(year);
+    if (!numeric) return null;
+    return `${numeric}-01-01`;
+  }
+
+  private resolveCurrentAcademicYearFromYears(
+    years: StudentSummaryYear[],
+  ): number | null {
+    const numeric = years
+      .map((y) => y.year)
+      .filter((value) => typeof value === 'number' && Number.isFinite(value));
+    if (!numeric.length) {
+      return years.length > 0 ? 1 : null;
+    }
+    return Math.max(...numeric);
   }
 
   private resolvePartials(value: unknown): 2 | 4 {
