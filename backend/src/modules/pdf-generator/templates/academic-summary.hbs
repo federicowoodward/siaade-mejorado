@@ -1,0 +1,95 @@
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 32px;
+        line-height: 1.5;
+      }
+      h1 {
+        text-align: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        padding: 6px 4px;
+        font-size: 12px;
+      }
+      th {
+        font-weight: bold;
+        border-bottom: 1px solid #000;
+      }
+      .year-summary {
+        margin-top: 8px;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .divider {
+        border-top: 1px solid #000;
+        margin: 12px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>{{instituteName}}</h1>
+    <p style="text-align:center; margin-top:-12px;">
+      <strong>{{subtitle}}</strong>
+    </p>
+    <div class="divider"></div>
+
+    <p>
+      Estudiante: <strong>{{student.lastname}}, {{student.name}}</strong><br />
+      Sexo: <strong>{{student.sex}}</strong>&nbsp;&nbsp; Nacido:
+      <strong>{{student.bornYear}}</strong> en
+      <strong>{{student.bornPlace}}</strong><br />
+      Legajo: <strong>{{student.legajoId}}</strong>&nbsp;&nbsp; Libro Matriz:
+      <strong>{{student.libroMatriz}}</strong>&nbsp;&nbsp; Folio:
+      <strong>{{student.folio}}</strong><br />
+      Documento: <strong>{{student.documentType}}</strong> Nro:
+      <strong>{{student.documentNumber}}</strong><br />
+      Cuil: <strong>{{student.cuil}}</strong><br />
+      Correo: <strong>{{student.email}}</strong><br />
+      Teléfono: <strong>{{student.telephone}}</strong>
+    </p>
+
+    <div class="divider"></div>
+    <p>Plan de Estudios: <strong>{{student.planName}}</strong></p>
+    <div class="divider"></div>
+
+    {{#each years}}
+      <h3>{{this.label}}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>subject</th>
+            <th>month - year - subject_type</th>
+            <th>student_status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each this.subjects}}
+            <tr>
+              <td>{{this.name}}</td>
+              <td>{{this.descriptor}}</td>
+              <td>{{this.status}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+
+      <div class="year-summary">
+        <span>Curso {{this.yearStatus}}</span>
+        <span>Promedio Curso: {{this.yearAverage}}</span>
+      </div>
+
+      <div class="divider"></div>
+    {{/each}}
+  </body>
+</html>
+

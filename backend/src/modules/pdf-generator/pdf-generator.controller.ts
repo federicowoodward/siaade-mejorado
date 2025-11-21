@@ -12,7 +12,7 @@ import {
 @ApiTags("PDF Generator")
 @Controller("generatePdf")
 export class PdfGeneratorController {
-  constructor(private readonly pdfGeneratorService: PdfGeneratorService) { }
+  constructor(private readonly pdfGeneratorService: PdfGeneratorService) {}
 
   // ---------------------------------------------------------
   // STUDENT CERTIFICATE
@@ -240,3 +240,4 @@ export class PdfGeneratorController {
     return res.send(html);
   }
 }
+

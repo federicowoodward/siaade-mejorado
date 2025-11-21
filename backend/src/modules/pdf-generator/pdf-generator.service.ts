@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Student } from "@/entities/users/student.entity";
 import { PdfEngineService } from "@/modules/pdf-generator/pdf-engine.service";
+import { CatalogsService } from "@/modules/catalogs/catalogs.service";
 
 const CAREER_NAME = "TECNICATURA SUPERIOR EN DESARROLLO DE SOFTWARE";
 const SCHOOL_NAME = "Instituto Superior en Actividades Deportivas";
@@ -13,13 +14,14 @@ export class PdfGeneratorService {
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
     private readonly pdfEngineService: PdfEngineService,
-  ) { }
+    private readonly catalogsService: CatalogsService
+  ) {}
 
   private formatDate(date?: Date | null): string {
     if (!date) return "";
     const day = String(date.getUTCDate()).padStart(2, "0");
     const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const year = date.getUTCFullYear();
+    const year = date;
     return `${day}/${month}/${year}`;
   }
 
@@ -27,7 +29,13 @@ export class PdfGeneratorService {
     const normalizedId = String(studentId);
     const student = await this.studentRepo.findOne({
       where: { userId: normalizedId },
-      relations: ["user", "user.commonData"],
+      relations: [
+        "user",
+        "user.commonData",
+        "user.userInfo",
+        "finals",
+        "finals.finalExam",
+      ],
     });
     if (!student) {
       throw new NotFoundException("Estudiante no encontrado");
@@ -38,7 +46,6 @@ export class PdfGeneratorService {
   async getStudentCertificatePdf(studentId: string | number): Promise<Buffer> {
     const payload = await this.buildStudentCertificatePayload(studentId);
     const templateName = "student-certificate";
-    // Validaciones específicas para los campos utilizados por la plantilla student-certificate.
     const requiredFields = [
       "name",
       "lastname",
@@ -57,75 +64,313 @@ export class PdfGeneratorService {
         (typeof value === "string" && value.trim() === "")
       ) {
         throw new Error(
-          `Missing required field '${field}' for template '${templateName}'`,
+          `Missing required field '${field}' for template '${templateName}'`
         );
       }
     }
 
-    return this.pdfEngineService.generatePdfFromTemplate(
-      templateName,
-      payload,
-    );
+    return this.pdfEngineService.generatePdfFromTemplate(templateName, payload);
   }
 
   async getStudentCertificateHtml(studentId: string | number): Promise<string> {
     const payload = await this.buildStudentCertificatePayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "student-certificate",
-      payload,
+      payload
     );
   }
 
   async getExamRegistrationReceiptPdf(
-    studentId: string | number,
+    studentId: string | number
   ): Promise<Buffer> {
     const payload = await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
       "exam-registration-receipt",
-      payload,
+      payload
     );
   }
 
   async getExamRegistrationReceiptHtml(
-    studentId: string | number,
+    studentId: string | number
   ): Promise<string> {
     const payload = await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "exam-registration-receipt",
-      payload,
+      payload
     );
   }
 
   async getAcademicPerformancePdf(studentId: string | number): Promise<Buffer> {
-    const payload = await this.buildAcademicPerformancePayload(studentId);
+    const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
-      "academic-performance",
-      payload,
+      "academic-summary",
+      viewModel as unknown as Record<string, unknown>
     );
   }
 
   async getAcademicPerformanceHtml(
-    studentId: string | number,
+    studentId: string | number
   ): Promise<string> {
-    const payload = await this.buildAcademicPerformancePayload(studentId);
+    const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
-      "academic-performance",
-      payload,
+      "academic-summary",
+      viewModel as unknown as Record<string, unknown>
     );
   }
 
+  async generateAcademicSummary(studentId: string): Promise<Buffer> {
+    const viewModel = await this.buildAcademicSummaryPayload(studentId);
+    return this.pdfEngineService.generatePdfFromTemplate(
+      "academic-summary",
+      viewModel as unknown as Record<string, unknown>
+    );
+  }
+
+  private async buildAcademicSummaryPayload(
+    studentId: string | number
+  ): Promise<AcademicSummaryViewModel> {
+    const student = await this.loadStudent(studentId);
+    const user = student.user;
+    const commonData = user.commonData;
+    const userInfo = user.userInfo;
+
+    const bornYear = commonData?.birthDate
+      ? String(commonData.birthDate)
+      : "";
+
+    const studentViewModel: AcademicSummaryStudentView = {
+      lastname: user.lastName,
+      name: user.name,
+      sex: commonData?.sex ?? "",
+      bornYear,
+      bornPlace: commonData?.birthPlace ?? "",
+      legajoId: student.legajo,
+      libroMatriz: "",
+      folio: "",
+      documentType: "D.N.I",
+      documentNumber: user.cuil,
+      cuil: user.cuil,
+      email: user.email,
+      telephone: userInfo?.phone ?? "",
+      planName: CAREER_NAME,
+    };
+
+    const finalsBySubjectId = new Map<
+      number,
+      {
+        examDate: Date;
+        score: number | null;
+      }
+    >();
+
+    for (const fes of student.finals ?? []) {
+      const finalExam = fes.finalExam;
+      if (!finalExam) continue;
+      const subjectId = finalExam.subjectId;
+      const examDate = finalExam.examDate;
+      if (!subjectId || !examDate) continue;
+
+      const score =
+        typeof fes.score === "string" && fes.score.trim() !== ""
+          ? Number(fes.score)
+          : null;
+
+      const existing = finalsBySubjectId.get(subjectId);
+      if (!existing || examDate > existing.examDate) {
+        finalsBySubjectId.set(subjectId, { examDate, score });
+      }
+    }
+
+    const academicStatus = await this.catalogsService.getStudentAcademicStatus(
+      student.userId
+    );
+
+    const years: AcademicSummaryYearView[] = [];
+
+    const yearEntries = Object.entries(academicStatus.byYear);
+    yearEntries.sort((a, b) => {
+      const subjectsA = a[1];
+      const subjectsB = b[1];
+      const yearA =
+        subjectsA.length > 0 && subjectsA[0].year != null
+          ? subjectsA[0].year
+          : Number.MAX_SAFE_INTEGER;
+      const yearB =
+        subjectsB.length > 0 && subjectsB[0].year != null
+          ? subjectsB[0].year
+          : Number.MAX_SAFE_INTEGER;
+      if (yearA !== yearB) return yearA - yearB;
+      return a[0].localeCompare(b[0]);
+    });
+
+    for (const [yearLabelRaw, subjectRows] of yearEntries) {
+      if (subjectRows.length === 0) continue;
+
+      const subjects: AcademicSummarySubjectView[] = subjectRows.map((row) => {
+        const finalsInfo = finalsBySubjectId.get(row.subjectId);
+        const finalScoreRaw =
+          finalsInfo?.score != null
+            ? finalsInfo.score
+            : row.final != null
+              ? row.final
+              : null;
+
+        const finalScore =
+          typeof finalScoreRaw === "number" && !Number.isNaN(finalScoreRaw)
+            ? finalScoreRaw
+            : null;
+
+        const descriptor = this.buildSubjectDescriptor(
+          {
+            year: row.year,
+            condition: row.condition,
+          },
+          finalsInfo?.examDate ?? null,
+          student.studentStartYear
+        );
+
+        const status = (row.condition ?? "Inscripto").trim() || "Inscripto";
+
+        return {
+          name: row.subjectName,
+          descriptor,
+          status,
+          finalScore,
+        };
+      });
+
+      const yearAverage = this.computeYearAverage(
+        subjects.map((s) => s.finalScore)
+      );
+      const yearStatus = this.computeYearStatus(subjects);
+
+      const firstRow = subjectRows[0];
+      const yearNo = firstRow.year;
+      const label =
+        yearNo != null && Number.isFinite(yearNo)
+          ? `${yearNo}º Año`
+          : yearLabelRaw;
+
+      years.push({
+        label,
+        subjects,
+        yearStatus,
+        yearAverage,
+      });
+    }
+
+    return {
+      instituteName: SCHOOL_NAME,
+      subtitle: "Resumen Situación Académica (sin aplazos)",
+      student: studentViewModel,
+      years,
+    };
+  }
+
+  private buildSubjectDescriptor(
+    info: { year: number | null; condition: string | null },
+    examDate: Date | null,
+    studentStartYear: number
+  ): string {
+    let month: string | null = null;
+    let yearText: string | null = null;
+
+    if (examDate) {
+      month = String(examDate.getUTCMonth() + 1).padStart(2, "0");
+      yearText = String(examDate);
+    } else if (info.year != null) {
+      const calendarYear = studentStartYear + info.year - 1;
+      month = "12";
+      yearText = String(calendarYear);
+    }
+
+    if (!month || !yearText) {
+      return "-";
+    }
+
+    const baseCondition = (info.condition ?? "").trim();
+    let typeLabel = "Cursado";
+    const lower = baseCondition.toLowerCase();
+    if (lower.includes("promo")) {
+      typeLabel = "Promocionado";
+    } else if (lower.includes("regular")) {
+      typeLabel = "Regular";
+    } else if (lower.includes("libre")) {
+      typeLabel = "Libre";
+    } else if (lower.includes("aprob")) {
+      typeLabel = "Aprobado";
+    }
+
+    return `${month} - ${yearText} - ${typeLabel}`;
+  }
+
+  private computeYearAverage(scores: Array<number | null>): string {
+    const valid = scores.filter(
+      (n): n is number => typeof n === "number" && !Number.isNaN(n) && n >= 4
+    );
+    if (valid.length === 0) return "-";
+    const sum = valid.reduce((acc, n) => acc + n, 0);
+    const avg = sum / valid.length;
+    return avg.toFixed(2);
+  }
+
+  private computeYearStatus(subjects: AcademicSummarySubjectView[]): string {
+    if (subjects.length === 0) return "";
+
+    let hasApproved = false;
+    let hasInProgress = false;
+    let hasFailed = false;
+
+    for (const subject of subjects) {
+      const status = (subject.status ?? "").toLowerCase();
+      const finalScore = subject.finalScore;
+
+      const isApproved =
+        (typeof finalScore === "number" && finalScore >= 4) ||
+        status.includes("aprob") ||
+        status.includes("promo");
+
+      if (isApproved) {
+        hasApproved = true;
+        continue;
+      }
+
+      if (
+        status.includes("inscrip") ||
+        status.includes("curs") ||
+        status.includes("regular")
+      ) {
+        hasInProgress = true;
+      } else if (status.includes("libre") || status.includes("no inscrip")) {
+        hasFailed = true;
+      }
+    }
+
+    if (!hasInProgress && !hasFailed && hasApproved) {
+      return "Completo";
+    }
+
+    if (hasInProgress) {
+      return "Cursando";
+    }
+
+    if (hasFailed) {
+      return "Incompleto";
+    }
+
+    return "En curso";
+  }
+
   private async buildStudentCertificatePayload(
-    studentId: string | number,
+    studentId: string | number
   ): Promise<StudentCertificatePayload> {
     const student = await this.loadStudent(studentId);
     const commonData = student.user.commonData;
     const issuanceDate = new Date();
     const day = String(issuanceDate.getUTCDate()).padStart(2, "0");
     const month = issuanceDate.toLocaleString("es-AR", { month: "long" });
-    const year = String(issuanceDate.getUTCFullYear());
-    const bornYear = commonData?.birthDate
-      ? String(commonData.birthDate.getUTCFullYear())
-      : "";
+    const year = String(issuanceDate);
+    const bornYear = commonData?.birthDate ? String(commonData.birthDate) : "";
     return {
       lastname: student.user.lastName,
       name: student.user.name,
@@ -140,7 +385,7 @@ export class PdfGeneratorService {
   }
 
   private async buildExamRegistrationReceiptPayload(
-    studentId: string | number,
+    studentId: string | number
   ): Promise<ExamRegistrationReceiptPayload> {
     const student = await this.loadStudent(studentId);
     const commonData = student.user.commonData;
@@ -150,27 +395,6 @@ export class PdfGeneratorService {
       dni: student.user.cuil,
       sex: commonData?.sex ?? "",
       birth_date: this.formatDate(commonData?.birthDate),
-    };
-  }
-
-  private async buildAcademicPerformancePayload(
-    studentId: string | number,
-  ): Promise<AcademicPerformancePayload> {
-    const student = await this.loadStudent(studentId);
-    const commonData = student.user.commonData;
-    // TODO(PDF-GENERATOR): revisar campo 'born_year' en la entidad Student o entidad relacionada.
-    const bornYear = commonData?.birthDate
-      ? String(commonData.birthDate)
-      : "";
-    // TODO(PDF-GENERATOR): validar si existe un campo 'legajoId' especifico o si debe usarse 'legajo'.
-    return {
-      lastname: student.user.lastName,
-      name: student.user.name,
-      dni: student.user.cuil,
-      sex: commonData?.sex ?? "",
-      born_year: bornYear,
-      born_place: commonData?.birthPlace ?? "",
-      legajoId: student.legajo,
     };
   }
 }
@@ -195,12 +419,40 @@ interface ExamRegistrationReceiptPayload extends Record<string, string> {
   birth_date: string;
 }
 
-interface AcademicPerformancePayload extends Record<string, string> {
+interface AcademicSummaryStudentView {
   lastname: string;
   name: string;
-  dni: string;
   sex: string;
-  born_year: string;
-  born_place: string;
+  bornYear: string;
+  bornPlace: string;
   legajoId: string;
+  libroMatriz: string;
+  folio: string;
+  documentType: string;
+  documentNumber: string;
+  cuil: string;
+  email: string;
+  telephone: string;
+  planName: string;
+}
+
+interface AcademicSummarySubjectView {
+  name: string;
+  descriptor: string;
+  status: string;
+  finalScore: number | null;
+}
+
+interface AcademicSummaryYearView {
+  label: string;
+  subjects: AcademicSummarySubjectView[];
+  yearStatus: string;
+  yearAverage: string;
+}
+
+interface AcademicSummaryViewModel {
+  instituteName: string;
+  subtitle: string;
+  student: AcademicSummaryStudentView;
+  years: AcademicSummaryYearView[];
 }

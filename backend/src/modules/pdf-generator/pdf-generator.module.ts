@@ -4,9 +4,10 @@ import { Student } from "@/entities/users/student.entity";
 import { PdfGeneratorController } from "@/modules/pdf-generator/pdf-generator.controller";
 import { PdfGeneratorService } from "@/modules/pdf-generator/pdf-generator.service";
 import { PdfEngineService } from "@/modules/pdf-generator/pdf-engine.service";
+import { CatalogsModule } from "@/modules/catalogs/catalogs.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Student])],
+  imports: [TypeOrmModule.forFeature([Student]), CatalogsModule],
   controllers: [PdfGeneratorController],
   providers: [PdfGeneratorService, PdfEngineService],
   exports: [PdfGeneratorService],
