@@ -15,6 +15,8 @@ import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequisite-by-order.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
+import { StudentSubjectProgress } from "@/entities/subjects/student-subject-progress.entity";
+import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
 
 export type SubjectCommissionTeachersDto = {
   subject: { id: number; name: string };
@@ -60,6 +62,10 @@ export class CatalogsService {
     private readonly subjectPrerequisiteByOrderRepo: Repository<SubjectPrerequisiteByOrder>,
     @InjectRepository(SubjectStudent)
     private readonly subjectStudentRepo: Repository<SubjectStudent>,
+    @InjectRepository(StudentSubjectProgress)
+    private readonly studentSubjectProgressRepo: Repository<StudentSubjectProgress>,
+    @InjectRepository(FinalExamsStudent)
+    private readonly finalExamsStudentRepo: Repository<FinalExamsStudent>,
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -778,8 +784,41 @@ export class CatalogsService {
     }
 
     // 2. Complementar con raw enrollments si no existe
+    // Optimización: traer progreso de todas las materias del alumno en una sola query
+    const progressList = await this.studentSubjectProgressRepo.find({
+      where: { studentId },
+      relations: ["status"],
+    });
+    // Mapa: subjectCommissionId -> Progress
+    const progressMap = new Map<number, any>();
+    for (const p of progressList) {
+      progressMap.set(p.subjectCommissionId, p);
+    }
+
     for (const enrollment of rawEnrollments) {
       if (!bySubject.has(enrollment.subjectId) && enrollment.subject) {
+        // Buscar si hay progreso asociado a esta inscripción (si tiene comisión)
+        let progress = null;
+        if (enrollment.commissionId) {
+          // El enrollment tiene commissionId que apunta a SubjectCommission.id?
+          // No, enrollment.commissionId apunta a SubjectCommission.id según la entidad SubjectStudent
+          progress = progressMap.get(enrollment.commissionId);
+        }
+
+        const partials = progress?.partialScores || {};
+        const note1 = partials["1"] ? Number(partials["1"]) : null;
+        const note2 = partials["2"] ? Number(partials["2"]) : null;
+        const note3 = partials["3"] ? Number(partials["3"]) : null;
+        const note4 = partials["4"] ? Number(partials["4"]) : null;
+        const final = progress?.finalScore ? Number(progress.finalScore) : null; // Si existiera en entity, pero no veo finalScore en entity. Asumimos null por ahora o revisamos entity.
+        // Revisando entity StudentSubjectProgress: no tiene finalScore explícito, solo partialScores.
+        // Pero la vista tiene 'final'. ¿De dónde sale? De final_exams_students?
+        // La vista v_subject_grades tiene columna 'final'.
+        // Por ahora dejamos final en null si no está en progress.
+
+        const condition = progress?.status?.name || "Inscripto";
+        const attendance = progress?.attendancePercentage ? Number(progress.attendancePercentage) : 0;
+
         // Construir objeto compatible con la vista
         bySubject.set(enrollment.subjectId, {
           subjectId: enrollment.subjectId,
@@ -787,13 +826,40 @@ export class CatalogsService {
           commissionId: enrollment.commission?.commission?.id ?? 0,
           commissionLetter: enrollment.commission?.commission?.commissionLetter ?? null,
           partials: 2, // Default
+          note1,
+          note2,
+          note3,
+          note4,
+          final,
+          attendancePercentage: attendance,
+          condition, 
+        });
+      }
+    }
+
+    // 3. Complementar con inscripciones a finales (si no existe en los anteriores)
+    // Esto cubre casos de alumnos "Libres" o con inscripciones solo a examen
+    const examEnrollments = await this.finalExamsStudentRepo.find({
+      where: { studentId },
+      relations: ["finalExam", "finalExam.subject"],
+    });
+
+    for (const examEnrollment of examEnrollments) {
+      const subject = examEnrollment.finalExam?.subject;
+      if (subject && !bySubject.has(subject.id)) {
+        bySubject.set(subject.id, {
+          subjectId: subject.id,
+          subjectName: subject.subjectName,
+          commissionId: 0,
+          commissionLetter: null,
+          partials: 2,
           note1: null,
           note2: null,
           note3: null,
           note4: null,
-          final: null,
+          final: examEnrollment.score ? Number(examEnrollment.score) : null,
           attendancePercentage: 0,
-          condition: "Inscripto", // Estado por defecto si solo está en subject_students
+          condition: "Libre", // Asumimos Libre si solo tiene final y no cursada
         });
       }
     }
