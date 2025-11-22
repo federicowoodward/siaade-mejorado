@@ -39,11 +39,6 @@ export class MenuComponent {
         routerLink: ['/alumno/mesas'],
       },
       {
-        label: 'Documentacion',
-        icon: 'pi pi-calendar',
-        routerLink: ['/students/appointments-documents'],
-      },
-      {
         label: 'Situacion academica',
         icon: 'pi pi-book',
         routerLink: ['/alumno/situacion-academica'],
