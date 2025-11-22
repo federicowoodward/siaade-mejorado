@@ -1,13 +1,14 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Card } from 'primeng/card';
 import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE } from '../../../core/auth/roles';
 import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
-import { ApiService } from '@/core/services/api.service';
 import { AuthService } from '@/core/services/auth.service';
 import { environment } from 'environments/environment';
+import { take } from 'rxjs/operators';
 
 interface QuickAccess {
   label: string;
@@ -27,10 +28,11 @@ interface QuickAccess {
 export class QuickAccessComponent {
   private permissions = inject(PermissionService);
   private router = inject(Router);
-  private api = inject(ApiService);
   private authService = inject(AuthService);
+  private http = inject(HttpClient);
 
   accesses = signal<QuickAccess[]>([]);
+  loadingStudentCertificate = signal(false);
 
   userRole(): ROLE | null {
     return this.permissions.currentRole();
@@ -47,23 +49,14 @@ export class QuickAccessComponent {
       {
         label: 'Mesas de examen',
         icon: 'pi pi-calendar-plus',
-        description: 'Mesas disponibles para inscripción.',
+        description: 'Mesas disponibles para inscripcion.',
         route: ['/alumno/mesas'],
       },
       {
         label: 'Certificado alumno',
         icon: 'pi pi-book',
         description: 'Genera certificado de alumno.',
-        action: () => {
-          this.authService.getUser().subscribe((user) => {
-            if (!user) return;
-
-            const base = environment.apiBaseUrl.replace(/\/$/, ''); // http://localhost:3000/api
-            const url = `${base}/generatePdf/student-certificate/${user.id}`;
-
-            window.open(url, '_blank'); // abre el PDF en una nueva pestaña / dispara la descarga
-          });
-        },
+        action: () => this.handleStudentCertificateClick(),
       },
     ],
     [ROLE.TEACHER]: [
@@ -151,14 +144,69 @@ export class QuickAccessComponent {
   constructor() {
     effect(() => {
       const role = this.permissions.currentRole();
-      this.accesses.set(role ? (this.accessesByRole[role] ?? []) : []);
+      this.accesses.set(role ? this.accessesByRole[role] ?? [] : []);
     });
   }
 
-  navigate(route: string[]) {
+  isStudentCertificate(acc: QuickAccess): boolean {
+    return acc.label === 'Certificado alumno';
+  }
+
+  private handleStudentCertificateClick(): void {
+    if (this.loadingStudentCertificate()) {
+      return;
+    }
+
+    this.loadingStudentCertificate.set(true);
+
+    this.authService
+      .getUser()
+      .pipe(take(1))
+      .subscribe({
+        next: (user) => {
+          if (!user) {
+            this.loadingStudentCertificate.set(false);
+            return;
+          }
+
+          const base = environment.apiBaseUrl.replace(/\/$/, '');
+          const url = `${base}/generatePdf/student-certificate/${user.id}`;
+
+          this.http
+            .get(url, { responseType: 'blob' as 'blob' })
+            .subscribe({
+              next: (blob) => {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.target = '_blank';
+                link.download = 'certificado-alumno.pdf';
+                link.click();
+                URL.revokeObjectURL(blobUrl);
+                this.loadingStudentCertificate.set(false);
+              },
+              error: (error) => {
+                console.error(
+                  'Error al generar el certificado de alumno',
+                  error,
+                );
+                this.loadingStudentCertificate.set(false);
+              },
+            });
+        },
+        error: (error) => {
+          console.error('Error al obtener el usuario actual', error);
+          this.loadingStudentCertificate.set(false);
+        },
+      });
+  }
+
+  navigate(route: string[]): void {
     this.router.navigate(route).then((ok) => {
-      if (!ok)
+      if (!ok) {
         console.warn('Navigation was canceled, check guards or path:', route);
+      }
     });
   }
 }
+

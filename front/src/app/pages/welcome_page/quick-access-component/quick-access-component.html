@@ -7,20 +7,37 @@
   Aquí encontrarás tus accesos rápidos e información importante.
 </p>
 
-<!-- Accesos rapidos -->
+<!-- Accesos rápidos -->
 <div class="grid">
   <div *ngFor="let acc of accesses()" class="col-12 sm:col-6 lg:col-3">
-    <p-card
-      [header]="acc.label"
-      [subheader]="acc.description"
-      [style]="{ cursor: 'pointer' }"
-      (click)="acc.route ? navigate(acc.route) : acc.action?.()"
-      class="quick-card"
+    <ng-container
+      *ngIf="!(isStudentCertificate(acc) && loadingStudentCertificate()); else loadingCard"
     >
-      <ng-template #header>
-        <i [class]="acc.icon + ' text-5xl text-primary'"></i>
-      </ng-template>
-      <div class="card-content"></div>
-    </p-card>
+      <p-card
+        [header]="acc.label"
+        [subheader]="acc.description"
+        [style]="{ cursor: 'pointer' }"
+        (click)="acc.route ? navigate(acc.route) : acc.action?.()"
+        class="quick-card"
+      >
+        <ng-template #header>
+          <i [class]="acc.icon + ' text-5xl text-primary'"></i>
+        </ng-template>
+        <div class="card-content"></div>
+      </p-card>
+    </ng-container>
+
+    <ng-template #loadingCard>
+      <p-card
+        header="Generando certificado..."
+        subheader="Por favor esperá unos segundos"
+        class="quick-card loading-card"
+      >
+        <div class="card-content">
+          <div class="loader-spinner"></div>
+        </div>
+      </p-card>
+    </ng-template>
   </div>
 </div>
+

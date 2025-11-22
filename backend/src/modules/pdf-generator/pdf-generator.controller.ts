@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Res, HttpStatus } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  HttpStatus,
+  UseGuards,
+} from "@nestjs/common";
 import { Response } from "express";
 import { PdfGeneratorService } from "@/modules/pdf-generator/pdf-generator.service";
 import {
@@ -7,9 +14,16 @@ import {
   ApiProduces,
   ApiResponse,
   ApiParam,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { Action } from "@/shared/rbac/decorators/action.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
 
 @ApiTags("PDF Generator")
+@ApiBearerAuth()
 @Controller("generatePdf")
 export class PdfGeneratorController {
   constructor(private readonly pdfGeneratorService: PdfGeneratorService) {}
@@ -18,6 +32,15 @@ export class PdfGeneratorController {
   // STUDENT CERTIFICATE
   // ---------------------------------------------------------
   @Get("student-certificate/:studentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("pdfGenerator.generateStudentCertificate")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.TEACHER,
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY
+  )
   @ApiOperation({
     summary: "Generate Student Certificate PDF",
     description:
@@ -53,6 +76,15 @@ export class PdfGeneratorController {
   }
 
   @Get("preview/student-certificate/:studentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("pdfGenerator.previewStudentCertificate")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.TEACHER,
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY
+  )
   @ApiOperation({
     summary: "Preview Student Certificate HTML",
     description:
@@ -87,6 +119,15 @@ export class PdfGeneratorController {
   // EXAM REGISTRATION RECEIPT
   // ---------------------------------------------------------
   @Get("exam-registration-receipt/:studentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("pdfGenerator.generateExamRegistrationReceipt")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.TEACHER,
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY
+  )
   @ApiOperation({
     summary: "Generate Exam Registration Receipt PDF",
     description:
@@ -122,6 +163,15 @@ export class PdfGeneratorController {
   }
 
   @Get("preview/exam-registration-receipt/:studentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("pdfGenerator.previewExamRegistrationReceipt")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.TEACHER,
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY
+  )
   @ApiOperation({
     summary: "Preview Exam Registration Receipt HTML",
     description:
@@ -156,6 +206,15 @@ export class PdfGeneratorController {
   // ACADEMIC PERFORMANCE
   // ---------------------------------------------------------
   @Get("academic-performance/:studentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("pdfGenerator.generateAcademicPerformance")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.TEACHER,
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY
+  )
   @ApiOperation({
     summary: "Generate Academic Performance PDF",
     description:
@@ -191,6 +250,15 @@ export class PdfGeneratorController {
   }
 
   @Get("preview/academic-performance/:studentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("pdfGenerator.previewAcademicPerformance")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.TEACHER,
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY
+  )
   @ApiOperation({
     summary: "Preview Academic Performance HTML",
     description:
