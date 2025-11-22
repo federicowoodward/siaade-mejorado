@@ -768,48 +768,58 @@ export class CatalogsService {
       .addOrderBy("vg.commission_id", "ASC")
       .getMany();
 
-    console.log(`[DEBUG] viewRows count: ${viewRows.length}`);
-
     // Traer inscripciones crudas para complementar lo que falte en la vista
     const rawEnrollments = await this.subjectStudentRepo.find({
       where: { studentId },
       relations: ["subject", "commission", "commission.commission"],
     });
-    
-    console.log(`[DEBUG] rawEnrollments count: ${rawEnrollments.length}`);
 
-    // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
-    // Prioridad: Vista (tiene notas) > Raw (solo inscripción)
-    const bySubject = new Map<number, any>();
-    
-    // 1. Cargar desde la vista
-    for (const row of viewRows) {
-      if (!bySubject.has(row.subjectId)) bySubject.set(row.subjectId, row);
-    }
-
-    // 2. Complementar con raw enrollments si no existe
-    // Optimización: traer progreso de todas las materias del alumno en una sola query
+    // Traer progreso real (notas, asistencia) para asegurar datos frescos
     const progressList = await this.studentSubjectProgressRepo.find({
       where: { studentId },
       relations: ["status"],
     });
     
-    console.log(`[DEBUG] progressList count: ${progressList.length}`);
-    
-    // Mapa: subjectCommissionId -> Progress
     const progressMap = new Map<number, any>();
     for (const p of progressList) {
       progressMap.set(p.subjectCommissionId, p);
     }
 
+    // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
+    // Prioridad: Vista (tiene notas) > Raw (solo inscripción)
+    const bySubject = new Map<number, any>();
+    
+    // 1. Cargar desde la vista y enriquecer con progressMap
+    for (const row of viewRows) {
+      if (!bySubject.has(row.subjectId)) {
+        // Intentar enriquecer con datos frescos de progressMap si la vista trajo NULLs
+        const progress = progressMap.get(row.commissionId);
+        if (progress) {
+          const partials = progress.partialScores || {};
+          row.note1 = partials["1"] ? Number(partials["1"]) : row.note1;
+          row.note2 = partials["2"] ? Number(partials["2"]) : row.note2;
+          row.note3 = partials["3"] ? Number(partials["3"]) : row.note3;
+          row.note4 = partials["4"] ? Number(partials["4"]) : row.note4;
+          
+          row.attendancePercentage = progress.attendancePercentage 
+            ? String(progress.attendancePercentage) 
+            : row.attendancePercentage;
+            
+          if (progress.status?.name) {
+            row.condition = progress.status.name;
+          }
+        }
+        bySubject.set(row.subjectId, row);
+      }
+    }
+
+    // 2. Complementar con raw enrollments si no existe
     for (const enrollment of rawEnrollments) {
       if (!bySubject.has(enrollment.subjectId) && enrollment.subject) {
-        // Buscar si hay progreso asociado a esta inscripción (si tiene comisión)
+        // Buscar si hay progreso asociado
         let progress = null;
         if (enrollment.commissionId) {
-          // El enrollment tiene commissionId que apunta a SubjectCommission.id?
-          // No, enrollment.commissionId apunta a SubjectCommission.id según la entidad SubjectStudent
-          progress = progressMap.get(enrollment.commissionId);
+           progress = progressMap.get(enrollment.commissionId);
         }
 
         const partials = progress?.partialScores || {};
@@ -817,18 +827,10 @@ export class CatalogsService {
         const note2 = partials["2"] ? Number(partials["2"]) : null;
         const note3 = partials["3"] ? Number(partials["3"]) : null;
         const note4 = partials["4"] ? Number(partials["4"]) : null;
-        const final = progress?.finalScore ? Number(progress.finalScore) : null; // Si existiera en entity, pero no veo finalScore in entity. Asumimos null por ahora o revisamos entity.
-        // Revisando entity StudentSubjectProgress: no tiene finalScore explícito, solo partialScores.
-        // Pero la vista tiene 'final'. ¿De dónde sale? De final_exams_students?
-        // La vista v_subject_grades tiene columna 'final'.
-        // Por ahora dejamos final en null si no está en progress.
-
+        
         const condition = progress?.status?.name || "Inscripto";
         const attendance = progress?.attendancePercentage ? Number(progress.attendancePercentage) : 0;
-        
-        console.log(`[DEBUG] Adding subject from rawEnrollments: ${enrollment.subject.subjectName}, condition: ${condition}`);
 
-        // Construir objeto compatible con la vista
         bySubject.set(enrollment.subjectId, {
           subjectId: enrollment.subjectId,
           subjectName: enrollment.subject.subjectName,
@@ -839,26 +841,22 @@ export class CatalogsService {
           note2,
           note3,
           note4,
-          final,
+          final: null,
           attendancePercentage: attendance,
           condition, 
         });
       }
     }
 
-    // 3. Complementar con inscripciones a finales (si no existe en los anteriores)
-    // Esto cubre casos de alumnos "Libres" o con inscripciones solo a examen
+    // 3. Complementar con inscripciones a finales
     const examEnrollments = await this.finalExamsStudentRepo.find({
       where: { studentId },
       relations: ["finalExam", "finalExam.subject"],
     });
-    
-    console.log(`[DEBUG] examEnrollments count: ${examEnrollments.length}`);
 
     for (const examEnrollment of examEnrollments) {
       const subject = examEnrollment.finalExam?.subject;
       if (subject && !bySubject.has(subject.id)) {
-        console.log(`[DEBUG] Adding subject from examEnrollments: ${subject.subjectName}`);
         bySubject.set(subject.id, {
           subjectId: subject.id,
           subjectName: subject.subjectName,
@@ -871,7 +869,7 @@ export class CatalogsService {
           note4: null,
           final: examEnrollment.score ? Number(examEnrollment.score) : null,
           attendancePercentage: 0,
-          condition: "Libre", // Asumimos Libre si solo tiene final y no cursada
+          condition: "Libre", 
         });
       }
     }
@@ -903,12 +901,15 @@ export class CatalogsService {
       attendance: number | null | undefined,
       existing: string | null | undefined,
     ): string => {
-      if (existing && existing.trim()) return existing;
+      if (existing && existing.trim() && existing !== "Inscripto") return existing;
+      
       const att = Number(attendance ?? 0);
       const valid = notes.filter(
         (n): n is number => typeof n === "number" && !Number.isNaN(n),
       );
-      if (valid.length === 0) return "Inscripto";
+      
+      if (valid.length === 0) return existing || "Inscripto";
+      
       const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
       if (att >= 90 && avg >= 7) return "Promocionado";
       if (att >= 75 && att < 90 && avg >= 4) return "Regular";
