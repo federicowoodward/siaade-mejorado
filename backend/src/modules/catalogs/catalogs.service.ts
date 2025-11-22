@@ -768,11 +768,15 @@ export class CatalogsService {
       .addOrderBy("vg.commission_id", "ASC")
       .getMany();
 
+    console.log(`[DEBUG] viewRows count: ${viewRows.length}`);
+
     // Traer inscripciones crudas para complementar lo que falte en la vista
     const rawEnrollments = await this.subjectStudentRepo.find({
       where: { studentId },
-      relations: ["subject", "commission", "commission.commission"], // commission -> SubjectCommission -> Commission
+      relations: ["subject", "commission", "commission.commission"],
     });
+    
+    console.log(`[DEBUG] rawEnrollments count: ${rawEnrollments.length}`);
 
     // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
     // Prioridad: Vista (tiene notas) > Raw (solo inscripción)
@@ -789,6 +793,9 @@ export class CatalogsService {
       where: { studentId },
       relations: ["status"],
     });
+    
+    console.log(`[DEBUG] progressList count: ${progressList.length}`);
+    
     // Mapa: subjectCommissionId -> Progress
     const progressMap = new Map<number, any>();
     for (const p of progressList) {
@@ -810,7 +817,7 @@ export class CatalogsService {
         const note2 = partials["2"] ? Number(partials["2"]) : null;
         const note3 = partials["3"] ? Number(partials["3"]) : null;
         const note4 = partials["4"] ? Number(partials["4"]) : null;
-        const final = progress?.finalScore ? Number(progress.finalScore) : null; // Si existiera en entity, pero no veo finalScore en entity. Asumimos null por ahora o revisamos entity.
+        const final = progress?.finalScore ? Number(progress.finalScore) : null; // Si existiera en entity, pero no veo finalScore in entity. Asumimos null por ahora o revisamos entity.
         // Revisando entity StudentSubjectProgress: no tiene finalScore explícito, solo partialScores.
         // Pero la vista tiene 'final'. ¿De dónde sale? De final_exams_students?
         // La vista v_subject_grades tiene columna 'final'.
@@ -818,6 +825,8 @@ export class CatalogsService {
 
         const condition = progress?.status?.name || "Inscripto";
         const attendance = progress?.attendancePercentage ? Number(progress.attendancePercentage) : 0;
+        
+        console.log(`[DEBUG] Adding subject from rawEnrollments: ${enrollment.subject.subjectName}, condition: ${condition}`);
 
         // Construir objeto compatible con la vista
         bySubject.set(enrollment.subjectId, {
@@ -843,10 +852,13 @@ export class CatalogsService {
       where: { studentId },
       relations: ["finalExam", "finalExam.subject"],
     });
+    
+    console.log(`[DEBUG] examEnrollments count: ${examEnrollments.length}`);
 
     for (const examEnrollment of examEnrollments) {
       const subject = examEnrollment.finalExam?.subject;
       if (subject && !bySubject.has(subject.id)) {
+        console.log(`[DEBUG] Adding subject from examEnrollments: ${subject.subjectName}`);
         bySubject.set(subject.id, {
           subjectId: subject.id,
           subjectName: subject.subjectName,
