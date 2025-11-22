@@ -49,25 +49,64 @@
         Estudiante:
         <strong>{{student.lastname}}, {{student.name}}</strong><br />
         Sexo:
-        <strong>{{student.sex}}</strong>&nbsp;&nbsp; Nacido:
-        <strong>{{student.bornYear}}</strong>
-        en
-        <strong>{{student.bornPlace}}</strong><br />
+        <strong>{{student.sex}}</strong>&nbsp;&nbsp; Nacido el:
+        <strong>{{student.birthDateText}}</strong>
+        {{#if student.bornPlace}}
+          en
+          <strong>{{student.bornPlace}}</strong>
+        {{/if}}<br />
         Documento:
         <strong>{{student.documentType}}</strong>
         Nro:
         <strong>{{student.documentNumber}}</strong><br />
       </p>
       <p>
-
         Cuil:
         <strong>{{student.cuil}}</strong><br />
         Correo:
         <strong>{{student.email}}</strong><br />
-        Teléfono:
+        Telefono:
         <strong>{{student.telephone}}</strong>
       </p>
     </div>
+
     {{! comprobante empieza aca }}
+    <div class="divider"></div>
+
+    {{#if planName}}
+      <p style="font-weight:bold; margin-top: 8px;">
+        {{planName}}
+      </p>
+    {{/if}}
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 18%;">Fecha</th>
+          <th style="width: 15%;">Hora</th>
+          <th style="width: 20%;">Estado</th>
+          <th>Materia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#if exams.length}}
+          {{#each exams}}
+            <tr>
+              <td>{{this.dateText}}</td>
+              <td>{{this.timeText}}</td>
+              <td>{{this.statusText}}</td>
+              <td>{{this.subjectName}}</td>
+            </tr>
+          {{/each}}
+        {{else}}
+          <tr>
+            <td colspan="4">
+              El alumno no registra inscripciones a examenes finales para el
+              periodo seleccionado.
+            </td>
+          </tr>
+        {{/if}}
+      </tbody>
+    </table>
   </body>
 </html>

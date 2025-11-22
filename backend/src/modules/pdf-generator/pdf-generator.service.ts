@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { IsNull, Not, Repository } from "typeorm";
+import * as crypto from "crypto";
 import { Student } from "@/entities/users/student.entity";
+import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
 import { PdfEngineService } from "@/modules/pdf-generator/pdf-engine.service";
 import { CatalogsService } from "@/modules/catalogs/catalogs.service";
 
@@ -13,6 +15,8 @@ export class PdfGeneratorService {
   constructor(
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
+    @InjectRepository(FinalExamsStudent)
+    private readonly finalExamsStudentRepo: Repository<FinalExamsStudent>,
     private readonly pdfEngineService: PdfEngineService,
     private readonly catalogsService: CatalogsService
   ) {}
@@ -25,6 +29,19 @@ export class PdfGeneratorService {
     const month = String(d.getUTCMonth() + 1).padStart(2, "0");
     const year = String(d.getUTCFullYear());
     return `${day}/${month}/${year}`;
+  }
+
+  private formatDateDdMmYyyy(date: Date): string {
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = String(date.getUTCFullYear());
+    return `${day}-${month}-${year}`;
+  }
+
+  private formatTimeHhMm(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}hs.`;
   }
 
   private async loadStudent(studentId: string | number): Promise<Student> {
@@ -454,14 +471,87 @@ export class PdfGeneratorService {
     studentId: string | number
   ): Promise<ExamRegistrationReceiptPayload> {
     const student = await this.loadStudent(studentId);
-    const commonData = student.user.commonData;
-    return {
-      lastname: student.user.lastName,
-      name: student.user.name,
-      dni: student.user.cuil,
+    const user = student.user;
+    const commonData = user.commonData;
+    const userInfo = user.userInfo;
+
+    const inscriptions = await this.finalExamsStudentRepo.find({
+      where: { studentId: student.userId, enrolledAt: Not(IsNull()) },
+      relations: ["finalExam", "finalExam.subject", "status"],
+      order: { finalExam: { examDate: "ASC" } },
+    });
+
+    const exams: ExamRegistrationReceiptExamView[] = inscriptions.map((fes) => {
+      const exam = fes.finalExam;
+      return {
+        dateText: exam?.examDate ? this.formatDateDdMmYyyy(exam.examDate) : "-",
+        timeText: exam?.examDate ? this.formatTimeHhMm(exam.examDate) : "-",
+        statusText: this.buildExamInscriptionStatus(fes),
+        subjectName: exam?.subject?.subjectName ?? "",
+      };
+    });
+
+    const now = new Date();
+    const refDate = inscriptions[0]?.finalExam?.examDate ?? now;
+    const monthYear = refDate.toLocaleDateString("es-AR", {
+      month: "2-digit",
+      year: "numeric",
+    });
+    const subtitle = `Recibo Inscripción a Examen - ${monthYear}`;
+
+    const birthDateText =
+      commonData?.birthDate != null
+        ? this.formatDate(commonData.birthDate)
+        : "";
+
+    const digitsOnlyCuil = user.cuil.replace(/[^0-9]/g, "");
+    const dniNumber =
+      digitsOnlyCuil.length >= 8 ? digitsOnlyCuil.slice(-8) : digitsOnlyCuil;
+
+    const studentView: ExamRegistrationReceiptStudentView = {
+      lastname: user.lastName,
+      name: user.name,
+      dni: dniNumber,
       sex: commonData?.sex ?? "",
-      birth_date: this.formatDate(commonData?.birthDate),
+      birthDateText,
+      documentType: "D.N.I.",
+      documentNumber: dniNumber,
+      bornYear: birthDateText,
+      bornPlace: commonData?.birthPlace ?? "",
+      cuil: user.cuil,
+      email: user.email,
+      telephone: userInfo?.phone ?? "",
     };
+
+    const dvSource = `${student.userId}|${exams
+      .map((e) => e.dateText + e.subjectName)
+      .join("|")}`;
+
+    return {
+      instituteName: SCHOOL_NAME,
+      subtitle,
+      planName: CAREER_NAME,
+      student: studentView,
+      exams,
+    };
+  }
+
+  private buildExamInscriptionStatus(row: FinalExamsStudent): string {
+    const baseName = row.status?.name?.toLowerCase() ?? "";
+
+    if (!row.enrolledAt) {
+      return "No inscripto";
+    }
+
+    if (baseName.includes("anul")) {
+      return "Inscripción anulada";
+    }
+
+    if (row.approvedAt) {
+      return "Inscripción confirmada";
+    }
+
+    return "Inscripto";
   }
 }
 
@@ -477,12 +567,34 @@ interface StudentCertificatePayload extends Record<string, string> {
   born_year: string;
 }
 
-interface ExamRegistrationReceiptPayload extends Record<string, string> {
+interface ExamRegistrationReceiptStudentView {
   lastname: string;
   name: string;
   dni: string;
   sex: string;
-  birth_date: string;
+  birthDateText: string;
+  documentType: string;
+  documentNumber: string;
+  bornYear: string;
+  bornPlace: string;
+  cuil: string;
+  email: string;
+  telephone: string;
+}
+
+interface ExamRegistrationReceiptExamView {
+  dateText: string;
+  timeText: string;
+  statusText: string;
+  subjectName: string;
+}
+
+interface ExamRegistrationReceiptPayload extends Record<string, any> {
+  instituteName: string;
+  subtitle: string;
+  planName: string;
+  student: ExamRegistrationReceiptStudentView;
+  exams: ExamRegistrationReceiptExamView[];
 }
 
 interface AcademicSummaryStudentView {
