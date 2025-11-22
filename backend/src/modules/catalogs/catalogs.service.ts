@@ -14,6 +14,7 @@ import { Subject } from "@/entities/subjects/subject.entity";
 import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequisite-by-order.entity";
+import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 
 export type SubjectCommissionTeachersDto = {
   subject: { id: number; name: string };
@@ -57,6 +58,8 @@ export class CatalogsService {
     private readonly teacherRepo: Repository<Teacher>,
     @InjectRepository(SubjectPrerequisiteByOrder)
     private readonly subjectPrerequisiteByOrderRepo: Repository<SubjectPrerequisiteByOrder>,
+    @InjectRepository(SubjectStudent)
+    private readonly subjectStudentRepo: Repository<SubjectStudent>,
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -759,10 +762,40 @@ export class CatalogsService {
       .addOrderBy("vg.commission_id", "ASC")
       .getMany();
 
+    // Traer inscripciones crudas para complementar lo que falte en la vista
+    const rawEnrollments = await this.subjectStudentRepo.find({
+      where: { studentId },
+      relations: ["subject", "commission", "commission.commission"], // commission -> SubjectCommission -> Commission
+    });
+
     // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
-    const bySubject = new Map<number, (typeof viewRows)[number]>();
+    // Prioridad: Vista (tiene notas) > Raw (solo inscripción)
+    const bySubject = new Map<number, any>();
+    
+    // 1. Cargar desde la vista
     for (const row of viewRows) {
       if (!bySubject.has(row.subjectId)) bySubject.set(row.subjectId, row);
+    }
+
+    // 2. Complementar con raw enrollments si no existe
+    for (const enrollment of rawEnrollments) {
+      if (!bySubject.has(enrollment.subjectId) && enrollment.subject) {
+        // Construir objeto compatible con la vista
+        bySubject.set(enrollment.subjectId, {
+          subjectId: enrollment.subjectId,
+          subjectName: enrollment.subject.subjectName,
+          commissionId: enrollment.commission?.commission?.id ?? 0,
+          commissionLetter: enrollment.commission?.commission?.commissionLetter ?? null,
+          partials: 2, // Default
+          note1: null,
+          note2: null,
+          note3: null,
+          note4: null,
+          final: null,
+          attendancePercentage: 0,
+          condition: "Inscripto", // Estado por defecto si solo está en subject_students
+        });
+      }
     }
 
     const byYear: Record<
