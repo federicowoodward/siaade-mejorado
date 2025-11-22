@@ -26,18 +26,18 @@ import {
   StudentExamCall,
   StudentExamTable,
   StudentWindowState,
-} from '../../core/models/student-exam.model';
-import { StudentInscriptionsService } from '../../core/services/student-inscriptions.service';
+} from '../../../../core/models/student-exam.model';
+import { StudentInscriptionsService } from '../../../../core/services/student-inscriptions.service';
 import {
   BlockMessageComponent,
   BlockMessageVariant,
   BlockMessageAction,
-} from '../../shared/block-message/block-message.component';
-import { ExamTableSyncService } from '../../core/services/exam-table-sync.service';
+} from '../../../../shared/block-message/block-message.component';
+import { ExamTableSyncService } from '../../../../core/services/exam-table-sync.service';
 import {
   StudentStatusService,
   StudentSubjectCard,
-} from '../../core/services/student-status.service';
+} from '../../../../core/services/student-status.service';
 
 interface ExamCallRow {
   mesaId: number;
@@ -167,20 +167,29 @@ export class MesasListComponent implements OnInit {
   readonly courseCardsVm = computed<CourseCardViewModel[]>(() => {
     const optimistic = this.courseEnrollmentsOptimistic();
     const tables = this.tables();
-    const subjectIds = new Set<number>(tables.map((table) => table.subjectId));
+    const subjectIds = new Set<number>(
+      tables.map((table: StudentExamTable) => table.subjectId),
+    );
     const subjects = this.studentSubjects();
     const source =
       subjectIds.size > 0
-        ? subjects.filter((card) => subjectIds.has(card.subjectId))
+        ? subjects.filter((card: StudentSubjectCard) =>
+            subjectIds.has(card.subjectId),
+          )
         : subjects;
     return source
-      .map((card) => this.mapCourseCard(card, optimistic))
-      .sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+      .map((card: StudentSubjectCard) =>
+        this.mapCourseCard(card, optimistic),
+      )
+      .sort(
+        (a: CourseCardViewModel, b: CourseCardViewModel) =>
+          a.subjectName.localeCompare(b.subjectName),
+      );
   });
 
   readonly subjectOptions = computed(() => {
     const seen = new Map<number, string>();
-    this.tables().forEach((table) => {
+    this.tables().forEach((table: StudentExamTable) => {
       const id = table.subjectId;
       if (!seen.has(id)) {
         seen.set(id, table.subjectName);
@@ -267,7 +276,9 @@ export class MesasListComponent implements OnInit {
     this.inscriptions
       .listExamTables(this.buildFilterPayload(), { refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((tables) => this.reconcileLocalEnrollment(tables));
+      .subscribe((tables: StudentExamTable[]) =>
+        this.reconcileLocalEnrollment(tables),
+      );
   }
 
   applyFilters(): void {
@@ -371,7 +382,7 @@ export class MesasListComponent implements OnInit {
     this.inscriptions
       .enroll({ mesaId: row.mesaId, callId: row.call.id })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         if (response.ok) {
           this.messages.add({
             severity: 'success',
@@ -404,7 +415,7 @@ export class MesasListComponent implements OnInit {
     this.inscriptions
       .unenroll({ mesaId: row.mesaId, callId: row.call.id })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         if (response.ok) {
           this.messages.add({
             severity: 'info',
@@ -432,7 +443,9 @@ export class MesasListComponent implements OnInit {
     this.inscriptions
       .refresh({ refresh: force })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((tables) => this.reconcileLocalEnrollment(tables));
+      .subscribe((tables: StudentExamTable[]) =>
+        this.reconcileLocalEnrollment(tables),
+      );
   }
 
   private reconcileLocalEnrollment(
@@ -442,8 +455,10 @@ export class MesasListComponent implements OnInit {
       return;
     }
     const seen = new Set<number>();
-    tables.forEach((table) =>
-      table.availableCalls.forEach((call) => seen.add(call.id)),
+    tables.forEach((table: StudentExamTable) =>
+      table.availableCalls.forEach((call: StudentExamCall) =>
+        seen.add(call.id),
+      ),
     );
     if (!seen.size) {
       return;
@@ -574,7 +589,8 @@ export class MesasListComponent implements OnInit {
     customMessage?: string,
     row?: ExamCallRow,
   ): void {
-    const template = BLOCK_COPY[reason ?? 'DEFAULT'] ?? BLOCK_COPY.DEFAULT;
+    const template =
+      BLOCK_COPY[reason ?? 'DEFAULT'] ?? BLOCK_COPY['DEFAULT'];
 
     // Compose an official, accessible list when correlatives are missing
     const msg: string | string[] =
@@ -603,8 +619,8 @@ export class MesasListComponent implements OnInit {
     if (raw) {
       const parts = raw
         .split(/\r?\n|;|\u2022|\-/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
       if (parts.length) {
         return lines.concat(parts);
       }

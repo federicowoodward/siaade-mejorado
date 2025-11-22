@@ -10,8 +10,8 @@ import {
   StudentStatusService,
   StudentSubjectCard,
   StudentSubjectNote,
-} from '../../../core/services/student-status.service';
-import { AuthService } from '../../../core/services/auth.service';
+} from '../../../../../core/services/student-status.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-subject-status-detail',
@@ -48,7 +48,7 @@ export class SubjectStatusDetailComponent implements OnInit {
       this.status$,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([subjectId, cards]) => {
+      .subscribe(([subjectId, cards]: [number, StudentSubjectCard[]]) => {
         if (!cards.length) {
           if (this.statusService.loading()) {
             this.loading.set(true);
@@ -60,7 +60,9 @@ export class SubjectStatusDetailComponent implements OnInit {
           return;
         }
         const match =
-          cards.find((card) => card.subjectId === subjectId) ?? null;
+          cards.find(
+            (card: StudentSubjectCard) => card.subjectId === subjectId,
+          ) ?? null;
         if (!match) {
           this.subject.set(null);
           this.error.set('No encontramos la materia solicitada.');
@@ -85,7 +87,7 @@ export class SubjectStatusDetailComponent implements OnInit {
     this.auth
       .getUser()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((user) => {
+      .subscribe((user: any) => {
         if (!user) {
           this.studentName.set(null);
           return;

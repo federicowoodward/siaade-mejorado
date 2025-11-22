@@ -11,9 +11,9 @@ import { FINAL_EXAMS_ROUTES } from './pages/final_examns_module/final_examns_mod
 import { NoticesPageComponent } from './pages/notices_page/notices_page.component';
 import { roleCanActivate } from './core/guards/role.guard';
 import { ROLE } from './core/auth/roles';
-import { MesasListComponent } from './alumno/mesas/mesas-list.component';
-import { AcademicStatusComponent } from './alumno/situacion-academica/academic-status.component';
-import { SubjectStatusDetailComponent } from './alumno/situacion-academica/subject-status-detail/subject-status-detail.component';
+import { MesasListComponent } from './pages/students_module/enrollments_page/mesas/mesas-list.component';
+import { AcademicStatusComponent } from './pages/students_module/academic_status_page/situacion-academica/academic-status.component';
+import { SubjectStatusDetailComponent } from './pages/students_module/academic_status_page/situacion-academica/subject-status-detail/subject-status-detail.component';
 import { ACCOUNT_ROUTES } from './pages/account/account.routes';
 import { forcePasswordChangeGuard } from './core/guards/force-password-change.guard';
 

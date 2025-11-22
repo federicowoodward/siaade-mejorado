@@ -11,7 +11,7 @@ import {
   StudentSubjectCard,
   StudentSummarySubject,
   StudentSummaryYear,
-} from '../../core/services/student-status.service';
+} from '../../../../core/services/student-status.service';
 
 type SubjectRow = StudentSummarySubject & {
   courseLabel: string;
@@ -132,14 +132,14 @@ export class AcademicStatusComponent implements OnInit {
 
   private toYearBlocks(years: StudentSummaryYear[]): YearBlock[] {
     return years
-      .map((year) => ({
+      .map((year: StudentSummaryYear) => ({
         year: year.year,
         label: this.yearLabel(year.year),
-        subjects: (year.subjects ?? []).map((subject) =>
+        subjects: (year.subjects ?? []).map((subject: StudentSummarySubject) =>
           this.mapSubjectRow(subject),
         ),
       }))
-      .sort((a, b) => a.year - b.year);
+      .sort((a: YearBlock, b: YearBlock) => a.year - b.year);
   }
 
   private toYearBlocksFromCards(
@@ -149,13 +149,17 @@ export class AcademicStatusComponent implements OnInit {
       subjects: StudentSubjectCard[];
     }>,
   ): YearBlock[] {
-    return groups.map((group) => ({
+    return groups.map((group: {
+      label: string;
+      order: number;
+      subjects: StudentSubjectCard[];
+    }) => ({
       year: Number.isFinite(group.order)
         ? group.order
         : Number.POSITIVE_INFINITY,
       label: group.label,
       subjects: group.subjects
-        .map((card) => ({
+        .map((card: StudentSubjectCard) => ({
           id: card.subjectId,
           name: card.subjectName,
           calendarYear: card.yearNumber,
@@ -164,7 +168,9 @@ export class AcademicStatusComponent implements OnInit {
           lastExamSummary: card.finalExplanation ?? null,
           hasGrades: this.hasLegacyGrades(card),
         }))
-        .map((subject) => this.mapSubjectRow(subject)),
+        .map((subject: StudentSummarySubject) =>
+          this.mapSubjectRow(subject),
+        ),
     }));
   }
 
@@ -189,7 +195,7 @@ export class AcademicStatusComponent implements OnInit {
       string,
       { label: string; order: number; subjects: StudentSubjectCard[] }
     >();
-    this.cards().forEach((card) => {
+    this.cards().forEach((card: StudentSubjectCard) => {
       const key = card.yearLabel;
       if (!map.has(key)) {
         map.set(key, {
@@ -207,7 +213,7 @@ export class AcademicStatusComponent implements OnInit {
   }
 
   private sortSubjects(subjects: StudentSubjectCard[]): StudentSubjectCard[] {
-    return [...subjects].sort((a, b) =>
+    return [...subjects].sort((a: StudentSubjectCard, b: StudentSubjectCard) =>
       a.subjectName.localeCompare(b.subjectName),
     );
   }

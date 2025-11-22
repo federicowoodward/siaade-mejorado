@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
-import { AcademicStatus } from '../../../shared/components/academic_status/academic-status-component';
+import { AcademicStatusComponent } from './situacion-academica/academic-status.component';
 
 @Component({
-  imports: [AcademicStatus],
+  standalone: true,
+  imports: [AcademicStatusComponent],
   templateUrl: './academic-status-page.html',
   styleUrl: './academic-status-page.scss',
 })
