@@ -141,4 +141,82 @@ export class StudentsReadService {
     });
     return flat;
   }
+
+  async getStudentSummary(studentId: string) {
+    const student = await this.studentRepo.findOne({
+      where: { userId: studentId },
+      relations: ["user", "commission"],
+    });
+    if (!student) throw new NotFoundException("Estudiante no encontrado");
+
+    const { user } = student;
+
+    // Obtener situación académica para construir los años
+    const academicStatus =
+      await this.catalogsService.getStudentAcademicStatus(studentId);
+
+    // Construir estructura de años con materias
+    const years = [];
+    for (const [yearLabel, subjects] of Object.entries(academicStatus.byYear)) {
+      const yearMatch = yearLabel.match(/\d+/);
+      const yearNumber = yearMatch ? parseInt(yearMatch[0]) : 0;
+
+      years.push({
+        year: yearNumber,
+        subjects: (subjects as any[]).map((s) => ({
+          id: s.subjectId,
+          name: s.subjectName,
+          calendarYear: s.year,
+          division: s.commissionLetter,
+          finalCondition: s.condition,
+          lastExamSummary: this.buildExamSummary(s),
+          hasGrades: this.hasGrades(s),
+        })),
+      });
+    }
+
+    // Ordenar años
+    years.sort((a, b) => a.year - b.year);
+
+    return {
+      id: studentId,
+      studentId: studentId,
+      firstName: user.name,
+      lastName: user.lastName,
+      fullName: `${user.name} ${user.lastName}`,
+      documentNumber: user.cuil,
+      legajo: student.legajo,
+      studentStartYear: student.studentStartYear,
+      careerPlanName: null,
+      planName: null,
+      registeredSince: student.studentStartYear
+        ? `${student.studentStartYear}-01-01`
+        : null,
+      currentAcademicYear: years.length > 0 ? Math.max(...years.map((y) => y.year)) : null,
+      years,
+    };
+  }
+
+  private buildExamSummary(subject: any): string | null {
+    const parts: string[] = [];
+    const notes = [subject.note1, subject.note2, subject.note3, subject.note4].filter(
+      (n) => typeof n === "number"
+    );
+    if (notes.length) parts.push(`Parciales: ${notes.join(", ")}`);
+    if (typeof subject.final === "number") parts.push(`Final: ${subject.final}`);
+    if (typeof subject.attendancePercentage === "number")
+      parts.push(`Asist.: ${subject.attendancePercentage}%`);
+    if (subject.condition) parts.push(subject.condition);
+    return parts.length > 0 ? parts.join(" • ") : null;
+  }
+
+  private hasGrades(subject: any): boolean {
+    return (
+      typeof subject.final === "number" ||
+      typeof subject.note1 === "number" ||
+      typeof subject.note2 === "number" ||
+      typeof subject.note3 === "number" ||
+      typeof subject.note4 === "number"
+    );
+  }
 }

@@ -113,4 +113,36 @@ export class StudentsReadController {
   getMyFull(@Req() req: any) {
     return this.service.getStudentFullData(req.user.id);
   }
+
+  @Get("me/summary")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("students.readMySummary")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({ summary: "Obtener resumen de MI data académica (usuario autenticado)" })
+  @ApiOkResponse({ description: "Resumen del alumno (self)" })
+  getMySummary(@Req() req: any) {
+    return this.service.getStudentSummary(req.user.id);
+  }
+
+  @Get(":id/summary")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("students.readSummary")
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({ summary: "Obtener resumen de data académica de un alumno" })
+  @ApiParam({ name: "id", type: String })
+  @ApiOkResponse({ description: "Resumen del alumno" })
+  getSummary(@Param("id") id: string) {
+    return this.service.getStudentSummary(id);
+  }
 }
