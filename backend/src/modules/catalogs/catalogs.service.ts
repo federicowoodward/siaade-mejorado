@@ -716,6 +716,7 @@ export class CatalogsService {
     byYear: Record<
       string,
       Array<{
+        id: number;
         subjectId: number;
         subjectName: string;
         year: number | null;
@@ -877,6 +878,7 @@ export class CatalogsService {
     const byYear: Record<
       string,
       Array<{
+        id: number;
         subjectId: number;
         subjectName: string;
         year: number | null;
@@ -921,6 +923,7 @@ export class CatalogsService {
       const key = yearNo ? `${yearNo}° Año` : "Sin año";
       if (!byYear[key]) byYear[key] = [];
       byYear[key].push({
+        id: row.subjectId,
         subjectId: row.subjectId,
         subjectName: row.subjectName,
         year: yearNo,
