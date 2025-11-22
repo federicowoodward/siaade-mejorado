@@ -40,13 +40,16 @@ export class RolesGuard implements CanActivate {
     if (!allowed && process.env.NODE_ENV !== "production") {
       // eslint-disable-next-line no-console
       console.warn("[RBAC DENY][DEV]", {
-        email: user.email ?? null,
-        userId: user.id ?? null,
+        //real path
+        url: request.url,
+        email: user.email,
+        userId: user.id,
         role,
         action,
         allowedRoles: handlerRoles,
         method: request?.method ?? null,
-        path: request?.route?.path ?? request?.url ?? null,
+        //path swagger like
+        path: request?.route?.path,
       });
     }
 

@@ -27,6 +27,7 @@ export class StudentsReadController {
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
     ROLE.TEACHER,
+    ROLE.STUDENT,
   )
   @ApiOperation({ summary: "Obtener toda la data de un alumno" })
   @ApiParam({ name: "id", type: String })
