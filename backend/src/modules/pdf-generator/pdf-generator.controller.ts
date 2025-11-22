@@ -45,7 +45,7 @@ export class PdfGeneratorController {
   })
   async getStudentCertificate(
     @Param("studentId") studentId: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const pdf =
       await this.pdfGeneratorService.getStudentCertificatePdf(studentId);
@@ -76,7 +76,7 @@ export class PdfGeneratorController {
   })
   async previewStudentCertificateHtml(
     @Param("studentId") studentId: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const html =
       await this.pdfGeneratorService.getStudentCertificateHtml(studentId);
@@ -114,7 +114,7 @@ export class PdfGeneratorController {
   })
   async getExamRegistrationReceipt(
     @Param("studentId") studentId: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const pdf =
       await this.pdfGeneratorService.getExamRegistrationReceiptPdf(studentId);
@@ -145,7 +145,7 @@ export class PdfGeneratorController {
   })
   async previewExamRegistrationReceiptHtml(
     @Param("studentId") studentId: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const html =
       await this.pdfGeneratorService.getExamRegistrationReceiptHtml(studentId);
@@ -183,11 +183,11 @@ export class PdfGeneratorController {
   })
   async getAcademicPerformance(
     @Param("studentId") studentId: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const pdf =
       await this.pdfGeneratorService.getAcademicPerformancePdf(studentId);
-    return this.sendPdf(res, pdf, `academic-performance-${studentId}.pdf`);
+    return this.sendPdf(res, pdf, `situacion-academica-alumno.pdf`);
   }
 
   @Get("preview/academic-performance/:studentId")
@@ -214,7 +214,7 @@ export class PdfGeneratorController {
   })
   async previewAcademicPerformanceHtml(
     @Param("studentId") studentId: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const html =
       await this.pdfGeneratorService.getAcademicPerformanceHtml(studentId);
@@ -240,4 +240,3 @@ export class PdfGeneratorController {
     return res.send(html);
   }
 }
-

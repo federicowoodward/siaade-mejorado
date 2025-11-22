@@ -17,11 +17,13 @@ export class PdfGeneratorService {
     private readonly catalogsService: CatalogsService
   ) {}
 
-  private formatDate(date?: Date | null): string {
+  private formatDate(date?: Date | string | null): string {
     if (!date) return "";
-    const day = String(date.getUTCDate()).padStart(2, "0");
-    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const year = date;
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (Number.isNaN(d.getTime())) return "";
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const year = String(d.getUTCFullYear());
     return `${day}/${month}/${year}`;
   }
 
@@ -103,7 +105,7 @@ export class PdfGeneratorService {
   async getAcademicPerformancePdf(studentId: string | number): Promise<Buffer> {
     const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
-      "academic-summary",
+      "academic-performance",
       viewModel as unknown as Record<string, unknown>
     );
   }
@@ -113,7 +115,7 @@ export class PdfGeneratorService {
   ): Promise<string> {
     const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
-      "academic-summary",
+      "academic-performance",
       viewModel as unknown as Record<string, unknown>
     );
   }
@@ -121,7 +123,7 @@ export class PdfGeneratorService {
   async generateAcademicSummary(studentId: string): Promise<Buffer> {
     const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
-      "academic-summary",
+      "academic-performance",
       viewModel as unknown as Record<string, unknown>
     );
   }
@@ -134,9 +136,7 @@ export class PdfGeneratorService {
     const commonData = user.commonData;
     const userInfo = user.userInfo;
 
-    const bornYear = commonData?.birthDate
-      ? String(commonData.birthDate)
-      : "";
+    const bornYear = commonData?.birthDate ? String(commonData.birthDate) : "";
 
     const studentViewModel: AcademicSummaryStudentView = {
       lastname: user.lastName,
@@ -220,20 +220,79 @@ export class PdfGeneratorService {
             ? finalScoreRaw
             : null;
 
-        const descriptor = this.buildSubjectDescriptor(
-          {
-            year: row.year,
-            condition: row.condition,
-          },
-          finalsInfo?.examDate ?? null,
-          student.studentStartYear
-        );
-
         const status = (row.condition ?? "Inscripto").trim() || "Inscripto";
+
+        const conditionLower = status.toLowerCase();
+        const hasApprovedScore =
+          typeof finalScore === "number" && finalScore >= 4;
+
+        let generalStatusCode: string;
+        if (
+          hasApprovedScore ||
+          conditionLower.includes("promo") ||
+          conditionLower.includes("aprob")
+        ) {
+          generalStatusCode = "APR";
+        } else if (
+          conditionLower.includes("libre") ||
+          conditionLower.includes("no apr") ||
+          conditionLower.includes("desaprob")
+        ) {
+          generalStatusCode = "LIB";
+        } else if (conditionLower.includes("regular")) {
+          generalStatusCode = "REG";
+        } else {
+          generalStatusCode = "INS";
+        }
+
+        const examDate = finalsInfo?.examDate ?? null;
+
+        let courseYearLabel: string;
+        if (row.year != null && Number.isFinite(row.year)) {
+          const calendarYear = student.studentStartYear + row.year - 1;
+          courseYearLabel = String(calendarYear);
+        } else if (examDate) {
+          courseYearLabel = String(examDate.getUTCFullYear());
+        } else {
+          courseYearLabel = "-";
+        }
+
+        const courseTypeLabel = "-";
+        const shiftLabel = "-";
+        // TODO: completar tipo de cursado (anual/cuatrimestral) y turno real cuando haya datos en el DTO.
+
+        let finalConditionLabel = "";
+        if (conditionLower.includes("promo")) {
+          finalConditionLabel = "Promoc.";
+        } else if (conditionLower.includes("aprob")) {
+          finalConditionLabel = "Aprob.";
+        } else if (conditionLower.includes("libre")) {
+          finalConditionLabel = "Libre";
+        } else if (conditionLower.includes("regular")) {
+          finalConditionLabel = "Reg.";
+        }
+
+        const finalScoreText =
+          typeof finalScore === "number" && finalScore >= 1
+            ? finalScore.toFixed(2)
+            : "-";
+
+        const finalDateText =
+          examDate != null ? this.formatDateForSummary(examDate) : "-";
+
+        const finalBookFolio = "";
+        // TODO: completar libro/folio (acta) cuando exista esa información en la base de datos o el DTO.
 
         return {
           name: row.subjectName,
-          descriptor,
+          generalStatusCode,
+          courseYearLabel,
+          courseTypeLabel,
+          shiftLabel,
+          finalConditionLabel,
+          finalScoreText,
+          finalDateText,
+          finalBookFolio,
           status,
           finalScore,
         };
@@ -267,6 +326,13 @@ export class PdfGeneratorService {
     };
   }
 
+  private formatDateForSummary(date: Date): string {
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = String(date.getUTCFullYear());
+    return `${day}/${month}/${year}`;
+  }
+
   private buildSubjectDescriptor(
     info: { year: number | null; condition: string | null },
     examDate: Date | null,
@@ -277,7 +343,7 @@ export class PdfGeneratorService {
 
     if (examDate) {
       month = String(examDate.getUTCMonth() + 1).padStart(2, "0");
-      yearText = String(examDate);
+      yearText = String(examDate.getUTCFullYear());
     } else if (info.year != null) {
       const calendarYear = studentStartYear + info.year - 1;
       month = "12";
@@ -289,7 +355,7 @@ export class PdfGeneratorService {
     }
 
     const baseCondition = (info.condition ?? "").trim();
-    let typeLabel = "Cursado";
+    let typeLabel = "Inscripto";
     const lower = baseCondition.toLowerCase();
     if (lower.includes("promo")) {
       typeLabel = "Promocionado";
@@ -301,7 +367,7 @@ export class PdfGeneratorService {
       typeLabel = "Aprobado";
     }
 
-    return `${month} - ${yearText} - ${typeLabel}`;
+    return `${typeLabel} - ${yearText} - ${typeLabel}`;
   }
 
   private computeYearAverage(scores: Array<number | null>): string {
@@ -367,7 +433,7 @@ export class PdfGeneratorService {
     const student = await this.loadStudent(studentId);
     const commonData = student.user.commonData;
     const issuanceDate = new Date();
-    const day = String(issuanceDate.getUTCDate()).padStart(2, "0");
+    const day = String(issuanceDate).padStart(2, "0");
     const month = issuanceDate.toLocaleString("es-AR", { month: "long" });
     const year = String(issuanceDate);
     const bornYear = commonData?.birthDate ? String(commonData.birthDate) : "";
@@ -438,7 +504,19 @@ interface AcademicSummaryStudentView {
 
 interface AcademicSummarySubjectView {
   name: string;
-  descriptor: string;
+  // Bloque 1: estado general de cursado
+  generalStatusCode: "INS" | "REG" | "LIB" | "APR" | string;
+  courseYearLabel: string;
+  courseTypeLabel: string;
+  shiftLabel: string;
+
+  // Bloque 2: examen final
+  finalConditionLabel: string;
+  finalScoreText: string;
+  finalDateText: string;
+  finalBookFolio: string;
+
+  // Datos crudos que ya existían
   status: string;
   finalScore: number | null;
 }

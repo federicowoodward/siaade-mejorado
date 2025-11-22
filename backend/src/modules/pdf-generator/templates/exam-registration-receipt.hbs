@@ -11,19 +11,63 @@
       h1 {
         text-align: center;
       }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        padding: 6px 4px;
+        font-size: 12px;
+      }
+      th {
+        font-weight: bold;
+        border-bottom: 1px solid #000;
+      }
+      .year-summary {
+        margin-top: 8px;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .divider {
+        border-top: 1px solid #000;
+        margin: 12px 0;
+      }
     </style>
   </head>
   <body>
-    <h1>Comprobante de Inscripcion a Examen</h1>
-    <p>
-      Alumno:
-      <strong>{{name}} {{lastname}}</strong><br />
-      DNI:
-      <strong>{{dni}}</strong><br />
-      Sexo:
-      <strong>{{sex}}</strong><br />
-      Fecha de nacimiento:
-      <strong>{{birth_date}}</strong>
+    <h1>{{instituteName}}</h1>
+    <p style="text-align:center; margin-top:-12px;">
+      <strong>{{subtitle}}</strong>
     </p>
+    <div class="divider"></div>
+
+    <div style="display: flex; justify-content: space-around;">
+      <p>
+        Estudiante:
+        <strong>{{student.lastname}}, {{student.name}}</strong><br />
+        Sexo:
+        <strong>{{student.sex}}</strong>&nbsp;&nbsp; Nacido:
+        <strong>{{student.bornYear}}</strong>
+        en
+        <strong>{{student.bornPlace}}</strong><br />
+        Documento:
+        <strong>{{student.documentType}}</strong>
+        Nro:
+        <strong>{{student.documentNumber}}</strong><br />
+      </p>
+      <p>
+
+        Cuil:
+        <strong>{{student.cuil}}</strong><br />
+        Correo:
+        <strong>{{student.email}}</strong><br />
+        Teléfono:
+        <strong>{{student.telephone}}</strong>
+      </p>
+    </div>
+    {{! comprobante empieza aca }}
   </body>
 </html>

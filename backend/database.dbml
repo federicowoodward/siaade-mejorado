@@ -71,6 +71,8 @@ Table "subject_commissions" {
   "commission_id" int4 [not null]
   "teacher_id" uuid [not null]
   "active" bool [not null, default: true]
+  "grade_window_opened_at" timestamptz [default: `now()`]
+  "grade_window_expires_at" timestamptz [default: `(now() + '10 days'::interval)`]
 
   Indexes {
     (subject_id, commission_id) [type: btree, name: "IDX_b3074a12097b0e46d9a53d0aee"]
@@ -183,6 +185,23 @@ Table "users" {
   "is_active" bool [not null, default: true]
 }
 
+Table "subject_grade_audits" {
+  "id" int4 [pk, not null, increment]
+  "subject_commission_id" int4 [not null]
+  "student_id" uuid [not null]
+  "actor_id" uuid [not null]
+  "actor_role" text [not null]
+  "payload" jsonb [not null]
+  "context" text
+  "created_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    actor_id [type: btree, name: "idx_subject_grade_audits_actor"]
+    subject_commission_id [type: btree, name: "idx_subject_grade_audits_commission"]
+    student_id [type: btree, name: "idx_subject_grade_audits_student"]
+  }
+}
+
 Table "password_reset_tokens" {
   "id" uuid [pk, not null, default: `uuid_generate_v4()`]
   "user_id" uuid [not null]
@@ -279,6 +298,8 @@ Table "notices" {
   "content" text [not null]
   "visible_role_id" int4
   "created_by" uuid
+  "subject_commission_ids" jsonb [not null, default: `[]`]
+  "year_numbers" jsonb [default: `[]`]
   "created_at" timestamptz [not null, default: `now()`]
   "updated_at" timestamptz [not null, default: `now()`]
 }
@@ -369,6 +390,12 @@ Ref "FK_ad9281a6a38148ce7d9674a2a59":"subjects"."id" < "subject_commissions"."su
 Ref "FK_b3b410787bedfa50358315cd538":"commission"."id" < "subject_commissions"."commission_id" [delete: restrict]
 
 Ref "FK_e7e4849f084c18911c0dbbbc75a":"teachers"."user_id" < "subject_commissions"."teacher_id" [delete: restrict]
+
+Ref "subject_grade_audits_actor_id_fkey":"users"."id" < "subject_grade_audits"."actor_id" [delete: cascade]
+
+Ref "subject_grade_audits_student_id_fkey":"students"."user_id" < "subject_grade_audits"."student_id" [delete: cascade]
+
+Ref "subject_grade_audits_subject_commission_id_fkey":"subject_commissions"."id" < "subject_grade_audits"."subject_commission_id" [delete: cascade]
 
 Ref "FK_245ca3fcaecc8a8e25dcae0d08f":"careers"."id" < "subject_prerequisites_by_order"."career_id" [delete: cascade]
 
