@@ -219,4 +219,16 @@ export class StudentsReadService {
       typeof subject.note4 === "number"
     );
   }
+
+  async getActionContext(studentId: string) {
+    // TODO: Implementar lógica real de ventanas y correlativas
+    // Por ahora devolvemos estructura vacía para evitar 404 en frontend
+    return {
+      courseWindow: null,
+      examWindow: null,
+      correlatives: [],
+      duplicates: [],
+      quotaFull: [],
+    };
+  }
 }

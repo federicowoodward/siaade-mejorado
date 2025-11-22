@@ -158,7 +158,7 @@ export class StudentStatusService {
     return this.api
       .request<RawStatusResponse>(
         'GET',
-        'students/status/subjects',
+        'students/read/status/subjects',
         undefined,
         params,
       )
@@ -186,7 +186,7 @@ export class StudentStatusService {
     return this.api
       .request<RawContextResponse>(
         'GET',
-        'students/status/action-context',
+        'students/read/status/action-context',
         undefined,
         params,
       )

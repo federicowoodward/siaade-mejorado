@@ -44,6 +44,26 @@ export class StudentsReadController {
     return this.service.getSubjectsStatusFlat(targetId);
   }
 
+  @Get("status/action-context")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("students.readActionContext")
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+    ROLE.STUDENT,
+  )
+  @ApiOperation({
+    summary: "Contexto de acciones (ventanas, correlativas) para el alumno",
+  })
+  @ApiQuery({ name: "studentId", type: String, required: false })
+  @ApiOkResponse({ description: "Contexto de acciones" })
+  getActionContext(@Query("studentId") studentId: string, @Req() req: any) {
+    const targetId = studentId || req.user.id;
+    return this.service.getActionContext(targetId);
+  }
+
 
   @Get(":id/full")
   @UseGuards(JwtAuthGuard, RolesGuard)

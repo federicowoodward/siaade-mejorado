@@ -5,10 +5,7 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      {
-        "include": "modules/pdf-generator/templates/**/*.hbs",
-        "outDir": "dist"
-      }
+      "**/*.hbs"
     ],
     "watchAssets": true
   }
