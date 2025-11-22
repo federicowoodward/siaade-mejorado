@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Req, Query } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards, Req, Query, BadRequestException } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -147,7 +147,13 @@ export class StudentsReadController {
   @ApiOperation({ summary: "Obtener resumen de MI data académica (usuario autenticado)" })
   @ApiOkResponse({ description: "Resumen del alumno (self)" })
   getMySummary(@Req() req: any) {
-    return this.service.getStudentSummary(req.user.id);
+    const id = req.user?.id || req.user?.sub || req.user?.userId;
+    if (!id) {
+      throw new BadRequestException(
+        `User ID missing in request. User: ${JSON.stringify(req.user)}`,
+      );
+    }
+    return this.service.getStudentSummary(id);
   }
 
   @Get(":id/summary")
