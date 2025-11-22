@@ -32,7 +32,7 @@ export class SubjectStatusDetailComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
-  private readonly status$ = toObservable(this.statusService.status);
+  private readonly summary$ = toObservable(this.statusService.summary);
 
   ngOnInit(): void {
     this.loadStudentName();
@@ -45,11 +45,11 @@ export class SubjectStatusDetailComponent implements OnInit {
             subjectId !== null && Number.isFinite(subjectId) && subjectId > 0,
         ),
       ),
-      this.status$,
+      this.summary$,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([subjectId, cards]: [number, StudentSubjectCard[]]) => {
-        if (!cards.length) {
+      .subscribe(([subjectId, summary]) => {
+        if (!summary?.years?.length) {
           if (this.statusService.loading()) {
             this.loading.set(true);
             return;
@@ -59,20 +59,72 @@ export class SubjectStatusDetailComponent implements OnInit {
           this.loading.set(false);
           return;
         }
-        const match =
-          cards.find(
-            (card: StudentSubjectCard) => card.subjectId === subjectId,
-          ) ?? null;
+        
+        // Buscar la materia en todos los años del summary
+        let match = null;
+        for (const year of summary.years) {
+          if (!year.subjects) continue;
+          const found = year.subjects.find((s: any) => s.id === subjectId);
+          if (found) {
+            match = found;
+            break;
+          }
+        }
+        
         if (!match) {
           this.subject.set(null);
           this.error.set('No encontramos la materia solicitada.');
           this.loading.set(false);
           return;
         }
-        this.subject.set(match);
+        
+        // Convertir el formato del summary al formato de StudentSubjectCard
+        const card: StudentSubjectCard = {
+          subjectId: match.id,
+          subjectName: match.name || 'Sin nombre',
+          yearLabel: match.calendarYear ? `${match.calendarYear}° año` : 'Sin año',
+          yearNumber: match.calendarYear,
+          commissionLabel: match.division || null,
+          condition: match.finalCondition || null,
+          accreditation: null,
+          finalScore: null,
+          finalExplanation: match.lastExamSummary || null,
+          notes: this.extractNotesFromSummary(match),
+        };
+        
+        this.subject.set(card);
         this.error.set(null);
         this.loading.set(false);
       });
+  }
+  
+  private extractNotesFromSummary(subject: any): StudentSubjectNote[] {
+    // Intentar extraer las notas del lastExamSummary
+    const summary = subject.lastExamSummary || '';
+    const notes: StudentSubjectNote[] = [];
+    
+    // Buscar patrón "Parciales: 4, 6, 8, 4"
+    const parcialesMatch = summary.match(/Parciales:\s*([\d,\s]+)/);
+    if (parcialesMatch) {
+      const values = parcialesMatch[1].split(',').map(v => v.trim()).filter(v => v);
+      values.forEach((value, index) => {
+        notes.push({
+          label: `Parcial ${index + 1}`,
+          value: parseFloat(value),
+        });
+      });
+    }
+    
+    // Buscar patrón "Final: X"
+    const finalMatch = summary.match(/Final:\s*(\d+(?:\.\d+)?)/);
+    if (finalMatch) {
+      notes.push({
+        label: 'Final',
+        value: parseFloat(finalMatch[1]),
+      });
+    }
+    
+    return notes;
   }
 
   private ensureStatusLoaded(): void {
