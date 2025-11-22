@@ -15,6 +15,7 @@ import { FinalExamsStudent } from "../../entities/finals/final-exams-student.ent
 import { CommonData } from "../../entities/users/common-data.entity";
 import { AddressData } from "../../entities/users/address-data.entity";
 import { Preceptor } from "../../entities/users/preceptor.entity";
+import { UserInfo } from "../../entities/users/user-info.entity";
 
 /**
  * DUMMY DEV SEED - SIAADE
@@ -147,6 +148,12 @@ type RandomAddressData = {
   country: string | null;
 };
 
+type RandomUserInfo = {
+  phone: string | null;
+  emergencyName: string | null;
+  emergencyPhone: string | null;
+};
+
 const randomItem = <T>(items: T[]): T =>
   items[Math.floor(Math.random() * items.length)];
 
@@ -180,6 +187,28 @@ const buildRandomCommonData = (): RandomCommonData => {
     birthDate: new Date(randomTime),
     birthPlace: randomItem(RANDOM_BIRTH_PLACES),
     nationality: randomItem(RANDOM_NATIONALITIES),
+  };
+};
+
+const RANDOM_EMERGENCY_NAMES = [
+  "Madre",
+  "Padre",
+  "Hermano",
+  "Hermana",
+  "Cónyuge",
+  "Tutor",
+];
+
+const buildRandomPhone = (): string => {
+  const base = 6000000 + Math.floor(Math.random() * 999999);
+  return `351${base.toString().padStart(7, "0")}`;
+};
+
+const buildRandomUserInfo = (): RandomUserInfo => {
+  return {
+    phone: buildRandomPhone(),
+    emergencyName: randomItem(RANDOM_EMERGENCY_NAMES),
+    emergencyPhone: buildRandomPhone(),
   };
 };
 
@@ -269,6 +298,7 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
       const commonDataRepo = manager.getRepository(CommonData);
       const addressDataRepo = manager.getRepository(AddressData);
       const preceptorRepo = manager.getRepository(Preceptor);
+      const userInfoRepo = manager.getRepository(UserInfo);
 
       const counters = {
         commissionsCreated: 0,
@@ -954,6 +984,45 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
 
       console.log(
         `[DummySeed] Common data -> usersWithoutCommonData=${usersWithoutCommonData.length}, inserted=${commonDataToInsert.length}`,
+      );
+
+      let existingUserInfoUserIds = new Set<string>();
+      if (targetUserIds.length > 0) {
+        const existingUserInfo = await userInfoRepo.find({
+          select: ["userId"],
+          where: {
+            userId: In(targetUserIds),
+          },
+        });
+        existingUserInfoUserIds = new Set(
+          existingUserInfo.map((entry) => entry.userId),
+        );
+      }
+
+      const usersWithoutUserInfo = targetUserIds.filter(
+        (userId) => !existingUserInfoUserIds.has(userId),
+      );
+
+      for (const chunk of chunkArray(usersWithoutUserInfo, CHUNK_SIZE)) {
+        const userInfoEntities: UserInfo[] = [];
+        for (const userId of chunk) {
+          const randomInfo = buildRandomUserInfo();
+          const info = userInfoRepo.create({
+            userId,
+            phone: randomInfo.phone,
+            emergencyName: randomInfo.emergencyName,
+            emergencyPhone: randomInfo.emergencyPhone,
+          });
+          userInfoEntities.push(info);
+        }
+
+        if (userInfoEntities.length > 0) {
+          await userInfoRepo.save(userInfoEntities);
+        }
+      }
+
+      console.log(
+        `[DummySeed] User info -> usersWithoutUserInfo=${usersWithoutUserInfo.length}`,
       );
 
       const totalSubjectCommissions = await subjectCommissionRepo.count({
