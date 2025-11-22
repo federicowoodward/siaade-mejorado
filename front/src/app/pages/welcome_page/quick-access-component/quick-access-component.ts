@@ -7,7 +7,7 @@ import { ROLE } from '../../../core/auth/roles';
 import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 import { ApiService } from '@/core/services/api.service';
 import { AuthService } from '@/core/services/auth.service';
-import { environment } from 'environments/environment.qa';
+import { environment } from 'environments/environment';
 
 interface QuickAccess {
   label: string;
