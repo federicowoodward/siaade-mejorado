@@ -1,0 +1,26 @@
+<!-- Bienvenida -->
+<h2 class="mb-4 text-2xl font-semibold">
+  Bienvenido, {{ (userRole() || 'usuario') | roleLabel }}
+</h2>
+
+<p class="text-gray-500 mb-4">
+  Aquí encontrarás tus accesos rápidos e información importante.
+</p>
+
+<!-- Accesos rapidos -->
+<div class="grid">
+  <div *ngFor="let acc of accesses()" class="col-12 sm:col-6 lg:col-3">
+    <p-card
+      [header]="acc.label"
+      [subheader]="acc.description"
+      [style]="{ cursor: 'pointer' }"
+      (click)="acc.route ? navigate(acc.route) : acc.action?.()"
+      class="quick-card"
+    >
+      <ng-template #header>
+        <i [class]="acc.icon + ' text-5xl text-primary'"></i>
+      </ng-template>
+      <div class="card-content"></div>
+    </p-card>
+  </div>
+</div>

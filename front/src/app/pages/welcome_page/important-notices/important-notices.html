@@ -1,0 +1,21 @@
+<div class="card mt-4">
+  <h3>Avisos importantes</h3>
+
+  <ul class="list-none p-0 pt-2">
+    <li *ngFor="let aviso of noticesForHome()" class="mb-3">
+      <p-card>
+        <i class="pi pi-bell text-yellow-500 mr-2"></i>
+        <strong>{{ aviso.title }}</strong>
+        <p-divider class="my-2"></p-divider>
+        <span [innerHTML]="aviso.content"></span>
+        <p-divider class="my-2"></p-divider>
+        <small class="text-gray-500">
+          Publicado por {{ aviso.createdBy }} - {{ aviso.createdAt | date:
+          'dd/MM/yyyy HH:mm' }}
+        </small>
+      </p-card>
+    </li>
+  </ul>
+
+  <p *ngIf="!noticesForHome().length">No hay avisos para tu rol.</p>
+</div>

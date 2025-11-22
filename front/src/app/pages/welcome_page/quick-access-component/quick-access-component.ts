@@ -1,30 +1,34 @@
-import { Component, effect, inject, signal, computed } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { Card } from 'primeng/card';
 import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE } from '../../../core/auth/roles';
-import { NoticesService, Notice } from '../../../core/services/notices.service';
-import { Card } from 'primeng/card';
+import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
+import { ApiService } from '@/core/services/api.service';
+import { AuthService } from '@/core/services/auth.service';
+import { environment } from 'environments/environment.qa';
 
 interface QuickAccess {
   label: string;
   icon: string;
   description: string;
-  route: string[];
+  route?: string[];
+  action?: (() => void) | null;
 }
 
 @Component({
   selector: 'app-quick-access',
   standalone: true,
-  imports: [CommonModule, Card, RouterModule],
+  imports: [CommonModule, Card, RouterModule, RoleLabelPipe],
   templateUrl: './quick-access-component.html',
   styleUrls: ['./quick-access-component.scss'],
 })
 export class QuickAccessComponent {
   private permissions = inject(PermissionService);
   private router = inject(Router);
-  private noticesSrv = inject(NoticesService);
-  public ROLE = ROLE;
+  private api = inject(ApiService);
+  private authService = inject(AuthService);
 
   accesses = signal<QuickAccess[]>([]);
 
@@ -41,10 +45,25 @@ export class QuickAccessComponent {
         route: ['/alumno/situacion-academica'],
       },
       {
-        label: 'Inscripciones a Mesas',
+        label: 'Mesas de examen',
         icon: 'pi pi-calendar-plus',
-        description: 'Mesas disponibles y ventanas activas.',
+        description: 'Mesas disponibles para inscripción.',
         route: ['/alumno/mesas'],
+      },
+      {
+        label: 'Certificado alumno',
+        icon: 'pi pi-book',
+        description: 'Genera certificado de alumno.',
+        action: () => {
+          this.authService.getUser().subscribe((user) => {
+            if (!user) return;
+
+            const base = environment.apiBaseUrl.replace(/\/$/, ''); // http://localhost:3000/api
+            const url = `${base}/generatePdf/student-certificate/${user.id}`;
+
+            window.open(url, '_blank'); // abre el PDF en una nueva pestaña / dispara la descarga
+          });
+        },
       },
     ],
     [ROLE.TEACHER]: [
@@ -142,27 +161,4 @@ export class QuickAccessComponent {
         console.warn('Navigation was canceled, check guards or path:', route);
     });
   }
-
-  role = this.permissions.role;
-  allNotices = this.noticesSrv.notices;
-
-  noticesForHome = computed<Notice[]>(() => {
-    const role = this.role();
-    const all = this.allNotices();
-    if (!role) return all;
-    if (
-      role === ROLE.PRECEPTOR ||
-      role === ROLE.SECRETARY ||
-      role === ROLE.EXECUTIVE_SECRETARY
-    ) {
-      return all;
-    }
-    return all.filter((n) => n.visibleFor === 'all' || n.visibleFor === role);
-  });
-
-  stats = [
-    { label: 'Materias activas', value: 5 },
-    { label: 'Examenes proximos', value: 2 },
-    { label: 'Usuarios nuevos', value: 12 },
-  ];
 }

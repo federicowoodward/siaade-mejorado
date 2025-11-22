@@ -28,17 +28,17 @@
     align-items: center;
   }
 
-  i {
-    font-size: 3rem;
-    color: var(--primary-color, #2196f3);
-  }
-
+  
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   }
 }
 
+i {
+  font-size: 3rem;
+  color: var(--primary-color, #2196f3);
+}
 button:focus {
   outline: 2px solid #2563eb; // azul accesible
   outline-offset: 2px;

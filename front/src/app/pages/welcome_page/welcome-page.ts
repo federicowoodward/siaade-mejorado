@@ -3,8 +3,9 @@ import { Observable, map } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { ROLE } from '../../core/auth/roles';
-import { QuickAccessComponent } from '../../shared/components/quick-access-component/quick-access-component';
 import { CommonModule } from '@angular/common';
+import { QuickAccessComponent } from './quick-access-component/quick-access-component';
+import { ImportantNoticesComponent } from './important-notices/important-notices';
 import { FirstPasswordChangeModalComponent } from '../../shared/components/first-password-change-modal/first-password-change-modal';
 
 @Component({
@@ -13,6 +14,7 @@ import { FirstPasswordChangeModalComponent } from '../../shared/components/first
   imports: [
     CommonModule,
     QuickAccessComponent,
+    ImportantNoticesComponent,
     FirstPasswordChangeModalComponent,
   ],
   templateUrl: './welcome-page.html',
@@ -43,18 +45,4 @@ export class WelcomePage implements OnInit {
       }
     });
   }
-
-  // Observable del usuario para el banner de bloqueo
-  blockedUser$: Observable<{
-    isBlocked: boolean;
-    blockedReason: string | null;
-  } | null> = this.authService
-    .getUser()
-    .pipe(
-      map((u) =>
-        u
-          ? { isBlocked: !!u.isBlocked, blockedReason: u.blockedReason ?? null }
-          : null,
-      ),
-    );
 }
