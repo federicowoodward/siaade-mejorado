@@ -48,6 +48,7 @@ export interface StudentSummarySubject {
   division: string | null;
   finalCondition: string | null;
   lastExamSummary: string | null;
+  attendancePct: number | null;
   hasGrades?: boolean | null;
 }
 
@@ -420,6 +421,11 @@ export class StudentStatusService {
         typeof subject?.lastExamSummary === 'string'
           ? subject.lastExamSummary
           : null,
+      attendancePct: this.toNumber(
+        subject?.attendancePct ??
+          subject?.attendancePercentage ??
+          subject?.attendance,
+      ),
       hasGrades: this.deriveHasGrades(subject),
     }));
   }
@@ -455,6 +461,9 @@ export class StudentStatusService {
           finalCondition:
             typeof row?.condition === 'string' ? row.condition : null,
           lastExamSummary: this.buildSummaryExamText(row),
+          attendancePct: this.toNumber(
+            row?.attendancePercentage ?? row?.attendance,
+          ),
           hasGrades: this.deriveHasGrades(row),
         })),
       });
