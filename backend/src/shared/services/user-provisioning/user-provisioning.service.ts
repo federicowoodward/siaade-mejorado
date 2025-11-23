@@ -226,9 +226,11 @@ export class UserProvisioningService {
 
     const toCreate: DeepPartial<UserInfo> = {
       userId,
-      phone: dto.phone,
-      emergencyName: dto.emergencyName,
-      emergencyPhone: dto.emergencyPhone,
+      phone: dto.phone ?? null,
+      emergencyName: dto.emergencyName ?? null,
+      emergencyPhone: dto.emergencyPhone ?? null,
+      documentType: dto.documentType ?? "DNI",
+      documentValue: dto.documentValue ?? null,
     };
 
     const entity = this.userInfoRepo.create(toCreate);
@@ -253,7 +255,6 @@ export class UserProvisioningService {
         locality: dto.address.locality!,
         province: dto.address.province!,
         postalCode: dto.address.postalCode!,
-        country: dto.address.country!,
       };
       const addrEntity = this.addressRepo.create(addrPartial);
       address = await qr.manager.save(AddressData, addrEntity);
@@ -261,11 +262,9 @@ export class UserProvisioningService {
 
     const cdPartial: DeepPartial<CommonData> = {
       userId,
-      addressDataId: address!.id,
+      addressDataId: address ? address.id : null,
       sex: dto.sex!,
       birthDate: new Date(dto.birthDate!),
-      birthPlace: dto.birthPlace!,
-      nationality: dto.nationality!,
     };
 
     const cdEntity = this.commonDataRepo.create(cdPartial);

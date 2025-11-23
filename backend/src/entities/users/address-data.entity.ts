@@ -30,9 +30,6 @@ export class AddressData {
   @Column({ name: "postal_code", type: "text", nullable: true })
   postalCode: string | null;
 
-  @Column({ type: "text", nullable: true })
-  country: string | null;
-
   @OneToMany(() => CommonData, (cd) => cd.address)
   commonData?: CommonData[];
 }

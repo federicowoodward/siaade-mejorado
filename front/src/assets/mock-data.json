@@ -504,244 +504,163 @@
       "userId": "u1",
       "addressDataId": 1,
       "sex": "F",
-      "birthDate": "2004-05-12",
-      "birthPlace": "Córdoba",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2004-05-12",    },
     {
       "id": 2,
       "userId": "u2",
       "addressDataId": 2,
       "sex": "M",
-      "birthDate": "1980-03-30",
-      "birthPlace": "Río Cuarto",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1980-03-30",    },
     {
       "id": 3,
       "userId": "u3",
       "addressDataId": 3,
       "sex": "F",
-      "birthDate": "1990-07-20",
-      "birthPlace": "Buenos Aires",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1990-07-20",    },
     {
       "id": 4,
       "userId": "u4",
       "addressDataId": 4,
       "sex": "M",
-      "birthDate": "1975-12-05",
-      "birthPlace": "Rosario",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1975-12-05",    },
     {
       "id": 5,
       "userId": "u5",
       "addressDataId": 5,
       "sex": "F",
-      "birthDate": "1985-09-15",
-      "birthPlace": "Mendoza",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1985-09-15",    },
     {
       "id": 6,
       "userId": "u6",
       "addressDataId": 6,
       "sex": "M",
-      "birthDate": "1975-04-10",
-      "birthPlace": "Córdoba",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1975-04-10",    },
     {
       "id": 7,
       "userId": "u7",
       "addressDataId": 7,
       "sex": "F",
-      "birthDate": "1990-11-30",
-      "birthPlace": "La Plata",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1990-11-30",    },
     {
       "id": 8,
       "userId": "u8",
       "addressDataId": 8,
       "sex": "M",
-      "birthDate": "1981-02-14",
-      "birthPlace": "San Miguel de Tucumán",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "1981-02-14",    },
     {
       "id": 9,
       "userId": "u9",
       "addressDataId": 9,
       "sex": "F",
-      "birthDate": "2003-04-26",
-      "birthPlace": "Bariloche",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2003-04-26",    },
     {
       "id": 10,
       "userId": "u10",
       "addressDataId": 10,
       "sex": "M",
-      "birthDate": "2005-08-22",
-      "birthPlace": "Corrientes",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2005-08-22",    },
     {
       "id": 11,
       "userId": "u11",
       "addressDataId": 11,
       "sex": "F",
-      "birthDate": "2006-03-05",
-      "birthPlace": "Mar del Plata",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2006-03-05",    },
     {
       "id": 12,
       "userId": "u12",
       "addressDataId": 12,
       "sex": "F",
-      "birthDate": "2005-03-25",
-      "birthPlace": "Paraná",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2005-03-25",    },
     {
       "id": 13,
       "userId": "u13",
       "addressDataId": 13,
       "sex": "M",
-      "birthDate": "2005-07-12",
-      "birthPlace": "La Plata",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2005-07-12",    },
     {
       "id": 14,
       "userId": "u14",
       "addressDataId": 14,
       "sex": "F",
-      "birthDate": "2003-07-06",
-      "birthPlace": "Rosario",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2003-07-06",    },
     {
       "id": 15,
       "userId": "u15",
       "addressDataId": 15,
       "sex": "M",
-      "birthDate": "2004-12-18",
-      "birthPlace": "Río Cuarto",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2004-12-18",    },
     {
       "id": 16,
       "userId": "u16",
       "addressDataId": 16,
       "sex": "F",
-      "birthDate": "2004-04-11",
-      "birthPlace": "Villa María",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2004-04-11",    },
     {
       "id": 17,
       "userId": "u17",
       "addressDataId": 17,
       "sex": "F",
-      "birthDate": "2004-07-25",
-      "birthPlace": "Santiago del Estero",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2004-07-25",    },
     {
       "id": 18,
       "userId": "u18",
       "addressDataId": 18,
       "sex": "M",
-      "birthDate": "2006-05-13",
-      "birthPlace": "Neuquén",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2006-05-13",    },
     {
       "id": 19,
       "userId": "u19",
       "addressDataId": 19,
       "sex": "F",
-      "birthDate": "2003-02-09",
-      "birthPlace": "Rosario",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2003-02-09",    },
     {
       "id": 20,
       "userId": "u20",
       "addressDataId": 20,
       "sex": "M",
-      "birthDate": "2003-03-11",
-      "birthPlace": "San Juan",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2003-03-11",    },
     {
       "id": 21,
       "userId": "u21",
       "addressDataId": 21,
       "sex": "M",
-      "birthDate": "2004-09-19",
-      "birthPlace": "San Luis",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2004-09-19",    },
     {
       "id": 22,
       "userId": "u22",
       "addressDataId": 22,
       "sex": "F",
-      "birthDate": "2002-01-15",
-      "birthPlace": "Mendoza",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2002-01-15",    },
     {
       "id": 23,
       "userId": "u23",
       "addressDataId": 23,
       "sex": "M",
-      "birthDate": "2005-06-23",
-      "birthPlace": "Buenos Aires",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2005-06-23",    },
     {
       "id": 24,
       "userId": "u24",
       "addressDataId": 24,
       "sex": "M",
-      "birthDate": "2006-11-21",
-      "birthPlace": "Mendoza",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2006-11-21",    },
     {
       "id": 25,
       "userId": "u25",
       "addressDataId": 25,
       "sex": "F",
-      "birthDate": "2002-07-07",
-      "birthPlace": "Córdoba",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2002-07-07",    },
     {
       "id": 26,
       "userId": "u26",
       "addressDataId": 26,
       "sex": "M",
-      "birthDate": "2003-08-17",
-      "birthPlace": "Villa María",
-      "nationality": "Argentinian"
-    },
+      "birthDate": "2003-08-17",    },
     {
       "id": 27,
       "userId": "u27",
       "addressDataId": 27,
       "sex": "F",
-      "birthDate": "2003-05-28",
-      "birthPlace": "Neuquén",
-      "nationality": "Argentinian"
-    }
+      "birthDate": "2003-05-28",    }
   ],
 
   "address_data": [
@@ -754,9 +673,7 @@
       "neighborhood": "Centro",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 2,
       "street": "Belgrano",
@@ -766,9 +683,7 @@
       "neighborhood": "Norte",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 3,
       "street": "Urquiza",
@@ -778,9 +693,7 @@
       "neighborhood": "Oeste",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 4,
       "street": "Caseros",
@@ -790,9 +703,7 @@
       "neighborhood": "Este",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 5,
       "street": "Paso de los Andes",
@@ -802,9 +713,7 @@
       "neighborhood": "Oeste",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 6,
       "street": "Santa Fe",
@@ -814,9 +723,7 @@
       "neighborhood": "Sur",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 7,
       "street": "Lavalle",
@@ -826,9 +733,7 @@
       "neighborhood": "Sur",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 8,
       "street": "Independencia",
@@ -838,9 +743,7 @@
       "neighborhood": "Centro",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 9,
       "street": "9 de Julio",
@@ -850,9 +753,7 @@
       "neighborhood": "Centro",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 10,
       "street": "General Paz",
@@ -862,9 +763,7 @@
       "neighborhood": "Este",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 11,
       "street": "Colon",
@@ -874,9 +773,7 @@
       "neighborhood": "Sur",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 12,
       "street": "Velez Sarsfield",
@@ -886,9 +783,7 @@
       "neighborhood": "Norte",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 13,
       "street": "Rivadavia",
@@ -898,9 +793,7 @@
       "neighborhood": "Sur",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 14,
       "street": "Sarmiento",
@@ -910,9 +803,7 @@
       "neighborhood": "Este",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 15,
       "street": "Mitre",
@@ -922,9 +813,7 @@
       "neighborhood": "Norte",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 16,
       "street": "Buenos Aires",
@@ -934,9 +823,7 @@
       "neighborhood": "Centro",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 17,
       "street": "Catamarca",
@@ -946,9 +833,7 @@
       "neighborhood": "Este",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 18,
       "street": "La Rioja",
@@ -958,9 +843,7 @@
       "neighborhood": "Norte",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 19,
       "street": "Entre Rios",
@@ -970,9 +853,7 @@
       "neighborhood": "Sur",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 20,
       "street": "San Juan",
@@ -982,9 +863,7 @@
       "neighborhood": "Sur",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 21,
       "street": "Santa Rosa",
@@ -994,9 +873,7 @@
       "neighborhood": "Este",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 22,
       "street": "Chacabuco",
@@ -1006,9 +883,7 @@
       "neighborhood": "Oeste",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 23,
       "street": "Maipu",
@@ -1018,9 +893,7 @@
       "neighborhood": "Centro",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 24,
       "street": "Alvear",
@@ -1030,9 +903,7 @@
       "neighborhood": "Centro",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 25,
       "street": "Ituzaingo",
@@ -1042,9 +913,7 @@
       "neighborhood": "Norte",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 26,
       "street": "Corrientes",
@@ -1054,9 +923,7 @@
       "neighborhood": "Oeste",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    },
+      "postalCode": "5000",    },
     {
       "id": 27,
       "street": "Obispo Trejo",
@@ -1066,9 +933,7 @@
       "neighborhood": "Norte",
       "locality": "Córdoba",
       "province": "Córdoba",
-      "postalCode": "5000",
-      "country": "Argentina"
-    }
+      "postalCode": "5000",    }
   ],
 
   "students": [
@@ -1410,3 +1275,4 @@
     }
   ]
 }
+

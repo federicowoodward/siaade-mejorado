@@ -20,8 +20,6 @@ export interface UserInfoForm {
 export interface CommonDataForm {
   sex: string;
   birthDate: string; // yyyy-MM-dd
-  birthPlace: string;
-  nationality: string;
 }
 
 export interface AddressForm {
@@ -29,7 +27,6 @@ export interface AddressForm {
   number?: string;
   locality?: string;
   province?: string;
-  country?: string;
   postalCode?: string;
 }
 
@@ -105,8 +102,6 @@ export function buildPayload(args: BuildPayloadArgs) {
         commonData: {
           sex: commonData?.sex,
           birthDate: commonData?.birthDate,
-          birthPlace: commonData?.birthPlace,
-          nationality: commonData?.nationality,
           address:
             req.allowsAddress && hasAnyAddress(address)
               ? {
@@ -114,7 +109,6 @@ export function buildPayload(args: BuildPayloadArgs) {
                   number: address?.number || undefined,
                   locality: address?.locality || undefined,
                   province: address?.province || undefined,
-                  country: address?.country || undefined,
                   postalCode: address?.postalCode || undefined,
                 }
               : undefined,

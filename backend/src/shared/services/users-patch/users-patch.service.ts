@@ -211,6 +211,8 @@ export class UsersPatchService {
       phone: "phone",
       emergencyName: "emergencyName",
       emergencyPhone: "emergencyPhone",
+      documentType: "documentType",
+      documentValue: "documentValue",
     };
     for (const [k, v] of Object.entries(fields)) {
       const col = map[k];
@@ -268,8 +270,6 @@ export class UsersPatchService {
     const simpleMap: Record<string, keyof CommonData> = {
       sex: "sex",
       birthDate: "birthDate",
-      birthPlace: "birthPlace",
-      nationality: "nationality",
     };
     for (const [k, v] of Object.entries(cdFields)) {
       if (k.startsWith("address.")) continue;
@@ -298,7 +298,6 @@ export class UsersPatchService {
         locality: "locality",
         province: "province",
         postalCode: "postalCode",
-        country: "country",
       };
       for (const [k, v] of Object.entries(addrFields)) {
         const col = addrMap[k];

@@ -4,6 +4,4 @@ export interface CommonData {
   addressDataId?: number;
   sex: string;
   birthDate: string; // YYYY-MM-DD
-  birthPlace: string;
-  nationality: string;
 }

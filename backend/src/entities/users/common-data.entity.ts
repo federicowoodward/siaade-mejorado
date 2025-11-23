@@ -33,10 +33,4 @@ export class CommonData {
 
   @Column({ name: "birth_date", type: "date", nullable: true })
   birthDate: Date | null;
-
-  @Column({ name: "birth_place", type: "text", nullable: true })
-  birthPlace: string | null;
-
-  @Column({ type: "text", nullable: true })
-  nationality: string | null;
 }

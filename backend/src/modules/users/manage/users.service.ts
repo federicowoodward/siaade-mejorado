@@ -98,14 +98,9 @@ export class UsersService {
       );
     }
     dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
-    if (
-      !dto.commonData?.sex ||
-      !dto.commonData?.birthDate ||
-      !dto.commonData?.birthPlace ||
-      !dto.commonData?.nationality
-    ) {
+    if (!dto.commonData?.sex || !dto.commonData?.birthDate) {
       throw new BadRequestException(
-        "commonData.sex, birthDate, birthPlace y nationality son requeridos para teacher",
+        "commonData.sex y birthDate son requeridos para teacher",
       );
     }
     return this.provisioning.createTeacher({
@@ -129,14 +124,9 @@ export class UsersService {
       );
     }
     dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
-    if (
-      !dto.commonData?.sex ||
-      !dto.commonData?.birthDate ||
-      !dto.commonData?.birthPlace ||
-      !dto.commonData?.nationality
-    ) {
+    if (!dto.commonData?.sex || !dto.commonData?.birthDate) {
       throw new BadRequestException(
-        "commonData.sex, birthDate, birthPlace y nationality son requeridos para student",
+        "commonData.sex y birthDate son requeridos para student",
       );
     }
 

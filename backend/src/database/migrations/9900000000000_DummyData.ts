@@ -124,16 +124,12 @@ const RANDOM_STREETS = ["San Martín", "Belgrano", "Rivadavia", "Sarmiento"];
 const RANDOM_NEIGHBORHOODS = ["Centro", "Norte", "Sur", "Este", "Oeste"];
 const RANDOM_LOCALITIES = ["Córdoba", "Villa María", "Río Cuarto", "Alta Gracia"];
 const RANDOM_PROVINCES = ["Córdoba", "Buenos Aires", "Santa Fe", "Mendoza"];
-const RANDOM_COUNTRIES = ["Argentina"];
 const RANDOM_SEX = ["F", "M", "X"];
-const RANDOM_BIRTH_PLACES = ["Córdoba", "Buenos Aires", "Rosario", "Mendoza"];
-const RANDOM_NATIONALITIES = ["Argentina"];
+const RANDOM_DOCUMENT_TYPES = ["DNI", "Pasaporte", "LC", "LE"];
 
 type RandomCommonData = {
   sex: string | null;
   birthDate: Date | null;
-  birthPlace: string | null;
-  nationality: string | null;
 };
 
 type RandomAddressData = {
@@ -145,10 +141,11 @@ type RandomAddressData = {
   locality: string | null;
   province: string | null;
   postalCode: string | null;
-  country: string | null;
 };
 
 type RandomUserInfo = {
+  documentType: string | null;
+  documentValue: string | null;
   phone: string | null;
   emergencyName: string | null;
   emergencyPhone: string | null;
@@ -173,7 +170,6 @@ const buildRandomAddressData = (): RandomAddressData => {
     locality: randomItem(RANDOM_LOCALITIES),
     province: randomItem(RANDOM_PROVINCES),
     postalCode: (5000 + Math.floor(Math.random() * 500)).toString(),
-    country: randomItem(RANDOM_COUNTRIES),
   };
 };
 
@@ -185,8 +181,6 @@ const buildRandomCommonData = (): RandomCommonData => {
   return {
     sex: randomItem(RANDOM_SEX),
     birthDate: new Date(randomTime),
-    birthPlace: randomItem(RANDOM_BIRTH_PLACES),
-    nationality: randomItem(RANDOM_NATIONALITIES),
   };
 };
 
@@ -205,7 +199,11 @@ const buildRandomPhone = (): string => {
 };
 
 const buildRandomUserInfo = (): RandomUserInfo => {
+  const documentType = randomItem(RANDOM_DOCUMENT_TYPES);
+  const documentValue = (20000000 + Math.floor(Math.random() * 20000000)).toString();
   return {
+    documentType,
+    documentValue,
     phone: buildRandomPhone(),
     emergencyName: randomItem(RANDOM_EMERGENCY_NAMES),
     emergencyPhone: buildRandomPhone(),
@@ -971,8 +969,6 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
             addressDataId: address.id,
             sex: randomCommon.sex,
             birthDate: randomCommon.birthDate,
-            birthPlace: randomCommon.birthPlace,
-            nationality: randomCommon.nationality,
           });
           commonDataToInsert.push(common);
         });
@@ -1009,6 +1005,8 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           const randomInfo = buildRandomUserInfo();
           const info = userInfoRepo.create({
             userId,
+            documentType: randomInfo.documentType,
+            documentValue: randomInfo.documentValue,
             phone: randomInfo.phone,
             emergencyName: randomInfo.emergencyName,
             emergencyPhone: randomInfo.emergencyPhone,

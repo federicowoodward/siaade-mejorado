@@ -160,7 +160,6 @@ export class PdfGeneratorService {
       name: user.name,
       sex: commonData?.sex ?? "",
       bornYear,
-      bornPlace: commonData?.birthPlace ?? "",
       legajoId: student.legajo,
       libroMatriz: "",
       folio: "",
@@ -517,7 +516,6 @@ export class PdfGeneratorService {
       documentType: "D.N.I.",
       documentNumber: dniNumber,
       bornYear: birthDateText,
-      bornPlace: commonData?.birthPlace ?? "",
       cuil: user.cuil,
       email: user.email,
       telephone: userInfo?.phone ?? "",
@@ -576,7 +574,6 @@ interface ExamRegistrationReceiptStudentView {
   documentType: string;
   documentNumber: string;
   bornYear: string;
-  bornPlace: string;
   cuil: string;
   email: string;
   telephone: string;
@@ -602,7 +599,6 @@ interface AcademicSummaryStudentView {
   name: string;
   sex: string;
   bornYear: string;
-  bornPlace: string;
   legajoId: string;
   libroMatriz: string;
   folio: string;

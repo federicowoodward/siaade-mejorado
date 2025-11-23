@@ -8,5 +8,4 @@ export interface AddressData {
   locality: string;
   province: string;
   postalCode: string;
-  country: string;
 }

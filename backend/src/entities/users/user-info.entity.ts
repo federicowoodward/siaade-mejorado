@@ -22,6 +22,12 @@ export class UserInfo {
   @Column({ type: "text", nullable: true })
   phone: string | null;
 
+  @Column({ name: "document_type", type: "text", nullable: true })
+  documentType: string | null;
+
+  @Column({ name: "document_value", type: "text", nullable: true })
+  documentValue: string | null;
+
   @Column({ name: "emergency_name", type: "text", nullable: true })
   emergencyName: string | null;
 

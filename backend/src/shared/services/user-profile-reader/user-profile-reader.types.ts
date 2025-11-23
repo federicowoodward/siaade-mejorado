@@ -23,8 +23,6 @@ export interface UserProfileResult {
     id: number;
     sex: string | null;
     birthDate: string | Date | null;
-    birthPlace: string | null;
-    nationality: string | null;
     address: {
       id: number;
       street: string | null;
@@ -35,7 +33,6 @@ export interface UserProfileResult {
       locality: string | null;
       province: string | null;
       postalCode: string | null;
-      country: string | null;
     } | null;
   } | null;
 

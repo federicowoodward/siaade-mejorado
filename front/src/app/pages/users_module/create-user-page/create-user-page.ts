@@ -86,15 +86,12 @@ export class CreateUserPage {
   // common_data
   sex = '';
   birthDate = ''; // yyyy-MM-dd
-  birthPlace = '';
-  nationality = '';
 
   // address (opcional)
   addressStreet = '';
   addressNumber = '';
   addressLocality = '';
   addressProvince = '';
-  addressCountry = '';
   addressPostalCode = '';
 
   // extras de alumno
@@ -142,7 +139,6 @@ export class CreateUserPage {
       number: this.addressNumber || undefined,
       locality: this.addressLocality || undefined,
       province: this.addressProvince || undefined,
-      country: this.addressCountry || undefined,
       postalCode: this.addressPostalCode || undefined,
     };
   }
@@ -166,8 +162,6 @@ export class CreateUserPage {
       documentValue: this.documentValue,
       sex: this.sex,
       birthDate: this.birthDate,
-      birthPlace: this.birthPlace,
-      nationality: this.nationality,
       legajo:
         this.role === 'student'
           ? this.studentLegajo || this.cuil || this.documentValue
@@ -201,8 +195,6 @@ export class CreateUserPage {
           ? {
               sex: this.sex,
               birthDate: this.birthDate,
-              birthPlace: this.birthPlace,
-              nationality: this.nationality,
             }
           : undefined,
         address:
@@ -268,8 +260,6 @@ export class CreateUserPage {
         ? {
             sex: this.sex || undefined,
             birthDate: this.birthDate || undefined,
-            birthPlace: this.birthPlace || undefined,
-            nationality: this.nationality || undefined,
             address:
               this.req?.allowsAddress && this.hasAddress()
                 ? this.addressObj()

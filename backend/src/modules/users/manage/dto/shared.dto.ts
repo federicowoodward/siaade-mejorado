@@ -20,15 +20,12 @@ export class AddressDataDto {
   @ApiPropertyOptional() @IsOptional() @IsString() locality?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() province?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() postalCode?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() country?: string;
 }
 
 // CommonData (requerido para teacher/student, address opcional)
 export class CommonDataDto {
   @ApiProperty() @IsString() sex!: string;
   @ApiProperty() @IsString() birthDate!: string; // ISO string
-  @ApiProperty() @IsString() birthPlace!: string;
-  @ApiProperty() @IsString() nationality!: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -58,19 +58,23 @@ export class UserProfileReaderService {
     const ui = user.userInfo
       ? {
           id: user.userInfo.id,
+          documentType: user.userInfo.documentType ?? null,
+          documentValue: user.userInfo.documentValue ?? null,
           phone: user.userInfo.phone ?? null,
           emergencyName: user.userInfo.emergencyName ?? null,
           emergencyPhone: user.userInfo.emergencyPhone ?? null,
         }
       : null;
 
+    if (ui) {
+      result.userInfo = ui;
+    }
+
     const cd = user.commonData
       ? {
           id: user.commonData.id,
           sex: user.commonData.sex ?? null,
           birthDate: user.commonData.birthDate ?? null,
-          birthPlace: user.commonData.birthPlace ?? null,
-          nationality: user.commonData.nationality ?? null,
           address: user.commonData.address
             ? {
                 id: user.commonData.address.id,
@@ -82,7 +86,6 @@ export class UserProfileReaderService {
                 locality: user.commonData.address.locality ?? null,
                 province: user.commonData.address.province ?? null,
                 postalCode: user.commonData.address.postalCode ?? null,
-                country: user.commonData.address.country ?? null,
               }
             : null,
         }

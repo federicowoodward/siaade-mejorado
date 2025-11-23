@@ -20,14 +20,11 @@ export class CreateAddressDataDto {
   locality?: string;
   province?: string;
   postalCode?: string;
-  country?: string;
 }
 
 export class CreateCommonDataDto {
   sex?: string;
   birthDate?: Date | string;
-  birthPlace?: string;
-  nationality?: string;
   address?: CreateAddressDataDto | null;
 }
 

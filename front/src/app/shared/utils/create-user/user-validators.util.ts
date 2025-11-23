@@ -15,8 +15,6 @@ export function canCreateStep2(params: {
   documentValue: string;
   sex: string;
   birthDate: string;
-  birthPlace: string;
-  nationality: string;
   legajo?: string;
 }): boolean {
   const {
@@ -25,8 +23,6 @@ export function canCreateStep2(params: {
     documentValue,
     sex,
     birthDate,
-    birthPlace,
-    nationality,
     legajo,
   } = params;
   if (!role) return false;
@@ -36,7 +32,7 @@ export function canCreateStep2(params: {
     if (!documentType || !documentValue) return false;
   }
   if (req.needsCommonData) {
-    if (!sex || !birthDate || !birthPlace || !nationality) return false;
+    if (!sex || !birthDate) return false;
   }
   if (role === 'student') {
     if (!legajo || !String(legajo).trim()) return false;

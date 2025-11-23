@@ -12,6 +12,8 @@ Table "roles" {
 Table "user_info" {
   "id" int4 [pk, not null, increment]
   "user_id" uuid [unique, not null]
+  "document_type" text
+  "document_value" text
   "phone" text
   "emergency_name" text
   "emergency_phone" text
@@ -27,7 +29,6 @@ Table "address_data" {
   "locality" text
   "province" text
   "postal_code" text
-  "country" text
 }
 
 Table "common_data" {
@@ -36,8 +37,6 @@ Table "common_data" {
   "address_data_id" int4
   "sex" text
   "birth_date" date
-  "birth_place" text
-  "nationality" text
 }
 
 Table "exams" {
@@ -183,6 +182,7 @@ Table "users" {
   "is_blocked" bool [not null, default: false]
   "blocked_reason" text
   "is_active" bool [not null, default: true]
+  "profile_picture" text
 }
 
 Table "subject_grade_audits" {

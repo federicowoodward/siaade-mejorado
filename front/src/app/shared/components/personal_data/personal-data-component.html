@@ -1,308 +1,326 @@
-<div class="flex flex-column align-items-center pb-4 m-w-custom">
-  <!-- onIcon="pi pi-lock" -->
-
-  <p-togglebutton
-    [ngModel]="activateInputs()"
-    (ngModelChange)="activateInputs.set($event)"
-    onLabel="Editar"
-    offLabel="Editar"
-    onIcon="pi pi-lock"
-    offIcon="pi pi-lock-open"
-    class="w-36 mb-4"
-    ariaLabel="Toggle edit mode"
-  ></p-togglebutton>
-
-  <form class="flex flex-column gap-3 mb-3 relative">
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="name"
-          [(ngModel)]="userData().name"
-          name="name"
-        />
-        <label for="name">Nombre</label>
-      </p-iftalabel>
-
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="lastName"
-          [(ngModel)]="userData().lastName"
-          name="lastName"
-        />
-        <label for="lastName">Apellido</label>
-      </p-iftalabel>
+<div class="personal-wrapper">
+  <div class="summary-card">
+    <div class="summary-main">
+      <div class="summary-avatar">{{ initials() }}</div>
+      <div>
+        <h3 class="summary-name">
+          {{ userData().name || 'Tu nombre' }} {{ userData().lastName || '' }}
+        </h3>
+        <p class="summary-label">Resides en</p>
+        <p class="summary-meta-text">
+          <span class="pi pi-map-marker"></span>
+          {{ displayCity() }}, Córdoba
+        </p>
+        <p class="summary-email">
+          {{ userData().email || 'usuario@cordoba.gob.ar' }}
+        </p>
+      </div>
     </div>
-
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="email"
-          type="email"
-          [(ngModel)]="userData().email"
-          name="email"
-        />
-        <label for="email">Email</label>
-      </p-iftalabel>
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="cuil"
-          [(ngModel)]="userData().cuil"
-          name="cuil"
-        />
-        <label for="cuil">CUIL</label>
-      </p-iftalabel>
+    <div class="summary-meta">
+      <span class="role-pill">{{ displayRole() }}</span>
+      <p-togglebutton
+        [ngModel]="activateInputs()"
+        (ngModelChange)="activateInputs.set($event)"
+        [onLabel]="'Modo edición'"
+        offLabel="Modo lectura"
+        [onIcon]="'pi pi-lock'"
+        [offIcon]="'pi pi-lock-open'"
+        class="edit-toggle"
+        [ariaLabel]="'Toggle edit mode'"
+      ></p-togglebutton>
     </div>
+  </div>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row relative">
-      <p-inputgroup>
-        <p-inputgroup-addon>
-          <p-button
-            label="{{userInfo().documentType}}"
-            severity="secondary"
-            variant="text"
+  <div class="panels-grid">
+    <section class="panel">
+      <div class="panel-header">
+        <h3>Identidad</h3>
+        <p>Datos básicos para tus trámites académicos.</p>
+      </div>
+      <div class="field-grid field-grid--two">
+        <p-iftalabel class="w-full">
+          <input
             [disabled]="!activateInputs()"
-            (click)="menu.toggle($event)"
+            class="w-full"
+            pInputText
+            id="name"
+            placeholder="Ej: Milagros Romero"
+            [(ngModel)]="userData().name"
+            name="name"
           />
-        </p-inputgroup-addon>
-        <p-iftalabel>
+          <label for="name">Nombre</label>
+        </p-iftalabel>
+
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="lastName"
+            placeholder="Ej: Quiroga"
+            [(ngModel)]="userData().lastName"
+            name="lastName"
+          />
+          <label for="lastName">Apellido</label>
+        </p-iftalabel>
+
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="email"
+            type="email"
+            placeholder="Ej: mromero@cordoba.gob.ar"
+            [(ngModel)]="userData().email"
+            name="email"
+          />
+          <label for="email">Email</label>
+        </p-iftalabel>
+
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="cuil"
+            placeholder="Ej: 20-30123456-7"
+            [(ngModel)]="userData().cuil"
+            name="cuil"
+          />
+          <label for="cuil">CUIL</label>
+        </p-iftalabel>
+
+        <div class="field-stack w-full">
+          <label class="field-label" for="documentType">Tipo de documento</label>
+          <p-select
+            class="w-full"
+            inputId="documentType"
+            [options]="docTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Seleccioná una opción"
+            [disabled]="!activateInputs()"
+            [(ngModel)]="userInfo().documentType"
+            name="documentType"
+            [showClear]="true"
+          ></p-select>
+        </div>
+
+        <p-iftalabel class="w-full">
           <input
             [disabled]="!activateInputs()"
             class="w-full"
             pInputText
             id="docValue"
+            placeholder="Ej: 35.789.123"
             [(ngModel)]="userInfo().documentValue"
             name="docValue"
           />
           <label for="docValue">Número de documento</label>
         </p-iftalabel>
-      </p-inputgroup>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="phone"
-          [(ngModel)]="userInfo().phone"
-          name="phone"
-        />
-        <label for="phone">Teléfono</label>
-      </p-iftalabel>
-    </div>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="phone"
+            placeholder="Ej: 351 456-7890"
+            [(ngModel)]="userInfo().phone"
+            name="phone"
+          />
+          <label for="phone">Teléfono</label>
+        </p-iftalabel>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="emergencyName"
-          [(ngModel)]="userInfo().emergencyName"
-          name="emergencyName"
-        />
-        <label for="emergencyName">Nombre contacto emergencia</label>
-      </p-iftalabel>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="birthDate"
+            type="date"
+            [(ngModel)]="commonData().birthDate"
+            name="birthDate"
+          />
+          <label for="birthDate">Fecha de nacimiento</label>
+        </p-iftalabel>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="emergencyPhone"
-          [(ngModel)]="userInfo().emergencyPhone"
-          name="emergencyPhone"
-        />
-        <label for="emergencyPhone">Teléfono emergencia</label>
-      </p-iftalabel>
-    </div>
+        <div class="field-stack w-full">
+          <label class="field-label" for="sex">Sexo</label>
+          <p-select
+            class="w-full"
+            inputId="sex"
+            [options]="sexOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Seleccioná una opción"
+            [disabled]="!activateInputs()"
+            [(ngModel)]="commonData().sex"
+            name="sex"
+            [showClear]="true"
+          ></p-select>
+        </div>
+      </div>
+    </section>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="sex"
-          [(ngModel)]="commonData().sex"
-          name="sex"
-        />
-        <label for="sex">Sexo</label>
-      </p-iftalabel>
+    <section class="panel">
+      <div class="panel-header">
+        <h3>Contacto de emergencia</h3>
+        <p>Persona de confianza para contactar en caso de emergencia.</p>
+      </div>
+      <div class="field-grid field-grid--two">
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="emergencyName"
+            placeholder="Ej: Belén Córdoba"
+            [(ngModel)]="userInfo().emergencyName"
+            name="emergencyName"
+          />
+          <label for="emergencyName">Nombre contacto emergencia</label>
+        </p-iftalabel>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="birthDate"
-          type="date"
-          [(ngModel)]="commonData().birthDate"
-          name="birthDate"
-        />
-        <label for="birthDate">Fecha de nacimiento</label>
-      </p-iftalabel>
-    </div>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="emergencyPhone"
+            placeholder="Ej: 351 234-5678"
+            [(ngModel)]="userInfo().emergencyPhone"
+            name="emergencyPhone"
+          />
+          <label for="emergencyPhone">Teléfono emergencia</label>
+        </p-iftalabel>
+      </div>
+    </section>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="birthPlace"
-          [(ngModel)]="commonData().birthPlace"
-          name="birthPlace"
-        />
-        <label for="birthPlace">Lugar de nacimiento</label>
-      </p-iftalabel>
+    <section class="panel">
+      <div class="panel-header">
+        <h3>Domicilio en Córdoba</h3>
+        <p>Usamos estos datos para notificaciones y certificaciones.</p>
+      </div>
+      <div class="field-grid field-grid--two">
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="street"
+            placeholder="Ej: Av. Colón"
+            [(ngModel)]="addressData().street"
+            name="street"
+          />
+          <label for="street">Calle</label>
+        </p-iftalabel>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="nationality"
-          [(ngModel)]="commonData().nationality"
-          name="nationality"
-        />
-        <label for="nationality">Nacionalidad</label>
-      </p-iftalabel>
-    </div>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="number"
+            placeholder="Ej: 1450"
+            [(ngModel)]="addressData().number"
+            name="number"
+          />
+          <label for="number">Número</label>
+        </p-iftalabel>
 
-    <h4 class="">Domicilio</h4>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="floor"
+            placeholder="Ej: 7"
+            [(ngModel)]="addressData().floor"
+            name="floor"
+          />
+          <label for="floor">Piso</label>
+        </p-iftalabel>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="street"
-          [(ngModel)]="addressData().street"
-          name="street"
-        />
-        <label for="street">Calle</label>
-      </p-iftalabel>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="apartment"
+            placeholder="Ej: B"
+            [(ngModel)]="addressData().apartment"
+            name="apartment"
+          />
+          <label for="apartment">Departamento</label>
+        </p-iftalabel>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="number"
-          [(ngModel)]="addressData().number"
-          name="number"
-        />
-        <label for="number">Número</label>
-      </p-iftalabel>
-    </div>
+        <div class="field-stack w-full">
+          <label class="field-label" for="province">Provincia</label>
+          <p-select
+            class="w-full"
+            inputId="province"
+            [options]="provinceOptions()"
+            [disabled]="!activateInputs()"
+            [(ngModel)]="addressData().province"
+            name="province"
+            placeholder="Seleccioná provincia"
+            [showClear]="true"
+            appendTo="body"
+            (onChange)="onProvinceChange($event.value)"
+          ></p-select>
+        </div>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="floor"
-          [(ngModel)]="addressData().floor"
-          name="floor"
-        />
-        <label for="floor">Piso</label>
-      </p-iftalabel>
+        <div class="field-stack w-full">
+          <label class="field-label" for="department">Departamento</label>
+          <p-select
+            class="w-full"
+            inputId="department"
+            [options]="departmentOptions()"
+            [disabled]="!activateInputs() || !addressData().province"
+            [(ngModel)]="addressData().neighborhood"
+            name="department"
+            placeholder="Ej: Capital"
+            [showClear]="true"
+            appendTo="body"
+            (onChange)="onDepartmentChange($event.value)"
+          ></p-select>
+        </div>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="apartment"
-          [(ngModel)]="addressData().apartment"
-          name="apartment"
-        />
-        <label for="apartment">Departamento</label>
-      </p-iftalabel>
-    </div>
+        <div class="field-stack w-full">
+          <label class="field-label" for="locality">Localidad</label>
+          <p-select
+            class="w-full"
+            inputId="locality"
+            [options]="localityOptions()"
+            [disabled]="!activateInputs() || !addressData().province"
+            [(ngModel)]="addressData().locality"
+            name="locality"
+            placeholder="Ej: Córdoba Capital"
+            [showClear]="true"
+            appendTo="body"
+            (onChange)="onLocalityChange($event.value)"
+          ></p-select>
+        </div>
 
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="neighborhood"
-          [(ngModel)]="addressData().neighborhood"
-          name="neighborhood"
-        />
-        <label for="neighborhood">Barrio</label>
-      </p-iftalabel>
+        <p-iftalabel class="w-full">
+          <input
+            [disabled]="!activateInputs()"
+            class="w-full"
+            pInputText
+            id="postalCode"
+            placeholder="Ej: 5000"
+            [(ngModel)]="addressData().postalCode"
+            name="postalCode"
+          />
+          <label for="postalCode">Código Postal</label>
+        </p-iftalabel>
+      </div>
+    </section>
+  </div>
 
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="locality"
-          [(ngModel)]="addressData().locality"
-          name="locality"
-        />
-        <label for="locality">Localidad</label>
-      </p-iftalabel>
-    </div>
-
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="province"
-          [(ngModel)]="addressData().province"
-          name="province"
-        />
-        <label for="province">Provincia</label>
-      </p-iftalabel>
-
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="postalCode"
-          [(ngModel)]="addressData().postalCode"
-          name="postalCode"
-        />
-        <label for="postalCode">Código Postal</label>
-      </p-iftalabel>
-    </div>
-
-    <div class="flex gap-3 w-full flex-column md:flex-row">
-      <p-iftalabel class="w-full">
-        <input
-          [disabled]="!activateInputs()"
-          class="w-full"
-          pInputText
-          id="country"
-          [(ngModel)]="addressData().country"
-          name="country"
-        />
-        <label for="country">País</label>
-      </p-iftalabel>
-    </div>
-  </form>
-  <p-menu #menu [model]="docTypes" popup class="docTypeMenu" />
-  <div class="flex gap-2 align-self-center">
+  <div class="actions-row">
     <p-button
       label="Restaurar"
       icon="pi pi-refresh"
@@ -342,6 +360,8 @@
       *ngIf="modifiedFields().length !== 0"
       label="Confirmar"
       icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="saving()"
       (click)="submitChanges()"
     />
   </ng-template>

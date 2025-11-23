@@ -17,8 +17,6 @@ export class FieldLabelPipe implements PipeTransform {
     emergencyPhone: 'Teléfono emergencia',
     sex: 'Sexo',
     birthDate: 'Fecha de nacimiento',
-    birthPlace: 'Lugar de nacimiento',
-    nationality: 'Nacionalidad',
     street: 'Calle',
     number: 'Número',
     floor: 'Piso',
@@ -27,7 +25,6 @@ export class FieldLabelPipe implements PipeTransform {
     locality: 'Localidad',
     province: 'Provincia',
     postalCode: 'Código Postal',
-    country: 'País',
     password: 'Contraseña',
   };
 

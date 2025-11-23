@@ -1,11 +1,9 @@
 import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { InputTextModule } from 'primeng/inputtext';
 import { IftaLabelModule } from 'primeng/iftalabel';
-import { Menu } from 'primeng/menu';
-import { MenuItem } from 'primeng/api';
-import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputGroup } from 'primeng/inputgroup';
+import { SelectModule } from 'primeng/select';
 import { Button } from 'primeng/button';
 import { cloneDeep, isEqual } from 'lodash-es';
 import { Dialog } from 'primeng/dialog';
@@ -13,19 +11,20 @@ import { ApiService } from '../../../core/services/api.service';
 import { FieldLabelPipe } from '../../pipes/field-label.pipe';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from '../../../core/services/auth.service';
 import { FormsModule } from '@angular/forms';
+import { ArgentinaGeoService } from '../../services/argentina-geo.service';
+import { MessageService } from 'primeng/api';
+
 @Component({
   selector: 'app-personal-data',
   standalone: true,
   imports: [
     CommonModule,
+    HttpClientModule,
     FormsModule,
     InputTextModule,
     IftaLabelModule,
-    Menu,
-    InputGroupAddonModule,
-    InputGroup,
+    SelectModule,
     Button,
     Dialog,
     FieldLabelPipe,
@@ -36,11 +35,25 @@ import { FormsModule } from '@angular/forms';
 })
 export class PersonalDataComponent implements OnInit {
   private api = inject(ApiService);
+  private geo = inject(ArgentinaGeoService);
+  private readonly messages = inject(MessageService);
 
   /** Si no viene, usa el usuario logueado */
   @Input() userId!: string;
 
-  docTypes: MenuItem[] | undefined;
+  readonly docTypeOptions = [
+    { label: 'DNI', value: 'DNI' },
+    { label: 'Pasaporte', value: 'Pasaporte' },
+    { label: 'CUIT', value: 'CUIT' },
+    { label: 'Libreta Civica', value: 'Libreta Civica' },
+    { label: 'Libreta de Enrolamiento', value: 'Libreta de Enrolamiento' },
+  ];
+
+  readonly sexOptions = [
+    { label: 'Femenino', value: 'Femenino' },
+    { label: 'Masculino', value: 'Masculino' },
+    { label: 'Prefiero no decirlo', value: 'Prefiero no decirlo' },
+  ];
 
   // Modelo editable
   userData = signal<any>({});
@@ -48,6 +61,10 @@ export class PersonalDataComponent implements OnInit {
   commonData = signal<any>({});
   addressData = signal<any>({});
   activateInputs = signal(false);
+  saving = signal(false);
+  provinceOptions = signal<{ label: string; value: string }[]>([]);
+  departmentOptions = signal<{ label: string; value: string }[]>([]);
+  localityOptions = signal<{ label: string; value: string }[]>([]);
 
   // cambios
   original = signal<any>({});
@@ -55,20 +72,6 @@ export class PersonalDataComponent implements OnInit {
   modifiedFields = signal<string[]>([]);
 
   async ngOnInit(): Promise<void> {
-    this.docTypes = [
-      { label: 'DNI', command: () => this.selectDocType('DNI') },
-      { label: 'Pasaporte', command: () => this.selectDocType('Pasaporte') },
-      { label: 'CUIT', command: () => this.selectDocType('CUIT') },
-      {
-        label: 'Libreta Cívica',
-        command: () => this.selectDocType('Libreta Cívica'),
-      },
-      {
-        label: 'Libreta de Enrolamiento',
-        command: () => this.selectDocType('Libreta de Enrolamiento'),
-      },
-    ];
-
     // 1) Determinar el ID a usar
     let id = this.userId;
     if (!id) {
@@ -79,6 +82,7 @@ export class PersonalDataComponent implements OnInit {
     // 3) Si no hay cache, pedir al backend el perfil completo
     await this.loadProfileFromApi(id);
     this.snapshotOriginal();
+    await this.initializeGeoSelectors();
   }
 
   // ---- Helpers de carga -----------------------------------------------------
@@ -148,10 +152,6 @@ export class PersonalDataComponent implements OnInit {
 
   // ---- UI actions -----------------------------------------------------------
 
-  selectDocType(tipo: string) {
-    this.userInfo.update((prev) => ({ ...prev, documentType: tipo }));
-  }
-
   checkForChanges() {
     const changes: string[] = [];
     const compare = (section: any, original: any, pathPrefix = '') => {
@@ -183,18 +183,223 @@ export class PersonalDataComponent implements OnInit {
     this.addressData.set(cloneDeep(original.addressData));
   }
 
-  submitChanges() {
+  async submitChanges(): Promise<void> {
     this.showConfirmDialog.set(false);
-    // Para guardar, armás el payload que te pida tu endpoint de update
-    const payload = {
-      user: this.userData(),
-      userInfo: this.userInfo(),
-      commonData: {
-        ...this.commonData(),
-        address: this.addressData(),
-      },
+    const payload = this.buildChangesPayload();
+    if (!Object.keys(payload).length) {
+      this.messages.add({
+        severity: 'info',
+        summary: 'Sin cambios',
+        detail: 'No encontramos modificaciones para guardar.',
+        life: 4000,
+      });
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await firstValueFrom(
+        this.api.request<any>('PUT', `users/${this.userId}`, payload),
+      );
+      this.messages.add({
+        severity: 'success',
+        summary: 'Datos actualizados',
+        detail: 'Guardamos tus datos personales correctamente.',
+        life: 3500,
+      });
+      await this.loadProfileFromApi(this.userId);
+      this.snapshotOriginal();
+      await this.initializeGeoSelectors();
+    } catch (error: any) {
+      this.messages.add({
+        severity: 'error',
+        summary: 'No se pudo guardar',
+        detail: this.resolveErrorMessage(error),
+        sticky: false,
+        life: 5000,
+      });
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  initials(): string {
+    const name = (this.userData().name || 'C').trim();
+    const last = (this.userData().lastName || 'P').trim();
+    return `${name.charAt(0) || 'C'}${last.charAt(0) || 'P'}`.toUpperCase();
+  }
+
+  displayCity(): string {
+    return this.addressData().locality || 'Córdoba Capital';
+  }
+
+  displayRole(): string {
+    return this.userData().role || 'Alumno';
+  }
+
+
+  async onProvinceChange(value: string | null): Promise<void> {
+    this.addressData().province = value ?? '';
+    this.addressData().neighborhood = '';
+    this.addressData().locality = '';
+    this.departmentOptions.set([]);
+    this.localityOptions.set([]);
+    if (value) {
+      await this.loadDepartments(value);
+    }
+  }
+
+  async onDepartmentChange(value: string | null): Promise<void> {
+    this.addressData().neighborhood = value ?? '';
+    this.addressData().locality = '';
+    this.localityOptions.set([]);
+    if (value || this.addressData().province) {
+      await this.loadLocalities(this.addressData().province, value ?? undefined);
+    }
+  }
+
+  async onLocalityChange(value: string | null): Promise<void> {
+    this.addressData().locality = value ?? '';
+  }
+
+  private async initializeGeoSelectors(): Promise<void> {
+    await this.loadProvinces();
+    const province = this.addressData().province;
+    if (province) {
+      await this.loadDepartments(province);
+      const department = this.addressData().neighborhood;
+      await this.loadLocalities(province, department || undefined);
+    }
+  }
+
+  private async loadProvinces(): Promise<void> {
+    try {
+      const options = await firstValueFrom(this.geo.getProvinces());
+      this.provinceOptions.set(options);
+    } catch (error) {
+      console.error('No se pudieron cargar provincias', error);
+    }
+  }
+
+  private async loadDepartments(province: string): Promise<void> {
+    try {
+      const options = await firstValueFrom(this.geo.getDepartments(province));
+      this.departmentOptions.set(options);
+    } catch (error) {
+      console.error('No se pudieron cargar departamentos', error);
+      this.departmentOptions.set([]);
+    }
+  }
+
+  private async loadLocalities(
+    province: string,
+    department?: string,
+  ): Promise<void> {
+    try {
+      const options = await firstValueFrom(
+        this.geo.getLocalities(province, department),
+      );
+      this.localityOptions.set(options);
+    } catch (error) {
+      console.error('No se pudieron cargar localidades', error);
+      this.localityOptions.set([]);
+    }
+  }
+
+  private buildChangesPayload(): Record<string, any> {
+    const changes: Record<string, any> = {};
+    const original = this.original();
+    const assign = (
+      key: string,
+      current: any,
+      previous: any,
+    ): void => {
+      const next = this.normalizeForPayload(current);
+      const prev = this.normalizeForPayload(previous);
+      if (next !== prev) {
+        changes[key] = next;
+      }
     };
-    console.log('[PersonalData] Guardar con payload:', payload);
-    // TODO: this.api.request('PUT', 'users/:id', payload) cuando esté listo el endpoint
+
+    const user = this.userData();
+    const origUser = original.userData ?? {};
+    assign('name', user.name, origUser.name);
+    assign('lastName', user.lastName, origUser.lastName);
+    assign('email', user.email, origUser.email);
+    assign('cuil', user.cuil, origUser.cuil);
+
+    const info = this.userInfo();
+    const origInfo = original.userInfo ?? {};
+    assign('userInfo.documentType', info.documentType, origInfo.documentType);
+    assign(
+      'userInfo.documentValue',
+      info.documentValue,
+      origInfo.documentValue,
+    );
+    assign('userInfo.phone', info.phone, origInfo.phone);
+    assign('userInfo.emergencyName', info.emergencyName, origInfo.emergencyName);
+    assign(
+      'userInfo.emergencyPhone',
+      info.emergencyPhone,
+      origInfo.emergencyPhone,
+    );
+
+    const common = this.commonData();
+    const origCommon = original.commonData ?? {};
+    assign('commonData.sex', common.sex, origCommon.sex);
+    assign('commonData.birthDate', common.birthDate, origCommon.birthDate);
+
+    const address = this.addressData();
+    const origAddress = original.addressData ?? {};
+    assign('commonData.address.street', address.street, origAddress.street);
+    assign('commonData.address.number', address.number, origAddress.number);
+    assign('commonData.address.floor', address.floor, origAddress.floor);
+    assign(
+      'commonData.address.apartment',
+      address.apartment,
+      origAddress.apartment,
+    );
+    assign(
+      'commonData.address.neighborhood',
+      address.neighborhood,
+      origAddress.neighborhood,
+    );
+    assign(
+      'commonData.address.locality',
+      address.locality,
+      origAddress.locality,
+    );
+    assign(
+      'commonData.address.province',
+      address.province,
+      origAddress.province,
+    );
+    assign(
+      'commonData.address.postalCode',
+      address.postalCode,
+      origAddress.postalCode,
+    );
+
+    return changes;
+  }
+
+  private normalizeForPayload(value: any): any {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : null;
+    }
+    return value;
+  }
+
+  private resolveErrorMessage(error: any): string {
+    const serverMessage = error?.error?.message ?? error?.message;
+    if (Array.isArray(serverMessage)) {
+      return serverMessage.join(' ');
+    }
+    if (typeof serverMessage === 'string' && serverMessage.trim().length) {
+      return serverMessage;
+    }
+    return 'Intenta nuevamente en unos minutos.';
   }
 }
+
