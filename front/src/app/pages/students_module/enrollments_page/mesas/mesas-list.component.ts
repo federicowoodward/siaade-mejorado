@@ -179,7 +179,13 @@ export class MesasListComponent implements OnInit {
             subjectIds.has(card.subjectId),
           )
         : subjects;
-    return source
+    const cardsSource =
+      source.length === 0 && tables.length
+        ? tables.map((table, idx) =>
+            this.buildPlaceholderSubject(table, idx),
+          )
+        : source;
+    return cardsSource
       .map((card: StudentSubjectCard) =>
         this.mapCourseCard(card, optimistic),
       )
@@ -776,6 +782,41 @@ export class MesasListComponent implements OnInit {
   private buildCourseStatus(card: StudentSubjectCard): string {
     const base = card.accreditation || card.condition || 'Sin estado';
     return base.toUpperCase();
+  }
+
+  private buildPlaceholderSubject(
+    table: StudentExamTable,
+    idx: number,
+  ): StudentSubjectCard {
+    const fallbackId =
+      Number.isFinite(table.subjectId) && table.subjectId > 0
+        ? table.subjectId
+        : -(Number.isFinite(table.mesaId) ? Number(table.mesaId) : idx + 1);
+    const enrolled = table.availableCalls.some((call) => call.enrolled);
+    return {
+      subjectId: fallbackId,
+      subjectName: table.subjectName ?? 'Materia',
+      yearLabel: 'Sin año',
+      yearNumber: null,
+      commissionLabel: table.commissionLabel ?? null,
+      partialsExpected: 2,
+      notes: [],
+      finalScore: null,
+      finalExplanation: '',
+      attendancePct: 0,
+      condition: enrolled ? 'Inscripto' : null,
+      accreditation: 'Mesa publicada',
+      studyPlan: null,
+      pedagogicalMessage: null,
+      actions: {
+        canEnrollCourse: false,
+        canEnrollExam: false,
+        courseReason: null,
+        examReason: null,
+        courseWindow: null,
+        examWindow: null,
+      },
+    };
   }
 
   private resolveCourseSeverity(card: StudentSubjectCard): ButtonSeverity {
