@@ -1,4 +1,4 @@
-﻿import { Component, effect, inject, signal } from '@angular/core';
+﻿import { Component, effect, inject, signal, ViewEncapsulation } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Menu } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
@@ -19,7 +19,8 @@ function addCommandToMenu(items: MenuItem[], command: () => void): MenuItem[] {
   selector: 'app-menu-component',
   imports: [Menu, ToastModule],
   templateUrl: './menu-component.html',
-  styleUrl: './menu-component.scss',
+  styleUrls: ['./menu-component.scss'],
+  encapsulation: ViewEncapsulation.Emulated,
   standalone: true,
 })
 export class MenuComponent {

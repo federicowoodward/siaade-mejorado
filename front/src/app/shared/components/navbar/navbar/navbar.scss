@@ -1,3 +1,14 @@
 ::ng-deep .navbar .p-menu.p-menu-overlay {
   top: 62px !important;
 }
+
+:ng-deep {
+  .p-menu-list,
+  .p-menu {
+    width: 200px !important;
+  }
+}
+
+:host ::ng-deep .navbar .logout-item .p-menu-item-icon {
+  color: #dc3545 !important;
+}

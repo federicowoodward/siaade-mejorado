@@ -3,12 +3,11 @@
   *ngIf="authService.isLoggedIn()"
 >
   <!-- Botón hamburguesa -->
-  <div>
+  <div class="lg:hidden block">
     <p-button
       (click)="openSidebar()"
       aria-label="Abrir menú"
       icon="pi pi-bars"
-      class="lg:hidden block"
     ></p-button>
   </div>
 
@@ -19,10 +18,13 @@
 
   <!-- Usuario y menú -->
   <div
-    class="flex align-items-center gap-2 cursor-pointer p-2 px-3"
+    class="flex align-items-center gap-2 p-2 px-3 cursor-pointer"
     (click)="menu.toggle($event); this.isMenuOpen = !this.isMenuOpen;"
   >
-    <p>{{ userName }}</p>
+    <div class="flex flex-column">
+      <p>{{ userName }}</p>
+      <p class="text-sm text-gray-500">{{ userRole()! | roleLabel }}</p>
+    </div>
     <p
       [class.pi-angle-down]="!isMenuOpen"
       [class.pi-angle-up]="isMenuOpen"

@@ -1,20 +1,25 @@
 <!-- Banner principal -->
-<div class="banner h-10rem flex align-items-center px-4 bg-primary text-white">
+<div
+  class="banner h-10rem flex align-items-center px-4 md:px-6 bg-primary text-black"
+>
   <div class="flex align-items-center gap-3">
-    <div>
-      <h1 class="text-2xl font-bold">Sistema Académico Quality</h1>
-      <p class="text-sm opacity-80">Gestión simple, acceso rápido</p>
+    <div class="custom-color-text">
+      <h1 class="text-4xl font-bold">Instituto Cura Gabriel Brochero</h1>
+      <p class="text-xl opacity-80">Gestión simple, acceso rápido</p>
     </div>
   </div>
   <div class="ml-auto text-right"></div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div class="p-4">
+<!-- CONTENEDOR 50/50 DESKTOP — 1 COL MOBILE -->
+<div class="grid grid-nogutter mt-4">
+  <!-- Quick Access -->
+  <div class="col-12 md:col-6 p-4 lg:px-6">
     <app-quick-access></app-quick-access>
   </div>
 
-  <div class="p-4">
+  <!-- Important Notices -->
+  <div class="col-12 md:col-6 px-4 lg:px-6">
     <app-important-notices></app-important-notices>
   </div>
 </div>

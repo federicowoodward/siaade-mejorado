@@ -8,8 +8,8 @@
 </p>
 
 <!-- Accesos rápidos -->
-<div class="grid">
-  <div *ngFor="let acc of accesses()" class="col-12 sm:col-6 lg:col-3">
+<div class="grid quick-access">
+  <div *ngFor="let acc of accesses()" class="col-12 lg:col-6">
     <ng-container
       *ngIf="!(isStudentCertificate(acc) && loadingStudentCertificate()); else loadingCard"
     >
@@ -23,7 +23,6 @@
         <ng-template #header>
           <i [class]="acc.icon + ' text-5xl text-primary'"></i>
         </ng-template>
-        <div class="card-content"></div>
       </p-card>
     </ng-container>
 
@@ -40,4 +39,3 @@
     </ng-template>
   </div>
 </div>
-

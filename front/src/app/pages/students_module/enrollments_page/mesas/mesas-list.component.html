@@ -144,7 +144,6 @@
             <th>Materia</th>
             <th>Fecha apertura</th>
             <th>Fecha cierre</th>
-            <th class="text-center">Ventana</th>
             <th class="text-center">Accion</th>
           </tr>
         </ng-template>
@@ -161,14 +160,7 @@
             <td>
               {{ row.enrollmentClosesLabel }}
             </td>
-            <td class="text-center">
-              <span
-                class="window-label"
-                [ngClass]="'window-label--' + windowSeverity(row)"
-              >
-                {{ windowLabel(row) }}
-              </span>
-            </td>
+
             <td class="text-center">
               <div class="action-wrapper">
                 <ng-container *ngIf="!isEnrolled(row); else enrolledButton">
