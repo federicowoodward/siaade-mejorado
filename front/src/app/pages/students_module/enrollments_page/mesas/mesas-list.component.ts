@@ -364,6 +364,11 @@ export class MesasListComponent implements OnInit {
     if (!this.isEnrolled(row)) {
       return;
     }
+    if (this.isUnenrollBlocked(row)) {
+      this.showBlock('WINDOW_CLOSED', this.inscriptionsClosedMessage, row);
+      this.restoreFocus();
+      return;
+    }
     this.dialogMode = 'unenroll';
     this.selectedRow = row;
     this.dialogVisible = true;
@@ -421,6 +426,13 @@ export class MesasListComponent implements OnInit {
   }
 
   private performUnenroll(row: ExamCallRow): void {
+    if (this.isUnenrollBlocked(row)) {
+      this.showBlock('WINDOW_CLOSED', this.inscriptionsClosedMessage, row);
+      this.restoreFocus();
+      this.selectedRow = null;
+      this.dialogMode = 'enroll';
+      return;
+    }
     this.inscriptions
       .unenroll({ mesaId: row.mesaId, callId: row.call.id })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -686,6 +698,17 @@ export class MesasListComponent implements OnInit {
     return this.resolveBlock(row)?.message || undefined;
   }
 
+  isUnenrollBlocked(row: ExamCallRow): boolean {
+    return this.isEnrollmentClosed(row);
+  }
+
+  unenrollTooltip(row: ExamCallRow): string | undefined {
+    if (this.isUnenrollBlocked(row)) {
+      return this.inscriptionsClosedMessage;
+    }
+    return undefined;
+  }
+
   isEnrolled(row: ExamCallRow): boolean {
     // Preferir estado por llamado (proporcionado por backend).
     // Fallback a marca local optimista en esta sesión.
@@ -906,3 +929,4 @@ export class MesasListComponent implements OnInit {
     );
   }
 }
+
