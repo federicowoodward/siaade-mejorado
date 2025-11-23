@@ -19,18 +19,10 @@
 
   <!-- Usuario y menú -->
   <div
-    class="flex align-items-center gap-2 cursor-pointer p-2 px-3 user-trigger"
+    class="flex align-items-center gap-2 cursor-pointer p-2 px-3"
     (click)="menu.toggle($event); this.isMenuOpen = !this.isMenuOpen;"
   >
-    <span class="user-avatar flex align-items-center justify-content-center">
-      <i class="pi pi-user"></i>
-    </span>
-    <div class="flex flex-column line-height-1">
-      <p class="m-0 user-name">{{ userName }}</p>
-      <small class="m-0 text-color-secondary" *ngIf="userRoleLabel">{{
-        userRoleLabel
-      }}</small>
-    </div>
+    <p>{{ userName }}</p>
     <p
       [class.pi-angle-down]="!isMenuOpen"
       [class.pi-angle-up]="isMenuOpen"
