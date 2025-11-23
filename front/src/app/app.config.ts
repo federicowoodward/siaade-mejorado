@@ -27,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
+    MessageService,
     ...httpInterceptorProviders,
     MessageService,
     {

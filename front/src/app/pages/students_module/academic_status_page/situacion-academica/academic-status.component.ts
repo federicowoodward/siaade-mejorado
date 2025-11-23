@@ -166,6 +166,7 @@ export class AcademicStatusComponent implements OnInit {
           division: card.commissionLabel,
           finalCondition: card.condition ?? card.accreditation ?? null,
           lastExamSummary: card.finalExplanation ?? null,
+          attendancePct: card.attendancePct,
           hasGrades: this.hasLegacyGrades(card),
         }))
         .map((subject: StudentSummarySubject) =>

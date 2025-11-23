@@ -71,6 +71,7 @@ export class SubjectStatusDetailComponent implements OnInit {
           this.loading.set(false);
           return;
         }
+        const attendancePct = this.resolveAttendance(match);
         const card: StudentSubjectCard = {
           subjectId: Number(match.id),
           subjectName: match.name ?? 'Sin nombre',
@@ -81,7 +82,7 @@ export class SubjectStatusDetailComponent implements OnInit {
           notes: this.extractNotesFromSummary(match),
           finalScore: null,
           finalExplanation: match.lastExamSummary ?? '',
-          attendancePct: 0,
+          attendancePct,
           condition: match.finalCondition ?? null,
           accreditation: match.accreditation ?? '',
           studyPlan: null,
@@ -119,6 +120,30 @@ export class SubjectStatusDetailComponent implements OnInit {
       notes.push({ label: 'Final', value: parseFloat(finalMatch[1]) });
     }
     return notes;
+  }
+
+  private resolveAttendance(subject: any): number {
+    const direct = this.toFiniteNumber(
+      subject?.attendancePct ??
+        subject?.attendancePercentage ??
+        subject?.attendance,
+    );
+    if (direct !== null) return direct;
+    const summaryValue = this.extractAttendanceFromSummary(
+      subject?.lastExamSummary,
+    );
+    return summaryValue ?? 0;
+  }
+
+  private extractAttendanceFromSummary(summary: unknown): number | null {
+    if (typeof summary !== 'string') return null;
+    const match = summary.match(/Asist\.:?\s*(\d+(?:\.\d+)?)/i);
+    return match ? Number.parseFloat(match[1]) : null;
+  }
+
+  private toFiniteNumber(value: unknown): number | null {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
   }
 
   private ensureStatusLoaded(): void {
