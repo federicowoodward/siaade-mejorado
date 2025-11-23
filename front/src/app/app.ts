@@ -8,6 +8,7 @@ import { DrawerVisibility } from './core/services/drawer_visibility.service';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { Navbar } from './shared/components/navbar/navbar/navbar';
+import { ToastModule } from 'primeng/toast';
 
 @Component({
   selector: 'app-root',
@@ -18,6 +19,7 @@ import { Navbar } from './shared/components/navbar/navbar/navbar';
     DrawerModule,
     CommonModule,
     Navbar,
+    ToastModule,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
