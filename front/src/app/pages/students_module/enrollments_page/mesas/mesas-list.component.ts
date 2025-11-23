@@ -168,7 +168,9 @@ export class MesasListComponent implements OnInit {
     const optimistic = this.courseEnrollmentsOptimistic();
     const tables = this.tables();
     const subjectIds = new Set<number>(
-      tables.map((table: StudentExamTable) => table.subjectId),
+      tables
+        .map((table: StudentExamTable) => table.subjectId)
+        .filter((id) => Number.isFinite(id) && id > 0),
     );
     const subjects = this.studentSubjects();
     const source =
