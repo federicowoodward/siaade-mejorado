@@ -186,6 +186,9 @@
                     icon="pi pi-check"
                     size="small"
                     severity="success"
+                    [disabled]="isUnenrollBlocked(row)"
+                    [pTooltip]="unenrollTooltip(row) || ''"
+                    tooltipPosition="top"
                     (onClick)="onUnenroll(row, $event)"
                     styleClass="cta-button"
                     ariaLabel="Inscripto en {{ row.subjectName }} - {{
