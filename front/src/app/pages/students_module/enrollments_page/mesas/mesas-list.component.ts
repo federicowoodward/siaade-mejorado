@@ -38,6 +38,7 @@ import {
   StudentStatusService,
   StudentSubjectCard,
 } from '../../../../core/services/student-status.service';
+import { UiAlertAuditService } from '../../../../core/services/ui-alert-audit.service';
 
 interface ExamCallRow {
   mesaId: number;
@@ -140,12 +141,12 @@ const BLOCK_COPY: Record<
   ],
   templateUrl: './mesas-list.component.html',
   styleUrl: './mesas-list.component.scss',
-  providers: [MessageService],
 })
 export class MesasListComponent implements OnInit {
   private readonly inscriptions = inject(StudentInscriptionsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messages = inject(MessageService);
+  private readonly uiAlertAudit = inject(UiAlertAuditService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly sync = inject(ExamTableSyncService);
@@ -317,7 +318,7 @@ export class MesasListComponent implements OnInit {
       next.add(card.subjectId);
       return next;
     });
-    this.messages.add({
+    this.uiAlertAudit.add(this.messages, {
       severity: 'info',
       summary: 'Gestion pendiente',
       detail: `${card.subjectName}: la confirmacion final se realizara cuando se conecte el endpoint oficial.`,
@@ -384,7 +385,7 @@ export class MesasListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response: any) => {
         if (response.ok) {
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'success',
             summary: 'Inscripcion confirmada',
             detail: `${row.subjectName} - ${row.call.label}`,
@@ -417,7 +418,7 @@ export class MesasListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response: any) => {
         if (response.ok) {
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'info',
             summary: 'Inscripcion cancelada',
             detail: `${row.subjectName} - ${row.call.label}`,

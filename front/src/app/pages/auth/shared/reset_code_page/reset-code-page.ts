@@ -19,7 +19,6 @@ import { firstValueFrom } from 'rxjs';
     ButtonModule,
     ToastModule,
   ],
-  providers: [MessageService],
   templateUrl: './reset-code-page.html',
   styleUrl: './reset-code-page.scss',
 })

@@ -19,7 +19,6 @@ import { firstValueFrom } from 'rxjs';
     ButtonModule,
     ToastModule,
   ],
-  providers: [MessageService],
   templateUrl: './change-password-code.html',
   styleUrl: './change-password-code.scss',
 })

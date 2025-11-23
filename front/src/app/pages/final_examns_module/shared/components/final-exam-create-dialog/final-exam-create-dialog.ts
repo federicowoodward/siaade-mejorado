@@ -24,6 +24,7 @@ import { MessageService } from 'primeng/api';
 import { ApiService } from '../../../../../core/services/api.service';
 import { Subject } from '../../../../../core/models/subject.model';
 import { toHM, toYMD } from '../../utils/datetime.util';
+import { UiAlertAuditService } from '../../../../../core/services/ui-alert-audit.service';
 
 type SubjectOption = { label: string; value: number };
 
@@ -42,11 +43,11 @@ type SubjectOption = { label: string; value: number };
   ],
   templateUrl: './final-exam-create-dialog.html',
   styleUrls: ['./final-exam-create-dialog.scss'],
-  providers: [MessageService],
 })
 export class FinalExamCreateDialogComponent implements OnChanges {
   private api = inject(ApiService);
   private messages = inject(MessageService);
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   // Control de visibilidad y límites de fecha que te pasa el padre
   @Input() visible = false;
@@ -116,7 +117,7 @@ export class FinalExamCreateDialogComponent implements OnChanges {
         this.loadingSubjects.set(false);
         this.loadingInProgress = false;
         this.subjectsLoaded = true;
-        this.messages.add({
+        this.uiAlertAudit.add(this.messages, {
           severity: 'error',
           summary: 'Error',
           detail:
@@ -191,7 +192,7 @@ export class FinalExamCreateDialogComponent implements OnChanges {
     const dt = this.dateTime;
 
     if (!subj || !dt) {
-      this.messages.add({
+      this.uiAlertAudit.add(this.messages, {
         severity: 'warn',
         summary: 'Falta completar',
         detail: 'Elegí una materia y una fecha/hora.',

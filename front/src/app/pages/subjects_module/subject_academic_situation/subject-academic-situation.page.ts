@@ -45,6 +45,7 @@ import {
   parseGradeValue,
   rowsTrackBy as rowsTrackByFn,
 } from './utils/academic-utils';
+import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
@@ -66,7 +67,6 @@ import {
   ],
   templateUrl: './subject-academic-situation.page.html',
   styleUrl: './subject-academic-situation.page.scss',
-  providers: [MessageService],
 })
 export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   // =======================
@@ -78,6 +78,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
   private readonly rbac = inject(RbacService);
+  private readonly uiAlertAudit = inject(UiAlertAuditService);
 
   // =======================
   // Estado y seÃ±ales
@@ -192,7 +193,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   private showWindowClosedWarning(row?: AcademicSituationRow): void {
-    this.messages.add({
+    this.uiAlertAudit.add(this.messages, {
       severity: 'warn',
       summary: 'Plazo cerrado',
       detail:
@@ -228,7 +229,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }
   }
 
-  // Mover alumno de comisiÃ³n
+  // Mover alumno de comision
   moveDialog = signal<{
     visible: boolean;
     loading: boolean;
@@ -369,9 +370,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       next: (groups) => {
         this.saving.set(false);
         this.currentPersist = null;
-        const savedIds = groups.flat();
-        this.applySuccessfulPersist(savedIds);
-        this.messages.add({
+          const savedIds = groups.flat();
+          this.applySuccessfulPersist(savedIds);
+          this.uiAlertAudit.add(this.messages, {
           severity: 'success',
           summary: 'Cambios guardados',
           detail: 'Las notas se guardaron correctamente.',
@@ -721,7 +722,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   private showError(summary: string, detail: string): void {
-    this.messages.add({
+    this.uiAlertAudit.add(this.messages, {
       severity: 'error',
       summary,
       detail,
@@ -796,7 +797,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
             ? `Por ${actorLabel}${dateLabel ? ` el ${dateLabel}` : ''}`
             : 'Se removi� la inscripci�n en la comisi�n.';
 
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'success',
 
             summary: serverEnrolled
@@ -855,16 +856,16 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           this.closeMoveDialog();
           // refrescar situaciÃ³n acadÃ©mica
           this.onReload();
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'success',
             summary: 'Alumno movido',
-            detail: 'La comisiÃ³n del alumno fue actualizada.',
+            detail: 'La comision del alumno fue actualizada.',
           });
         },
         error: (err: unknown) => {
           console.error('Error moviendo alumno', err);
           this.moveDialog.update((v) => ({ ...v, loading: false }));
-          this.showError('Error', 'No se pudo mover el alumno de comisiÃ³n.');
+          this.showError('Error', 'No se pudo mover el alumno de comision.');
         },
       });
   }

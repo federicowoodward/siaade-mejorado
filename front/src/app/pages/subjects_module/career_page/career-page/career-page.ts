@@ -12,6 +12,7 @@ import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { UiAlertAuditService } from '../../../../core/services/ui-alert-audit.service';
 
 type SubjectView = {
   id: number;
@@ -38,12 +39,12 @@ type SubjectView = {
   ],
   templateUrl: './career-page.html',
   styleUrls: ['./career-page.scss'],
-  providers: [MessageService],
 })
 export class CareerPage implements OnInit {
   private catalog = inject(CareerCatalogService);
   private router = inject(Router);
   private messages = inject(MessageService);
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   private readonly careerId = 1;
   loading = signal(true);
@@ -135,7 +136,7 @@ export class CareerPage implements OnInit {
       .updateSubjectPrereqs(this.careerId, subject.orderNo, payload)
       .subscribe({
         next: () => {
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'success',
             summary: 'Correlativas actualizadas',
             detail: subject.subjectName,
@@ -149,7 +150,7 @@ export class CareerPage implements OnInit {
           const detail =
             err?.error?.message ??
             'No se pudieron guardar las correlativas. Intente nuevamente.';
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'error',
             summary: 'Error',
             detail: Array.isArray(detail) ? detail.join(' | ') : detail,

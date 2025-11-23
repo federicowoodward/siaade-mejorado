@@ -39,6 +39,7 @@ import {
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 
 import { MessageService } from 'primeng/api';
+import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 type Row = {
   id: number;
@@ -89,7 +90,6 @@ type Row = {
 
   styleUrls: ['./final-exam-page.scss'],
 
-  providers: [MessageService],
 })
 export class FinalExamPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -103,6 +103,8 @@ export class FinalExamPage implements OnInit {
   private messages = inject(MessageService);
 
   private syncService = inject(ExamTableSyncService);
+
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   examId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 
@@ -239,11 +241,15 @@ export class FinalExamPage implements OnInit {
   }
 
   private toastOk(summary: string) {
-    this.messages.add({ severity: 'success', summary });
+    this.uiAlertAudit.add(this.messages, { severity: 'success', summary });
   }
 
   private toastErr(detail: string) {
-    this.messages.add({ severity: 'error', summary: 'Error', detail });
+    this.uiAlertAudit.add(this.messages, {
+      severity: 'error',
+      summary: 'Error',
+      detail,
+    });
   }
 
   // helpers para el tag de estado

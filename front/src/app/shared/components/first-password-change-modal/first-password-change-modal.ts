@@ -22,7 +22,6 @@ import { AuthService } from '../../../core/services/auth.service';
     ButtonModule,
     ToastModule,
   ],
-  providers: [MessageService],
   templateUrl: './first-password-change-modal.html',
   styleUrl: './first-password-change-modal.scss',
 })

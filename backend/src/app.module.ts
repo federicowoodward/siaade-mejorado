@@ -23,6 +23,7 @@ import { StudentsReadModule } from "./modules/students/read/students.module";
 import { PdfGeneratorModule } from "./modules/pdf-generator/pdf-generator.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
+import { AlertAuditModule } from "./modules/alert_audit/alert-audit.module";
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
     PrerequisitesModule,
     StudentsReadModule,
     PdfGeneratorModule,
+    AlertAuditModule,
   ],
   providers: [
     {

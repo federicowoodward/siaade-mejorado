@@ -325,6 +325,23 @@ Table "student_inscription_audits" {
   }
 }
 
+Table "ui_alert_audits" {
+  "id" int4 [pk, not null, increment]
+  "user_id" uuid
+  "severity" text [not null]
+  "message" text [not null]
+  "front_route" text
+  "front_module" text
+  "action" text
+  "metadata" jsonb
+  "created_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    created_at [type: btree, name: "idx_ui_alert_audits_created_at"]
+    user_id [type: btree, name: "idx_ui_alert_audits_user"]
+  }
+}
+
 Ref "FK_3dddb847f5033682c672a973199":"careers"."id" < "career_students"."career_id" [delete: cascade]
 
 Ref "FK_f625a148a289aaca8d89da6bb80":"students"."user_id" < "career_students"."student_id" [delete: cascade]

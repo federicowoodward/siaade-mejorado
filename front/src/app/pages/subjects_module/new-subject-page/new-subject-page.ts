@@ -18,6 +18,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
 import { Subject } from '../../../core/models/subject.model';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
+import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 @Component({
   selector: 'app-subject-new-page',
@@ -33,7 +34,6 @@ import { BlockedActionDirective } from '../../../shared/directives/blocked-actio
     ToastModule,
     BlockedActionDirective,
   ],
-  providers: [MessageService],
   templateUrl: './new-subject-page.html',
   styleUrls: ['./new-subject-page.scss'],
 })
@@ -41,6 +41,7 @@ export class NewSubjectPage implements OnInit {
   private api = inject(ApiService);
   private authService = inject(AuthService);
   private messageService = inject(MessageService);
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   constructor(private router: Router) {}
 
@@ -100,7 +101,7 @@ export class NewSubjectPage implements OnInit {
       });
 
       if (success) {
-        this.messageService.add({
+        this.uiAlertAudit.add(this.messageService, {
           severity: 'info',
           summary: 'Sesion iniciada',
           detail: 'Se ha iniciado sesion automaticamente',
@@ -109,7 +110,7 @@ export class NewSubjectPage implements OnInit {
         throw new Error('Auto-login failed');
       }
     } catch (error) {
-      this.messageService.add({
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'error',
         summary: 'Error de autenticacion',
         detail:
@@ -174,7 +175,7 @@ export class NewSubjectPage implements OnInit {
       }
     } catch (error: any) {
       console.error('=== DATA LOAD FAILED ===', error);
-      this.messageService.add({
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'error',
         summary: 'Error de carga',
         detail: `No se pudieron cargar los datos: ${error?.message || error}`,
@@ -282,7 +283,7 @@ export class NewSubjectPage implements OnInit {
       !this.courseLetter ||
       !this.courseYear
     ) {
-      this.messageService.add({
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Campos requeridos',
         detail: 'Por favor complete todos los campos obligatorios',
@@ -291,8 +292,8 @@ export class NewSubjectPage implements OnInit {
     }
 
     // Verificar si los datos están cargados
-    if (this.teachers.length === 0) {
-      this.messageService.add({
+      if (this.teachers.length === 0) {
+        this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Datos no cargados',
         detail: 'Los profesores aún se están cargando. Intente nuevamente.',
@@ -305,10 +306,10 @@ export class NewSubjectPage implements OnInit {
     let preceptorId: string;
 
     // Si teacherId es un objeto con id, extraer el id
-    if (typeof this.teacherId === 'object' && this.teacherId?.id) {
-      teacherId = this.teacherId.id;
-    } else {
-      this.messageService.add({
+      if (typeof this.teacherId === 'object' && this.teacherId?.id) {
+        teacherId = this.teacherId.id;
+      } else {
+        this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Profesor no válido',
         detail: 'Por favor seleccione un profesor válido de la lista',
@@ -317,10 +318,10 @@ export class NewSubjectPage implements OnInit {
     }
 
     // Si preceptorId es un objeto con id, extraer el id
-    if (typeof this.preceptorId === 'object' && this.preceptorId?.id) {
-      preceptorId = this.preceptorId.id;
-    } else {
-      this.messageService.add({
+      if (typeof this.preceptorId === 'object' && this.preceptorId?.id) {
+        preceptorId = this.preceptorId.id;
+      } else {
+        this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Preceptor no válido',
         detail: 'Por favor seleccione un preceptor válido de la lista',
@@ -352,11 +353,11 @@ export class NewSubjectPage implements OnInit {
       // Log de depuración del payload
       console.debug('[Subjects] Creating with payload:', subjectData);
 
-      await firstValueFrom(
-        this.api.create<Subject>('subjects/manage/create', subjectData),
-      );
+        await firstValueFrom(
+          this.api.create<Subject>('subjects/manage/create', subjectData),
+        );
 
-      this.messageService.add({
+        this.uiAlertAudit.add(this.messageService, {
         severity: 'success',
         summary: 'Éxito',
         detail: 'Materia creada correctamente',
@@ -390,11 +391,11 @@ export class NewSubjectPage implements OnInit {
         }
       }
 
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: errorMessage,
-      });
+        this.uiAlertAudit.add(this.messageService, {
+          severity: 'error',
+          summary: 'Error',
+          detail: errorMessage,
+        });
     } finally {
       this.creating = false;
     }

@@ -16,7 +16,6 @@ import { AuthService } from '../../../../core/services/auth.service';
   standalone: true,
   templateUrl: './auth-page.html',
   styleUrls: ['./auth-page.scss'],
-  providers: [MessageService],
   imports: [
     CommonModule,
     FormsModule,

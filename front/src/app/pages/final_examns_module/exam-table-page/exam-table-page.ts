@@ -13,6 +13,7 @@ import { FinalExamsService } from '../../../core/services/final-exams.service';
 import { ExamTable } from '../../../core/models/exam_table.model';
 import { FinalExam } from '../../../core/models/final_exam.model';
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
+import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 @Component({
   selector: 'app-exam-table-page',
@@ -27,7 +28,6 @@ import { ExamTableSyncService } from '../../../core/services/exam-table-sync.ser
   ],
   templateUrl: './exam-table-page.html',
   styleUrls: ['./exam-table-page.scss'],
-  providers: [MessageService],
 })
 export class ExamTablePage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -36,6 +36,7 @@ export class ExamTablePage implements OnInit {
   private finalsSvc = inject(FinalExamsService);
   private messages = inject(MessageService);
   private sync = inject(ExamTableSyncService);
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   tableId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 
@@ -99,7 +100,10 @@ export class ExamTablePage implements OnInit {
       })
       .subscribe({
         next: (created) => {
-          this.messages.add({ severity: 'success', summary: 'Final creado' });
+          this.uiAlertAudit.add(this.messages, {
+            severity: 'success',
+            summary: 'Final creado',
+          });
           // Optimista: insertar el nuevo examen en el listado inmediatamente
           try {
             const current = this.finals();
@@ -122,7 +126,7 @@ export class ExamTablePage implements OnInit {
           const detail = Array.isArray(raw)
             ? raw.join(' • ')
             : (raw ?? 'Ver consola');
-          this.messages.add({
+          this.uiAlertAudit.add(this.messages, {
             severity: 'error',
             summary: 'Error al crear',
             detail,
@@ -139,7 +143,10 @@ export class ExamTablePage implements OnInit {
   deleteFinal(f: FinalExam) {
     this.finalsSvc.delete(f.id).subscribe({
       next: () => {
-        this.messages.add({ severity: 'success', summary: 'Final eliminado' });
+        this.uiAlertAudit.add(this.messages, {
+          severity: 'success',
+          summary: 'Final eliminado',
+        });
         this.refreshFinals();
         this.sync.notify({
           action: 'updated',
@@ -148,7 +155,7 @@ export class ExamTablePage implements OnInit {
         });
       },
       error: (e) =>
-        this.messages.add({
+        this.uiAlertAudit.add(this.messages, {
           severity: 'error',
           summary: 'No se pudo eliminar',
           detail: e?.error?.message,

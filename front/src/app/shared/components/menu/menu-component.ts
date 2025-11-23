@@ -64,6 +64,11 @@ export class MenuComponent {
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
       { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
       { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
+      {
+        label: 'Auditoria',
+        icon: 'pi pi-chart-bar',
+        routerLink: ['/audit'],
+      },
     ],
     [ROLE.EXECUTIVE_SECRETARY]: [
       { label: 'Inicio', icon: 'pi pi-home', routerLink: ['/welcome'] },
@@ -71,6 +76,11 @@ export class MenuComponent {
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
       { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
       { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
+      {
+        label: 'Auditoria',
+        icon: 'pi pi-chart-bar',
+        routerLink: ['/audit'],
+      },
     ],
   };
 

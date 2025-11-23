@@ -24,7 +24,6 @@ import { firstValueFrom } from 'rxjs';
     ButtonModule,
     ToastModule,
   ],
-  providers: [MessageService],
   templateUrl: './reset-password-page.html',
   styleUrl: './reset-password-page.scss',
 })

@@ -16,6 +16,7 @@ import { AcademicStatusComponent } from './pages/students_module/academic_status
 import { SubjectStatusDetailComponent } from './pages/students_module/academic_status_page/situacion-academica/subject-status-detail/subject-status-detail.component';
 import { ACCOUNT_ROUTES } from './pages/account/account.routes';
 import { forcePasswordChangeGuard } from './core/guards/force-password-change.guard';
+import { Audit } from './pages/audit/audit';
 
 export const routes: Routes = [
   {
@@ -78,6 +79,15 @@ export const routes: Routes = [
       ]),
     ],
     children: FINAL_EXAMS_ROUTES,
+  },
+  {
+    path: 'audit',
+    canActivate: [
+      AuthGuard,
+      forcePasswordChangeGuard,
+      roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]),
+    ],
+    component: Audit,
   },
   {
     path: 'welcome',

@@ -11,7 +11,6 @@ import { firstValueFrom } from 'rxjs';
   selector: 'app-request-password-change',
   standalone: true,
   imports: [CommonModule, ButtonModule, ToastModule],
-  providers: [MessageService],
   templateUrl: './request-password-change.html',
   styleUrl: './request-password-change.scss',
 })
