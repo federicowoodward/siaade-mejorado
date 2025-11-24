@@ -28,9 +28,10 @@
   >
     <ng-template pTemplate="header">
       <tr>
-        <th>Alumno</th>
-        <th style="width: 9rem">Estado</th>
-        <th style="width: 10rem">Nota</th>
+        <th style="width: 8rem">Alumno</th>
+        <th style="width: 14rem">Estado</th>
+        <th style="width: 8rem">Accion</th>
+        <th style="width: 7rem">Nota</th>
         <th>Observaciones</th>
       </tr>
     </ng-template>
@@ -39,24 +40,25 @@
       <tr>
         <td class="font-medium">{{ row.name }}</td>
 
-        <td class="flex flex-column justify-content-center w-12rem h-5rem">
+        <td class="">
           <p-tag
             *ngIf="row.enrolled_at; else noIns"
             severity="info"
-            styleClass="w-full"
+            styleClass="w-full h-2rem"
           >
-            <!-- boton para manejar inscripcion solamente para rol preceptor aca, ver docs/roles-visibility.md -->
             <div class="w-full text-center">
-              Inscripto el<br />
+              Inscripto el
               <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
             </div>
           </p-tag>
 
           <ng-template #noIns>
-            <p-tag severity="warn" styleClass="w-full">
+            <p-tag severity="warn" styleClass="w-full h-2rem">
               <div class="w-full text-center">No inscripto</div>
             </p-tag>
           </ng-template>
+        </td>
+        <td class="">
           <div
             class="mt-2"
             *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']"
@@ -84,7 +86,6 @@
             </ng-template>
           </div>
         </td>
-
         <td>
           <p-inputNumber
             [min]="0"
