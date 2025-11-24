@@ -13,8 +13,10 @@
 }
 
 .profile-page__cta {
-  flex: 1 1 220px;
+  flex: 0 0 auto;
   display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .password-link {
