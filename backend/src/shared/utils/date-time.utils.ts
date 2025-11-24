@@ -77,10 +77,15 @@ export function resolveWindowState(
  * Safely converts a value to a number.
  *
  * @param value - The value to convert
- * @param fallback - The fallback value if conversion fails (default: 0)
- * @returns The numeric value, or the fallback if conversion fails
+ * @param fallback - Optional fallback value if conversion fails. If not provided, returns null on failure.
+ * @returns The numeric value, or the fallback/null if conversion fails
  */
-export function toNumber(value: unknown, fallback = 0): number {
+export function toNumber(value: unknown): number | null;
+export function toNumber(value: unknown, fallback: number): number;
+export function toNumber(value: unknown, fallback?: number): number | null {
   const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : fallback;
+  if (Number.isFinite(numeric)) {
+    return numeric;
+  }
+  return fallback !== undefined ? fallback : null;
 }
