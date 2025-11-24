@@ -65,6 +65,13 @@ export class PersonalDataComponent implements OnInit {
   provinceOptions = signal<{ label: string; value: string }[]>([]);
   departmentOptions = signal<{ label: string; value: string }[]>([]);
   localityOptions = signal<{ label: string; value: string }[]>([]);
+  private readonly roleLabels: Record<string, string> = {
+    student: 'Alumno',
+    teacher: 'Docente',
+    preceptor: 'Preceptor',
+    secretary: 'Secretario',
+    executive_secretary: 'Secretario directivo',
+  };
 
   // cambios
   original = signal<any>({});
@@ -233,7 +240,8 @@ export class PersonalDataComponent implements OnInit {
   }
 
   displayRole(): string {
-    return this.userData().role || 'Alumno';
+    const role = (this.userData().role || '').toLowerCase();
+    return this.roleLabels[role] || (role ? role : 'Alumno');
   }
 
 

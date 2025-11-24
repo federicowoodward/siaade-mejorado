@@ -1,20 +1,16 @@
 <div class="profile-page m-w-custom">
   <div class="profile-page__header">
-    <div class="profile-page__cta">
-      <a
-        routerLink="/account/password/change-request"
-        class="password-link"
-      >
-        <span class="pi pi-key"></span>
-        <span>Cambiar contraseña</span>
-      </a>
-    </div>
     <div class="profile-page__title">
       <h2>Datos personales</h2>
       <p class="subtitle">
-        Revisa que tu información esté actualizada para agilizar las gestiones
-        académicas.
+        Revisá que tu información esté actualizada para agilizar las gestiones académicas.
       </p>
+    </div>
+    <div class="profile-page__cta">
+      <a routerLink="/account/password/change-request" class="password-link">
+        <span class="pi pi-key"></span>
+        <span>Cambiar contraseña</span>
+      </a>
     </div>
   </div>
   <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
