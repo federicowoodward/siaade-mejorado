@@ -19,12 +19,17 @@ import { User } from '../../../core/models/user.model';
 import { Subject } from '../../../core/models/subject.model';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-subject-new-page',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     FormsModule,
     InputTextModule,
     AutoCompleteModule,
@@ -42,6 +47,11 @@ export class NewSubjectPage implements OnInit {
   private authService = inject(AuthService);
   private messageService = inject(MessageService);
   private uiAlertAudit = inject(UiAlertAuditService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de materias', routerLink: '/subjects' },
+    { label: 'Nueva materia' },
+  ];
 
   constructor(private router: Router) {}
 

@@ -1,4 +1,6 @@
 <div class="m-w-custom status-wrapper flex flex-column gap-4 pt-4">
+  <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+
   <div
     class="surface-card shadow-2 border-round p-4 flex flex-column gap-3"
     *ngIf="headerVm() as header"

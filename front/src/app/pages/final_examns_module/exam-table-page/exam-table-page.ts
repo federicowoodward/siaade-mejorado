@@ -14,12 +14,17 @@ import { ExamTable } from '../../../core/models/exam_table.model';
 import { FinalExam } from '../../../core/models/final_exam.model';
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-exam-table-page',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     FormsModule,
     TableModule,
     Button,
@@ -37,6 +42,11 @@ export class ExamTablePage implements OnInit {
   private messages = inject(MessageService);
   private sync = inject(ExamTableSyncService);
   private uiAlertAudit = inject(UiAlertAuditService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Mesas de examen', routerLink: '/final_examns' },
+    { label: 'Mesa' },
+  ];
 
   tableId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 

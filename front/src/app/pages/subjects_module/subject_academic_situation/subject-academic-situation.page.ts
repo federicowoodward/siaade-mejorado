@@ -46,12 +46,17 @@ import {
   rowsTrackBy as rowsTrackByFn,
 } from './utils/academic-utils';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     FormsModule,
     TableModule,
     ButtonModule,
@@ -79,6 +84,12 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly messages = inject(MessageService);
   private readonly rbac = inject(RbacService);
   private readonly uiAlertAudit = inject(UiAlertAuditService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de materias', routerLink: '/subjects' },
+    { label: 'Listado de materias', routerLink: '/subjects' },
+    { label: 'Situación académica de la materia' },
+  ];
 
   // =======================
   // Estado y seÃ±ales
@@ -370,9 +381,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       next: (groups) => {
         this.saving.set(false);
         this.currentPersist = null;
-          const savedIds = groups.flat();
-          this.applySuccessfulPersist(savedIds);
-          this.uiAlertAudit.add(this.messages, {
+        const savedIds = groups.flat();
+        this.applySuccessfulPersist(savedIds);
+        this.uiAlertAudit.add(this.messages, {
           severity: 'success',
           summary: 'Cambios guardados',
           detail: 'Las notas se guardaron correctamente.',

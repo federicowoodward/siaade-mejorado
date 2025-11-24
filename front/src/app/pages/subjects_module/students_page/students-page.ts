@@ -9,11 +9,15 @@ import { RbacService } from '@/core/rbac/rbac.service';
 import { UserRow } from '../../../core/models/users-table.models';
 import { mapApiUserToRow } from '../../../shared/adapters/users.adapter';
 import { ButtonModule } from 'primeng/button';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-students-page',
   standalone: true,
-  imports: [CommonModule, UsersTableComponent, ButtonModule],
+  imports: [CommonModule, AppBreadcrumbComponent, UsersTableComponent, ButtonModule],
   templateUrl: './students-page.html',
   styleUrls: ['./students-page.scss'],
 })
@@ -26,6 +30,11 @@ export class StudentsPage implements OnInit {
   public ROLE = ROLE;
   subjectId!: string;
   rows = signal<UserRow[]>([]);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de materias', routerLink: '/subjects' },
+    { label: 'Estudiantes de la materia' },
+  ];
 
   get viewerRole(): ROLE | null {
     const roles = this.rbac.getSnapshot();

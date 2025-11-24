@@ -27,12 +27,17 @@ import {
 import { DisableIfUnauthorizedDirective } from '@/shared/directives/disable-if-unauthorized.directive';
 import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
 import { GoBackService } from '@/core/services/go_back.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-career-students-page',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     FormsModule,
     TableModule,
     ButtonModule,
@@ -60,6 +65,12 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   private readonly statusRoles: ROLE[] = [
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
+  ];
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de materias', routerLink: '/subjects' },
+    { label: 'Información de la carrera', routerLink: '/subjects/career-data' },
+    { label: 'Alumnos de la carrera' },
   ];
 
   loading = signal(true);

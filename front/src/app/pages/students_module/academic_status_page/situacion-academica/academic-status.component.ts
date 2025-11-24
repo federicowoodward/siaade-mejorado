@@ -12,6 +12,10 @@ import {
   StudentSummarySubject,
   StudentSummaryYear,
 } from '../../../../core/services/student-status.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 type SubjectRow = StudentSummarySubject & {
   courseLabel: string;
@@ -37,6 +41,7 @@ type HeaderViewModel = {
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     ButtonModule,
     TagModule,
     ProgressSpinnerModule,
@@ -46,6 +51,12 @@ type HeaderViewModel = {
   styleUrl: './academic-status.component.scss',
 })
 export class AcademicStatusComponent implements OnInit {
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    
+    
+    { label: 'Situación académica' },
+  ];
+
   private readonly statusService = inject(StudentStatusService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);

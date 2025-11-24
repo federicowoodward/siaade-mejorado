@@ -14,12 +14,17 @@ import {
 } from '@/core/services/student-inscriptions.service';
 import { GoBackService } from '@/core/services/go_back.service';
 import { UiAlertAuditService } from '@/core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-mesas-list',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     TableModule,
     ButtonModule,
     TagModule,
@@ -32,6 +37,8 @@ import { UiAlertAuditService } from '@/core/services/ui-alert-audit.service';
   providers: [ConfirmationService],
 })
 export class MesasListComponent implements OnInit {
+  breadcrumbItems: SimpleBreadcrumbItem[] = [{ label: 'Mesas de examen' }];
+
   private readonly inscriptions = inject(StudentInscriptionsService);
   private readonly messages = inject(MessageService);
   private readonly confirmation = inject(ConfirmationService);

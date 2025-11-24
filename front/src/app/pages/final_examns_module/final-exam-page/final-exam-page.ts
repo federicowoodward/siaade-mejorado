@@ -40,6 +40,10 @@ import { ExamTableSyncService } from '../../../core/services/exam-table-sync.ser
 
 import { MessageService } from 'primeng/api';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 type Row = {
   id: number;
@@ -84,12 +88,13 @@ type Row = {
     ToastModule,
 
     CanAnyRoleDirective,
+
+    AppBreadcrumbComponent,
   ],
 
   templateUrl: './final-exam-page.html',
 
   styleUrls: ['./final-exam-page.scss'],
-
 })
 export class FinalExamPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -105,6 +110,12 @@ export class FinalExamPage implements OnInit {
   private syncService = inject(ExamTableSyncService);
 
   private uiAlertAudit = inject(UiAlertAuditService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Mesas de examen', routerLink: '/final_examns' },
+    { label: 'Mesa' },
+    { label: 'Examen' },
+  ];
 
   examId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
 

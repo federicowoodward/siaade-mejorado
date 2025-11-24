@@ -13,6 +13,10 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { UiAlertAuditService } from '../../../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 type SubjectView = {
   id: number;
@@ -26,6 +30,7 @@ type SubjectView = {
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     FormsModule,
     TableModule,
     CardModule,
@@ -45,6 +50,11 @@ export class CareerPage implements OnInit {
   private router = inject(Router);
   private messages = inject(MessageService);
   private uiAlertAudit = inject(UiAlertAuditService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de materias', routerLink: '/subjects' },
+    { label: 'Información de la carrera' },
+  ];
 
   private readonly careerId = 1;
   loading = signal(true);

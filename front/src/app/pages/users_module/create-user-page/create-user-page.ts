@@ -31,6 +31,10 @@ import {
 } from '../../../shared/utils/create-user/user-validators.util';
 import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE } from '../../../core/auth/roles';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 type PreviewRow = { field: string; value: string };
 @Component({
@@ -38,6 +42,7 @@ type PreviewRow = { field: string; value: string };
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     FormsModule,
     StepperModule,
     ButtonModule,
@@ -59,6 +64,12 @@ export class CreateUserPage {
   private permissions = inject(PermissionService);
 
   isCreating = false;
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Inicio', routerLink: '/welcome' },
+    { label: 'Usuarios', routerLink: '/users' },
+    { label: 'Nuevo usuario' },
+  ];
 
   back(): void {
     this.goBackSvc.back();

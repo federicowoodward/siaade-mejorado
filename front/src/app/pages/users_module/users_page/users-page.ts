@@ -11,11 +11,15 @@ import { UserRow } from '../../../core/models/users-table.models';
 import { mapApiUserToRow } from '../../../shared/adapters/users.adapter';
 import { ApiCacheService } from '../../../core/cache/api-cache.service';
 import { environment as env } from 'environments/environment';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-users-page',
   standalone: true,
-  imports: [CommonModule, UsersTableComponent, Button, DialogModule],
+  imports: [CommonModule, AppBreadcrumbComponent, UsersTableComponent, Button, DialogModule],
   templateUrl: './users-page.html',
   styleUrl: './users-page.scss',
 })
@@ -29,6 +33,10 @@ export class UsersPage {
   viewerRole: ROLE | null = this.permissions.currentRole();
 
   rows = signal<UserRow[]>([]);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de usuarios' },
+  ];
 
   // Modal "Materias a cargo" (docente)
   dialogTeacher = signal<{ visible: boolean; teacherId: string | null }>({

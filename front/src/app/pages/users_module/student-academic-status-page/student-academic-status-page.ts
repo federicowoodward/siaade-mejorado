@@ -10,13 +10,19 @@ import { ApiService } from '../../../core/services/api.service';
 import { Button } from 'primeng/button';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-student-academic-status-page',
   standalone: true,
-  imports: [CommonModule, AcademicStatus, Button],
+  imports: [CommonModule, AppBreadcrumbComponent, AcademicStatus, Button],
   template: `
     <div class="m-w-custom flex flex-column gap-3">
+      <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+
       <p-button
         label="Volver a tabla"
         icon="pi-arrow-rigth"
@@ -49,6 +55,11 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   loading = signal<boolean>(true);
   errorMessage = signal<string>('');
   private redirectTimer: number | null = null;
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de usuarios', routerLink: '/users' },
+    { label: 'Situación académica del estudiante' },
+  ];
 
   constructor(private router: Router) {}
 

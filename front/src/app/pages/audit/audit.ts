@@ -6,12 +6,17 @@ import { PaginatorModule } from 'primeng/paginator';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ApiService } from '../../core/services/api.service';
 import { UiAlertAuditPayload } from '../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-audit',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     TableModule,
     TagModule,
     PaginatorModule,
@@ -22,6 +27,11 @@ import { UiAlertAuditPayload } from '../../core/services/ui-alert-audit.service'
 })
 export class Audit {
   private readonly api = inject(ApiService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Auditoría', routerLink: '/audit' },
+    { label: 'Auditoría de alertas' },
+  ];
 
   private readonly pageSize = 20;
 
@@ -54,10 +64,15 @@ export class Audit {
     this.page.set(clampedPage);
 
     this.api
-      .request<AuditApiResponse | AuditApiRow[]>('GET', 'audit/alerts', undefined, {
-        page: clampedPage,
-        limit: this.pageSize,
-      })
+      .request<AuditApiResponse | AuditApiRow[]>(
+        'GET',
+        'audit/alerts',
+        undefined,
+        {
+          page: clampedPage,
+          limit: this.pageSize,
+        },
+      )
       .subscribe({
         next: (resp) => {
           const rows = Array.isArray(resp)
@@ -85,9 +100,7 @@ export class Audit {
             err?.error?.message ??
             err?.message ??
             'No se pudieron cargar las alertas.';
-          this.error.set(
-            Array.isArray(msg) ? msg.join(' | ') : String(msg),
-          );
+          this.error.set(Array.isArray(msg) ? msg.join(' | ') : String(msg));
           this.rows.set([]);
           this.loading.set(false);
         },

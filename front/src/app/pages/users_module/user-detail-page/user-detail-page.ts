@@ -12,6 +12,10 @@ import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-user-detail-page',
@@ -19,6 +23,7 @@ import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.s
   imports: [
     PersonalDataComponent,
     CommonModule,
+    AppBreadcrumbComponent,
     Button,
     FormsModule,
     ToggleButtonModule,
@@ -32,6 +37,11 @@ export class UserDetailPage implements OnInit {
   private api = inject(ApiService);
   private permissions = inject(PermissionService);
   private cache = inject(UserFlagsCacheService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Gestión de usuarios', routerLink: '/users' },
+    { label: 'Detalle de usuario' },
+  ];
   userId!: string;
   // flags alumno
   isActive = signal<boolean | null>(null);

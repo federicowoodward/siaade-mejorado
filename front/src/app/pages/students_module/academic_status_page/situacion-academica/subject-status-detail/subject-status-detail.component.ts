@@ -10,15 +10,31 @@ import {
   StudentSummarySubject,
 } from '@/core/services/student-status.service';
 import { GoBackService } from '@/core/services/go_back.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-subject-status-detail',
   standalone: true,
-  imports: [CommonModule, ButtonModule, TagModule, ProgressSpinnerModule, RouterModule],
+  imports: [
+    CommonModule,
+    ButtonModule,
+    TagModule,
+    ProgressSpinnerModule,
+    RouterModule,
+    AppBreadcrumbComponent,
+  ],
   templateUrl: './subject-status-detail.component.html',
   styleUrl: './subject-status-detail.component.scss',
 })
 export class SubjectStatusDetailComponent implements OnInit {
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Situación académica', routerLink: '/alumno/situacion-academica' },
+    { label: 'Detalle de materia' },
+  ];
+
   private readonly route = inject(ActivatedRoute);
   private readonly statusService = inject(StudentStatusService);
   private readonly backService = inject(GoBackService);

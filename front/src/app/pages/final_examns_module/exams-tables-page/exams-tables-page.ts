@@ -14,12 +14,17 @@ import { MessageService } from 'primeng/api';
 import { AuthService } from '../../../core/services/auth.service';
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-exams-tables-page',
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     TableModule,
     Button,
     DialogModule,
@@ -37,6 +42,10 @@ export class ExamsTablesPage implements OnInit {
   private auth = inject(AuthService);
   private sync = inject(ExamTableSyncService);
   private uiAlertAudit = inject(UiAlertAuditService);
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Mesas de examen' },
+  ];
 
   tables = signal<ExamTable[]>([]);
   loading = signal<boolean>(false);
