@@ -475,7 +475,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     // Idempotente: inserta rol y usuario sólo si no existen.
     const secretaryRoleSlug = "secretary";
     const secretaryEmail = "sec.auto4@example.com";
-    const secretaryPassword = "pass1234";
+    const secretaryPassword = "changeme";
 
     // Normalizar roles existentes a lower(trim(name)) antes de insertar y asegurar IDs fijos.
     await queryRunner.query(`UPDATE roles SET name = lower(trim(name))`);
