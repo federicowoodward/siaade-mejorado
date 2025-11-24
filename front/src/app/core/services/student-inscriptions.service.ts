@@ -12,8 +12,12 @@ import {
   StudentExamTable,
   StudentEnrollPayload,
   StudentEnrollmentResponse,
-  StudentWindowState,
 } from '../models/student-exam.model';
+import {
+  normalizeDate,
+  normalizeWindow,
+  toNumber,
+} from '../../shared/utils/date-time.utils';
 
 type RawExamTablesResponse =
   | { data?: any[] }
@@ -201,8 +205,8 @@ export class StudentInscriptionsService {
   ): Record<string, string> {
     const params: Record<string, string> = {};
     if (filters.subjectId) params['subjectId'] = String(filters.subjectId);
-    if (filters.from) params['from'] = this.normalizeDate(filters.from);
-    if (filters.to) params['to'] = this.normalizeDate(filters.to);
+    if (filters.from) params['from'] = normalizeDate(filters.from);
+    if (filters.to) params['to'] = normalizeDate(filters.to);
     if (filters.windowState && filters.windowState !== 'all') {
       params['windowState'] = filters.windowState;
     }
@@ -281,54 +285,20 @@ export class StudentInscriptionsService {
     if (!input) return null;
     const id = Number(input.id ?? input.callId);
     if (!Number.isFinite(id)) return null;
-    const window = this.normalizeWindow(
+    const window = normalizeWindow(
       input.enrollmentWindow ?? input.window ?? input.enrollment,
     );
     return {
       id,
       label: input.label ?? input.name ?? 'Llamado',
-      examDate: this.normalizeDate(input.examDate ?? input.date ?? null),
+      examDate: normalizeDate(input.examDate ?? input.date ?? null),
       aula: input.aula ?? input.room ?? null,
-      quotaTotal: this.toNumber(input.quotaTotal ?? input.quota),
-      quotaUsed: this.toNumber(input.quotaUsed ?? input.enrolled),
+      quotaTotal: toNumber(input.quotaTotal ?? input.quota),
+      quotaUsed: toNumber(input.quotaUsed ?? input.enrolled),
       enrollmentWindow: window,
       additional: Boolean(input.additional ?? input.isAdditional ?? false),
       enrolled: Boolean(input.enrolled ?? input.alreadyEnrolled ?? false),
     };
-  }
-
-  private normalizeWindow(window: any): StudentActionWindow {
-    const opensAt = this.normalizeDate(
-      window?.opensAt ?? window?.start ?? window?.from,
-    );
-    const closesAt = this.normalizeDate(
-      window?.closesAt ?? window?.end ?? window?.to,
-    );
-    return {
-      id: window?.id ?? window?.windowId,
-      label: window?.label ?? 'Ventana',
-      opensAt,
-      closesAt,
-      state: this.resolveWindowState(opensAt, closesAt),
-      message: window?.message ?? null,
-      isAdditional: Boolean(
-        window?.isAdditional ?? window?.additional ?? false,
-      ),
-    };
-  }
-
-  private resolveWindowState(
-    opensAt?: string | null,
-    closesAt?: string | null,
-  ): StudentWindowState {
-    if (!opensAt || !closesAt) return 'closed';
-    const now = Date.now();
-    const start = Date.parse(opensAt);
-    const end = Date.parse(closesAt);
-    if (Number.isNaN(start) || Number.isNaN(end)) return 'closed';
-    if (now < start) return 'upcoming';
-    if (now > end) return 'past';
-    return 'open';
   }
 
   private normalizeEnrollmentResponse(resp: any): StudentEnrollmentResponse {
@@ -396,20 +366,5 @@ export class StudentInscriptionsService {
       return (payload as any).tables;
     }
     return [];
-  }
-
-  private normalizeDate(value: string | Date | null | undefined): string {
-    if (!value) return '';
-    if (value instanceof Date) return value.toISOString().slice(0, 10);
-    if (typeof value === 'string') {
-      if (value.includes('T')) return value.slice(0, 10);
-      return value;
-    }
-    return '';
-  }
-
-  private toNumber(value: unknown): number | null {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
   }
 }

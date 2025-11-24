@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { ExamTable } from '../models/exam_table.model';
+import { normalizeDate } from '../../shared/utils/date-time.utils';
 
 @Injectable({ providedIn: 'root' })
 export class ExamTablesService {
@@ -14,19 +15,11 @@ export class ExamTablesService {
 
   constructor(private api: ApiService) {}
 
-  // --- helpers ---
-  private normalizeDate(d: string | Date | null | undefined): string {
-    if (!d) return '';
-    if (d instanceof Date) return d.toISOString().slice(0, 10);
-    // string
-    return d.includes('T') ? d.slice(0, 10) : d;
-  }
-
   private toExamTable = (raw: any): ExamTable => ({
     id: raw.id,
     name: raw.name,
-    start_date: this.normalizeDate(raw.start_date ?? raw.startDate),
-    end_date: this.normalizeDate(raw.end_date ?? raw.endDate),
+    start_date: normalizeDate(raw.start_date ?? raw.startDate),
+    end_date: normalizeDate(raw.end_date ?? raw.endDate),
     created_by: raw.created_by ?? raw.createdBy,
     created_by_user: raw.createdByUser
       ? {
@@ -69,8 +62,8 @@ export class ExamTablesService {
   ): Observable<ExamTable> {
     const payload = {
       name: dto.name,
-      start_date: this.normalizeDate(dto.start_date),
-      end_date: this.normalizeDate(dto.end_date),
+      start_date: normalizeDate(dto.start_date),
+      end_date: normalizeDate(dto.end_date),
       ...(dto.created_by ? { created_by: dto.created_by } : {}),
     };
     return this.api.request<any>('POST', `${this.base}/init`, payload).pipe(
@@ -87,9 +80,9 @@ export class ExamTablesService {
     const payload: any = {};
     if (dto.name !== undefined) payload.name = dto.name;
     if (dto.start_date !== undefined)
-      payload.start_date = this.normalizeDate(dto.start_date);
+      payload.start_date = normalizeDate(dto.start_date);
     if (dto.end_date !== undefined)
-      payload.end_date = this.normalizeDate(dto.end_date);
+      payload.end_date = normalizeDate(dto.end_date);
 
     return this.api
       .request<any>('PUT', `${this.base}/edit/${id}`, payload)

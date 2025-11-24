@@ -17,6 +17,10 @@ import { isoToDate, dateInRange } from "../utils/date-utils";
 import { hasRankAtLeast } from "../utils/rbac-utils";
 import { ROLE } from "@/shared/rbac/roles.constants";
 import { FinalExam } from "@/entities/finals/final-exam.entity";
+import {
+  toIsoDate,
+  resolveWindowState,
+} from "@/shared/utils/date-time.utils";
 
 @Injectable()
 export class FinalExamTableService {
@@ -179,9 +183,9 @@ export class FinalExamTableService {
         }
       | undefined;
   }) {
-    const startIso = this.toIsoDate(input.start);
-    const endIso = this.toIsoDate(input.end);
-    const windowState = this.resolveWindowState(startIso, endIso);
+    const startIso = toIsoDate(input.start);
+    const endIso = toIsoDate(input.end);
+    const windowState = resolveWindowState(startIso, endIso);
     return {
       id: input.id,
       name: input.name,
@@ -224,30 +228,5 @@ export class FinalExamTableService {
           }
         : undefined,
     };
-  }
-
-  private toIsoDate(value: Date | string | null | undefined): string | null {
-    if (!value) return null;
-    if (value instanceof Date) {
-      return value.toISOString().slice(0, 10);
-    }
-    if (typeof value === "string" && value.length >= 10) {
-      return value.includes("T") ? value.slice(0, 10) : value;
-    }
-    return null;
-  }
-
-  private resolveWindowState(
-    start?: string | null,
-    end?: string | null,
-  ): "open" | "upcoming" | "past" | "closed" {
-    if (!start || !end) return "closed";
-    const from = Date.parse(start);
-    const to = Date.parse(end);
-    if (Number.isNaN(from) || Number.isNaN(to)) return "closed";
-    const now = Date.now();
-    if (now < from) return "upcoming";
-    if (now > to) return "past";
-    return "open";
   }
 }

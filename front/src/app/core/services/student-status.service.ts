@@ -6,8 +6,13 @@ import { AuthService } from './auth.service';
 import {
   StudentActionWindow,
   StudentExamBlockReason,
-  StudentWindowState,
 } from '../models/student-exam.model';
+import {
+  normalizeDate,
+  normalizeWindow,
+  resolveWindowState,
+  toNumber,
+} from '../../shared/utils/date-time.utils';
 
 export interface StudentSubjectNote {
   label: string;
@@ -183,8 +188,8 @@ export class StudentStatusService {
     const partials = this.resolvePartials(row.partials);
     const notes = this.buildNotes(row, partials);
     const attendance =
-      this.toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
-    const finalScore = this.toNumber(row.final ?? row.finalScore);
+      toNumber(row.attendancePercentage ?? row.attendance) ?? 0;
+    const finalScore = toNumber(row.final ?? row.finalScore);
     const yearNumber = this.resolveYearNumber(row);
     const yearLabel = this.resolveYearLabel(row, yearNumber);
     return {
@@ -228,7 +233,7 @@ export class StudentStatusService {
     ];
     return labels.slice(0, partials).map((label, idx) => ({
       label,
-      value: this.toNumber(values[idx]),
+      value: toNumber(values[idx]),
     }));
   }
 
@@ -314,12 +319,12 @@ export class StudentStatusService {
     if (condition.includes('promo') || condition.includes('regular'))
       return true;
     if (condition.includes('aprob')) return true;
-    const finalScore = this.toNumber(row.final ?? row.finalScore);
+    const finalScore = toNumber(row.final ?? row.finalScore);
     return typeof finalScore === 'number' && finalScore >= 4;
   }
 
   private resolveYearNumber(row: any): number | null {
-    const explicit = this.toNumber(
+    const explicit = toNumber(
       row.year ?? row.yearNo ?? row.year_no ?? row.yearNumber,
     );
     if (typeof explicit === 'number') {
@@ -398,46 +403,12 @@ export class StudentStatusService {
       ),
     );
     return {
-      courseWindow: courseWindow ? this.normalizeWindow(courseWindow) : null,
-      examWindow: examWindow ? this.normalizeWindow(examWindow) : null,
+      courseWindow: courseWindow ? normalizeWindow(courseWindow) : null,
+      examWindow: examWindow ? normalizeWindow(examWindow) : null,
       correlatives,
       duplicates,
       quotaFull,
     };
-  }
-
-  private normalizeWindow(window: any): StudentActionWindow {
-    const opensAt = this.normalizeDate(
-      window?.opensAt ?? window?.start ?? window?.from,
-    );
-    const closesAt = this.normalizeDate(
-      window?.closesAt ?? window?.end ?? window?.to,
-    );
-    return {
-      id: window?.id ?? window?.windowId,
-      label: window?.label ?? window?.name ?? 'Ventana',
-      opensAt,
-      closesAt,
-      state: this.resolveWindowState(opensAt, closesAt),
-      message: window?.message ?? null,
-      isAdditional: Boolean(
-        window?.isAdditional ?? window?.additional ?? false,
-      ),
-    };
-  }
-
-  private resolveWindowState(
-    opensAt?: string | null,
-    closesAt?: string | null,
-  ): StudentWindowState {
-    if (!opensAt || !closesAt) return 'closed';
-    const now = Date.now();
-    const start = Date.parse(opensAt);
-    const end = Date.parse(closesAt);
-    if (Number.isNaN(start) || Number.isNaN(end)) return 'closed';
-    if (now < start) return 'upcoming';
-    if (now > end) return 'past';
-    return 'open';
   }
 
   private buildFallbackContext(): ActionContext {
@@ -487,20 +458,5 @@ export class StudentStatusService {
       studentId: input?.studentId ?? studentId ?? null,
       subjects,
     };
-  }
-
-  private normalizeDate(value: string | Date | null | undefined): string {
-    if (!value) return '';
-    if (value instanceof Date) return value.toISOString().slice(0, 10);
-    if (typeof value === 'string') {
-      if (value.includes('T')) return value.slice(0, 10);
-      return value;
-    }
-    return '';
-  }
-
-  private toNumber(value: unknown): number | null {
-    const numeric = Number(value);
-    return Number.isFinite(numeric) ? numeric : null;
   }
 }

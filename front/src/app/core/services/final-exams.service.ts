@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { FinalExam } from '../models/final_exam.model';
+import { normalizeDate } from '../../shared/utils/date-time.utils';
 
 @Injectable({ providedIn: 'root' })
 export class FinalExamsService {
@@ -9,17 +10,11 @@ export class FinalExamsService {
 
   constructor(private api: ApiService) {}
 
-  private normalizeDate(d: string | Date | null | undefined): string {
-    if (!d) return '';
-    if (d instanceof Date) return d.toISOString().slice(0, 10);
-    return d.includes('T') ? d.slice(0, 10) : d;
-  }
-
   private toFinal = (raw: any): FinalExam => ({
     id: raw.id,
     subject_id: raw.subject_id ?? raw.subjectId ?? raw.subject?.id,
     subject_name: raw.subject_name ?? raw.subject?.subject_name ?? '',
-    exam_date: this.normalizeDate(raw.exam_date ?? raw.examDate),
+    exam_date: normalizeDate(raw.exam_date ?? raw.examDate),
     exam_time: raw.exam_time ?? raw.examTime ?? '',
     aula: raw.aula ?? undefined,
   });
@@ -43,7 +38,7 @@ export class FinalExamsService {
     exam_time?: string;
     aula?: string;
   }): Observable<FinalExam> {
-    const dateOnly = this.normalizeDate(dto.exam_date);
+    const dateOnly = normalizeDate(dto.exam_date);
     const withTime = dto?.exam_time
       ? `${dateOnly}T${dto.exam_time}:00`
       : dateOnly;
@@ -66,7 +61,7 @@ export class FinalExamsService {
     const payload: any = {};
     if (dto.subject_id !== undefined) payload.subject_id = dto.subject_id;
     if (dto.exam_date !== undefined)
-      payload.exam_date = this.normalizeDate(dto.exam_date);
+      payload.exam_date = normalizeDate(dto.exam_date);
     if (dto.aula !== undefined) payload.aula = dto.aula;
     return this.api
       .request<any>('PUT', `${this.base}/edit/${id}`, payload)

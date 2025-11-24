@@ -9,13 +9,16 @@ import {
   StudentExamCallDto,
   StudentExamTableDto,
   StudentExamWindowDto,
-  StudentWindowState,
 } from "./dto/student-exam.dto";
 import {
   ExamTableFiltersDto,
   WindowFilter,
 } from "./dto/exam-table-filters.dto";
 import { AuditEventDto } from "./dto/audit-event.dto";
+import {
+  formatDate,
+  resolveWindowState,
+} from "@/shared/utils/date-time.utils";
 
 type NormalizedFilters = {
   subjectId?: number;
@@ -324,7 +327,7 @@ export class StudentInscriptionsService {
     window: StudentExamWindowDto,
     quotaUsed: number | null,
   ): StudentExamCallDto {
-    const examDate = this.formatDate(finalExam.examDate);
+    const examDate = formatDate(finalExam.examDate);
     return {
       id: finalExam.id,
       label: this.composeCallLabel(tableName, examDate),
@@ -359,51 +362,18 @@ export class StudentInscriptionsService {
     return `${parts[2]}/${parts[1]}`;
   }
 
-  private formatDate(value: Date | string | null | undefined): string {
-    if (!value) {
-      return "";
-    }
-    const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return "";
-    }
-    return date.toISOString().slice(0, 10);
-  }
-
   private buildWindow(table: ExamTable): StudentExamWindowDto {
-    const opensAt = this.formatDate(table.startDate);
-    const closesAt = this.formatDate(table.endDate);
+    const opensAt = formatDate(table.startDate);
+    const closesAt = formatDate(table.endDate);
     return {
       id: table.id,
       label: table.name,
       opensAt: opensAt || null,
       closesAt: closesAt || null,
-      state: this.resolveWindowState(opensAt, closesAt),
+      state: resolveWindowState(opensAt, closesAt),
       message: null,
       isAdditional: false,
     };
-  }
-
-  private resolveWindowState(
-    opensAt?: string | null,
-    closesAt?: string | null,
-  ): StudentWindowState {
-    if (!opensAt || !closesAt) {
-      return "closed";
-    }
-    const start = Date.parse(opensAt);
-    const end = Date.parse(closesAt);
-    if (Number.isNaN(start) || Number.isNaN(end)) {
-      return "closed";
-    }
-    const now = Date.now();
-    if (now < start) {
-      return "upcoming";
-    }
-    if (now > end) {
-      return "past";
-    }
-    return "open";
   }
 
   private blocked(
