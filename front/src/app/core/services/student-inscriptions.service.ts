@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, finalize, map, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -14,12 +15,31 @@ import {
   StudentEnrollmentResponse,
   StudentWindowState,
 } from '../models/student-exam.model';
+import { environment } from 'environments/environment';
 
 type RawExamTablesResponse =
   | { data?: any[] }
   | { items?: any[] }
   | { tables?: any[] }
   | any[];
+
+export interface StudentFinalExamRow {
+  mesaId: number;
+  subjectId: number;
+  subjectName: string;
+  subjectCode?: string | null;
+  commissionLabel?: string | null;
+  finalExamId: number;
+  examDate: string;
+  aula?: string | null;
+  window: StudentActionWindow;
+  isEnrolled: boolean;
+  correlativeStatus: 'OK' | 'BLOCKED';
+  academicRequirement?: string | null;
+  blockedReason?: StudentExamBlockReason | null;
+  blockedMessage?: string | null;
+  examTypeLabel?: string;
+}
 
 const buildParamsCacheKey = (params: Record<string, string>): string => {
   const sorted = Object.keys(params)
@@ -35,6 +55,7 @@ const buildParamsCacheKey = (params: Record<string, string>): string => {
 export class StudentInscriptionsService {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
 
   private readonly tablesSignal = signal<StudentExamTable[]>([]);
   private readonly loadingSignal = signal(false);
@@ -68,6 +89,15 @@ export class StudentInscriptionsService {
     BACKEND_BLOCK: 'BACKEND_BLOCK',
     UNKNOWN: 'UNKNOWN',
   };
+
+  getAvailableFinalExamsForCurrentStudent(
+    filters: StudentExamFilters = {},
+    options?: { refresh?: boolean },
+  ): Observable<StudentFinalExamRow[]> {
+    return this.listExamTables(filters, options).pipe(
+      map((tables) => this.mapTablesToRows(tables)),
+    );
+  }
 
   listExamTables(
     filters: StudentExamFilters = {},
@@ -162,6 +192,34 @@ export class StudentInscriptionsService {
       );
   }
 
+  enrollToFinalExam(
+    finalExamId: number | string,
+  ): Observable<StudentEnrollmentResponse> {
+    const id = Number(finalExamId);
+    if (!Number.isFinite(id)) {
+      return of({
+        ok: false,
+        blocked: true,
+        reasonCode: 'UNKNOWN',
+        message:
+          'No se pudo identificar el llamado de examen seleccionado para la inscripción.',
+        refreshRequired: false,
+      });
+    }
+    const ctx = this.findContextForFinalExamId(id);
+    if (!ctx) {
+      return of({
+        ok: false,
+        blocked: true,
+        reasonCode: 'UNKNOWN',
+        message:
+          'No se encontró la mesa asociada al llamado de examen seleccionado. Actualizá la lista e intentá nuevamente.',
+        refreshRequired: true,
+      });
+    }
+    return this.enroll({ mesaId: ctx.mesaId, callId: id });
+  }
+
   unenroll(
     payload: StudentEnrollPayload,
   ): Observable<StudentEnrollmentResponse> {
@@ -183,6 +241,42 @@ export class StudentInscriptionsService {
           of(this.normalizeEnrollmentResponse(error?.error ?? error)),
         ),
       );
+  }
+
+  unenrollFromFinalExam(
+    finalExamId: number | string,
+  ): Observable<StudentEnrollmentResponse> {
+    const id = Number(finalExamId);
+    if (!Number.isFinite(id)) {
+      return of({
+        ok: false,
+        blocked: true,
+        reasonCode: 'UNKNOWN',
+        message:
+          'No se pudo identificar el llamado de examen seleccionado para cancelar la inscripción.',
+        refreshRequired: false,
+      });
+    }
+    const ctx = this.findContextForFinalExamId(id);
+    if (!ctx) {
+      return of({
+        ok: false,
+        blocked: true,
+        reasonCode: 'UNKNOWN',
+        message:
+          'No se encontró la mesa asociada al llamado de examen seleccionado. Actualizá la lista e intentá nuevamente.',
+        refreshRequired: true,
+      });
+    }
+    return this.unenroll({ mesaId: ctx.mesaId, callId: id });
+  }
+
+  downloadReceipt(finalExamId: number | string): Observable<Blob> {
+    const studentId = this.auth.getUserId();
+    const normalizedId = studentId ?? '';
+    const base = environment.apiBaseUrl.replace(/\/$/, '');
+    const url = `${base}/generatePdf/exam-registration-receipt/${normalizedId}`;
+    return this.http.get(url, { responseType: 'blob' });
   }
 
   logAudit(payload: StudentExamAuditPayload): Observable<void> {
@@ -248,6 +342,39 @@ export class StudentInscriptionsService {
     });
   }
 
+  private mapTablesToRows(tables: StudentExamTable[]): StudentFinalExamRow[] {
+    const rows: StudentFinalExamRow[] = [];
+
+    for (const table of tables) {
+      const correlativeStatus: 'OK' | 'BLOCKED' =
+        table.academicRequirement && table.academicRequirement.length
+          ? 'BLOCKED'
+          : 'OK';
+
+      for (const call of table.availableCalls) {
+        rows.push({
+          mesaId: table.mesaId,
+          subjectId: table.subjectId,
+          subjectName: table.subjectName,
+          subjectCode: table.subjectCode ?? null,
+          commissionLabel: table.commissionLabel ?? null,
+          finalExamId: call.id,
+          examDate: call.examDate,
+          aula: call.aula ?? null,
+          window: call.enrollmentWindow,
+          isEnrolled: Boolean(call.enrolled),
+          correlativeStatus,
+          academicRequirement: table.academicRequirement ?? null,
+          blockedReason: table.blockedReason ?? null,
+          blockedMessage: table.blockedMessage ?? null,
+          examTypeLabel: call.label,
+        });
+      }
+    }
+
+    return rows;
+  }
+
   private mapCalls(row: any): StudentExamCall[] {
     const source = Array.isArray(row.calls)
       ? row.calls
@@ -275,6 +402,19 @@ export class StudentInscriptionsService {
       additional: row.additionalCall ?? row.isAdditional ?? false,
     });
     return fallback ? [fallback] : [];
+  }
+
+  private findContextForFinalExamId(
+    finalExamId: number,
+  ): { mesaId: number; table: StudentExamTable } | null {
+    const tables = this.tablesSignal();
+    for (const table of tables) {
+      const match = table.availableCalls.some((call) => call.id === finalExamId);
+      if (match) {
+        return { mesaId: table.mesaId, table };
+      }
+    }
+    return null;
   }
 
   private normalizeCall(input: any): StudentExamCall | null {
