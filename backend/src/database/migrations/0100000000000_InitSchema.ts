@@ -9,7 +9,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       `CREATE TABLE "roles" ("id" SERIAL NOT NULL, "name" text NOT NULL, CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE ("name"), CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "user_info" ("id" SERIAL NOT NULL, "user_id" uuid NOT NULL, "phone" text, "emergency_name" text, "emergency_phone" text, CONSTRAINT "REL_59c55ac40f267d450246040899" UNIQUE ("user_id"), CONSTRAINT "PK_273a06d6cdc2085ee1ce7638b24" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "user_info" ("id" SERIAL NOT NULL, "user_id" uuid NOT NULL, "phone" text, "document_type" text, "document_value" text, "emergency_name" text, "emergency_phone" text, CONSTRAINT "REL_59c55ac40f267d450246040899" UNIQUE ("user_id"), CONSTRAINT "PK_273a06d6cdc2085ee1ce7638b24" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TABLE "address_data" ("id" SERIAL NOT NULL, "street" text, "number" text, "floor" text, "apartment" text, "neighborhood" text, "locality" text, "province" text, "postal_code" text, "country" text, CONSTRAINT "PK_c1379677a0a5f11d46e510491b0" PRIMARY KEY ("id"))`,
