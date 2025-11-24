@@ -2,7 +2,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .meta-label {
@@ -15,10 +14,6 @@
 .meta-value {
   margin: 0.15rem 0 0;
   font-weight: 600;
-}
-
-.detail-section {
-  margin-top: 1.5rem;
 }
 
 .section-title {
@@ -43,7 +38,6 @@
 
 .partial-chip {
   padding: 0.2rem 0.6rem;
-  border-radius: 999px;
   background: var(--surface-200);
   font-size: 0.85rem;
 }

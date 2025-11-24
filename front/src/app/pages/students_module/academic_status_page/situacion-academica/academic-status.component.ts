@@ -149,30 +149,30 @@ export class AcademicStatusComponent implements OnInit {
       subjects: StudentSubjectCard[];
     }>,
   ): YearBlock[] {
-    return groups.map((group: {
-      label: string;
-      order: number;
-      subjects: StudentSubjectCard[];
-    }) => ({
-      year: Number.isFinite(group.order)
-        ? group.order
-        : Number.POSITIVE_INFINITY,
-      label: group.label,
-      subjects: group.subjects
-        .map((card: StudentSubjectCard) => ({
-          id: card.subjectId,
-          name: card.subjectName,
-          calendarYear: card.yearNumber,
-          division: card.commissionLabel,
-          finalCondition: card.condition ?? card.accreditation ?? null,
-          lastExamSummary: card.finalExplanation ?? null,
-          attendancePct: card.attendancePct,
-          hasGrades: this.hasLegacyGrades(card),
-        }))
-        .map((subject: StudentSummarySubject) =>
-          this.mapSubjectRow(subject),
-        ),
-    }));
+    return groups.map(
+      (group: {
+        label: string;
+        order: number;
+        subjects: StudentSubjectCard[];
+      }) => ({
+        year: Number.isFinite(group.order)
+          ? group.order
+          : Number.POSITIVE_INFINITY,
+        label: group.label,
+        subjects: group.subjects
+          .map((card: StudentSubjectCard) => ({
+            id: card.subjectId,
+            name: card.subjectName,
+            calendarYear: card.yearNumber,
+            division: card.commissionLabel,
+            finalCondition: card.condition ?? card.accreditation ?? null,
+            lastExamSummary: null,
+            attendancePct: card.attendancePct,
+            hasGrades: this.hasLegacyGrades(card),
+          }))
+          .map((subject: StudentSummarySubject) => this.mapSubjectRow(subject)),
+      }),
+    );
   }
 
   private mapSubjectRow(subject: StudentSummarySubject): SubjectRow {
@@ -180,9 +180,12 @@ export class AcademicStatusComponent implements OnInit {
     return {
       ...subject,
       hasGrades,
-      courseLabel: this.buildCourseLabel(subject.calendarYear, subject.division),
+      courseLabel: this.buildCourseLabel(
+        subject.calendarYear,
+        subject.division,
+      ),
       examsText: hasGrades
-        ? subject.lastExamSummary ?? '-'
+        ? (subject.lastExamSummary ?? '-')
         : this.missingGradesText(),
     };
   }

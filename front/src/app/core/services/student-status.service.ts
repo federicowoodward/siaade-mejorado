@@ -32,7 +32,6 @@ export interface StudentSubjectCard {
   partialsExpected: 2 | 4;
   notes: StudentSubjectNote[];
   finalScore: number | null;
-  finalExplanation: string;
   attendancePct: number;
   condition: string | null;
   accreditation: string;
@@ -312,7 +311,6 @@ export class StudentStatusService {
       partialsExpected: partials,
       notes,
       finalScore,
-      finalExplanation: this.buildFinalExplanation(partials, notes, attendance),
       attendancePct: attendance,
       condition: row.condition ?? row.status ?? null,
       accreditation: this.deriveAccreditation(row),
@@ -523,27 +521,6 @@ export class StudentStatusService {
       label,
       value: this.toNumber(values[idx]),
     }));
-  }
-
-  private buildFinalExplanation(
-    partials: 2 | 4,
-    notes: StudentSubjectNote[],
-    attendance: number,
-  ): string {
-    const validNotes = notes
-      .map((n) => n.value)
-      .filter((value): value is number => typeof value === 'number');
-    if (!validNotes.length) {
-      return `Se requieren ${partials} parciales para calcular la nota final.`;
-    }
-    const average =
-      validNotes.reduce((acc, value) => acc + value, 0) / validNotes.length;
-    const rounded = Math.round(average * 10) / 10;
-    const attendanceText =
-      attendance >= 75
-        ? 'La asistencia cumple el minimo requerido.'
-        : 'La asistencia no alcanza el 75%.';
-    return `Promedio de ${validNotes.length} parciales (${partials} esperados): ${rounded}. ${attendanceText}`;
   }
 
   private deriveAccreditation(row: any): string {
