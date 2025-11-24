@@ -11,6 +11,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import {
   NoticesService,
   Notice,
@@ -22,7 +24,6 @@ import { CanAnyRoleDirective } from '../../shared/directives/can-any-role.direct
 import { BlockedActionDirective } from '../../shared/directives/blocked-action.directive';
 import { CatalogsService } from '../../core/services/catalogs.service';
 import { firstValueFrom } from 'rxjs';
-
 @Component({
   selector: 'app-notices-page',
   standalone: true,
@@ -31,6 +32,8 @@ import { firstValueFrom } from 'rxjs';
     FormsModule,
     EditorModule,
     ButtonModule,
+    InputTextModule,
+    SelectModule,
     CanAnyRoleDirective,
     BlockedActionDirective,
   ],
@@ -69,6 +72,12 @@ export class NoticesPageComponent implements OnInit {
   availableYears = signal<number[]>([]);
   selectedYearNumbers: number[] = [];
   loadingYears = signal<boolean>(false);
+  yearOptions = computed(() =>
+    this.availableYears().map((year) => ({
+      label: `${year}° año`,
+      value: year,
+    })),
+  );
 
   constructor() {
     effect(() => {

@@ -7,59 +7,66 @@
   >
     <input
       type="text"
-      placeholder="Titulo"
+      pInputText
+      placeholder="Título"
       [(ngModel)]="newNotice.title"
-      class="p-inputtext"
       blockedAction
     />
 
     <p-editor
       [(ngModel)]="newNotice.content"
       [style]="{ height: '200px' }"
-      placeholder="Escribi el contenido del aviso."
+      placeholder="Escribí el contenido del aviso."
       blockedAction
     ></p-editor>
 
     <label class="mt-2">Visible para:</label>
-    <select
+    <p-select
+      [options]="[
+        { label: 'Todos', value: 'all' },
+        { label: 'Alumnos', value: 'student' },
+        { label: 'Profesores', value: 'teacher' },
+      ]"
       [(ngModel)]="newNotice.visibleFor"
-      (ngModelChange)="onVisibleForChange()"
+      (onChange)="onVisibleForChange()"
+      placeholder="Seleccionar destinatarios"
+      styleClass="w-full"
     >
-      <option value="all">Todos</option>
-      <option value="student">Alumnos</option>
-      <option value="teacher">Profesores</option>
-    </select>
+    </p-select>
 
     <div
       class="year-selector"
       *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0"
     >
       <label>Años destino</label>
-      <select
-        multiple
+      <p-select
+        [options]="yearOptions()"
+        optionLabel="label"
+        optionValue="value"
         [(ngModel)]="selectedYearNumbers"
-        (change)="onYearSelectionChange($event)"
+        placeholder="Todos los años"
+        styleClass="w-full"
       >
-        <option *ngFor="let year of availableYears()" [ngValue]="year">
-          {{ year }}° año
-        </option>
-      </select>
-      <small
-        >Si no seleccionás ningún año se publicará para todos los años.</small
-      >
+      </p-select>
+      <small>
+        Si no seleccionás ningún año se publicará para todos los años.
+      </small>
     </div>
 
     <div class="commission-selector" *ngIf="segmentByCommission()">
-      <label>comisiones destino</label>
-      <select multiple [(ngModel)]="selectedCommissionIds">
-        <option
-          *ngFor="let option of commissionOptions()"
-          [ngValue]="option.id"
-        >
-          {{ option.label }}
-        </option>
-      </select>
-      <small>Si no seleccionás ninguna comision se publicará para todas.</small>
+      <label>Comisiones destino</label>
+      <p-select
+        [options]="commissionOptions()"
+        optionLabel="label"
+        optionValue="id"
+        [(ngModel)]="selectedCommissionIds"
+        placeholder="Todas las comisiones"
+        styleClass="w-full"
+      >
+      </p-select>
+      <small>
+        Si no seleccionás ninguna comisión se publicará para todas.
+      </small>
     </div>
 
     <button
