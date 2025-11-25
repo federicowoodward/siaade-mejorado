@@ -1,4 +1,17 @@
 .quick-access {
+  gap: 1rem;
+
+  .quick-card {
+    height: 100%;
+  }
+
+  ::ng-deep .p-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
   ::ng-deep .p-card-header {
     display: flex;
     justify-content: center;
