@@ -1,10 +1,9 @@
-import { Controller, Get, Param, UseGuards, Req, Query, BadRequestException } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards, Req } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
 import { StudentsReadService } from "./students.service";
@@ -20,50 +19,37 @@ import { ROLE } from "@/shared/rbac/roles.constants";
 export class StudentsReadController {
   constructor(private readonly service: StudentsReadService) {}
 
-  @Get("status/subjects")
+  @Get("me/summary")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Action("students.readSubjectsStatus")
+  @Action("students.readMySummary")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({ summary: "Obtener mi resumen acad��mico" })
+  @ApiOkResponse({ description: "Resumen acad��mico del alumno (self)" })
+  getMySummary(@Req() req: any) {
+    return this.service.getStudentSummary(req.user.id);
+  }
+
+  @Get(":id/summary")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("students.readSummary")
   @AllowRoles(
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
     ROLE.TEACHER,
-    ROLE.STUDENT,
   )
-  @ApiOperation({
-    summary: "Listado de status del alumno en todas las materias (con query param)",
-  })
-  @ApiQuery({ name: "studentId", type: String, required: false })
-  @ApiOkResponse({ description: "Lista de materias con condición" })
-  getSubjectsStatusByQuery(
-    @Query("studentId") studentId: string,
-    @Req() req: any,
-  ) {
-    // Si no se proporciona studentId, usar el ID del usuario autenticado
-    const targetId = studentId || req.user.id;
-    return this.service.getSubjectsStatusFlat(targetId);
+  @ApiOperation({ summary: "Obtener resumen acad��mico de un alumno" })
+  @ApiParam({ name: "id", type: String })
+  @ApiOkResponse({ description: "Resumen acad��mico del alumno" })
+  getSummary(@Param("id") id: string) {
+    return this.service.getStudentSummary(id);
   }
-
-  @Get("status/action-context")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Action("students.readActionContext")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-    ROLE.TEACHER,
-    ROLE.STUDENT,
-  )
-  @ApiOperation({
-    summary: "Contexto de acciones (ventanas, correlativas) para el alumno",
-  })
-  @ApiQuery({ name: "studentId", type: String, required: false })
-  @ApiOkResponse({ description: "Contexto de acciones" })
-  getActionContext(@Query("studentId") studentId: string, @Req() req: any) {
-    const targetId = studentId || req.user.id;
-    return this.service.getActionContext(targetId);
-  }
-
 
   @Get(":id/full")
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -73,7 +59,6 @@ export class StudentsReadController {
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
     ROLE.TEACHER,
-    ROLE.STUDENT,
   )
   @ApiOperation({ summary: "Obtener toda la data de un alumno" })
   @ApiParam({ name: "id", type: String })
@@ -132,43 +117,5 @@ export class StudentsReadController {
   @ApiOkResponse({ description: "Datos completos del alumno (self)" })
   getMyFull(@Req() req: any) {
     return this.service.getStudentFullData(req.user.id);
-  }
-
-  @Get("me/summary")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Action("students.readMySummary")
-  @AllowRoles(
-    ROLE.STUDENT,
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-    ROLE.TEACHER,
-  )
-  @ApiOperation({ summary: "Obtener resumen de MI data académica (usuario autenticado)" })
-  @ApiOkResponse({ description: "Resumen del alumno (self)" })
-  getMySummary(@Req() req: any) {
-    const id = req.user?.id || req.user?.sub || req.user?.userId;
-    if (!id) {
-      throw new BadRequestException(
-        `User ID missing in request. User: ${JSON.stringify(req.user)}`,
-      );
-    }
-    return this.service.getStudentSummary(id);
-  }
-
-  @Get(":id/summary")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Action("students.readSummary")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-    ROLE.TEACHER,
-  )
-  @ApiOperation({ summary: "Obtener resumen de data académica de un alumno" })
-  @ApiParam({ name: "id", type: String })
-  @ApiOkResponse({ description: "Resumen del alumno" })
-  getSummary(@Param("id") id: string) {
-    return this.service.getStudentSummary(id);
   }
 }
