@@ -21,7 +21,7 @@ interface QuickAccess {
 @Component({
   selector: 'app-quick-access',
   standalone: true,
-  imports: [CommonModule, Card, RouterModule, RoleLabelPipe],
+  imports: [CommonModule, Card, RouterModule],
   templateUrl: './quick-access-component.html',
   styleUrls: ['./quick-access-component.scss'],
 })
@@ -144,7 +144,7 @@ export class QuickAccessComponent {
   constructor() {
     effect(() => {
       const role = this.permissions.currentRole();
-      this.accesses.set(role ? this.accessesByRole[role] ?? [] : []);
+      this.accesses.set(role ? (this.accessesByRole[role] ?? []) : []);
     });
   }
 
@@ -172,27 +172,22 @@ export class QuickAccessComponent {
           const base = environment.apiBaseUrl.replace(/\/$/, '');
           const url = `${base}/generatePdf/student-certificate/${user.id}`;
 
-          this.http
-            .get(url, { responseType: 'blob' as 'blob' })
-            .subscribe({
-              next: (blob) => {
-                const blobUrl = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.target = '_blank';
-                link.download = 'certificado-alumno.pdf';
-                link.click();
-                URL.revokeObjectURL(blobUrl);
-                this.loadingStudentCertificate.set(false);
-              },
-              error: (error) => {
-                console.error(
-                  'Error al generar el certificado de alumno',
-                  error,
-                );
-                this.loadingStudentCertificate.set(false);
-              },
-            });
+          this.http.get(url, { responseType: 'blob' as 'blob' }).subscribe({
+            next: (blob) => {
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.target = '_blank';
+              link.download = 'certificado-alumno.pdf';
+              link.click();
+              URL.revokeObjectURL(blobUrl);
+              this.loadingStudentCertificate.set(false);
+            },
+            error: (error) => {
+              console.error('Error al generar el certificado de alumno', error);
+              this.loadingStudentCertificate.set(false);
+            },
+          });
         },
         error: (error) => {
           console.error('Error al obtener el usuario actual', error);
@@ -209,4 +204,3 @@ export class QuickAccessComponent {
     });
   }
 }
-

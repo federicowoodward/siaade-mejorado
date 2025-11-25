@@ -18,7 +18,8 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
-
+import { PermissionService } from '@/core/auth/permission.service';
+import { ROLE } from '../../../core/auth/roles';
 @Component({
   selector: 'app-exams-tables-page',
   standalone: true,
@@ -42,10 +43,9 @@ export class ExamsTablesPage implements OnInit {
   private auth = inject(AuthService);
   private sync = inject(ExamTableSyncService);
   private uiAlertAudit = inject(UiAlertAuditService);
+  private permissions = inject(PermissionService);
 
-  breadcrumbItems: SimpleBreadcrumbItem[] = [
-    { label: 'Mesas de examen' },
-  ];
+  breadcrumbItems: SimpleBreadcrumbItem[] = [{ label: 'Mesas de examen' }];
 
   tables = signal<ExamTable[]>([]);
   loading = signal<boolean>(false);
@@ -211,5 +211,13 @@ export class ExamsTablesPage implements OnInit {
       detail: Array.isArray(message) ? message.join(' · ') : message,
       life: 5000,
     });
+  }
+
+  // Solo SECRETARIO o DIRECTIVO pueden crear mesas
+  canCreateUser(): boolean {
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
   }
 }

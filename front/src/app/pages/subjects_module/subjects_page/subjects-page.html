@@ -1,16 +1,20 @@
 <div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <div class="surface-card shadow-2 border-round p-3 flex justify-content-between align-content-center ">
+  <div
+    class="surface-card shadow-2 border-round p-4 flex justify-content-between align-content-center"
+  >
     <div>
-      <h2 class="mb-4">Gestión de Materias</h2>
+      <h2 class="mb-2">Gestión de Materias</h2>
+      <p>Gestiona las materias, alumnos y sus comisiones.</p>
     </div>
     <p-button
-    (onClick)="goToCareerInfo()"
-    icon="pi pi-info-circle"
-    label="Informacion de la carrera"
+      (onClick)="goToCareerInfo()"
+      icon="pi pi-info-circle"
+      severity="secondary"
+      label="Información de la carrera"
     ></p-button>
   </div>
-    <div class="flex justify-content-end mb-3 gap-3">
+  <div class="flex justify-content-end mb-3 gap-3">
     <!-- <p-button
       (onClick)="goToNewSubject()"
       icon="pi pi-plus"

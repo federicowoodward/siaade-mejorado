@@ -8,15 +8,6 @@
         exam()?.exam_time }} • Aula: {{ exam()?.aula || '—' }}
       </small>
     </h2>
-
-    <div class="flex gap-2">
-      <p-button
-        label="Volver a la mesa"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        (onClick)="back()"
-      ></p-button>
-    </div>
   </div>
 
   <p-table

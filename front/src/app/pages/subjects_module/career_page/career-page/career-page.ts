@@ -70,6 +70,94 @@ export class CareerPage implements OnInit {
     academicPeriods: this.catalog.periods(),
   }));
 
+  periodsByYear = computed(() => {
+    const periods = this.data().academicPeriods ?? [];
+
+    type PeriodEntry = {
+      academicPeriod:
+        | { id: number; name: string; partialsScoreNeeded: number }
+        | null;
+      subjects: any[];
+    };
+
+    type YearGroup = {
+      yearIndex: number | null;
+      label: string;
+      annual: PeriodEntry | null;
+      firstSemester: PeriodEntry | null;
+      secondSemester: PeriodEntry | null;
+      others: PeriodEntry[];
+    };
+
+    const map = new Map<number | 'no_year', YearGroup>();
+
+    const getGroup = (yearIndex: number | null): YearGroup => {
+      const key = yearIndex ?? 'no_year';
+      const existing = map.get(key);
+      if (existing) return existing;
+      const group: YearGroup = {
+        yearIndex,
+        label:
+          yearIndex != null && Number.isFinite(yearIndex)
+            ? `${yearIndex}º año`
+            : 'Sin año',
+        annual: null,
+        firstSemester: null,
+        secondSemester: null,
+        others: [],
+      };
+      map.set(key, group);
+      return group;
+    };
+
+    for (const period of periods as any[]) {
+      const subjects = period?.subjects ?? [];
+      const firstWithOrdering = subjects.find(
+        (s: any) => s?.careerOrdering && s.careerOrdering.periodOrder != null,
+      );
+
+      const periodOrder: number | null =
+        firstWithOrdering?.careerOrdering?.periodOrder ?? null;
+
+      const yearIndex: number | null =
+        periodOrder != null ? Math.floor(periodOrder / 3) + 1 : null;
+
+      const group = getGroup(yearIndex);
+
+      const entry: PeriodEntry = {
+        academicPeriod: period.academicPeriod ?? null,
+        subjects,
+      };
+
+      if (periodOrder == null) {
+        group.others.push(entry);
+        continue;
+      }
+
+      const mod = ((periodOrder % 3) + 3) % 3;
+      if (mod === 0) {
+        if (!group.annual) group.annual = entry;
+        else group.others.push(entry);
+      } else if (mod === 1) {
+        if (!group.firstSemester) group.firstSemester = entry;
+        else group.others.push(entry);
+      } else {
+        if (!group.secondSemester) group.secondSemester = entry;
+        else group.others.push(entry);
+      }
+    }
+
+    const result = Array.from(map.values());
+    result.sort((a, b) => {
+      if (a.yearIndex == null && b.yearIndex == null) return 0;
+      if (a.yearIndex == null) return 1;
+      if (b.yearIndex == null) return -1;
+      return a.yearIndex - b.yearIndex;
+    });
+
+    return result;
+  });
+
   private subjectsFlat = computed<SubjectView[]>(() => {
     const periods = this.data().academicPeriods ?? [];
     return periods.flatMap((period: any) =>
@@ -88,7 +176,7 @@ export class CareerPage implements OnInit {
     return this.subjectsFlat()
       .filter((s) => s.orderNo < subject.orderNo)
       .map((s) => ({
-        label: `${s.orderNo} · ${s.subjectName}`,
+        label: `${s.orderNo} º ${s.subjectName}`,
         value: s.orderNo,
       }));
   });
@@ -183,3 +271,4 @@ export class CareerPage implements OnInit {
     });
   }
 }
+

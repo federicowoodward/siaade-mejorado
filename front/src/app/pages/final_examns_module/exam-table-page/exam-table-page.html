@@ -1,27 +1,31 @@
 <div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <div class="flex justify-content-between align-items-center mb-3">
-    <h2 class="m-0">
-      {{ table()?.name || 'Mesa' }}
-      <small class="text-color-secondary block">
-        {{ table()?.start_date | date:'dd/MM/yyyy' }} → {{ table()?.end_date |
-        date:'dd/MM/yyyy' }}
-      </small>
-    </h2>
 
-    <div class="flex gap-2">
-      <p-button
-        label="Crear examen"
-        icon="pi pi-plus"
-        (onClick)="openCreate()"
-      ></p-button>
-      <p-button
-        label="Volver"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        (onClick)="back()"
-      ></p-button>
+  <div
+    class="surface-card shadow-2 border-round p-3 mb-3 flex justify-content-between align-content-center"
+  >
+    <div class="flex flex-column gap-2">
+      <h2 class="m-0">
+        Mesa: {{ table()?.name || 'Mesa' }}
+        <small class="text-color-secondary block text-sm">
+          {{ table()?.start_date | date:'dd/MM/yyyy' }} → {{ table()?.end_date |
+          date:'dd/MM/yyyy' }}
+        </small>
+      </h2>
+      <p>
+        Gestióna la mesa de examen, crea nuevos examenes, visualiza el estado de
+        los mismos.
+      </p>
     </div>
+    <p-button
+      label="Crear examen"
+      icon="pi pi-plus"
+      (onClick)="openCreate()"
+    ></p-button>
+  </div>
+
+  <div class="flex justify-content-between align-items-center mb-3">
+    <div class="flex gap-2"></div>
   </div>
 
   <p-table
@@ -53,9 +57,9 @@
             (onClick)="openFinal(row)"
           ></p-button>
           <p-button
-            label="Eliminar"
             icon="pi pi-trash"
             severity="danger"
+            outlined
             (onClick)="deleteFinal(row)"
           ></p-button>
         </td>

@@ -1,14 +1,24 @@
 <div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <h2 class="my-3">Gestión de Usuarios</h2>
 
-  <div class="flex justify-content-end mb-3" *ngIf="canCreateUser()">
-    <p-button
-      (onClick)="goToNewUser()"
-      icon="pi pi-plus"
-      label="Nuevo usuario"
-      variant="outlined"
-    ></p-button>
+  <div
+    class="surface-card shadow-2 border-round p-3 mb-3 flex justify-content-between align-content-center"
+  >
+    <div>
+      <h2 class="mb-2">Gestión de Usuarios</h2>
+      <p class="max-w-30rem">
+        Gestión y creación de usuarios, generación de documentos, materias
+        asignadas, situación académica de alumnos.
+      </p>
+    </div>
+    <div *ngIf="canCreateUser()">
+      <p-button
+        (onClick)="goToNewUser()"
+        icon="pi pi-plus"
+        label="Nuevo usuario"
+        variant="outlined"
+      ></p-button>
+    </div>
   </div>
 
   <app-users-table
@@ -18,7 +28,6 @@
     (rowAction)="onRowAction($event)"
     (rowClick)="onRowClick($event)"
   />
-
   <!-- Modal: Materias a cargo (Docente) -->
   <p-dialog
     [(visible)]="dialogTeacher().visible"

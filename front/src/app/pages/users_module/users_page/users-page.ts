@@ -19,7 +19,13 @@ import {
 @Component({
   selector: 'app-users-page',
   standalone: true,
-  imports: [CommonModule, AppBreadcrumbComponent, UsersTableComponent, Button, DialogModule],
+  imports: [
+    CommonModule,
+    AppBreadcrumbComponent,
+    UsersTableComponent,
+    Button,
+    DialogModule,
+  ],
   templateUrl: './users-page.html',
   styleUrl: './users-page.scss',
 })
@@ -34,9 +40,7 @@ export class UsersPage {
 
   rows = signal<UserRow[]>([]);
 
-  breadcrumbItems: SimpleBreadcrumbItem[] = [
-    { label: 'Gestión de usuarios' },
-  ];
+  breadcrumbItems: SimpleBreadcrumbItem[] = [{ label: 'Gestión de usuarios' }];
 
   // Modal "Materias a cargo" (docente)
   dialogTeacher = signal<{ visible: boolean; teacherId: string | null }>({

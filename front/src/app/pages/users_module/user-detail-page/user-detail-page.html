@@ -1,14 +1,14 @@
 <div class="m-w-custom flex flex-column gap-3">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <p-button
-    label="Volver"
-    icon="pi-arrow-rigth"
-    iconPos="left"
-    (onClick)="back()"
-  ></p-button>
 
+  <h2>Datos personales del usuario</h2>
+  <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
+
+  <h2>Accesos del usuario</h2>
   <!-- Controles de acceso/estado del alumno -->
-  <div class="flex flex-row gap-3 align-items-center flex-wrap">
+  <div
+    class="flex flex-row gap-3 align-items-center flex-wrap surface-card p-3 border-round"
+  >
     <div class="flex flex-column gap-1">
       <span class="text-sm font-medium">Acceso</span>
       <p-togglebutton
@@ -87,7 +87,4 @@
       </div>
     </div>
   </p-dialog>
-
-  <h2>Datos personales del usuario</h2>
-  <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
 </div>

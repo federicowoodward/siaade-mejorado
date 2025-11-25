@@ -26,7 +26,6 @@ import { TagModule } from 'primeng/tag';
     SelectModule,
     TagModule,
     Button,
-    FieldLabelPipe,
   ],
   templateUrl: './personal-data-component.html',
   styleUrls: ['./personal-data-component.scss'],

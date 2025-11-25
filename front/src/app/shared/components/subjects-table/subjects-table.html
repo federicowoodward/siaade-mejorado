@@ -5,18 +5,19 @@
 >
   <ng-template pTemplate="header">
     <tr>
-      <th>Asignatura</th>
-      <th style="width: 220px; text-align: center">Acciones</th>
+      <th class="p-3">Asignatura</th>
+      <th class="p-3" style="width: 220px; text-align: center">Acciones</th>
     </tr>
   </ng-template>
 
   <ng-template pTemplate="body" let-subject>
     <tr>
-      <td>{{ subject.name }}</td>
-      <td class="flex w-18rem gap-4">
+      <td class="px-3">{{ subject.name }}</td>
+      <td class="flex w-23rem justify-content-around">
         <button
           pButton
           type="button"
+          outlined="true"
           label="Comisiones"
           (click)="viewComissions(subject.id)"
           blockedAction
@@ -37,7 +38,7 @@
   [modal]="true"
   [(visible)]="dialogTeachers().visible"
   (onHide)="closeTeachersDialog()"
-  [style]="{ width: '78rem', maxWidth: '95vw' }"
+  [style]="{ width: '40rem' }"
   [draggable]="false"
   [resizable]="false"
   [contentStyle]="{ 'max-height': '70vh', overflow: 'auto' }"
@@ -118,14 +119,14 @@
     </ng-template>
   </ng-container>
 
-  <ng-template pTemplate="footer">
+  <!-- <ng-template pTemplate="footer">
     <button
       pButton
       label="Cerrar"
       icon="pi pi-times"
       (click)="closeTeachersDialog()"
     ></button>
-  </ng-template>
+  </ng-template> -->
 </p-dialog>
 
 <!-- Diálogo cambio de docente -->

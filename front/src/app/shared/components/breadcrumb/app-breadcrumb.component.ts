@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 
 export interface SimpleBreadcrumbItem {
   label: string;
@@ -17,13 +18,22 @@ export interface SimpleBreadcrumbItem {
 @Component({
   selector: 'app-breadcrumb',
   standalone: true,
-  imports: [CommonModule, BreadcrumbModule],
+  imports: [CommonModule, BreadcrumbModule, ButtonModule],
   template: `
-    <p-breadcrumb
-      *ngIf="model.length"
-      [model]="model"
-      styleClass="w-full"
-    ></p-breadcrumb>
+    <div class="flex align-items-center justify-content-between gap-2 my-3">
+      <p-breadcrumb
+        *ngIf="model.length"
+        [model]="model"
+        styleClass="w-full"
+      ></p-breadcrumb>
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        outlined="true"
+        (onClick)="back()"
+      ></p-button>
+    </div>
   `,
   styles: [
     `
@@ -49,5 +59,9 @@ export class AppBreadcrumbComponent implements OnChanges {
         routerLink: item.routerLink,
       }));
     }
+  }
+
+  back() {
+    window.history.back();
   }
 }
