@@ -14,6 +14,7 @@
 
 ### Local profile
 
+
 - Start: `docker compose --profile local up -d --build`
 - Exposed services:
   - Postgres: `localhost:5432`
