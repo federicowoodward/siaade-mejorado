@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { User } from "@/entities/users/user.entity";
@@ -6,8 +6,8 @@ import { Student } from "@/entities/users/student.entity";
 import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
 import { Notice } from "@/entities/notices/notice.entity";
 import { CatalogsService } from "@/modules/catalogs/catalogs.service";
-import { ROLE_IDS } from "@/shared/rbac/roles.constants";
 import { FinalExam } from "@/entities/finals/final-exam.entity";
+import { CareerStudent } from "@/entities/registration/career-student.entity";
 
 @Injectable()
 export class StudentsReadService {
@@ -15,6 +15,8 @@ export class StudentsReadService {
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
+    @InjectRepository(CareerStudent)
+    private readonly careerStudentRepo: Repository<CareerStudent>,
     @InjectRepository(FinalExamsStudent)
     private readonly fesRepo: Repository<FinalExamsStudent>,
     @InjectRepository(Notice) private readonly noticeRepo: Repository<Notice>,
@@ -22,6 +24,64 @@ export class StudentsReadService {
     private readonly finalExamRepo: Repository<FinalExam>,
     private readonly catalogsService: CatalogsService,
   ) {}
+
+  async getStudentSummary(studentId: string) {
+    const student = await this.studentRepo.findOne({
+      where: { userId: studentId },
+      relations: ["user", "commission"],
+    });
+    if (!student) throw new NotFoundException("Estudiante no encontrado");
+
+    let careerEnrollment: CareerStudent | null = null;
+    let academicStatus: { byYear: Record<string, AcademicStatusRow[]> } = {
+      byYear: {},
+    };
+
+    try {
+      [careerEnrollment, academicStatus] = await Promise.all([
+        this.careerStudentRepo.findOne({
+          where: { studentId },
+          relations: { career: { academicPeriod: true } },
+          order: { enrolledAt: "DESC", id: "DESC" },
+        }),
+        this.catalogsService.getStudentAcademicStatus(studentId),
+      ]);
+    } catch (error) {
+      // En caso de falla, devolvemos lo que tengamos para no romper el summary.
+      // eslint-disable-next-line no-console
+      console.warn("[StudentsRead] getStudentSummary fallback", {
+        error,
+        studentId,
+      });
+    }
+
+    const byYear = academicStatus?.byYear ?? {};
+    const years = this.mapAcademicStatusToYears(byYear);
+    const currentAcademicYear = this.resolveCurrentAcademicYear(years, byYear);
+
+    const registeredSince =
+      careerEnrollment?.enrolledAt ??
+      (student.studentStartYear
+        ? new Date(Date.UTC(student.studentStartYear, 0, 1))
+        : null);
+
+    return {
+      id: student.userId,
+      studentId: student.userId,
+      firstName: student.user?.name ?? null,
+      lastName: student.user?.lastName ?? null,
+      fullName: this.buildFullName(student.user?.name, student.user?.lastName),
+      documentType: null,
+      documentNumber: student.user?.cuil ?? null,
+      legajo: student.legajo,
+      studentStartYear: student.studentStartYear,
+      careerPlanName: careerEnrollment?.career?.careerName ?? null,
+      planName: careerEnrollment?.career?.careerName ?? null,
+      registeredSince,
+      currentAcademicYear,
+      years,
+    };
+  }
 
   async getStudentFullData(studentId: string) {
     const student = await this.studentRepo.findOne({
@@ -142,94 +202,164 @@ export class StudentsReadService {
     return flat;
   }
 
-  async getStudentSummary(studentId: string) {
-    if (!studentId) throw new BadRequestException("ID de estudiante requerido");
-    const student = await this.studentRepo.findOne({
-      where: { userId: studentId },
-      relations: ["user", "commission"],
-    });
-    if (!student) throw new NotFoundException("Estudiante no encontrado");
+  private mapAcademicStatusToYears(
+    byYear: Record<string, AcademicStatusRow[]>,
+  ): Array<{
+    year: number;
+    subjects: Array<{
+      id: number | null;
+      name: string;
+      calendarYear: number | null;
+      division: string | null;
+      finalCondition: string | null;
+      lastExamSummary: string | null;
+      hasGrades: boolean;
+    }>;
+  }> {
+    const result: Array<{
+      year: number;
+      subjects: Array<{
+        id: number | null;
+        name: string;
+        calendarYear: number | null;
+        division: string | null;
+        finalCondition: string | null;
+        lastExamSummary: string | null;
+        hasGrades: boolean;
+      }>;
+    }> = [];
 
-    const { user } = student;
+    for (const [label, rows] of Object.entries(byYear ?? {})) {
+      const yearNumber = this.resolveYearNumber(label, rows);
+      const subjects = rows
+        .map((row) => ({
+          id: row.subjectId ?? null,
+          name: row.subjectName ?? "Materia",
+          calendarYear: row.year ?? (yearNumber > 0 ? yearNumber : null),
+          division: row.commissionLetter ?? null,
+          finalCondition: row.condition ?? null,
+          lastExamSummary: this.buildLastExamSummary(row),
+          hasGrades: this.hasGrades(row),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-    // Obtener situación académica para construir los años
-    const academicStatus =
-      await this.catalogsService.getStudentAcademicStatus(studentId);
-
-    // Construir estructura de años con materias
-    const years = [];
-    for (const [yearLabel, subjects] of Object.entries(academicStatus.byYear)) {
-      const yearMatch = yearLabel.match(/\d+/);
-      const yearNumber = yearMatch ? parseInt(yearMatch[0]) : 0;
-
-      years.push({
-        year: yearNumber,
-        subjects: (subjects as any[]).map((s) => ({
-          id: s.subjectId,
-          name: s.subjectName,
-          calendarYear: s.year,
-          division: s.commissionLetter,
-          finalCondition: s.condition,
-          lastExamSummary: this.buildExamSummary(s),
-          hasGrades: this.hasGrades(s),
-        })),
-      });
+      result.push({ year: yearNumber, subjects });
     }
 
-    // Ordenar años
-    years.sort((a, b) => a.year - b.year);
-
-    return {
-      id: studentId,
-      studentId: studentId,
-      firstName: user.name,
-      lastName: user.lastName,
-      fullName: `${user.name} ${user.lastName}`,
-      documentNumber: user.cuil,
-      legajo: student.legajo,
-      studentStartYear: student.studentStartYear,
-      careerPlanName: null,
-      planName: null,
-      registeredSince: student.studentStartYear
-        ? `${student.studentStartYear}-01-01`
-        : null,
-      currentAcademicYear: years.length > 0 ? Math.max(...years.map((y) => y.year)) : null,
-      years,
-    };
+    result.sort((a, b) => a.year - b.year);
+    return result;
   }
 
-  private buildExamSummary(subject: any): string | null {
+  private resolveYearNumber(label: string, rows: AcademicStatusRow[]): number {
+    const explicitYear = rows.find(
+      (r) => typeof r.year === "number" && Number.isFinite(r.year) && r.year > 0,
+    )?.year;
+    if (explicitYear) return explicitYear;
+    const match = label?.match(/\d+/);
+    if (match?.[0]) {
+      const parsed = Number(match[0]);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    return 0;
+  }
+
+  private buildLastExamSummary(row: AcademicStatusRow): string | null {
     const parts: string[] = [];
-    const notes = [subject.note1, subject.note2, subject.note3, subject.note4].filter(
-      (n) => typeof n === "number"
+    const notes = [row.note1, row.note2, row.note3, row.note4].filter(
+      (n): n is number => typeof n === "number",
     );
-    if (notes.length) parts.push(`Parciales: ${notes.join(", ")}`);
-    if (typeof subject.final === "number") parts.push(`Final: ${subject.final}`);
-    if (typeof subject.attendancePercentage === "number")
-      parts.push(`Asist.: ${subject.attendancePercentage}%`);
-    if (subject.condition) parts.push(subject.condition);
-    return parts.length > 0 ? parts.join(" • ") : null;
+    if (notes.length) {
+      parts.push(`Parciales: ${notes.join(", ")}`);
+    }
+    if (typeof row.final === "number") {
+      parts.push(`Final: ${row.final}`);
+    }
+    const attendance = Number(row.attendancePercentage ?? 0);
+    if (!Number.isNaN(attendance) && attendance > 0) {
+      parts.push(`Asist.: ${attendance}%`);
+    }
+    if (row.condition) {
+      parts.push(row.condition);
+    }
+    if (!parts.length) return null;
+    return parts.join(" | ");
   }
 
-  private hasGrades(subject: any): boolean {
-    return (
-      typeof subject.final === "number" ||
-      typeof subject.note1 === "number" ||
-      typeof subject.note2 === "number" ||
-      typeof subject.note3 === "number" ||
-      typeof subject.note4 === "number"
-    );
+  private hasGrades(row: AcademicStatusRow): boolean {
+    const hasNote =
+      [row.note1, row.note2, row.note3, row.note4, row.final].some(
+        (n) => typeof n === "number",
+      );
+    const hasCondition =
+      typeof row.condition === "string" && row.condition.trim().length > 0;
+    return hasNote || hasCondition;
   }
 
-  async getActionContext(studentId: string) {
-    // TODO: Implementar lógica real de ventanas y correlativas
-    // Por ahora devolvemos estructura vacía para evitar 404 en frontend
-    return {
-      courseWindow: null,
-      examWindow: null,
-      correlatives: [],
-      duplicates: [],
-      quotaFull: [],
-    };
+  private resolveCurrentAcademicYear(
+    years: Array<{ year: number; subjects: unknown[] }>,
+    byYear: Record<string, AcademicStatusRow[]>,
+  ): number | null {
+    const numericYears = years
+      .map((y) => y.year)
+      .filter(
+        (y): y is number => y != null && Number.isFinite(y) && y > 0,
+      ) as number[];
+    if (numericYears.length) return Math.max(...numericYears);
+
+    // Fallbacks: intentar leer a��o desde las claves o las filas
+    const parsedFromKeys = Object.keys(byYear ?? {})
+      .map((label) => this.parseYearFromLabel(label))
+      .filter(
+        (y): y is number => y != null && Number.isFinite(y) && y > 0,
+      );
+    if (parsedFromKeys.length) return Math.max(...parsedFromKeys);
+
+    const parsedFromRows: number[] = [];
+    Object.values(byYear ?? {}).forEach((rows) => {
+      rows.forEach((row) => {
+        const candidate = Number(row.year ?? 0);
+        if (Number.isFinite(candidate) && candidate > 0) {
+          parsedFromRows.push(candidate);
+        }
+      });
+    });
+    if (parsedFromRows.length) return Math.max(...parsedFromRows);
+
+    return null;
+  }
+
+  private buildFullName(
+    firstName: string | null | undefined,
+    lastName: string | null | undefined,
+  ): string | null {
+    const parts = [firstName, lastName]
+      .map((value) => (value ?? "").trim())
+      .filter((value) => value.length > 0);
+    if (parts.length) return parts.join(" ");
+    return null;
+  }
+
+  private parseYearFromLabel(label: string | null | undefined): number | null {
+    if (!label) return null;
+    const match = label.match(/\d+/);
+    if (!match?.[0]) return null;
+    const parsed = Number(match[0]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
 }
+
+type AcademicStatusRow = {
+  subjectId: number;
+  subjectName: string;
+  year: number | null;
+  commissionId: number;
+  commissionLetter: string | null;
+  partials: 2 | 4;
+  note1: number | null;
+  note2: number | null;
+  note3: number | null;
+  note4: number | null;
+  final: number | null;
+  attendancePercentage: number;
+  condition: string | null;
+};

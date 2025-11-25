@@ -11,12 +11,14 @@ import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
 import { FinalExam } from "@/entities/finals/final-exam.entity";
 import { Role } from "@/entities/roles/role.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
+import { CareerStudent } from "@/entities/registration/career-student.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User,
       Student,
+      CareerStudent,
       FinalExamsStudent,
       FinalExam,
       Notice,
