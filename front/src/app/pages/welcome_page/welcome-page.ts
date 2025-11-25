@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { QuickAccessComponent } from './quick-access-component/quick-access-component';
 import { ImportantNoticesComponent } from './important-notices/important-notices';
 import { FirstPasswordChangeModalComponent } from '../../shared/components/first-password-change-modal/first-password-change-modal';
-
+import { RoleLabelPipe } from '../../shared/pipes/role-label.pipe';
 @Component({
   selector: 'app-welcome-page',
   standalone: true,
@@ -16,6 +16,7 @@ import { FirstPasswordChangeModalComponent } from '../../shared/components/first
     QuickAccessComponent,
     ImportantNoticesComponent,
     FirstPasswordChangeModalComponent,
+    RoleLabelPipe,
   ],
   templateUrl: './welcome-page.html',
   styleUrls: ['./welcome-page.scss'],

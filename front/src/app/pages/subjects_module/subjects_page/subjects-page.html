@@ -1,12 +1,16 @@
 <div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <h2 class="mb-4">Gestión de Materias</h2>
-  <div class="flex justify-content-end mb-3 gap-3">
+  <div class="surface-card shadow-2 border-round p-3 flex justify-content-between align-content-center ">
+    <div>
+      <h2 class="mb-4">Gestión de Materias</h2>
+    </div>
     <p-button
-      (onClick)="goToCareerInfo()"
-      icon="pi pi-info-circle"
-      label="Informacion de la carrera"
+    (onClick)="goToCareerInfo()"
+    icon="pi pi-info-circle"
+    label="Informacion de la carrera"
     ></p-button>
+  </div>
+    <div class="flex justify-content-end mb-3 gap-3">
     <!-- <p-button
       (onClick)="goToNewSubject()"
       icon="pi pi-plus"

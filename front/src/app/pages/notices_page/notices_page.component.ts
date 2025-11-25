@@ -69,15 +69,6 @@ export class NoticesPageComponent implements OnInit {
     commissionTargets: [],
   };
   selectedCommissionIds: number[] = [];
-  availableYears = signal<number[]>([]);
-  selectedYearNumbers: number[] = [];
-  loadingYears = signal<boolean>(false);
-  yearOptions = computed(() =>
-    this.availableYears().map((year) => ({
-      label: `${year}° año`,
-      value: year,
-    })),
-  );
 
   constructor() {
     effect(() => {
@@ -95,48 +86,9 @@ export class NoticesPageComponent implements OnInit {
       });
     });
     if (this.newNotice.visibleFor === ROLE.STUDENT) {
-      await this.loadAvailableYears();
     }
   }
 
-  async onVisibleForChange() {
-    if (this.newNotice.visibleFor === ROLE.STUDENT) {
-      await this.loadAvailableYears();
-    } else {
-      this.availableYears.set([]);
-      this.selectedYearNumbers = [];
-    }
-  }
-
-  onYearSelectionChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const selectedValues: number[] = [];
-    const available = this.availableYears();
-
-    // Leer los valores seleccionados usando el índice para obtener el valor real del array
-    for (let i = 0; i < select.options.length; i++) {
-      if (select.options[i].selected && i < available.length) {
-        selectedValues.push(available[i]);
-      }
-    }
-    this.selectedYearNumbers = selectedValues;
-  }
-
-  async loadAvailableYears() {
-    this.loadingYears.set(true);
-    try {
-      const careerId = 1;
-      const years = await firstValueFrom(
-        this.catalogs.getCareerYears(careerId),
-      );
-      this.availableYears.set(years);
-    } catch (error) {
-      console.error('Error al cargar años:', error);
-      this.availableYears.set([]);
-    } finally {
-      this.loadingYears.set(false);
-    }
-  }
 
   async addNotice() {
     try {
@@ -147,11 +99,6 @@ export class NoticesPageComponent implements OnInit {
         commissionIds: this.segmentByCommission()
           ? this.selectedCommissionIds
           : undefined,
-        yearNumbers:
-          this.newNotice.visibleFor === ROLE.STUDENT &&
-          this.selectedYearNumbers.length > 0
-            ? this.selectedYearNumbers
-            : undefined,
       });
 
       this.newNotice = {
@@ -161,7 +108,6 @@ export class NoticesPageComponent implements OnInit {
         commissionTargets: [],
       };
       this.selectedCommissionIds = [];
-      this.selectedYearNumbers = [];
     } catch (e: any) {
       alert(String(e?.message ?? 'No se pudo publicar el aviso.'));
     }

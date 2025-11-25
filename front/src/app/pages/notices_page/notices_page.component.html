@@ -25,16 +25,15 @@
       [options]="[
         { label: 'Todos', value: 'all' },
         { label: 'Alumnos', value: 'student' },
-        { label: 'Profesores', value: 'teacher' },
+        { label: 'Docentes', value: 'teacher' },
       ]"
       [(ngModel)]="newNotice.visibleFor"
-      (onChange)="onVisibleForChange()"
       placeholder="Seleccionar destinatarios"
       styleClass="w-full"
     >
     </p-select>
 
-    <div
+    <!-- <div
       class="year-selector"
       *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0"
     >
@@ -51,7 +50,7 @@
       <small>
         Si no seleccionás ningún año se publicará para todos los años.
       </small>
-    </div>
+    </div> -->
 
     <div class="commission-selector" *ngIf="segmentByCommission()">
       <label>Comisiones destino</label>

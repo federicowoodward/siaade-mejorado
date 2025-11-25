@@ -1,20 +1,27 @@
-<div class="card mt-4 bg-white notices p-5 border-round">
+<div class="card bg-white notices p-5 border-round">
   <h3><i class="pi pi-bell text-yellow-500 mr-2"></i> Avisos</h3>
 
-  <ul class="list-none p-0 pt-2">
-    <li *ngFor="let aviso of noticesForHome()" class="mb-3">
-      <p-card>
-        <strong>{{ aviso.title }}</strong>
-        <p-divider class="my-2"></p-divider>
-        <span [innerHTML]="aviso.content"></span>
-        <p-divider class="my-2"></p-divider>
-        <small class="text-gray-500">
-          Publicado por {{ aviso.createdBy }} - {{ aviso.createdAt | date:
-          'dd/MM/yyyy HH:mm' }}
-        </small>
-      </p-card>
-    </li>
-  </ul>
+  <div class="h-full">
+    <ul class="list-none p-0 pt-3">
+      <li *ngFor="let aviso of noticesForHome()" class="mb-3">
+        <div class="surface-card shadow-2 border-round p-3">
+          <h3>{{ aviso.title }}</h3>
+          <div class="py-3">
+            <span [innerHTML]="aviso.content"></span>
+          </div>
+          <div class="flex justify-content-end">
+            <small class="text-gray-500">
+              Publicado por {{ aviso.createdBy }} - {{ aviso.createdAt | date:
+              'dd/MM/yyyy HH:mm' }}
+            </small>
+          </div>
+        </div>
+      </li>
+    </ul>
 
-  <p *ngIf="!noticesForHome().length">No hay avisos para tu rol.</p>
+    <p *ngIf="!noticesForHome().length">No hay avisos para tu rol.</p>
+  </div>
+  <div class="flex justify-content-end align-self-end">
+    <p-button label="Ver todos los avisos" class="mt-3"></p-button>
+  </div>
 </div>

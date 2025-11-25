@@ -1,5 +1,4 @@
 ﻿<div class="m-w-custom">
-  
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="pt-3">
@@ -53,7 +52,7 @@
           <span class="grade-window-status__label">{{ card.label }}</span>
           <p-tag
             [value]="card.status === 'open' ? 'Plazo abierto' : 'Plazo cerrado'"
-            [severity]="card.status === 'open' ? 'success' : 'danger'"
+            severity="secondary"
           ></p-tag>
         </div>
         <small *ngIf="card.closesAt">
@@ -211,9 +210,7 @@
                 </ng-template>
               </p-cellEditor>
             </td>
-            <td class="final-cell" [ngClass]="finalClass(row.final)">
-              {{ row.final ?? '-' }}
-            </td>
+            <td class="final-cell font-bold">{{ row.final ?? '-' }}</td>
             <td class="note-cell" style="width: 6rem">
               <p-cellEditor>
                 <ng-template pTemplate="input">
@@ -247,7 +244,7 @@
               <ng-template #condByEnrollmentTpl>
                 <p-tag
                   [value]="row.enrolled ? 'Inscripto' : 'No inscripto'"
-                  [severity]="row.enrolled ? 'secondary' : 'warn'"
+                  [severity]="row.enrolled ? 'secondary' : 'contrast'"
                 ></p-tag>
               </ng-template>
               <!-- edición de condición reservada a preceptor (si aplica) -->

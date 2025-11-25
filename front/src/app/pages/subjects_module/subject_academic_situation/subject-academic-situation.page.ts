@@ -227,12 +227,12 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       case 'aprobado':
         return 'success';
       case 'regular':
-        return 'info';
+        return 'warn';
       case 'libre':
       case 'desaprobado':
         return 'danger';
       case 'no inscripto':
-        return 'warn';
+        return 'contrast';
       case 'inscripto':
         return 'secondary';
       default:

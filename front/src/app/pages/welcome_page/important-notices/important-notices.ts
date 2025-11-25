@@ -5,10 +5,11 @@ import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE } from '../../../core/auth/roles';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
+import { Button } from 'primeng/button';
 @Component({
   selector: 'app-important-notices',
   standalone: true,
-  imports: [CommonModule, CardModule, DividerModule],
+  imports: [CommonModule, CardModule, DividerModule, Button],
   templateUrl: './important-notices.html',
   styleUrl: './important-notices.scss',
 })

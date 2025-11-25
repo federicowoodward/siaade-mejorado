@@ -1,19 +1,18 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { InputTextModule } from 'primeng/inputtext';
 import { IftaLabelModule } from 'primeng/iftalabel';
 import { SelectModule } from 'primeng/select';
 import { Button } from 'primeng/button';
-import { cloneDeep, isEqual } from 'lodash-es';
-import { Dialog } from 'primeng/dialog';
+import { cloneDeep } from 'lodash-es';
 import { ApiService } from '../../../core/services/api.service';
 import { FieldLabelPipe } from '../../pipes/field-label.pipe';
-import { ToggleButtonModule } from 'primeng/togglebutton';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ArgentinaGeoService } from '../../services/argentina-geo.service';
 import { MessageService } from 'primeng/api';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-personal-data',
@@ -25,10 +24,9 @@ import { MessageService } from 'primeng/api';
     InputTextModule,
     IftaLabelModule,
     SelectModule,
+    TagModule,
     Button,
-    Dialog,
     FieldLabelPipe,
-    ToggleButtonModule,
   ],
   templateUrl: './personal-data-component.html',
   styleUrls: ['./personal-data-component.scss'],
@@ -75,8 +73,10 @@ export class PersonalDataComponent implements OnInit {
 
   // cambios
   original = signal<any>({});
-  showConfirmDialog = signal(false);
-  modifiedFields = signal<string[]>([]);
+  readonly hasChanges = computed(() => {
+    const payload = this.buildChangesPayload();
+    return Object.keys(payload).length > 0;
+  });
 
   async ngOnInit(): Promise<void> {
     // 1) Determinar el ID a usar
@@ -159,39 +159,40 @@ export class PersonalDataComponent implements OnInit {
 
   // ---- UI actions -----------------------------------------------------------
 
-  checkForChanges() {
-    const changes: string[] = [];
-    const compare = (section: any, original: any, pathPrefix = '') => {
-      const keys = new Set<string>([
-        ...Object.keys(section || {}),
-        ...Object.keys(original || {}),
-      ]);
-      for (const key of keys) {
-        if (!isEqual(section?.[key], original?.[key])) {
-          changes.push(`${pathPrefix}${key}`);
-        }
-      }
-    };
-
-    compare(this.userData(), this.original().userData, '');
-    compare(this.userInfo(), this.original().userInfo, '');
-    compare(this.commonData(), this.original().commonData, '');
-    compare(this.addressData(), this.original().addressData, 'Domicilio: ');
-
-    this.modifiedFields.set(changes);
-    this.showConfirmDialog.set(true);
-  }
-
   restoreOriginal() {
     const original = this.original();
     this.userData.set(cloneDeep(original.userData));
     this.userInfo.set(cloneDeep(original.userInfo));
     this.commonData.set(cloneDeep(original.commonData));
     this.addressData.set(cloneDeep(original.addressData));
+    this.activateInputs.set(false);
+  }
+
+  primaryActionLabel(): string {
+    if (!this.activateInputs()) return 'Editar datos';
+    return this.hasChanges() ? 'Guardar cambios' : 'Cancelar edición';
+  }
+
+  onPrimaryAction(): void {
+    if (!this.activateInputs()) {
+      this.activateInputs.set(true);
+      return;
+    }
+
+    if (!this.hasChanges()) {
+      this.restoreOriginal();
+      return;
+    }
+
+    void this.submitChanges();
+  }
+
+  onRestoreClick(): void {
+    if (!this.hasChanges()) return;
+    this.restoreOriginal();
   }
 
   async submitChanges(): Promise<void> {
-    this.showConfirmDialog.set(false);
     const payload = this.buildChangesPayload();
     if (!Object.keys(payload).length) {
       this.messages.add({
@@ -216,6 +217,7 @@ export class PersonalDataComponent implements OnInit {
       await this.loadProfileFromApi(this.userId);
       this.snapshotOriginal();
       await this.initializeGeoSelectors();
+      this.activateInputs.set(false);
     } catch (error: any) {
       this.messages.add({
         severity: 'error',
@@ -244,7 +246,6 @@ export class PersonalDataComponent implements OnInit {
     return this.roleLabels[role] || (role ? role : 'Alumno');
   }
 
-
   async onProvinceChange(value: string | null): Promise<void> {
     this.addressData().province = value ?? '';
     this.addressData().neighborhood = '';
@@ -261,7 +262,10 @@ export class PersonalDataComponent implements OnInit {
     this.addressData().locality = '';
     this.localityOptions.set([]);
     if (value || this.addressData().province) {
-      await this.loadLocalities(this.addressData().province, value ?? undefined);
+      await this.loadLocalities(
+        this.addressData().province,
+        value ?? undefined,
+      );
     }
   }
 
@@ -316,11 +320,7 @@ export class PersonalDataComponent implements OnInit {
   private buildChangesPayload(): Record<string, any> {
     const changes: Record<string, any> = {};
     const original = this.original();
-    const assign = (
-      key: string,
-      current: any,
-      previous: any,
-    ): void => {
+    const assign = (key: string, current: any, previous: any): void => {
       const next = this.normalizeForPayload(current);
       const prev = this.normalizeForPayload(previous);
       if (next !== prev) {
@@ -344,7 +344,11 @@ export class PersonalDataComponent implements OnInit {
       origInfo.documentValue,
     );
     assign('userInfo.phone', info.phone, origInfo.phone);
-    assign('userInfo.emergencyName', info.emergencyName, origInfo.emergencyName);
+    assign(
+      'userInfo.emergencyName',
+      info.emergencyName,
+      origInfo.emergencyName,
+    );
     assign(
       'userInfo.emergencyPhone',
       info.emergencyPhone,
@@ -410,4 +414,3 @@ export class PersonalDataComponent implements OnInit {
     return 'Intenta nuevamente en unos minutos.';
   }
 }
-

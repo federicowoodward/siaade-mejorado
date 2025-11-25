@@ -94,7 +94,6 @@
               <th>Materia</th>
               <th>Curso</th>
               <th>Cond. Final</th>
-              <th>Examen/es</th>
               <th class="text-center">Acción</th>
             </tr>
           </ng-template>
@@ -109,9 +108,6 @@
                   [value]="row.finalCondition || 'Sin estado'"
                   [severity]="stateSeverity(row.finalCondition)"
                 ></p-tag>
-              </td>
-              <td>
-                <span class="text-sm">{{ row.examsText }}</span>
               </td>
               <td class="text-center">
                 <div class="status-actions">

@@ -1,44 +1,29 @@
 <div class="mesas-wrapper m-w-custom flex flex-column gap-3 pt-4">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
+  <div class="flex flex-column gap-1 surface-card p-3 border-round shadow-2">
+    <h2 class="m-0">Inscripción a Examen</h2>
+    <p class="m-0 text-500">Seleccioná la materia para revisar inscribirte.</p>
+  </div>
+
   <div
     class="course-card border-round surface-card shadow-2 p-3 flex flex-column gap-3"
   >
-    <div
-      class="flex justify-content-between align-items-start flex-wrap gap-3 mb-2"
-    >
-      <div class="flex flex-column gap-1">
-        <h2 class="m-0">Inscripción a Examen</h2>
-        <p class="m-0 text-500">
-          Seleccioná la materia para revisar inscribirte.
-        </p>
-      </div>
+    <div class="flex justify-content-between gap-3 mb-2">
+      <ng-container *ngIf="rows.length">
+        <h3>Turno actual: {{ rows[0]!.window.label }}</h3>
+      </ng-container>
 
-      <div class="flex align-items-center gap-2 flex-wrap">
-        <p-button
-          label="Actualizar"
-          icon="pi pi-refresh"
-          severity="secondary"
-          styleClass="p-button-outlined"
-          (onClick)="onReloadClick()"
-        ></p-button>
-      </div>
+      <p-button
+        label="Actualizar"
+        icon="pi pi-refresh"
+        severity="secondary"
+        styleClass="p-button-outlined"
+        (onClick)="onReloadClick()"
+      ></p-button>
     </div>
 
     <div class="pt-2 flex flex-column gap-3">
-      <ng-container *ngIf="rows.length">
-        <span
-          class="window-label"
-          [ngClass]="{
-            'window-label--success': rows[0]!.window.state === 'open',
-            'window-label--info': rows[0]!.window.state === 'upcoming',
-            'window-label--danger': rows[0]!.window.state === 'past',
-          }"
-        >
-          Turno actual: {{ rows[0]!.window.label }}
-        </span>
-      </ng-container>
-
       <p-table
         class="mesas-table p-datatable-sm p-datatable-gridlines"
         [value]="rows"
@@ -98,7 +83,7 @@
                 <p-button
                   *ngIf="!row.isEnrolled; else enrolledActions"
                   label="Inscribirse"
-                  icon="pi pi-check"
+                  icon="pi pi-user-plus"
                   severity="success"
                   class="cta-button"
                   [disabled]="!canEnroll(row) || loading"
@@ -160,7 +145,6 @@
           *ngIf="hasEnrollments"
           label="Imprimir comprobante"
           icon="pi pi-file-pdf"
-          severity="help"
           [disabled]="loading"
           (onClick)="onPrintLastReceipt()"
         ></p-button>
