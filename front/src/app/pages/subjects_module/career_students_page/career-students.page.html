@@ -1,10 +1,10 @@
-﻿<div class="m-w-custom">
+<div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="surface-card border-round p-4 mb-4">
     <h2 class="m-0">Alumnos de la carrera</h2>
     <p class="m-0 text-color-secondary">
-      Administrá el acceso y estado de los estudiantes inscriptos en la carrera.
+      Administra el acceso y estado de los estudiantes inscriptos en la carrera.
     </p>
   </div>
 
@@ -45,11 +45,11 @@
                 type="number"
                 [ngModel]="year()"
                 (ngModelChange)="year.set($event ? +$event : null)"
-                placeholder="AÃ±o ingreso (ej: 2026)"
+                placeholder="A��o ingreso (ej: 2026)"
                 style="width: 12rem"
               />
               <p-button
-                label="Aplicar aÃ±o"
+                label="Aplicar a��o"
                 icon="pi pi-filter"
                 (onClick)="onApplyYearFilter()"
                 [disabled]="loading()"
@@ -63,9 +63,7 @@
             <th>Comision</th>
             <th>Alumno</th>
             <th>Email</th>
-            <th>Acceso</th>
-            <th *appCanAnyRole="[ROLE.SECRETARY]">Estado</th>
-            <th style="width: 6rem">Acciones</th>
+            <th style="width: 12rem">Acciones</th>
           </tr>
         </ng-template>
 
@@ -74,42 +72,6 @@
             <td>{{ row.commissionLetter || row.commissionId }}</td>
             <td>{{ row.user.name }}</td>
             <td>{{ row.user.email }}</td>
-            <td>
-              <p-togglebutton
-                [ngModel]="row.canLogin === true"
-                (ngModelChange)="onToggleCanLogin(row, !!$event)"
-                [disabled]="saving() || showReasonDialog() || row.isActive === false"
-                [disableIfUnauthorized]="[ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]"
-                onLabel="Habilitado"
-                offLabel="Bloqueado"
-                [onIcon]="'pi pi-lock-open'"
-                [offIcon]="'pi pi-lock'"
-                class="w-8rem text-sm"
-                [ngClass]="(row.canLogin ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
-                ariaLabel="Cambiar acceso"
-              ></p-togglebutton>
-              <div
-                class="mt-1 text-xs text-color-secondary"
-                *ngIf="row.isActive === false"
-              >
-                Inactivo: acceso bloqueado
-              </div>
-            </td>
-            <td *appCanAnyRole="[ROLE.SECRETARY]">
-              <p-togglebutton
-                [ngModel]="row.isActive !== false"
-                (onChange)="onToggleIsActive(row, !!$event.checked)"
-                [disabled]="saving()"
-                [disableIfUnauthorized]="[ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]"
-                onLabel="Activo"
-                offLabel="Inactivo"
-                [onIcon]="'pi pi-check'"
-                [offIcon]="'pi pi-times'"
-                class="w-8rem text-sm"
-                [ngClass]="((row.isActive !== false) ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
-                ariaLabel="Cambiar estado"
-              ></p-togglebutton>
-            </td>
             <td class="text-center">
               <button
                 pButton
@@ -125,43 +87,4 @@
       </p-table>
     </div>
   </ng-template>
-  <!-- DiÃ¡logo para motivo de bloqueo del acceso -->
-  <p-dialog
-    header="Motivo del bloqueo"
-    [visible]="showReasonDialog()"
-    (visibleChange)="showReasonDialog.set($event)"
-    [modal]="true"
-    [style]="{ width: '28rem' }"
-    [closable]="!saving()"
-    [dismissableMask]="true"
-    (onHide)="onReasonDialogHide()"
-  >
-    <div class="flex flex-column gap-2">
-      <span class="text-sm text-color-secondary">
-        PodÃ©s ingresar un motivo para el bloqueo (opcional). Si lo dejÃ¡s
-        vacÃ­o, se bloquearÃ¡ igual.
-      </span>
-      <textarea
-        class="p-inputtext w-full"
-        rows="4"
-        [ngModel]="reasonDraft()"
-        (ngModelChange)="reasonDraft.set($event)"
-        placeholder="Motivo del bloqueo (opcional)..."
-      ></textarea>
-      <div class="flex justify-content-end gap-2 mt-2">
-        <p-button
-          label="Cancelar"
-          class="p-button-text"
-          (onClick)="cancelBlockAccess()"
-          [disabled]="saving()"
-        ></p-button>
-        <p-button
-          label="Bloquear"
-          icon="pi pi-lock"
-          (onClick)="confirmBlockAccessWithReason()"
-          [disabled]="saving()"
-        ></p-button>
-      </div>
-    </div>
-  </p-dialog>
 </div>

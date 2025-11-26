@@ -5,18 +5,27 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true,
 })
 export class FieldLabelPipe implements PipeTransform {
-  private fieldMap: Record<string, string> = {
+  private baseMap: Record<string, string> = {
+    // user
+    role: 'Rol',
     name: 'Nombre',
     lastName: 'Apellido',
     email: 'Correo electrónico',
     cuil: 'CUIL',
+    password: 'Contraseña',
+
+    // user_info / comunes
     documentType: 'Tipo de documento',
     documentValue: 'Número de documento',
     phone: 'Teléfono',
     emergencyName: 'Nombre contacto emergencia',
     emergencyPhone: 'Teléfono emergencia',
+
+    // common_data
     sex: 'Sexo',
     birthDate: 'Fecha de nacimiento',
+
+    // dirección
     street: 'Calle',
     number: 'Número',
     floor: 'Piso',
@@ -25,10 +34,43 @@ export class FieldLabelPipe implements PipeTransform {
     locality: 'Localidad',
     province: 'Provincia',
     postalCode: 'Código Postal',
-    password: 'Contraseña',
+
+    // roleExtras (para student / secretary)
+    legajo: 'Legajo',
+    canLogin: 'Puede iniciar sesión',
+    isActive: 'Activo',
+    studentStartYear: 'Año de inicio',
+    isDirective: 'Es directivo',
   };
 
-  transform(fieldKey: string): string {
-    return this.fieldMap[fieldKey] || fieldKey;
+  private roleMap: Record<string, string> = {
+    student: 'Alumno',
+    teacher: 'Docente',
+    preceptor: 'Preceptor',
+    secretary: 'Secretaría',
+  };
+
+  transform(fieldKey: string, value?: unknown): string {
+    let key = fieldKey;
+
+    // Remover prefijos como "user.role", "common_data.sex", "roleExtras.legajo"
+    if (key.includes('.')) {
+      key = key.split('.').pop() as string;
+    }
+
+    // Si el pipe se usa para mostrar el VALOR (cuando lo llamás con el segundo arg)
+    if (value !== undefined) {
+      // Rol con traducción
+      if (key === 'role' && typeof value === 'string') {
+        return this.roleMap[value] || value;
+      }
+
+      // Booleanos
+      if (value === true) return 'Sí';
+      if (value === false) return 'No';
+    }
+
+    // Si es un label
+    return this.baseMap[key] || key;
   }
 }

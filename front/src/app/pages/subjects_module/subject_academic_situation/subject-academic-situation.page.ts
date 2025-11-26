@@ -36,7 +36,6 @@ import {
 } from './subject-academic-situation.types';
 import { SubjectMoveCommissionDialog } from './subject-move-commission.dialog';
 import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
-import { environment } from '../../../../environments/environment';
 import {
   computeFinalForRow as computeFinalForRowUtil,
   finalClass as finalClassUtil,
@@ -493,7 +492,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           const all = rowsWithComputedFinal;
           this.allRows.set(all);
           this.totalRecords.set(all.length);
-          const placeholders = Array.from({ length: all.length }) as AcademicSituationRow[];
+          const placeholders = Array.from({
+            length: all.length,
+          }) as AcademicSituationRow[];
           this.virtualRows.set(placeholders);
           this.onLazyLoad({ first: 0, rows: this.pageSize });
           this.clonedRows.clear();
@@ -524,7 +525,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     });
     this.allRows.update((rows) =>
       rows.map((row) =>
-        row.studentId === normalized.studentId ? { ...row, ...normalized } : row,
+        row.studentId === normalized.studentId
+          ? { ...row, ...normalized }
+          : row,
       ),
     );
     this.virtualRows.update((rows) =>
@@ -555,7 +558,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.syncRow(original);
   }
 
-  private buildSingleRowPayload(row: AcademicSituationRow): CommissionPayloadRow {
+  private buildSingleRowPayload(
+    row: AcademicSituationRow,
+  ): CommissionPayloadRow {
     const payload: CommissionPayloadRow = {
       studentId: row.studentId,
       note1: row.note1 ?? null,
@@ -746,10 +751,3 @@ type CommissionPayloadRow = {
   percentage: number;
   final: number | null;
 };
-
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
+import { SelectModule } from 'primeng/select';
 
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -29,14 +30,16 @@ import {
   canCreateBase,
   canCreateStep2,
 } from '../../../shared/utils/create-user/user-validators.util';
-import { PermissionService } from '../../../core/auth/permission.service';
-import { ROLE } from '../../../core/auth/roles';
 import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { IftaLabelModule } from 'primeng/iftalabel';
+import { ArgentinaGeoService } from '../../../shared/services/argentina-geo.service';
+import { firstValueFrom } from 'rxjs';
 
 type PreviewRow = { field: string; value: string };
+type RoleOption = { label: string; value: UserRole };
 @Component({
   selector: 'app-create-user-page',
   standalone: true,
@@ -49,19 +52,20 @@ type PreviewRow = { field: string; value: string };
     InputTextModule,
     AutoCompleteModule,
     TooltipModule,
+    SelectModule,
     TableModule,
     FieldLabelPipe,
-    RoleLabelPipe,
     BlockedActionDirective,
+    IftaLabelModule,
   ],
   templateUrl: './create-user-page.html',
   styleUrl: './create-user-page.scss',
 })
-export class CreateUserPage {
+export class CreateUserPage implements OnInit {
   private goBackSvc = inject(GoBackService);
   private api = inject(ApiService);
   private router = inject(Router);
-  private permissions = inject(PermissionService);
+  private geo = inject(ArgentinaGeoService);
 
   isCreating = false;
 
@@ -104,45 +108,32 @@ export class CreateUserPage {
   addressLocality = '';
   addressProvince = '';
   addressPostalCode = '';
+  addressNeighborhood = '';
+
+  // opciones de selects (alineadas con PersonalDataComponent)
+  readonly docTypeOptions = [
+    { label: 'DNI', value: 'DNI' },
+    { label: 'Pasaporte', value: 'Pasaporte' },
+    { label: 'CUIT', value: 'CUIT' },
+    { label: 'Libreta Civica', value: 'Libreta Civica' },
+    { label: 'Libreta de Enrolamiento', value: 'Libreta de Enrolamiento' },
+  ];
+
+  readonly sexOptions = [
+    { label: 'Femenino', value: 'Femenino' },
+    { label: 'Masculino', value: 'Masculino' },
+    { label: 'Prefiero no decirlo', value: 'Prefiero no decirlo' },
+  ];
+
+  provinceOptions: { label: string; value: string }[] = [];
+  departmentOptions: { label: string; value: string }[] = [];
+  localityOptions: { label: string; value: string }[] = [];
 
   // extras de alumno
   studentLegajo = '';
   studentStartYear: number | null = null; // opcional
   canLogin = true;
   isActive = true;
-
-  // Permisos por rol para editar flags
-  get canEditCanLogin(): boolean {
-    // Preceptor y superiores (incluye secretario común y ejecutivo)
-    return this.permissions.hasAnyRole([
-      ROLE.PRECEPTOR,
-      ROLE.SECRETARY,
-      ROLE.EXECUTIVE_SECRETARY,
-    ]);
-  }
-
-  get canEditIsActive(): boolean {
-    // Secretaría (incluye Secretario y Secretario Admin)
-    return this.permissions.hasAnyRole([
-      ROLE.SECRETARY,
-      ROLE.EXECUTIVE_SECRETARY,
-    ]);
-  }
-
-  // Si el alumno no está activo o el rol no lo permite, no puede loguearse: reflejar en UI
-  get canLoginDisabled(): boolean {
-    const inactive = this.role === 'student' && this.isActive === false;
-    const noPerms = !this.canEditCanLogin;
-    return inactive || noPerms;
-  }
-
-  onIsActiveChange(next: boolean): void {
-    if (!this.canEditIsActive) return; // sin permisos, ignorar
-    this.isActive = !!next;
-    if (this.isActive === false) {
-      this.canLogin = false; // override visual y de payload
-    }
-  }
 
   private addressObj() {
     return {
@@ -221,8 +212,8 @@ export class CreateUserPage {
           this.role === 'student' && this.studentStartYear
             ? this.studentStartYear
             : undefined,
-        canLogin: this.role === 'student' ? this.canLogin : undefined,
-        isActive: this.role === 'student' ? this.isActive : undefined,
+        canLogin: true,
+        isActive: true,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
@@ -252,8 +243,8 @@ export class CreateUserPage {
           ? {
               legajo: this.studentLegajo || this.cuil || this.documentValue,
               studentStartYear: this.studentStartYear || undefined,
-              canLogin: this.canLogin,
-              isActive: this.isActive,
+              canLogin: true,
+              isActive: true,
             }
           : this.role === 'secretary'
             ? { isDirective: true }
@@ -285,18 +276,24 @@ export class CreateUserPage {
   }
 
   // ---- SUGERENCIAS / LISTAS ----
-  private rolesAll: UserRole[] = [
-    'student',
-    'teacher',
-    'preceptor',
-    'secretary',
+  private readonly roleOptions: RoleOption[] = [
+    { value: 'student', label: 'Alumno' },
+    { value: 'teacher', label: 'Docente' },
+    { value: 'preceptor', label: 'Preceptor' },
+    { value: 'secretary', label: 'Secretaría' },
   ];
-  roleSuggestions: UserRole[] = [];
+  roleSuggestions: RoleOption[] = [];
 
-  private docTypesAll: string[] = ['DNI', 'Pasaporte', 'LE', 'LC'];
+  private docTypesAll: string[] = [
+    'DNI',
+    'Pasaporte',
+    'CUIT',
+    'Libreta Civica',
+    'Libreta de Enrolamiento',
+  ];
   docTypeSuggestions: string[] = [];
 
-  private sexesAll: string[] = ['F', 'M', 'X'];
+  private sexesAll: string[] = ['Femenino', 'Masculino', 'Prefiero no decirlo'];
   sexSuggestions: string[] = [];
 
   // ---- HELPERS ----
@@ -308,7 +305,18 @@ export class CreateUserPage {
 
   // ---- MÉTODOS PARA p-autoComplete ----
   searchRoles(e: { query: string }) {
-    this.roleSuggestions = this.filterContains(this.rolesAll, e?.query);
+    const q = (e?.query ?? '').toLowerCase().trim();
+
+    if (!q) {
+      this.roleSuggestions = [...this.roleOptions];
+      return;
+    }
+
+    this.roleSuggestions = this.roleOptions.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        opt.value.toLowerCase().includes(q),
+    );
   }
 
   searchDocTypes(e: { query: string }) {
@@ -317,5 +325,80 @@ export class CreateUserPage {
 
   searchSex(e: { query: string }) {
     this.sexSuggestions = this.filterContains(this.sexesAll, e?.query);
+  }
+
+  // ---- Ciclo de vida / geo-selectores ----
+  async ngOnInit(): Promise<void> {
+    await this.initializeGeoSelectors();
+  }
+
+  private async initializeGeoSelectors(): Promise<void> {
+    await this.loadProvinces();
+    const province = this.addressProvince;
+    if (province) {
+      await this.loadDepartments(province);
+      const department = this.addressNeighborhood || undefined;
+      await this.loadLocalities(province, department);
+    }
+  }
+
+  private async loadProvinces(): Promise<void> {
+    try {
+      const options = await firstValueFrom(this.geo.getProvinces());
+      this.provinceOptions = options;
+    } catch (error) {
+      console.error('No se pudieron cargar provincias', error);
+    }
+  }
+
+  private async loadDepartments(province: string): Promise<void> {
+    try {
+      const options = await firstValueFrom(
+        this.geo.getDepartments(province || ''),
+      );
+      this.departmentOptions = options;
+    } catch (error) {
+      console.error('No se pudieron cargar departamentos', error);
+      this.departmentOptions = [];
+    }
+  }
+
+  private async loadLocalities(
+    province: string,
+    department?: string,
+  ): Promise<void> {
+    try {
+      const options = await firstValueFrom(
+        this.geo.getLocalities(province || '', department),
+      );
+      this.localityOptions = options;
+    } catch (error) {
+      console.error('No se pudieron cargar localidades', error);
+      this.localityOptions = [];
+    }
+  }
+
+  async onProvinceChange(value: string | null): Promise<void> {
+    this.addressProvince = value ?? '';
+    this.addressNeighborhood = '';
+    this.addressLocality = '';
+    this.departmentOptions = [];
+    this.localityOptions = [];
+    if (value) {
+      await this.loadDepartments(value);
+    }
+  }
+
+  async onDepartmentChange(value: string | null): Promise<void> {
+    this.addressNeighborhood = value ?? '';
+    this.addressLocality = '';
+    this.localityOptions = [];
+    if (value || this.addressProvince) {
+      await this.loadLocalities(this.addressProvince, value ?? undefined);
+    }
+  }
+
+  async onLocalityChange(value: string | null): Promise<void> {
+    this.addressLocality = value ?? '';
   }
 }
