@@ -1,40 +1,12 @@
 .quick-access {
-  display: grid;
-  grid-template-columns: 1fr;
-  align-items: stretch;
-  gap: 1.25rem;
-  width: 100%;
-
-  > .col-12 {
-    padding: 0;
-  }
-
-  .quick-card {
-    height: 100%;
-  }
-
-  ::ng-deep .p-card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
-
   ::ng-deep .p-card-header {
     display: flex;
     justify-content: center;
     align-items: center;
     padding-top: 1.5rem;
   }
-  
+
   ::ng-deep .p-card-body {
     padding-top: 0 !important;
-  }
-  
-}
-
-@media (min-width: 992px) {
-  .quick-access {
-    grid-template-columns: repeat(3, 1fr);
   }
 }
