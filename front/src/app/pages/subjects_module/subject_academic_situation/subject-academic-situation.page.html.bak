@@ -1,5 +1,12 @@
-﻿<div class="m-w-custom">
+<div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+
+  <div class="flex justify-content-between align-items-center mb-3">
+
+    <div class="flex flex-column align-items-end gap-1">
+      <p-button label="Recargar datos" icon="pi pi-refresh" [disabled]="loading()" (onClick)="onReload()"></p-button>
+    </div>
+  </div>
 
   <div class="flex  justify-content-between align-items-center surface-card border-round p-4">
     <div>
@@ -13,20 +20,24 @@
           <p-tag [value]="card.status === 'open' ? 'Plazo abierto' : 'Plazo cerrado'" severity="secondary"></p-tag>
         </div>
         <small *ngIf="card.closesAt">
-          {{ card.status === 'open' ? 'Cierra' : 'Cerró' }}: {{ card.closesAt | date: 'dd/MM/yyyy' }}
+          {{ card.status === 'open' ? 'Cierra' : 'Cerr�' }}: {{ card.closesAt |
+          date: 'dd/MM/yyyy' }}
         </small>
       </div>
     </div>
   </div>
 
-  <div *ngIf="error()" class="error">
-    {{ error() }}
-  </div>
 
-  <ng-container *ngIf="!error()">
+
+  <ng-template #loadedTpl>
+    <div *ngIf="error(); else contentTpl" class="error">{{ error() }}</div>
+  </ng-template>
+
+  <ng-template #contentTpl>
     <div class="window-notice" *ngIf="teacherWindowNotice() as notice">
       {{ notice }}
     </div>
+
 
     <div class="table-container">
       <p-table #dt [value]="virtualRows()" dataKey="studentId" editMode="row" responsiveLayout="scroll"
@@ -39,8 +50,6 @@
             <div class="flex gap-2">
               <p-button label="Limpiar filtros" [outlined]="true" icon="pi pi-filter-slash"
                 (onClick)="clearFilters(dt)"></p-button>
-              <p-button label="Sincronizar" icon="pi pi-refresh" [disabled]="loading()"
-                (onClick)="onReload()"></p-button>
             </div>
 
             <div class="flex gap-3 align-items-center">
@@ -56,14 +65,14 @@
           <!-- prettier-ignore -->
           <tr>
             <th pTooltip="Alumno" tooltipPosition="top" appendTo="body">Alumno</th>
-            <th pTooltip="Comisión" tooltipPosition="top" appendTo="body">Com.</th>
-            <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N° 1</th>
-            <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N° 2</th>
-            <th *ngIf="partials() === 4" pTooltip="Nota 3" tooltipPosition="top" appendTo="body">N° 3</th>
-            <th *ngIf="partials() === 4" pTooltip="Nota 4" tooltipPosition="top" appendTo="body">N° 4</th>
+            <th pTooltip="Comisi�n" tooltipPosition="top" appendTo="body">Com.</th>
+            <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N� 1</th>
+            <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N� 2</th>
+            <th *ngIf="partials() === 4" pTooltip="Nota 3" tooltipPosition="top" appendTo="body">N� 3</th>
+            <th *ngIf="partials() === 4" pTooltip="Nota 4" tooltipPosition="top" appendTo="body">N� 4</th>
             <th pTooltip="Nota final" tooltipPosition="top" appendTo="body">Final</th>
             <th pTooltip="Asistencia" tooltipPosition="top" appendTo="body">Asist.</th>
-            <th pTooltip="Condición" tooltipPosition="top" appendTo="body">Cond.</th>
+            <th pTooltip="Condici�n" tooltipPosition="top" appendTo="body">Cond.</th>
             <th pTooltip="Acciones" tooltipPosition="top" appendTo="body" style="width:10rem">Acc.</th>
           </tr>
           <!-- prettier-ignore-end -->
@@ -222,5 +231,5 @@
       [currentCommissionId]="moveDialog().currentCommissionId" [options]="moveCommissionOptions()"
       [disableMove]="moveDialog().loading" (cancel)="closeMoveDialog()"
       (confirm)="confirmMoveCommission($event)"></app-subject-move-commission-dialog>
-  </ng-container>
+  </ng-template>
 </div>
