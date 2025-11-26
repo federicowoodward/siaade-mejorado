@@ -1,31 +1,40 @@
 <!-- Banner principal -->
-<div class="banner h-10rem flex align-items-center px-4 md:px-6 bg-primary text-black">
+<div
+  class="banner h-10rem flex align-items-center px-4 md:px-6 bg-primary text-black"
+>
   <div class="flex align-items-center gap-3">
     <div class="custom-color-text">
       <h1 class="text-4xl font-bold">Instituto Cura Gabriel Brochero</h1>
-      <p class="text-xl opacity-80">Gestion simple, acceso rapido</p>
+      <p class="text-xl opacity-80">Gestión simple, acceso rápido</p>
     </div>
   </div>
   <div class="ml-auto text-right"></div>
 </div>
 
-<div class="surface-card p-4 border-round shadow-2 mx-6 mt-4">
+<div class="surface-card p-4 border-round shadow-2 mx-4 lg:mx-6 mt-4">
   <h2 class="mb-2 text-2xl font-semibold">
     Bienvenido, {{ (userRole() || 'usuario') | roleLabel }}
   </h2>
 
   <p class="text-gray-500">
-    Aqui encontraras tus accesos rapidos e informacion importante.
+    Aquí encontrarás tus accesos rápidos e información importante.
   </p>
 </div>
 
-<div class="mx-4 md:mx-6 mt-4">
-  <app-quick-access></app-quick-access>
+<!-- CONTENEDOR 50/50 DESKTOP — 1 COL MOBILE -->
+<div class="grid grid-nogutter mt-4">
+  <!-- Quick Access -->
+  <div class="col-12 md:col-6 p-4 md:pr-0 pt-0 lg:px-6">
+    <app-quick-access></app-quick-access>
+  </div>
+
+  <!-- Important Notices -->
+  <div class="col-12 md:col-6 px-4 pt-0 lg:px-6">
+    <app-important-notices></app-important-notices>
+  </div>
 </div>
 
-<div class="mx-4 md:mx-6 mt-4">
-  <app-important-notices></app-important-notices>
-</div>
-
-<!-- Modal de cambio de contrasena obligatorio -->
-<app-first-password-change-modal *ngIf="showPasswordChangeModal()"></app-first-password-change-modal>
+<!-- Modal de cambio de contraseña obligatorio -->
+<app-first-password-change-modal
+  *ngIf="showPasswordChangeModal()"
+></app-first-password-change-modal>
