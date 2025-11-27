@@ -20,14 +20,15 @@
       ></p-button>
     </div>
   </div>
-
-  <app-users-table
-    [viewerRole]="viewerRole ?? ROLE.STUDENT"
-    [context]="'default'"
-    [rows]="rows()"
-    (rowAction)="onRowAction($event)"
-    (rowClick)="onRowClick($event)"
-  />
+  <div class="surface-card border-round p-1">
+    <app-users-table
+      [viewerRole]="viewerRole ?? ROLE.STUDENT"
+      [context]="'default'"
+      [rows]="rows()"
+      (rowAction)="onRowAction($event)"
+      (rowClick)="onRowClick($event)"
+    />
+  </div>
 
   <!-- Estado rápido de acceso/actividad del usuario seleccionado -->
   <div class="surface-card border-round p-3 mt-3" *ngIf="selectedUserId()">
