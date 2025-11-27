@@ -1,4 +1,11 @@
-import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { InputTextModule } from 'primeng/inputtext';
@@ -72,10 +79,11 @@ export class PersonalDataComponent implements OnInit {
 
   // cambios
   original = signal<any>({});
-  readonly hasChanges = computed(() => {
+
+  hasChanges(): boolean {
     const payload = this.buildChangesPayload();
     return Object.keys(payload).length > 0;
-  });
+  }
 
   async ngOnInit(): Promise<void> {
     // 1) Determinar el ID a usar

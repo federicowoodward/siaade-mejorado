@@ -65,7 +65,7 @@ export class CatalogsService {
     @InjectRepository(StudentSubjectProgress)
     private readonly studentSubjectProgressRepo: Repository<StudentSubjectProgress>,
     @InjectRepository(FinalExamsStudent)
-    private readonly finalExamsStudentRepo: Repository<FinalExamsStudent>,
+    private readonly finalExamsStudentRepo: Repository<FinalExamsStudent>
   ) {}
 
   findAcademicPeriods(opts?: { skip?: number; take?: number }) {
@@ -277,7 +277,7 @@ export class CatalogsService {
 
   async findCareerStudentsByCommission(
     careerId: number,
-    opts?: { studentStartYear?: number },
+    opts?: { studentStartYear?: number }
   ) {
     const career = await this.careerRepo.findOne({
       where: { id: careerId },
@@ -323,6 +323,7 @@ export class CatalogsService {
             name: string;
             lastName: string;
             email: string;
+            cuil: string | null;
           };
         }>;
       }
@@ -354,6 +355,7 @@ export class CatalogsService {
           name: student.user?.name ?? "",
           lastName: student.user?.lastName ?? "",
           email: student.user?.email ?? "",
+          cuil: student.user?.cuil ?? null,
         },
       });
     }
@@ -382,7 +384,7 @@ export class CatalogsService {
   }
 
   async getSubjectCommissionTeachers(
-    subjectId: number,
+    subjectId: number
   ): Promise<SubjectCommissionTeachersDto> {
     const subject = await this.subjectRepo.findOne({
       where: { id: subjectId },
@@ -431,7 +433,7 @@ export class CatalogsService {
         const teacherId = teacher.userId;
         if (!entry.teachers.some((t) => t.teacherId === teacherId)) {
           const nameParts = [user?.name, user?.lastName].filter(
-            (part): part is string => Boolean(part),
+            (part): part is string => Boolean(part)
           );
           entry.teachers.push({
             teacherId,
@@ -494,7 +496,7 @@ export class CatalogsService {
     return teachers.map((t) => {
       const user = t.user;
       const nameParts = [user?.name, user?.lastName].filter(
-        (p): p is string => !!p,
+        (p): p is string => !!p
       );
       return {
         teacherId: t.userId,
@@ -522,7 +524,7 @@ export class CatalogsService {
       });
       if (!commission) {
         throw new NotFoundException(
-          `Commission with id ${commissionId} was not found`,
+          `Commission with id ${commissionId} was not found`
         );
       }
       return { commission, subjects: [] };
@@ -700,7 +702,7 @@ export class CatalogsService {
 
     // Ordenar materias dentro de cada año por nombre
     Object.values(byYear).forEach((arr) =>
-      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)),
+      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
     );
 
     return { byYear };
@@ -741,7 +743,7 @@ export class CatalogsService {
 
     if (!student) {
       throw new NotFoundException(
-        `El usuario ${studentId} no es un estudiante o no existe.`,
+        `El usuario ${studentId} no es un estudiante o no existe.`
       );
     }
 
@@ -780,7 +782,7 @@ export class CatalogsService {
       where: { studentId },
       relations: ["status"],
     });
-    
+
     const progressMap = new Map<number, any>();
     for (const p of progressList) {
       progressMap.set(p.subjectCommissionId, p);
@@ -789,7 +791,7 @@ export class CatalogsService {
     // Elegir una fila por materia (si hubiera más de una comisión, tomamos la primera por id)
     // Prioridad: Vista (tiene notas) > Raw (solo inscripción)
     const bySubject = new Map<number, any>();
-    
+
     // 1. Cargar desde la vista y enriquecer con progressMap
     for (const row of viewRows) {
       if (!bySubject.has(row.subjectId)) {
@@ -801,11 +803,11 @@ export class CatalogsService {
           row.note2 = partials["2"] ? Number(partials["2"]) : row.note2;
           row.note3 = partials["3"] ? Number(partials["3"]) : row.note3;
           row.note4 = partials["4"] ? Number(partials["4"]) : row.note4;
-          
-          row.attendancePercentage = progress.attendancePercentage 
-            ? String(progress.attendancePercentage) 
+
+          row.attendancePercentage = progress.attendancePercentage
+            ? String(progress.attendancePercentage)
             : row.attendancePercentage;
-            
+
           if (progress.status?.name) {
             row.condition = progress.status.name;
           }
@@ -820,7 +822,7 @@ export class CatalogsService {
         // Buscar si hay progreso asociado
         let progress = null;
         if (enrollment.commissionId) {
-           progress = progressMap.get(enrollment.commissionId);
+          progress = progressMap.get(enrollment.commissionId);
         }
 
         const partials = progress?.partialScores || {};
@@ -828,15 +830,18 @@ export class CatalogsService {
         const note2 = partials["2"] ? Number(partials["2"]) : null;
         const note3 = partials["3"] ? Number(partials["3"]) : null;
         const note4 = partials["4"] ? Number(partials["4"]) : null;
-        
+
         const condition = progress?.status?.name || "Inscripto";
-        const attendance = progress?.attendancePercentage ? Number(progress.attendancePercentage) : 0;
+        const attendance = progress?.attendancePercentage
+          ? Number(progress.attendancePercentage)
+          : 0;
 
         bySubject.set(enrollment.subjectId, {
           subjectId: enrollment.subjectId,
           subjectName: enrollment.subject.subjectName,
           commissionId: enrollment.commission?.commission?.id ?? 0,
-          commissionLetter: enrollment.commission?.commission?.commissionLetter ?? null,
+          commissionLetter:
+            enrollment.commission?.commission?.commissionLetter ?? null,
           partials: 2, // Default
           note1,
           note2,
@@ -844,7 +849,7 @@ export class CatalogsService {
           note4,
           final: null,
           attendancePercentage: attendance,
-          condition, 
+          condition,
         });
       }
     }
@@ -870,7 +875,7 @@ export class CatalogsService {
           note4: null,
           final: examEnrollment.score ? Number(examEnrollment.score) : null,
           attendancePercentage: 0,
-          condition: "Libre", 
+          condition: "Libre",
         });
       }
     }
@@ -901,17 +906,18 @@ export class CatalogsService {
     const deriveCondition = (
       notes: Array<number | null | undefined>,
       attendance: number | null | undefined,
-      existing: string | null | undefined,
+      existing: string | null | undefined
     ): string => {
-      if (existing && existing.trim() && existing !== "Inscripto") return existing;
-      
+      if (existing && existing.trim() && existing !== "Inscripto")
+        return existing;
+
       const att = Number(attendance ?? 0);
       const valid = notes.filter(
-        (n): n is number => typeof n === "number" && !Number.isNaN(n),
+        (n): n is number => typeof n === "number" && !Number.isNaN(n)
       );
-      
+
       if (valid.length === 0) return existing || "Inscripto";
-      
+
       const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
       if (att >= 90 && avg >= 7) return "Promocionado";
       if (att >= 75 && att < 90 && avg >= 4) return "Regular";
@@ -939,21 +945,21 @@ export class CatalogsService {
         condition: deriveCondition(
           [row.note1, row.note2, row.note3, row.note4],
           Number(row.attendancePercentage ?? 0) || 0,
-          row.condition ?? null,
+          row.condition ?? null
         ),
       });
     }
 
     // Ordenar materias dentro de cada año por nombre
     Object.values(byYear).forEach((arr) =>
-      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName)),
+      arr.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
     );
 
     return { studentId, byYear };
   }
 
   private async buildPrereqMapByOrderNo(
-    careerId: number,
+    careerId: number
   ): Promise<Map<number, number[]>> {
     const rows = await this.subjectPrerequisiteByOrderRepo
       .createQueryBuilder("p")

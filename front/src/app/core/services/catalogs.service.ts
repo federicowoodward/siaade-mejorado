@@ -15,6 +15,7 @@ export type CareerStudentAssignment = {
     name: string;
     lastName: string;
     email: string;
+    dni?: string;
     cuil?: string;
   };
 };
@@ -40,7 +41,9 @@ export type CareerStudentItem = {
   isActive: boolean | null;
   canLogin: boolean | null;
   user: {
-    name: string;
+    fullName: string;
+    dni: string;
+    cuil: string;
     email: string;
   };
 };

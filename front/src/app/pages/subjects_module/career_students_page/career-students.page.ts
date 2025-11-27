@@ -74,6 +74,8 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
         const firstName = student.user?.name ?? '';
         const lastName = student.user?.lastName ?? '';
         const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+        const dni = student.user?.dni ?? '';
+        const cuil = student.user?.cuil ?? '';
 
         flattened.push({
           studentId: student.userId,
@@ -84,11 +86,14 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
           isActive: student.isActive ?? null,
           canLogin: student.canLogin ?? null,
           user: {
-            name: fullName || firstName || lastName || 'Sin nombre',
+            fullName: fullName || firstName || lastName || 'Sin nombre',
+            dni,
+            cuil,
             email: student.user?.email ?? '',
           },
         });
       }
+      console.log(students);
     }
 
     return flattened;
@@ -98,10 +103,26 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     const q = this.search().trim().toLowerCase();
     const items = this.rows();
     if (!q) return items;
+    const normalizedQuery = q.replace(/[^0-9a-z]/gi, '');
+
     return items.filter((r) => {
-      const name = r.user.name?.toLowerCase() ?? '';
+      const name = r.user.fullName?.toLowerCase() ?? '';
       const email = r.user.email?.toLowerCase() ?? '';
-      return name.includes(q) || email.includes(q);
+      const dni = r.user.dni?.toLowerCase() ?? '';
+      const cuil = r.user.cuil?.toLowerCase() ?? '';
+
+      const normalizedDni = dni.replace(/[^0-9a-z]/gi, '');
+      const normalizedCuil = cuil.replace(/[^0-9a-z]/gi, '');
+
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        dni.includes(q) ||
+        cuil.includes(q) ||
+        (!!normalizedQuery &&
+          (normalizedDni.includes(normalizedQuery) ||
+            normalizedCuil.includes(normalizedQuery)))
+      );
     });
   });
 

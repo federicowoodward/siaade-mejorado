@@ -19,7 +19,7 @@
   </ng-template>
 
   <ng-template #contentTpl>
-    <div class="table-container">
+    <div class="table-container surface-card border-round p-1">
       <p-table
         [value]="filteredRows()"
         [paginator]="true"
@@ -69,8 +69,17 @@
 
         <ng-template pTemplate="body" let-row>
           <tr class="tr-container">
-            <td>{{ row.commissionLetter || row.commissionId }}</td>
-            <td>{{ row.user.name }}</td>
+            <td class="w-1rem text-center">
+              {{ row.commissionLetter || row.commissionId }}
+            </td>
+            <td class="alumno-cell max-w-10rem">
+              <div class="flex flex-column">
+                <span class="font-medium">{{ row.user.fullName }}</span>
+                <small class="text-color-secondary"
+                  >CUIL: {{ row.user.dni }}</small
+                >
+              </div>
+            </td>
             <td>{{ row.user.email }}</td>
             <td class="text-center">
               <button
