@@ -7,10 +7,11 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { Router } from '@angular/router';
 import { ExamTable } from '../../../core/models/exam_table.model';
 import { ExamTablesService } from '../../../core/services/final-exam-tables.service';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService } from '../../../core/services/auth.service';
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
@@ -32,14 +33,17 @@ import { ROLE } from '../../../core/auth/roles';
     InputTextModule,
     FormsModule,
     TooltipModule,
+    ConfirmPopupModule,
   ],
   templateUrl: './exams-tables-page.html',
   styleUrls: ['./exams-tables-page.scss'],
+  providers: [ConfirmationService],
 })
 export class ExamsTablesPage implements OnInit {
   private svc = inject(ExamTablesService);
   private router = inject(Router);
   private messages = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
   private auth = inject(AuthService);
   private sync = inject(ExamTableSyncService);
   private uiAlertAudit = inject(UiAlertAuditService);
@@ -219,5 +223,19 @@ export class ExamsTablesPage implements OnInit {
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
     ]);
+  }
+
+  confirm(event: Event, callback: () => void, onReject?: () => void) {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: '¿Estás seguro de continuar?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => callback(),
+      reject: () => {
+        if (onReject) {
+          onReject();
+        }
+      },
+    });
   }
 }

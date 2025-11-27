@@ -12,6 +12,8 @@ import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.service';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ConfirmationService } from 'primeng/api';
 import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
@@ -28,15 +30,18 @@ import {
     FormsModule,
     ToggleButtonModule,
     DialogModule,
+    ConfirmPopupModule,
   ],
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
+  providers: [ConfirmationService],
 })
 export class UserDetailPage implements OnInit {
   private goBack = inject(GoBackService);
   private api = inject(ApiService);
   private permissions = inject(PermissionService);
   private cache = inject(UserFlagsCacheService);
+  private confirmationService = inject(ConfirmationService);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Gestión de usuarios', routerLink: '/users' },
@@ -321,5 +326,45 @@ export class UserDetailPage implements OnInit {
       this.canLogin.set(true);
     }
     this.dialogCloseMode = 'none';
+  }
+
+  onAccessToggleChange(event: any, toggle: any): void {
+    const previous = this.accessEnabled();
+    const next = !!event.checked;
+
+    this.confirm(
+      event.originalEvent,
+      () => this.onToggleCanLogin(next),
+      () => {
+        toggle.checked = previous;
+      },
+    );
+  }
+
+  onIsActiveToggleChange(event: any, toggle: any): void {
+    const previous = this.isActive() !== false;
+    const next = !!event.checked;
+
+    this.confirm(
+      event.originalEvent,
+      () => this.onToggleIsActive(next),
+      () => {
+        toggle.checked = previous;
+      },
+    );
+  }
+
+  confirm(event: Event, callback: () => void, onReject?: () => void) {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: '¿Estás seguro de continuar?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => callback(),
+      reject: () => {
+        if (onReject) {
+          onReject();
+        }
+      },
+    });
   }
 }

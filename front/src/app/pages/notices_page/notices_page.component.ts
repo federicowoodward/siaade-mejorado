@@ -13,6 +13,8 @@ import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ConfirmationService } from 'primeng/api';
 import {
   NoticesService,
   Notice,
@@ -34,17 +36,20 @@ import { firstValueFrom } from 'rxjs';
     ButtonModule,
     InputTextModule,
     SelectModule,
+    ConfirmPopupModule,
     CanAnyRoleDirective,
     BlockedActionDirective,
   ],
   templateUrl: './notices_page.component.html',
   styleUrls: ['./notices_page.component.scss'],
+  providers: [ConfirmationService],
 })
 export class NoticesPageComponent implements OnInit {
   private noticesSrv = inject(NoticesService);
   private permissions = inject(PermissionService);
   private catalogs = inject(CatalogsService);
   private zone = inject(NgZone);
+  private confirmationService = inject(ConfirmationService);
   protected readonly ROLE = ROLE;
 
   notices = this.noticesSrv.notices;
@@ -115,5 +120,19 @@ export class NoticesPageComponent implements OnInit {
 
   deleteNotice(id: number) {
     this.noticesSrv.remove(id);
+  }
+
+  confirm(event: Event, callback: () => void, onReject?: () => void) {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: '¿Estás seguro de continuar?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => callback(),
+      reject: () => {
+        if (onReject) {
+          onReject();
+        }
+      },
+    });
   }
 }

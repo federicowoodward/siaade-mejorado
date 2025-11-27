@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { FinalExamCreateDialogComponent } from '../shared/components/final-exam-create-dialog/final-exam-create-dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExamTablesService } from '../../../core/services/final-exam-tables.service';
@@ -29,10 +30,12 @@ import {
     TableModule,
     Button,
     TooltipModule,
+    ConfirmPopupModule,
     FinalExamCreateDialogComponent,
   ],
   templateUrl: './exam-table-page.html',
   styleUrls: ['./exam-table-page.scss'],
+  providers: [ConfirmationService],
 })
 export class ExamTablePage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -40,6 +43,7 @@ export class ExamTablePage implements OnInit {
   private tablesSvc = inject(ExamTablesService);
   private finalsSvc = inject(FinalExamsService);
   private messages = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
   private sync = inject(ExamTableSyncService);
   private uiAlertAudit = inject(UiAlertAuditService);
 
@@ -170,6 +174,20 @@ export class ExamTablePage implements OnInit {
           summary: 'No se pudo eliminar',
           detail: e?.error?.message,
         }),
+    });
+  }
+
+  confirm(event: Event, callback: () => void, onReject?: () => void) {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: '¿Estás seguro de continuar?',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => callback(),
+      reject: () => {
+        if (onReject) {
+          onReject();
+        }
+      },
     });
   }
 

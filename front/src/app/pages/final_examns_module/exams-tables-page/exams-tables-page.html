@@ -1,4 +1,5 @@
 <div class="m-w-custom">
+  <p-confirmpopup ></p-confirmpopup >
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
   <div
     class="surface-card shadow-2 border-round p-3 mb-3 flex justify-content-between align-content-center"
@@ -71,7 +72,7 @@
             icon="pi pi-trash"
             severity="danger"
             variant="outlined"
-            (onClick)="deleteTable(row)"
+            (onClick)="confirm($event, deleteTable.bind(this, row))"
           ></p-button>
         </td>
       </tr>

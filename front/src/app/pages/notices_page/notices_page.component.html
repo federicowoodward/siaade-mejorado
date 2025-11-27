@@ -1,4 +1,5 @@
 <div class="notices-page m-w-custom">
+  <p-confirmpopup ></p-confirmpopup >
   <h2 class="page-title">Administración de avisos</h2>
 
   <div
@@ -33,7 +34,8 @@
     >
     </p-select>
 
-    <!-- <div
+    <!--
+    <div
       class="year-selector"
       *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0"
     >
@@ -50,7 +52,8 @@
       <small>
         Si no seleccionás ningún año se publicará para todos los años.
       </small>
-    </div> -->
+    </div>
+    -->
 
     <div class="commission-selector" *ngIf="segmentByCommission()">
       <label>Comisiones destino</label>
@@ -86,13 +89,13 @@
         <small class="meta">
           Destinatarios:
           {{
-            n.visibleFor === "student"
-              ? "Alumnos"
-              : n.visibleFor === "teacher"
-                ? "Docentes"
-                : "Todos"
+            n.visibleFor === 'student'
+              ? 'Alumnos'
+              : n.visibleFor === 'teacher'
+                ? 'Docentes'
+                : 'Todos'
           }}
-          · {{ n.createdBy }} · {{ n.createdAt | date: "dd/MM/yyyy" }}
+          · {{ n.createdBy }} · {{ n.createdAt | date: 'dd/MM/yyyy' }}
         </small>
         <div class="commission-targets" *ngIf="segmentByCommission()">
           <ng-container *ngIf="n.hasCommissionFilter; else allCommissionsTpl">
@@ -120,7 +123,7 @@
           type="button"
           label="Eliminar"
           class="p-button-danger mt-2"
-          (click)="deleteNotice(n.id)"
+          (click)="confirm($event, deleteNotice.bind(this, n.id))"
           blockedAction
         ></button>
       </div>

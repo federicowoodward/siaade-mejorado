@@ -1,4 +1,5 @@
 <div class="m-w-custom flex flex-column">
+  <p-confirmpopup ></p-confirmpopup >
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="surface-card border-round p-4 shadow-1 mb-3">
@@ -27,8 +28,9 @@
       <div class="col-12 md:col-6 flex justify-content-center flex-column">
         <div class="pb-2">
           <p-togglebutton
+            #accessToggle
             [ngModel]="accessEnabled()"
-            (ngModelChange)="onToggleCanLogin(!!$event)"
+            (onChange)="onAccessToggleChange($event, accessToggle)"
             [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
             onLabel="Habilitado"
             offLabel="Bloqueado"
@@ -64,8 +66,9 @@
       </div>
       <div class="col-12 md:col-6 flex justify-content-center flex-column">
         <p-togglebutton
+          #activeToggle
           [ngModel]="isActive() !== false"
-          (ngModelChange)="onToggleIsActive(!!$event)"
+          (onChange)="onIsActiveToggleChange($event, activeToggle)"
           [disabled]="saving() || !canToggleIsActive()"
           onLabel="Activo"
           offLabel="Inactivo"
