@@ -14,6 +14,10 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import {
+  SubjectStateSeverity,
+  resolveSubjectStateSeverity,
+} from '@/shared/utils/subject-state.utils';
 
 @Component({
   selector: 'app-subject-status-detail',
@@ -108,13 +112,9 @@ export class SubjectStatusDetailComponent implements OnInit {
 
   stateSeverity(
     condition: string | null | undefined,
-  ): 'success' | 'info' | 'danger' | 'warning' {
-    if (!condition) return 'warning';
-    const value = condition.toLowerCase();
-    if (value.includes('promo') || value.includes('apro')) return 'success';
-    if (value.includes('regular')) return 'info';
-    if (value.includes('libre')) return 'danger';
-    return 'warning';
+  ): SubjectStateSeverity {
+    // Wrapper para reutilizar la lógica compartida de severidad de estado.
+    return resolveSubjectStateSeverity(condition);
   }
 
   back(): void {

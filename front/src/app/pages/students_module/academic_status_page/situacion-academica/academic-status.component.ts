@@ -16,6 +16,10 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import {
+  SubjectStateSeverity,
+  resolveSubjectStateSeverity,
+} from '@/shared/utils/subject-state.utils';
 
 type SubjectRow = StudentSummarySubject & {
   courseLabel: string;
@@ -100,13 +104,9 @@ export class AcademicStatusComponent implements OnInit {
 
   stateSeverity(
     condition: string | null,
-  ): 'success' | 'info' | 'danger' | 'warning' {
-    if (!condition) return 'warning';
-    const value = condition.toLowerCase();
-    if (value.includes('promo') || value.includes('apro')) return 'success';
-    if (value.includes('regular')) return 'info';
-    if (value.includes('libre')) return 'danger';
-    return 'warning';
+  ): SubjectStateSeverity {
+    // Wrapper para reutilizar la lógica compartida de severidad de estado.
+    return resolveSubjectStateSeverity(condition);
   }
 
   goToMesas(subjectId?: number): void {
