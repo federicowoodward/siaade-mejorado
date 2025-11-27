@@ -5,10 +5,10 @@ import { HttpClient } from '@angular/common/http';
 import { Card } from 'primeng/card';
 import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE } from '../../../core/auth/roles';
-import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 import { AuthService } from '@/core/services/auth.service';
 import { environment } from 'environments/environment';
 import { take } from 'rxjs/operators';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 interface QuickAccess {
   label: string;
@@ -21,7 +21,7 @@ interface QuickAccess {
 @Component({
   selector: 'app-quick-access',
   standalone: true,
-  imports: [CommonModule, Card, RouterModule],
+  imports: [CommonModule, Card, RouterModule, ProgressSpinner],
   templateUrl: './quick-access-component.html',
   styleUrls: ['./quick-access-component.scss'],
 })

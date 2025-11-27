@@ -18,14 +18,15 @@
     </ng-container>
 
     <ng-template #loadingCard>
-      <p-card
-        header="Generando certificado..."
-        subheader="Por favor esperá unos segundos"
-        class="quick-card loading-card"
-      >
-        <div class="card-content">
-          <div class="loader-spinner"></div>
-        </div>
+      <p-card header="Generando certificado..." class="quick-card loading-card">
+        <ng-template #header>
+          <i [class]="acc.icon + ' text-4xl text-primary pb-3'"></i>
+        </ng-template>
+        <p-progress-spinner
+          ariaLabel="loading"
+          strokeWidth="3"
+          [style]="{ width: '45px', height: '45px' }"
+        />
       </p-card>
     </ng-template>
   </div>
