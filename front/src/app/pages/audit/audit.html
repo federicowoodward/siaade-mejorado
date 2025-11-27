@@ -1,9 +1,11 @@
 <div class="p-3 flex flex-column gap-3 m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <h2 class="m-0 text-2xl font-semibold">Auditoría de alertas</h2>
-  <p class="m-0 text-color-secondary">
-    Últimas alertas disparadas desde la interfaz.
-  </p>
+  <div class="surface-card border-round p-4 pb-3">
+    <h2 class="m-0 text-2xl font-semibold">Auditoría de alertas</h2>
+    <p class="m-0 text-color-secondary">
+      Últimas alertas disparadas desde la interfaz.
+    </p>
+  </div>
 
   <div *ngIf="error(); else tableBlock" class="p-3 border-round bg-red-50">
     <p class="m-0 text-red-800 font-semibold">Error al cargar las alertas</p>
