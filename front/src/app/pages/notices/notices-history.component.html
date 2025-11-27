@@ -1,0 +1,76 @@
+<div class="m-w-custom p-3">
+  <p-card class="w-full notices-history-card p-4">
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center justify-content-between">
+        <div>
+          <h2 class="m-0 text-xl font-semibold">Historial de avisos</h2>
+          <p class="m-0 text-color-secondary text-sm">
+            Consulta todos los avisos publicados para tu rol.
+          </p>
+        </div>
+        <i class="pi pi-bell text-2xl text-yellow-500"></i>
+      </div>
+    </ng-template>
+
+    <div
+      *ngIf="error(); else loadingOrContent"
+      class="p-3 bg-red-50 border-round"
+    >
+      <p class="m-0 text-red-800 font-semibold">Error al cargar los avisos</p>
+      <p class="m-0 text-red-700 text-sm">{{ error() }}</p>
+    </div>
+
+    <ng-template #loadingOrContent>
+      <div
+        *ngIf="loading(); else contentBlock"
+        class="flex justify-content-center py-5"
+      >
+        <p-progressSpinner strokeWidth="3"></p-progressSpinner>
+      </div>
+
+      <ng-template #contentBlock>
+        <ng-container *ngIf="items().length; else emptyState">
+          <ul class="list-none p-0 m-0">
+            <li *ngFor="let aviso of items()" class="mb-3">
+              <div class="surface-card shadow-2 border-round p-3">
+                <h3 class="m-0">{{ aviso.title }}</h3>
+                <div class="py-3">
+                  <span [innerHTML]="aviso.content"></span>
+                </div>
+                <div class="flex justify-content-end">
+                  <small class="text-gray-500">
+                    Publicado por {{ aviso.createdBy }} -
+                    {{ aviso.createdAt | date: "dd/MM/yyyy HH:mm" }}
+                  </small>
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <p-divider class="my-4"></p-divider>
+
+          <div class="flex align-items-center justify-content-between">
+            <span class="text-sm text-color-secondary">
+              Página {{ page() }}
+            </span>
+
+            <!-- Paginador PrimeNG para coherencia visual, aunque la lógica también soporta Prev/Sig -->
+            <p-paginator
+              [rows]="5"
+              [totalRecords]="total()"
+              [first]="(page() - 1) * 5"
+              [rowsPerPageOptions]="[5]"
+              (onPageChange)="onPageChange($event)"
+            ></p-paginator>
+          </div>
+        </ng-container>
+
+        <ng-template #emptyState>
+          <p class="m-0 text-center text-color-secondary py-4">
+            No hay avisos para mostrar.
+          </p>
+        </ng-template>
+      </ng-template>
+    </ng-template>
+  </p-card>
+</div>

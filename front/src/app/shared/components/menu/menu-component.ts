@@ -81,7 +81,6 @@ export class MenuComponent {
       { label: 'Materias', icon: 'pi pi-briefcase', routerLink: ['/subjects'] },
       { label: 'Usuarios', icon: 'pi pi-users', routerLink: ['/users'] },
       { label: 'Finales', icon: 'pi pi-book', routerLink: ['/final_examns'] },
-      { label: 'Avisos', icon: 'pi pi-bell', routerLink: ['/notices'] },
       {
         label: 'Auditoria',
         icon: 'pi pi-chart-bar',

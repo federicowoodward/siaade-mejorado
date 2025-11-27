@@ -31,7 +31,6 @@ const VISIBILITY: VisibilityMatrix = {
 
 const MANAGEMENT_ACTIONS: RowAction[] = [
   { id: 'view', label: 'Ver usuario', icon: 'pi pi-user' },
-  { id: 'cert', label: 'Certificados', icon: 'pi pi-file-pdf' },
   {
     id: 'academic',
     label: 'Situacion academica',

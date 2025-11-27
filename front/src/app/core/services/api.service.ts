@@ -44,6 +44,12 @@ export class ApiService {
     data?: any,
     params?: Record<string, any>,
     headers?: HttpHeaders,
+    /**
+     * Cuando es `true` (por defecto) intenta devolver directamente `resp.data` si existe.
+     * Para casos donde se necesitan metadatos (ej. paginación), pasar `false` para recibir
+     * el objeto completo tal como lo envía el backend.
+     */
+    unwrapData: boolean = true,
   ): Observable<T> {
     const base = enviroment.apiBaseUrl;
     const fullUrl = `${base}/${url}`;
@@ -120,9 +126,10 @@ export class ApiService {
 
                 return throwError(() => err);
               }),
-              map((resp: any) =>
-                'data' in resp ? (resp.data as T) : (resp as T)
-              ),
+              map((resp: any) => {
+                if (!unwrapData) return resp as T;
+                return 'data' in resp ? (resp.data as T) : (resp as T);
+              }),
               tap(async (payload) => {
                 // Guardado atómico: data + ts en la misma transacción
                 await this.cache.set<T>(cacheKey, payload);
@@ -176,7 +183,10 @@ export class ApiService {
 
         return throwError(() => err);
       }),
-      map((resp: any) => ('data' in resp ? (resp.data as T) : (resp as T))),
+      map((resp: any) => {
+        if (!unwrapData) return resp as T;
+        return 'data' in resp ? (resp.data as T) : (resp as T);
+      }),
       tap(async () => {
         let relative = fullUrl;
         const base = enviroment.apiBaseUrl.replace(/\/$/, '');

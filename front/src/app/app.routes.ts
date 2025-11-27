@@ -9,6 +9,7 @@ import { AuthGuard } from './core/guards/auth.guard';
 import { UnAuthGuard } from './core/guards/unauth.guard';
 import { FINAL_EXAMS_ROUTES } from './pages/final_examns_module/final_examns_module.routes';
 import { NoticesPageComponent } from './pages/notices_page/notices_page.component';
+import { NoticesHistoryPage } from './pages/notices/notices-history.component';
 import { roleCanActivate } from './core/guards/role.guard';
 import { ROLE } from './core/auth/roles';
 import { MesasListComponent } from './pages/students_module/enrollments_page/mesas/mesas-list.component';
@@ -102,6 +103,11 @@ export const routes: Routes = [
   {
     path: 'notices',
     component: NoticesPageComponent,
+    canActivate: [AuthGuard, forcePasswordChangeGuard],
+  },
+  {
+    path: 'avisos',
+    component: NoticesHistoryPage,
     canActivate: [AuthGuard, forcePasswordChangeGuard],
   },
   {

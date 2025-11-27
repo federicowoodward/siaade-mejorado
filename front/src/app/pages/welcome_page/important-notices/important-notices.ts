@@ -6,10 +6,11 @@ import { ROLE } from '../../../core/auth/roles';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { Button } from 'primeng/button';
+import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-important-notices',
   standalone: true,
-  imports: [CommonModule, CardModule, DividerModule, Button],
+  imports: [CommonModule, CardModule, DividerModule, Button, RouterModule],
   templateUrl: './important-notices.html',
   styleUrl: './important-notices.scss',
 })
@@ -23,14 +24,23 @@ export class ImportantNoticesComponent {
   readonly noticesForHome = computed<Notice[]>(() => {
     const role = this.role();
     const all = this.allNotices();
-    if (!role) return all;
+    if (!role) {
+      return all.slice(0, 3);
+    }
+
+    let visible: Notice[];
     if (
       role === ROLE.PRECEPTOR ||
       role === ROLE.SECRETARY ||
       role === ROLE.EXECUTIVE_SECRETARY
     ) {
-      return all;
+      visible = all;
+    } else {
+      visible = all.filter(
+        (n) => n.visibleFor === 'all' || n.visibleFor === role,
+      );
     }
-    return all.filter((n) => n.visibleFor === 'all' || n.visibleFor === role);
+
+    return visible.slice(0, 3);
   });
 }

@@ -1,132 +1,201 @@
 <div class="notices-page m-w-custom">
-  <p-confirmpopup ></p-confirmpopup >
-  <h2 class="page-title">Administración de avisos</h2>
+  <p-confirmpopup></p-confirmpopup>
 
+  <!-- Banner de cabecera -->
   <div
-    class="new-notice-form"
-    *appCanAnyRole="[ROLE.SECRETARY, ROLE.PRECEPTOR, ROLE.EXECUTIVE_SECRETARY]"
+    class="surface-card border-round shadow-2 p-3 mb-3 flex align-items-center justify-content-between"
   >
-    <input
-      type="text"
-      pInputText
-      placeholder="Título"
-      [(ngModel)]="newNotice.title"
-      blockedAction
-    />
-
-    <p-editor
-      [(ngModel)]="newNotice.content"
-      [style]="{ height: '200px' }"
-      placeholder="Escribí el contenido del aviso."
-      blockedAction
-    ></p-editor>
-
-    <label class="mt-2">Visible para:</label>
-    <p-select
-      [options]="[
-        { label: 'Todos', value: 'all' },
-        { label: 'Alumnos', value: 'student' },
-        { label: 'Docentes', value: 'teacher' },
-      ]"
-      [(ngModel)]="newNotice.visibleFor"
-      placeholder="Seleccionar destinatarios"
-      styleClass="w-full"
-    >
-    </p-select>
-
-    <!--
-    <div
-      class="year-selector"
-      *ngIf="newNotice.visibleFor === 'student' && availableYears().length > 0"
-    >
-      <label>Años destino</label>
-      <p-select
-        [options]="yearOptions()"
-        optionLabel="label"
-        optionValue="value"
-        [(ngModel)]="selectedYearNumbers"
-        placeholder="Todos los años"
-        styleClass="w-full"
-      >
-      </p-select>
-      <small>
-        Si no seleccionás ningún año se publicará para todos los años.
-      </small>
+    <div>
+      <h2 class="page-title m-0">Administración de avisos</h2>
+      <p class="m-0 text-color-secondary">
+        Gestiona la creación y eliminación de avisos publicados.
+      </p>
     </div>
-    -->
-
-    <div class="commission-selector" *ngIf="segmentByCommission()">
-      <label>Comisiones destino</label>
-      <p-select
-        [options]="commissionOptions()"
-        optionLabel="label"
-        optionValue="id"
-        [(ngModel)]="selectedCommissionIds"
-        placeholder="Todas las comisiones"
-        styleClass="w-full"
-      >
-      </p-select>
-      <small>
-        Si no seleccionás ninguna comisión se publicará para todas.
-      </small>
-    </div>
-
     <button
+      *appCanAnyRole="[
+        ROLE.SECRETARY,
+        ROLE.PRECEPTOR,
+        ROLE.EXECUTIVE_SECRETARY,
+      ]"
       pButton
       type="button"
-      label="Publicar"
-      (click)="addNotice()"
-      class="mt-2"
+      label="Crear aviso"
+      icon="pi pi-plus"
+      (click)="openCreateDialog()"
       blockedAction
     ></button>
   </div>
 
-  <ul class="notices-list">
-    <li *ngFor="let n of notices()">
-      <div class="notice-item">
-        <h3>{{ n.title }}</h3>
-        <div class="content" [innerHTML]="n.content"></div>
-        <small class="meta">
-          Destinatarios:
-          {{
-            n.visibleFor === 'student'
-              ? 'Alumnos'
-              : n.visibleFor === 'teacher'
-                ? 'Docentes'
-                : 'Todos'
-          }}
-          · {{ n.createdBy }} · {{ n.createdAt | date: 'dd/MM/yyyy' }}
-        </small>
-        <div class="commission-targets" *ngIf="segmentByCommission()">
-          <ng-container *ngIf="n.hasCommissionFilter; else allCommissionsTpl">
-            <span
-              class="commission-chip"
-              *ngFor="let target of n.commissionTargets"
-            >
-              {{ target.label }}
-            </span>
-          </ng-container>
-          <ng-template #allCommissionsTpl>
-            <span class="commission-chip commission-chip--all">
-              Todas las comisiones
-            </span>
-          </ng-template>
-        </div>
+  <!-- Listado paginado de avisos -->
+  <div class="mt-3 surface-card border-round shadow-2 p-3">
+    <div *ngIf="error(); else listContent" class="p-3 bg-red-50 border-round">
+      <p class="m-0 text-red-800 font-semibold">Error al cargar los avisos</p>
+      <p class="m-0 text-red-700 text-sm">{{ error() }}</p>
+    </div>
 
-        <button
-          *appCanAnyRole="[
-            ROLE.SECRETARY,
-            ROLE.PRECEPTOR,
-            ROLE.EXECUTIVE_SECRETARY,
-          ]"
-          pButton
-          type="button"
-          label="Eliminar"
-          class="p-button-danger mt-2"
-          (click)="confirm($event, deleteNotice.bind(this, n.id))"
-          blockedAction
-        ></button>
+    <ng-template #listContent>
+      <div
+        *ngIf="loading(); else contentBlock"
+        class="flex justify-content-center py-5"
+      >
+        <p-progressSpinner strokeWidth="3"></p-progressSpinner>
       </div>
-    </li>
-  </ul>
+
+      <ng-template #contentBlock>
+        <ul class="notices-list" *ngIf="paginatedNotices().length; else empty">
+          <li *ngFor="let n of paginatedNotices()">
+            <div class="notice-item">
+              <h3>{{ n.title }}</h3>
+              <div class="content" [innerHTML]="n.content"></div>
+              <div class="flex justify-content-between">
+                <div class="flex align-items-end">
+                  <small class="meta">
+                    Destinatarios:
+                    {{
+                      n.visibleFor === "student"
+                        ? "Alumnos"
+                        : n.visibleFor === "teacher"
+                          ? "Docentes"
+                          : "Todos"
+                    }}
+                    · {{ n.createdBy }} ·
+                    {{ n.createdAt | date: "dd/MM/yyyy" }}
+                  </small>
+                  <div class="commission-targets" *ngIf="segmentByCommission()">
+                    <ng-container
+                      *ngIf="n.hasCommissionFilter; else allCommissionsTpl"
+                    >
+                      <span
+                        class="commission-chip"
+                        *ngFor="let target of n.commissionTargets"
+                      >
+                        {{ target.label }}
+                      </span>
+                    </ng-container>
+                    <ng-template #allCommissionsTpl>
+                      <span class="commission-chip commission-chip--all">
+                        Todas las comisiones
+                      </span>
+                    </ng-template>
+                  </div>
+                </div>
+                <button
+                  *appCanAnyRole="[
+                    ROLE.SECRETARY,
+                    ROLE.PRECEPTOR,
+                    ROLE.EXECUTIVE_SECRETARY,
+                  ]"
+                  pButton
+                  type="button"
+                  label="Eliminar"
+                  class="p-button-danger mt-2"
+                  (click)="confirm($event, deleteNotice.bind(this, n.id))"
+                  blockedAction
+                ></button>
+              </div>
+            </div>
+          </li>
+        </ul>
+
+        <ng-template #empty>
+          <p class="m-0 text-center text-color-secondary py-4">
+            No hay avisos publicados.
+          </p>
+        </ng-template>
+
+        <div class="flex justify-content-end mt-3" *ngIf="total() > 0">
+          <p-paginator
+            [rows]="5"
+            [totalRecords]="total()"
+            [first]="(page() - 1) * 5"
+            [rowsPerPageOptions]="[5]"
+            (onPageChange)="onPageChange($event)"
+          ></p-paginator>
+        </div>
+      </ng-template>
+    </ng-template>
+  </div>
+
+  <!-- Diálogo para crear aviso -->
+  <p-dialog
+    [(visible)]="createDialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '90%', maxWidth: '700px' }"
+    [contentStyle]="{ 'max-height': '70vh', overflow: 'auto' }"
+    header="Crear aviso"
+  >
+    <div
+      class="new-notice-form"
+      *appCanAnyRole="[
+        ROLE.SECRETARY,
+        ROLE.PRECEPTOR,
+        ROLE.EXECUTIVE_SECRETARY,
+      ]"
+    >
+      <input
+        type="text"
+        pInputText
+        placeholder="Título"
+        [(ngModel)]="newNotice.title"
+        blockedAction
+      />
+
+      <p-editor
+        [(ngModel)]="newNotice.content"
+        [style]="{ height: '200px' }"
+        placeholder="Escribí el contenido del aviso."
+        blockedAction
+      ></p-editor>
+
+      <label class="mt-2">Visible para:</label>
+      <p-select
+        [options]="[
+          { label: 'Todos', value: 'all' },
+          { label: 'Alumnos', value: 'student' },
+          { label: 'Docentes', value: 'teacher' },
+        ]"
+        [(ngModel)]="newNotice.visibleFor"
+        placeholder="Seleccionar destinatarios"
+        styleClass="w-full"
+      >
+      </p-select>
+
+      <div class="commission-selector" *ngIf="segmentByCommission()">
+        <label>Comisiones destino</label>
+        <p-select
+          [options]="commissionOptions()"
+          optionLabel="label"
+          optionValue="id"
+          [(ngModel)]="selectedCommissionIds"
+          placeholder="Todas las comisiones"
+          styleClass="w-full"
+        >
+        </p-select>
+        <small>
+          Si no seleccionás ninguna comisión se publicará para todas.
+        </small>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Cancelar"
+        severity="secondary"
+        icon="pi pi-times"
+        (click)="closeCreateDialog()"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="Publicar"
+        icon="pi pi-check"
+        (click)="addNotice()"
+        blockedAction
+      ></button>
+    </ng-template>
+  </p-dialog>
 </div>

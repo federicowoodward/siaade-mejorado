@@ -5,6 +5,7 @@
     [paginator]="true"
     [rows]="10"
     responsiveLayout="scroll"
+    styleClass="p-datatable-sm p-datatable-gridlines"
     [globalFilterFields]="['name', 'lastName', 'cuil', 'email', 'role']"
   >
     <ng-template pTemplate="caption">
@@ -34,7 +35,6 @@
               { label: 'Preceptor', value: 'preceptor' },
               { label: 'Secretario', value: 'secretary' },
               { label: 'Director', value: 'director' },
-              { label: 'Admin', value: 'admin' },
             ]"
             [(ngModel)]="selectedRole"
             (onChange)="
@@ -57,7 +57,8 @@
         <th>Nombre</th>
         <th>DNI/CUIL</th>
         <th>Rol</th>
-        <th style="width: 260px">Acciones</th>
+        <!-- agregar width aca si se agregan acciones -->
+        <th style="width: 100px">Acciones</th>
       </tr>
     </ng-template>
 

@@ -22,6 +22,10 @@
     <p *ngIf="!noticesForHome().length">No hay avisos para tu rol.</p>
   </div>
   <div class="flex justify-content-end align-self-end">
-    <p-button label="Ver todos los avisos" class="mt-3"></p-button>
+    <p-button
+      label="Ver todos los avisos"
+      class="mt-3"
+      [routerLink]="['/avisos']"
+    ></p-button>
   </div>
 </div>

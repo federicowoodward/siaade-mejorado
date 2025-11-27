@@ -14,11 +14,16 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { DialogModule } from 'primeng/dialog';
+import { PaginatorModule } from 'primeng/paginator';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ConfirmationService } from 'primeng/api';
 import {
   NoticesService,
   Notice,
   NoticeCommissionTarget,
+  NoticesAudience,
+  PaginatedNoticesResponse,
 } from '../../core/services/notices.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { ROLE, VisibleRole } from '../../core/auth/roles';
@@ -37,6 +42,9 @@ import { firstValueFrom } from 'rxjs';
     InputTextModule,
     SelectModule,
     ConfirmPopupModule,
+    DialogModule,
+    PaginatorModule,
+    ProgressSpinnerModule,
     CanAnyRoleDirective,
     BlockedActionDirective,
   ],
@@ -52,9 +60,22 @@ export class NoticesPageComponent implements OnInit {
   private confirmationService = inject(ConfirmationService);
   protected readonly ROLE = ROLE;
 
+  private readonly pageSize = 5;
+
   notices = this.noticesSrv.notices;
   segmentByCommission = this.noticesSrv.segmentByCommission;
   commissionOptions = this.noticesSrv.commissionOptions;
+
+  // Estado de paginación para el listado de avisos
+  private readonly audience = signal<NoticesAudience>('all');
+  paginatedNotices = signal<Notice[]>([]);
+  page = signal(1);
+  total = signal(0);
+  loading = signal(false);
+  error = signal<string | null>(null);
+
+  // Estado del diálogo de creación
+  createDialogVisible = signal(false);
 
   canManage = computed(() =>
     this.permissions.hasAnyRole([
@@ -90,10 +111,32 @@ export class NoticesPageComponent implements OnInit {
         setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
       });
     });
-    if (this.newNotice.visibleFor === ROLE.STUDENT) {
-    }
+
+    const role = this.permissions.currentRole();
+    const audience: NoticesAudience =
+      role === ROLE.STUDENT
+        ? 'student'
+        : role === ROLE.TEACHER
+          ? 'teacher'
+          : 'all';
+    this.audience.set(audience);
+
+    this.loadPage(1);
   }
 
+  onPageChange(event: { page?: number | null; rows?: number | null }): void {
+    const pageIndex = event.page ?? 0; // PrimeNG usa índice base 0
+    const requestedPage = pageIndex + 1;
+    this.loadPage(requestedPage);
+  }
+
+  openCreateDialog(): void {
+    this.createDialogVisible.set(true);
+  }
+
+  closeCreateDialog(): void {
+    this.createDialogVisible.set(false);
+  }
 
   async addNotice() {
     try {
@@ -113,13 +156,20 @@ export class NoticesPageComponent implements OnInit {
         commissionTargets: [],
       };
       this.selectedCommissionIds = [];
+      this.createDialogVisible.set(false);
+      this.loadPage(1);
     } catch (e: any) {
       alert(String(e?.message ?? 'No se pudo publicar el aviso.'));
     }
   }
 
-  deleteNotice(id: number) {
-    this.noticesSrv.remove(id);
+  async deleteNotice(id: number) {
+    try {
+      await this.noticesSrv.remove(id);
+      this.loadPage(this.page());
+    } catch (e) {
+      console.error('[NoticesPage] error deleting notice', e);
+    }
   }
 
   confirm(event: Event, callback: () => void, onReject?: () => void) {
@@ -134,5 +184,37 @@ export class NoticesPageComponent implements OnInit {
         }
       },
     });
+  }
+
+  private loadPage(page: number): void {
+    const clampedPage = Math.max(1, page);
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.noticesSrv
+      .getNoticesPaginated({
+        audience: this.audience(),
+        page: clampedPage,
+        limit: this.pageSize,
+      })
+      .subscribe({
+        next: (resp: PaginatedNoticesResponse) => {
+          this.paginatedNotices.set(resp.items ?? []);
+          this.page.set(resp.page ?? 1);
+          this.total.set(resp.total ?? resp.items.length);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('[NoticesPage] error loading notices', err);
+          const msg =
+            err?.error?.message ??
+            err?.message ??
+            'No se pudieron cargar los avisos.';
+          this.error.set(Array.isArray(msg) ? msg.join(' | ') : String(msg));
+          this.paginatedNotices.set([]);
+          this.loading.set(false);
+        },
+      });
   }
 }

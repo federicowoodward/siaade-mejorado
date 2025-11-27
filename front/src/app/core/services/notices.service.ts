@@ -2,6 +2,8 @@ import { Injectable, effect, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { PermissionService } from '../auth/permission.service';
 import { ROLE, ROLE_IDS, VisibleRole } from '../auth/roles';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Notice {
   id: number;
@@ -17,6 +19,25 @@ export interface Notice {
 export interface NoticeCommissionTarget {
   id: number;
   label: string;
+}
+
+export type NoticesAudience = 'student' | 'teacher' | 'all';
+
+export interface PaginatedNoticesResponse {
+  /** Lista de avisos ya mapeados para el front. */
+  items: Notice[];
+  /** Total de registros, si el backend lo informa; caso contrario se usa el tamaño de `items`. */
+  total: number;
+  /** Página actual (base 1). */
+  page: number;
+  /** Límite de registros por página. */
+  limit: number;
+  /** Cantidad total de páginas cuando el backend la informa. */
+  pages?: number;
+  /** Indica si existe una página anterior. */
+  hasPrevious: boolean;
+  /** Indica si existe una página siguiente. */
+  hasNext: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -72,6 +93,93 @@ export class NoticesService {
       console.error('[Notices] loadForRole error:', e);
       this._notices.set([]);
     }
+  }
+
+  /**
+   * Recupera avisos paginados desde `/notices`, pensado para el historial completo.
+   * Si el backend incluye metadatos de paginación (`meta.total`, `meta.page`, etc.),
+   * se utilizan; en caso contrario, la presencia de menos registros que `limit`
+   * indica que no hay siguiente página.
+   */
+  getNoticesPaginated(options: {
+    audience: NoticesAudience;
+    page: number;
+    limit: number;
+  }): Observable<PaginatedNoticesResponse> {
+    const { audience, page, limit } = options;
+
+    return this.api
+      .request<
+        {
+          data: any[];
+          meta?: {
+            total?: number;
+            page?: number;
+            limit?: number;
+            pages?: number;
+            segment_by_commission?: boolean;
+          };
+        }
+      >('GET', 'notices', undefined, { audience, page, limit }, undefined, false)
+      .pipe(
+        map((resp) => {
+          const rows = Array.isArray((resp as any)?.data)
+            ? ((resp as any).data as any[])
+            : Array.isArray(resp as any)
+              ? (resp as any)
+              : [];
+
+          const meta = (resp as any)?.meta as
+            | {
+                total?: number;
+                page?: number;
+                limit?: number;
+                pages?: number;
+                segment_by_commission?: boolean;
+              }
+            | undefined;
+
+          const mapped = this.mapFromApiList(
+            rows,
+            audience === 'all'
+              ? 'all'
+              : (audience as Extract<NoticesAudience, VisibleRole>),
+          );
+
+          const resolvedPage =
+            typeof meta?.page === 'number' && meta.page > 0
+              ? meta.page
+              : page;
+          const resolvedLimit =
+            typeof meta?.limit === 'number' && meta.limit > 0
+              ? meta.limit
+              : limit;
+          const resolvedTotal =
+            typeof meta?.total === 'number' && meta.total >= 0
+              ? meta.total
+              : mapped.length;
+          const resolvedPages =
+            typeof meta?.pages === 'number' && meta.pages > 0
+              ? meta.pages
+              : undefined;
+
+          const hasPrevious = resolvedPage > 1;
+          const hasNext =
+            resolvedPages !== undefined
+              ? resolvedPage < resolvedPages
+              : mapped.length === resolvedLimit;
+
+          return {
+            items: mapped,
+            total: resolvedTotal,
+            page: resolvedPage,
+            limit: resolvedLimit,
+            pages: resolvedPages,
+            hasPrevious,
+            hasNext,
+          };
+        }),
+      );
   }
 
   async create(input: {
