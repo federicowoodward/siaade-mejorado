@@ -30,10 +30,7 @@
   />
 
   <!-- Estado rápido de acceso/actividad del usuario seleccionado -->
-  <div
-    class="surface-card border-round p-3 mt-3"
-    *ngIf="selectedUserId()"
-  >
+  <div class="surface-card border-round p-3 mt-3" *ngIf="selectedUserId()">
     <h3 class="mb-2 text-base">Estado de acceso</h3>
     <p class="text-sm text-color-secondary mb-2" *ngIf="selectedUserName()">
       Usuario seleccionado:
@@ -58,18 +55,13 @@
             <div>
               <b>Acceso:</b>
               <span>
-                {{
-                  f.isBlocked || f.canLogin === false
-                    ? 'Bloqueado'
-                    : 'Habilitado'
-                }}
+                {{ f.isBlocked || f.canLogin === false ? 'Bloqueado' :
+                'Habilitado' }}
               </span>
             </div>
             <div>
               <b>Estado:</b>
-              <span>
-                {{ f.isActive === false ? 'Inactivo' : 'Activo' }}
-              </span>
+              <span> {{ f.isActive === false ? 'Inactivo' : 'Activo' }} </span>
             </div>
             <div *ngIf="f.isBlocked && f.blockedReason">
               <b>Motivo de bloqueo:</b>
@@ -140,10 +132,6 @@
       <ng-template #errorTpl>
         <div class="p-3 text-red-600">{{ dialogError() }}</div>
       </ng-template>
-    </ng-template>
-
-    <ng-template pTemplate="footer">
-      <p-button label="Cerrar" (onClick)="closeTeacherDialog()"></p-button>
     </ng-template>
   </p-dialog>
 </div>

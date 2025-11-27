@@ -36,3 +36,8 @@ input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
 }
+
+.p-dialog .p-dialog-header-close,
+.p-dialog .p-dialog-close-button {
+  display: none !important;
+}
