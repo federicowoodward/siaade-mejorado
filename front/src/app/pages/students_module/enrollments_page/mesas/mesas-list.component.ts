@@ -5,9 +5,9 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog'; // <-- nuevo
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api'; // <-- sacamos ConfirmationService
 import {
   StudentFinalExamRow,
   StudentInscriptionsService,
@@ -29,25 +29,30 @@ import {
     ButtonModule,
     TagModule,
     ToastModule,
-    ConfirmDialogModule,
+    DialogModule, // <-- nuevo
     ProgressSpinnerModule,
   ],
   templateUrl: './mesas-list.component.html',
   styleUrl: './mesas-list.component.scss',
-  providers: [ConfirmationService],
+  // providers: [ConfirmationService], // <-- lo sacamos
 })
 export class MesasListComponent implements OnInit {
   breadcrumbItems: SimpleBreadcrumbItem[] = [{ label: 'Mesas de examen' }];
 
   private readonly inscriptions = inject(StudentInscriptionsService);
   private readonly messages = inject(MessageService);
-  private readonly confirmation = inject(ConfirmationService);
   private readonly uiAlertAudit = inject(UiAlertAuditService);
   private readonly goBackSvc = inject(GoBackService);
 
   loading = false;
   rows: StudentFinalExamRow[] = [];
   selectedRow: StudentFinalExamRow | null = null;
+
+  // #ASUMIENDO CODIGO: usamos un modo simple para distinguir qué acción se confirma
+  confirmDialogVisible = false;
+  confirmDialogHeader = '';
+  confirmDialogMessage = '';
+  confirmDialogMode: 'enroll' | 'unenroll' | null = null;
 
   private readonly shortDateFormatter = new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
@@ -66,7 +71,10 @@ export class MesasListComponent implements OnInit {
   loadAvailableExams(options?: { refresh?: boolean }): void {
     this.loading = true;
     this.inscriptions
-      .getAvailableFinalExamsForCurrentStudent({}, { refresh: options?.refresh })
+      .getAvailableFinalExamsForCurrentStudent(
+        {},
+        { refresh: options?.refresh },
+      )
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (rows) => {
@@ -95,14 +103,10 @@ export class MesasListComponent implements OnInit {
     this.selectedRow = row;
 
     const when = this.formatExamDate(row.examDate);
-    this.confirmation.confirm({
-      header: 'Confirmar inscripción',
-      message: `¿Confirmás la inscripción a ${row.subjectName} para rendir el ${when}?`,
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Confirmar',
-      rejectLabel: 'Cancelar',
-      accept: () => this.executeEnroll(row),
-    });
+    this.confirmDialogHeader = 'Confirmar inscripción';
+    this.confirmDialogMessage = `¿Confirmás la inscripción a ${row.subjectName} para rendir el ${when}?`;
+    this.confirmDialogMode = 'enroll';
+    this.confirmDialogVisible = true;
   }
 
   onUnenroll(row: StudentFinalExamRow): void {
@@ -112,14 +116,31 @@ export class MesasListComponent implements OnInit {
     this.selectedRow = row;
 
     const when = this.formatExamDate(row.examDate);
-    this.confirmation.confirm({
-      header: 'Cancelar inscripción',
-      message: `¿Querés cancelar tu inscripción a ${row.subjectName} del ${when}?`,
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, cancelar',
-      rejectLabel: 'Mantener inscripción',
-      accept: () => this.executeUnenroll(row),
-    });
+    this.confirmDialogHeader = 'Cancelar inscripción';
+    this.confirmDialogMessage = `¿Querés cancelar tu inscripción a ${row.subjectName} del ${when}?`;
+    this.confirmDialogMode = 'unenroll';
+    this.confirmDialogVisible = true;
+  }
+
+  onConfirmDialogAccept(): void {
+    if (!this.selectedRow || !this.confirmDialogMode) {
+      this.confirmDialogVisible = false;
+      return;
+    }
+
+    if (this.confirmDialogMode === 'enroll') {
+      this.executeEnroll(this.selectedRow);
+    } else if (this.confirmDialogMode === 'unenroll') {
+      this.executeUnenroll(this.selectedRow);
+    }
+
+    this.confirmDialogVisible = false;
+    this.confirmDialogMode = null;
+  }
+
+  onConfirmDialogReject(): void {
+    this.confirmDialogVisible = false;
+    this.confirmDialogMode = null;
   }
 
   onPrintReceipt(row: StudentFinalExamRow): void {
@@ -179,7 +200,9 @@ export class MesasListComponent implements OnInit {
       row.blockedReason === 'QUOTA_FULL' ||
       row.blockedReason === 'BACKEND_BLOCK';
 
-    return !row.isEnrolled && hasCorrelativeOk && isWindowOpen && !backendBlocked;
+    return (
+      !row.isEnrolled && hasCorrelativeOk && isWindowOpen && !backendBlocked
+    );
   }
 
   canUnenroll(row: StudentFinalExamRow): boolean {
@@ -203,7 +226,9 @@ export class MesasListComponent implements OnInit {
         next: (resp) => {
           if (resp.ok) {
             this.rows = this.rows.map((r) =>
-              r.finalExamId === row.finalExamId ? { ...r, isEnrolled: true } : r,
+              r.finalExamId === row.finalExamId
+                ? { ...r, isEnrolled: true }
+                : r,
             );
             this.showToast(
               'success',
@@ -240,13 +265,23 @@ export class MesasListComponent implements OnInit {
         next: (resp) => {
           if (resp.ok) {
             this.rows = this.rows.map((r) =>
-              r.finalExamId === row.finalExamId ? { ...r, isEnrolled: false } : r,
+              r.finalExamId === row.finalExamId
+                ? {
+                    ...r,
+                    isEnrolled: false,
+                    // #ASUMIENDO CODIGO: blockedReason existe en StudentFinalExamRow
+                    // y dejarlo en null/undefined permite re-inscribirse si la ventana sigue abierta.
+                    blockedReason: null,
+                  }
+                : r,
             );
+
             this.showToast(
               'success',
               'Inscripción cancelada',
               `Se canceló tu inscripción a ${row.subjectName}.`,
             );
+
             if (resp.refreshRequired) {
               this.loadAvailableExams({ refresh: true });
             }

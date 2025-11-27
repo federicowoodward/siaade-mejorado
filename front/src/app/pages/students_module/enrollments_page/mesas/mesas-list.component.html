@@ -153,4 +153,29 @@
   </div>
 </div>
 
-<p-confirmDialog></p-confirmDialog>
+<p-dialog
+  [(visible)]="confirmDialogVisible"
+  [modal]="true"
+  [closable]="false"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '90vw' }"
+>
+  <ng-template pTemplate="header">
+    {{ confirmDialogHeader }}
+  </ng-template>
+
+  <p class="m-0">
+    {{ confirmDialogMessage }}
+  </p>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Mantener inscripción"
+      severity="secondary"
+      icon="pi pi-times"
+      (onClick)="onConfirmDialogReject()"
+    ></p-button>
+    <p-button label="Confirmar" (onClick)="onConfirmDialogAccept()"></p-button>
+  </ng-template>
+</p-dialog>
