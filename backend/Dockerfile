@@ -12,12 +12,17 @@ RUN npm install
 
 # Copiar el resto y compilar
 COPY . .
-RUN rm -rf dist && npm run build
+RUN rm -rf dist tsconfig.build.tsbuildinfo && npm run build \
+  && mkdir -p dist/modules/pdf-generator \
+  && cp -R src/modules/pdf-generator/templates dist/modules/pdf-generator/
 
 # ===== Etapa 2: Runtime =====
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Dependencias del sistema para Chromium/Puppeteer en Alpine
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
 
 # Copiar manifests y script de entrypoint
 COPY package*.json ./
