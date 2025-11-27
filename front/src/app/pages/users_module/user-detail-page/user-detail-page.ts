@@ -46,6 +46,8 @@ export class UserDetailPage implements OnInit {
   // flags alumno
   isActive = signal<boolean | null>(null);
   canLogin = signal<boolean | null>(null);
+  isBlocked = signal<boolean>(false);
+  blockedReason = signal<string | null>(null);
   isStudent = signal<boolean>(false);
   targetRole = signal<ROLE | null>(null);
   targetRoleId = signal<number | null>(null);
@@ -111,6 +113,10 @@ export class UserDetailPage implements OnInit {
         this.api.request('GET', `users/${id}`),
       );
       const data = resp?.data ?? resp;
+      const blockedReason = (data as any)?.blockedReason ?? null;
+      const isBlocked = !!(data as any)?.isBlocked;
+      this.blockedReason.set(blockedReason);
+      this.isBlocked.set(isBlocked);
       const roleName: ROLE | null = (data?.role?.name as ROLE) ?? null;
       const roleId: number | null =
         Number(data?.role?.id) || (roleName ? ROLE_IDS[roleName] : null);
@@ -191,6 +197,14 @@ export class UserDetailPage implements OnInit {
     return null;
   }
 
+  // Acceso efectivo (combina flags de rol y bloqueo global)
+  accessEnabled(): boolean {
+    const blocked = this.isBlocked();
+    const flag = this.canLogin();
+    if (blocked || flag === false) return false;
+    return true;
+  }
+
   // ---- acciones ----
   async onToggleCanLogin(next: boolean): Promise<void> {
     console.debug('[UserDetail] onToggleCanLogin called with next=', next, {
@@ -227,6 +241,8 @@ export class UserDetailPage implements OnInit {
         this.api.request('PATCH', `users/${this.userId}/unblock`),
       );
       this.canLogin.set(true);
+      this.isBlocked.set(false);
+      this.blockedReason.set(null);
       this.cache.update(this.userId, { canLogin: true });
       console.debug('[UserDetail] Access enabled and reason cleared');
     } catch (e) {
@@ -276,6 +292,8 @@ export class UserDetailPage implements OnInit {
         this.api.request('PATCH', `users/${this.userId}/block`, { reason }),
       );
       this.canLogin.set(false);
+      this.isBlocked.set(true);
+      this.blockedReason.set(reason || null);
       this.cache.update(this.userId, { canLogin: false });
       this.dialogCloseMode = 'confirm';
       this.showReasonDialog.set(false);

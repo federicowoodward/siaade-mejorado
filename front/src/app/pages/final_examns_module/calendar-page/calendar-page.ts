@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExamsMockService, ExamTable, FinalExam } from '../exams-mock.service';
 import {
@@ -12,7 +11,7 @@ import {
 @Component({
   selector: 'app-calendar-page',
   standalone: true,
-  imports: [CommonModule, AppBreadcrumbComponent, TableModule, Button],
+  imports: [CommonModule, AppBreadcrumbComponent, TableModule],
   templateUrl: './calendar-page.html',
   styleUrls: ['./calendar-page.scss'],
 })

@@ -1,50 +1,81 @@
-<div class="m-w-custom flex flex-column gap-3">
+<div class="m-w-custom flex flex-column">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
-  <h2>Datos personales del usuario</h2>
+  <div class="surface-card border-round p-4 shadow-1 mb-3">
+    <h2>Datos personales del usuario</h2>
+    <p class="pt-3">Visualiza y modifica datos del usuario seleccionado.</p>
+  </div>
   <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
 
-  <h2>Accesos del usuario</h2>
+  <div class="surface-card border-round p-4 shadow-1 mb-3 mt-3">
+    <h2>Accesos</h2>
+    <p class="pt-3">Administra los accesos del usuario seleccionado.</p>
+  </div>
+
   <!-- Controles de acceso/estado del alumno -->
   <div
-    class="flex flex-row gap-3 align-items-center flex-wrap surface-card p-3 border-round"
+    class="flex flex-column justify-content-around gap-5 flex-wrap surface-card p-3 border-round shadow-1"
   >
-    <div class="flex flex-column gap-1">
-      <span class="text-sm font-medium">Acceso</span>
-      <p-togglebutton
-        [ngModel]="canLogin()"
-        (ngModelChange)="onToggleCanLogin(!!$event)"
-        [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
-        onLabel="Habilitado"
-        offLabel="Bloqueado"
-        [onIcon]="'pi pi-lock-open'"
-        [offIcon]="'pi pi-lock'"
-        class="w-12rem text-sm"
-        [ngClass]="(canLogin() ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
-        ariaLabel="Cambiar acceso"
-      ></p-togglebutton>
-      <div
-        class="mt-1 text-xs text-color-secondary"
-        *ngIf="isActive() === false"
-      >
-        Inactivo: acceso bloqueado
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <h3>Acceso al sistema</h3>
+        <p class="pt-2">
+          Habilita o bloquea el inicio de sesión del usuario, se puede dejar una
+          nota indicando el motivo del bloqueo.
+        </p>
+      </div>
+      <div class="col-12 md:col-6 flex justify-content-center flex-column">
+        <div class="pb-2">
+          <p-togglebutton
+            [ngModel]="accessEnabled()"
+            (ngModelChange)="onToggleCanLogin(!!$event)"
+            [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
+            onLabel="Habilitado"
+            offLabel="Bloqueado"
+            [onIcon]="'pi pi-lock-open'"
+            [offIcon]="'pi pi-lock'"
+            class="w-10rem"
+            [ngClass]="accessEnabled() ? 'toggle-success' : 'toggle-danger'"
+            ariaLabel="Cambiar acceso"
+          />
+        </div>
+        <div
+          class="mt-1 text-xs text-color-secondary"
+          *ngIf="isActive() === false"
+        >
+          Inactivo: acceso bloqueado
+        </div>
+        <div
+          class="mt-1 text-xs text-color-secondary w-20rem"
+          *ngIf="isActive() !== false && (isBlocked() || canLogin() === false) && blockedReason()"
+        >
+          Motivo del bloqueo: {{ blockedReason() }}
+        </div>
       </div>
     </div>
 
-    <div class="flex flex-column gap-1">
-      <span class="text-sm font-medium">Estado</span>
-      <p-togglebutton
-        [ngModel]="isActive() !== false"
-        (onChange)="onToggleIsActive(!!$event.checked)"
-        [disabled]="saving() || !canToggleIsActive()"
-        onLabel="Activo"
-        offLabel="Inactivo"
-        [onIcon]="'pi pi-check'"
-        [offIcon]="'pi pi-times'"
-        class="w-10rem text-sm"
-        [ngClass]="((isActive() !== false) ? 'bg-green-300' : 'bg-red-300') + ' border-round-sm'"
-        ariaLabel="Cambiar estado"
-      ></p-togglebutton>
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <h3>Estado de cuenta</h3>
+        <p class="pt-2">
+          Indica si el usuario sigue activo en la institución. Un usuario
+          inactivo no podrá iniciar sesión ni ser asignado a nuevas actividades.
+        </p>
+      </div>
+      <div class="col-12 md:col-6 flex justify-content-center flex-column">
+        <p-togglebutton
+          [ngModel]="isActive() !== false"
+          (ngModelChange)="onToggleIsActive(!!$event)"
+          [disabled]="saving() || !canToggleIsActive()"
+          onLabel="Activo"
+          offLabel="Inactivo"
+          [onIcon]="'pi pi-check'"
+          [offIcon]="'pi pi-times'"
+          class="w-10rem"
+          [ngClass]="(isActive() !== false) ? 'toggle-success' : 'toggle-danger'"
+          ariaLabel="Cambiar estado"
+        />
+      </div>
     </div>
   </div>
 
