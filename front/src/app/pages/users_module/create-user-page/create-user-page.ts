@@ -55,6 +55,7 @@ type RoleOption = { label: string; value: UserRole };
     SelectModule,
     TableModule,
     FieldLabelPipe,
+    RoleLabelPipe,
     BlockedActionDirective,
     IftaLabelModule,
   ],
