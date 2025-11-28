@@ -8,6 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -37,6 +39,7 @@ import {
 import { IftaLabelModule } from 'primeng/iftalabel';
 import { ArgentinaGeoService } from '../../../shared/services/argentina-geo.service';
 import { firstValueFrom } from 'rxjs';
+import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 type PreviewRow = { field: string; value: string };
 type RoleOption = { label: string; value: UserRole };
@@ -53,6 +56,7 @@ type RoleOption = { label: string; value: UserRole };
     AutoCompleteModule,
     TooltipModule,
     SelectModule,
+    ToastModule,
     TableModule,
     FieldLabelPipe,
     RoleLabelPipe,
@@ -67,6 +71,8 @@ export class CreateUserPage implements OnInit {
   private api = inject(ApiService);
   private router = inject(Router);
   private geo = inject(ArgentinaGeoService);
+  private messages = inject(MessageService);
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   isCreating = false;
 
@@ -219,9 +225,18 @@ export class CreateUserPage implements OnInit {
 
       const created = await this.api.create(endpoint, payload).toPromise();
       console.log('Usuario creado:', created);
-      this.router.navigate(['/users']);
+      this.toastOk('Usuario creado correctamente');
+      setTimeout(() => this.router.navigate(['/users']), 700);
     } catch (err) {
       console.error('Error al crear usuario', err);
+      const backendMsg = (err as any)?.error?.message;
+      let detail = 'No se pudo crear el usuario. Verifique los datos.';
+      if (backendMsg) {
+        detail = Array.isArray(backendMsg) ? backendMsg.join(' | ') : backendMsg;
+      } else if ((err as any)?.status === 409) {
+        detail = 'Datos duplicados. Revise email, CUIL o legajo.';
+      }
+      this.toastErr(detail);
     } finally {
       this.isCreating = false;
     }
@@ -302,6 +317,18 @@ export class CreateUserPage implements OnInit {
     const needle = (q ?? '').toLowerCase().trim();
     if (!needle) return [...src];
     return src.filter((v) => v.toLowerCase().includes(needle));
+  }
+
+  private toastOk(summary: string) {
+    this.uiAlertAudit.add(this.messages, { severity: 'success', summary });
+  }
+
+  private toastErr(detail: string) {
+    this.uiAlertAudit.add(this.messages, {
+      severity: 'error',
+      summary: 'Error',
+      detail,
+    });
   }
 
   // ---- MÉTODOS PARA p-autoComplete ----
