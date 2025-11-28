@@ -1,6 +1,16 @@
 // src/shared/services/user-provisioning.service.ts
-import { Injectable, BadRequestException } from "@nestjs/common";
-import { DataSource, QueryRunner, Repository, DeepPartial } from "typeorm";
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+} from "@nestjs/common";
+import {
+  DataSource,
+  QueryRunner,
+  Repository,
+  DeepPartial,
+  QueryFailedError,
+} from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { User } from "@/entities/users/user.entity";
@@ -50,6 +60,40 @@ export class UserProvisioningService {
     private readonly secretariesRepo: Repository<Secretary>,
   ) {}
 
+  private isUniqueViolation(err: unknown): err is QueryFailedError {
+    return (
+      err instanceof QueryFailedError &&
+      ((err as any)?.driverError?.code ?? "") === "23505"
+    );
+  }
+
+  private mapUniqueViolationMessage(err: QueryFailedError): string | null {
+    const constraint = (err as any)?.driverError?.constraint as
+      | string
+      | undefined;
+    const detail = (err as any)?.driverError?.detail as string | undefined;
+
+    const messages: Record<string, string> = {
+      // users.email
+      UQ_97672ac88f789774dd47f7c8be3: "El email ya está registrado",
+      // users.cuil
+      UQ_ad7818505b07e9124cc186da6b7: "El CUIL ya está registrado",
+      // students.legajo
+      UQ_e8df771e580eb1c9f980d27becc: "El legajo ya está registrado",
+    };
+
+    if (constraint && messages[constraint]) return messages[constraint];
+    if (detail) return detail;
+    return null;
+  }
+
+  private throwConflictForUnique(err: QueryFailedError): never {
+    const msg =
+      this.mapUniqueViolationMessage(err) ||
+      "Violación de restricción única (datos duplicados)";
+    throw new ConflictException(msg);
+  }
+
   async createStudent(dto: CreateStudentUserDto) {
     return this.runInTx(async (qr) => {
       const role = await this.resolveRole(qr, dto.userData, ROLE.STUDENT);
@@ -87,7 +131,15 @@ export class UserProvisioningService {
         isActive: dto.studentData.isActive ?? true,
         studentStartYear: startYear,
       } as DeepPartial<Student>);
-      const savedStudent = await qr.manager.save(Student, student);
+      let savedStudent: Student;
+      try {
+        savedStudent = await qr.manager.save(Student, student);
+      } catch (err) {
+        if (this.isUniqueViolation(err)) {
+          this.throwConflictForUnique(err);
+        }
+        throw err;
+      }
 
       return { user, student: savedStudent };
     });
@@ -212,9 +264,16 @@ export class UserProvisioningService {
     };
 
     const userEntity = this.usersRepo.create(toCreate);
-    const saved = await qr.manager.save(User, userEntity);
-    // saved es User (no User[])
-    return saved;
+    try {
+      const saved = await qr.manager.save(User, userEntity);
+      // saved es User (no User[])
+      return saved;
+    } catch (err) {
+      if (this.isUniqueViolation(err)) {
+        this.throwConflictForUnique(err);
+      }
+      throw err;
+    }
   }
 
   private async maybeCreateUserInfo(
