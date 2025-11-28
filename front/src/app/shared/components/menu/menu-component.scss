@@ -7,7 +7,7 @@
   }
 }
 ::ng-deep {
-    .side-menu .p-menu {
+  .side-menu .p-menu {
     width: 7.1rem !important;
     min-width: 7.1rem !important;
     display: flex;
@@ -20,12 +20,24 @@
       flex-direction: column;
       padding-left: 0 !important;
       padding-right: 0 !important;
+
       .p-menu-item-label {
         font-size: 9px !important;
       }
     }
     .p-menu-item-icon {
       font-size: 22px !important;
+    }
+  }
+  .menu-component {
+    .is-active-menu-item {
+      color: var(--p-primary-color) !important;
+    }
+
+    .is-active-menu-item .p-menu-item-icon,
+    .is-active-menu-item .p-menu-item-label {
+      color: var(--p-primary-contrast-color);
+      color: var(--p-primary-color) !important;
     }
   }
 }
