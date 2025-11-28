@@ -1,6 +1,8 @@
 <div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <div class="flex justify-content-between align-items-center mb-3 surface-card shadow-2 border-round p-3">
+  <div
+    class="flex justify-content-between align-items-center mb-3 surface-card shadow-2 border-round p-3"
+  >
     <h2 class="m-0">
       Examen • {{ exam()?.subject_name || 'Materia' }}
       <small class="text-color-secondary block">
@@ -36,7 +38,7 @@
           <td class="">
             <p-tag
               *ngIf="row.enrolled_at; else noIns"
-              severity="info"
+              severity="secondary"
               styleClass="w-full h-2rem"
             >
               <div class="w-full text-center">
@@ -46,7 +48,7 @@
             </p-tag>
 
             <ng-template #noIns>
-              <p-tag severity="warn" styleClass="w-full h-2rem">
+              <p-tag severity="secondary" styleClass="w-full h-2rem">
                 <div class="w-full text-center">No inscripto</div>
               </p-tag>
             </ng-template>
