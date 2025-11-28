@@ -29,7 +29,10 @@ export function resolveSubjectStateSeverity(
   const isPromo = value.includes('promo') || value.includes('promocionado');
   const isLibre = value.includes('libre');
   const isRegular = value.includes('regular');
-  const isAprobado = value.includes('aproba') && !isPromo;
+  const isAprobado =
+    value.includes('aproba') &&
+    !isPromo &&
+    !value.includes('desaprob'); // evita clasificar "Desaprobado" como aprobado
   const isInscripto =
     value.includes('inscripto') ||
     value.includes('inscrito') ||

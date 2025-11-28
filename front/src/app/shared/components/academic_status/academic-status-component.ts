@@ -14,6 +14,10 @@ import { Tag } from 'primeng/tag';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { forkJoin } from 'rxjs';
+import {
+  SubjectStateSeverity,
+  resolveSubjectStateSeverity,
+} from '@/shared/utils/subject-state.utils';
 
 export interface StudentMinimal {
   id: string;
@@ -110,20 +114,8 @@ export class AcademicStatus implements OnInit, OnChanges {
       });
   }
 
-  getSeverity(condition: string): string {
-    switch (condition) {
-      case 'Aprobado':
-        return 'success';
-      case 'Promocionado':
-        return 'success';
-      case 'Desaprobado':
-        return 'warn';
-      case 'Libre':
-        return 'danger';
-      case 'Inscripto':
-        return 'info';
-      default:
-        return 'secondary';
-    }
+  getSeverity(condition: string | null | undefined): SubjectStateSeverity {
+    // Wrapper para reutilizar la lógica compartida de severidad de estado.
+    return resolveSubjectStateSeverity(condition);
   }
 }

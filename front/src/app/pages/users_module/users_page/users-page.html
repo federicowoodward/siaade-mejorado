@@ -133,6 +133,15 @@
       <ng-template #errorTpl>
         <div class="p-3 text-red-600">{{ dialogError() }}</div>
       </ng-template>
+
+      <div class="flex pt-3 justify-content-end">
+        <p-button
+          label="Cerrar"
+          icon="pi pi-times"
+          severity="secondary"
+          (onClick)="closeTeacherDialog()"
+        ></p-button>
+      </div>
     </ng-template>
   </p-dialog>
 </div>

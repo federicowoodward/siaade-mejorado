@@ -1,6 +1,6 @@
 <div class="m-w-custom">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <div class="flex justify-content-between align-items-center mb-3">
+  <div class="flex justify-content-between align-items-center mb-3 surface-card shadow-2 border-round p-3">
     <h2 class="m-0">
       Examen • {{ exam()?.subject_name || 'Materia' }}
       <small class="text-color-secondary block">
@@ -9,111 +9,113 @@
       </small>
     </h2>
   </div>
+  <div class="surface-card border-round p-1">
+    <p-table
+      [value]="rows()"
+      responsiveLayout="scroll"
+      [paginator]="true"
+      [rows]="10"
+      [loading]="loading()"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      [tableStyle]="{ 'min-width': '60rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 8rem">Alumno</th>
+          <th style="width: 14rem">Estado</th>
+          <th style="width: 8rem">Accion</th>
+          <th style="width: 7rem">Nota</th>
+          <th>Observaciones</th>
+        </tr>
+      </ng-template>
 
-  <p-table
-    [value]="rows()"
-    responsiveLayout="scroll"
-    [paginator]="true"
-    [rows]="10"
-    [loading]="loading()"
-    [tableStyle]="{ 'min-width': '60rem' }"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th style="width: 8rem">Alumno</th>
-        <th style="width: 14rem">Estado</th>
-        <th style="width: 8rem">Accion</th>
-        <th style="width: 7rem">Nota</th>
-        <th>Observaciones</th>
-      </tr>
-    </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td class="font-medium">{{ row.name }}</td>
 
-    <ng-template pTemplate="body" let-row>
-      <tr>
-        <td class="font-medium">{{ row.name }}</td>
-
-        <td class="">
-          <p-tag
-            *ngIf="row.enrolled_at; else noIns"
-            severity="info"
-            styleClass="w-full h-2rem"
-          >
-            <div class="w-full text-center">
-              Inscripto el
-              <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
-            </div>
-          </p-tag>
-
-          <ng-template #noIns>
-            <p-tag severity="warn" styleClass="w-full h-2rem">
-              <div class="w-full text-center">No inscripto</div>
+          <td class="">
+            <p-tag
+              *ngIf="row.enrolled_at; else noIns"
+              severity="info"
+              styleClass="w-full h-2rem"
+            >
+              <div class="w-full text-center">
+                Inscripto el
+                <strong>{{ row.enrolled_at | date:'dd/MM/yyyy' }}</strong>
+              </div>
             </p-tag>
-          </ng-template>
-        </td>
-        <td class="">
-          <div
-            class="mt-2"
-            *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']"
-          >
-            <p-button
-              *ngIf="row.enrolled_at; else insBtn"
-              label="Desinscribir"
-              icon="pi pi-user-minus"
-              severity="danger"
-              size="small"
-              [loading]="loadingRow() === row.student_id"
-              (onClick)="onToggleExamEnrollment(row, 'unenroll')"
-              blockedAction
-            ></p-button>
-            <ng-template #insBtn>
+
+            <ng-template #noIns>
+              <p-tag severity="warn" styleClass="w-full h-2rem">
+                <div class="w-full text-center">No inscripto</div>
+              </p-tag>
+            </ng-template>
+          </td>
+          <td class="">
+            <div
+              class="mt-2"
+              *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']"
+            >
               <p-button
-                label="Inscribir"
-                icon="pi pi-user-plus"
-                severity="success"
+                *ngIf="row.enrolled_at; else insBtn"
+                label="Desinscribir"
+                icon="pi pi-user-minus"
+                severity="danger"
                 size="small"
                 [loading]="loadingRow() === row.student_id"
-                (onClick)="onToggleExamEnrollment(row, 'enroll')"
+                (onClick)="onToggleExamEnrollment(row, 'unenroll')"
                 blockedAction
               ></p-button>
-            </ng-template>
-          </div>
-        </td>
-        <td>
-          <p-inputNumber
-            [min]="0"
-            [max]="10"
-            [step]="0.5"
-            [useGrouping]="false"
-            mode="decimal"
-            [(ngModel)]="row.score"
-            inputStyleClass="w-7rem"
-            [disabled]="!canEditScores()"
-          ></p-inputNumber>
-        </td>
+              <ng-template #insBtn>
+                <p-button
+                  label="Inscribir"
+                  icon="pi pi-user-plus"
+                  severity="success"
+                  size="small"
+                  [loading]="loadingRow() === row.student_id"
+                  (onClick)="onToggleExamEnrollment(row, 'enroll')"
+                  blockedAction
+                ></p-button>
+              </ng-template>
+            </div>
+          </td>
+          <td>
+            <p-inputNumber
+              [min]="0"
+              [max]="10"
+              [step]="0.5"
+              [useGrouping]="false"
+              mode="decimal"
+              [(ngModel)]="row.score"
+              inputStyleClass="w-7rem"
+              [disabled]="!canEditScores()"
+            ></p-inputNumber>
+          </td>
 
-        <td>
-          <input
-            pInputText
-            class="w-full"
-            [(ngModel)]="row.notes"
-            placeholder="Notas del acta (opcional)"
-            [disabled]="!canEditNotes()"
-          />
-        </td>
-      </tr>
-    </ng-template>
+          <td>
+            <input
+              pInputText
+              class="w-full"
+              [(ngModel)]="row.notes"
+              placeholder="Notas del acta (opcional)"
+              [disabled]="!canEditNotes()"
+            />
+          </td>
+        </tr>
+      </ng-template>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="4">
-          <div class="flex align-items-center gap-2">
-            <i class="pi pi-inbox"></i>
-            No hay alumnos para este examen.
-          </div>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-inbox"></i>
+              No hay alumnos para este examen.
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
 
   <div class="flex justify-end mt-3">
     <p-button

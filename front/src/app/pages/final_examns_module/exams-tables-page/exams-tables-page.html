@@ -1,5 +1,5 @@
 <div class="m-w-custom">
-  <p-confirmpopup ></p-confirmpopup >
+  <p-confirmpopup></p-confirmpopup>
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
   <div
     class="surface-card shadow-2 border-round p-3 mb-3 flex justify-content-between align-content-center"
@@ -19,65 +19,67 @@
       ></p-button>
     </div>
   </div>
-
-  <p-table
-    [value]="tables()"
-    [paginator]="true"
-    [rows]="10"
-    responsiveLayout="scroll"
-    [loading]="loading()"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Nombre</th>
-        <th>Rango</th>
-        <th>Creada por</th>
-        <th style="width: 260px">Acciones</th>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-row>
-      <tr>
-        <td class="font-medium">{{ row.name }}</td>
-        <td>
-          {{ row.start_date | date:'dd/MM/yyyy' }} → {{ row.end_date |
-          date:'dd/MM/yyyy' }}
-        </td>
-        <td>
-          <ng-container *ngIf="row.created_by_user as u; else createdById">
-            {{ u.name }} {{ u.last_name || '' }}
-            <i
-              *ngIf="u.email"
-              class="pi pi-info-circle text-500 cursor-pointer ml-2"
-              pTooltip="{{ u.email }}"
-              tooltipPosition="top"
-              aria-label="Email del creador"
-            ></i>
-          </ng-container>
-          <ng-template #createdById>
-            <span class="text-500">{{ row.created_by | slice:0:8 }}…</span>
-          </ng-template>
-        </td>
-        <td class="flex gap-2 flex-wrap">
-          <p-button
-            label="Abrir"
-            icon="pi pi-arrow-right"
-            (onClick)="openTable(row)"
-          ></p-button>
-          <p-button
-            icon="pi pi-pencil"
-            severity="secondary"
-            (onClick)="openEdit(row)"
-          ></p-button>
-          <p-button
-            icon="pi pi-trash"
-            severity="danger"
-            variant="outlined"
-            (onClick)="confirm($event, deleteTable.bind(this, row))"
-          ></p-button>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+  <div class="surface-card border-round p-1">
+    <p-table
+      [value]="tables()"
+      [paginator]="true"
+      [rows]="10"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      responsiveLayout="scroll"
+      [loading]="loading()"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Nombre</th>
+          <th>Rango</th>
+          <th>Creada por</th>
+          <th style="width: 260px">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td class="font-medium">{{ row.name }}</td>
+          <td>
+            {{ row.start_date | date:'dd/MM/yyyy' }} → {{ row.end_date |
+            date:'dd/MM/yyyy' }}
+          </td>
+          <td>
+            <ng-container *ngIf="row.created_by_user as u; else createdById">
+              {{ u.name }} {{ u.last_name || '' }}
+              <i
+                *ngIf="u.email"
+                class="pi pi-info-circle text-500 cursor-pointer ml-2"
+                pTooltip="{{ u.email }}"
+                tooltipPosition="top"
+                aria-label="Email del creador"
+              ></i>
+            </ng-container>
+            <ng-template #createdById>
+              <span class="text-500">{{ row.created_by | slice:0:8 }}…</span>
+            </ng-template>
+          </td>
+          <td class="flex gap-2 flex-wrap">
+            <p-button
+              label="Abrir"
+              icon="pi pi-arrow-right"
+              (onClick)="openTable(row)"
+            ></p-button>
+            <p-button
+              icon="pi pi-pencil"
+              severity="secondary"
+              (onClick)="openEdit(row)"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              variant="outlined"
+              (onClick)="confirm($event, deleteTable.bind(this, row))"
+            ></p-button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
 </div>
 
 <p-dialog

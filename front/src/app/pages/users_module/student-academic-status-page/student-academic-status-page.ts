@@ -18,30 +18,24 @@ import {
 @Component({
   selector: 'app-student-academic-status-page',
   standalone: true,
-  imports: [CommonModule, AppBreadcrumbComponent, AcademicStatus, Button],
+  imports: [CommonModule, AppBreadcrumbComponent, AcademicStatus],
   template: `
     <div class="m-w-custom flex flex-column gap-3">
       <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+      <div class="surface-card border-round p-4 mb-4">
+        <h2>Situación Académica del Estudiante</h2>
 
-      <p-button
-        label="Volver a tabla"
-        icon="pi-arrow-rigth"
-        iconPos="left"
-        (onClick)="back()"
-      ></p-button>
-
-      <h2>Situación Académica del Estudiante</h2>
-
-      @if (loading()) {
-        <p>Cargando información del usuario...</p>
-      } @else if (errorMessage()) {
-        <div class="p-4 bg-red-100 text-red-900 border-round">
-          <p class="font-bold">Error</p>
-          <p>{{ errorMessage() }}</p>
-        </div>
-      } @else if (student()) {
-        <app-academic-status [student]="student()"></app-academic-status>
-      }
+        @if (loading()) {
+          <p>Cargando información del usuario...</p>
+        } @else if (errorMessage()) {
+          <div class="p-4 bg-red-100 text-red-900 border-round">
+            <p class="font-bold">Error</p>
+            <p>{{ errorMessage() }}</p>
+          </div>
+        } @else if (student()) {
+          <app-academic-status [student]="student()"></app-academic-status>
+        }
+      </div>
     </div>
   `,
 })
