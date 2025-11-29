@@ -75,6 +75,7 @@ export class StudentsReadController {
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
     ROLE.TEACHER,
+    ROLE.STUDENT,
   )
   @ApiOperation({
     summary: "Listado de status del alumno en todas las materias (plano)",

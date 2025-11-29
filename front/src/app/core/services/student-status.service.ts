@@ -125,15 +125,16 @@ export class StudentStatusService {
 
   loadStatus(studentId?: string | null): Observable<StudentSubjectCard[]> {
     this.loadingSignal.set(true);
-    const effectiveStudentId = studentId ?? this.auth.getUserId();
+    const targetId = studentId ?? this.auth.getUserId();
+    const useSelfEndpoints = !studentId;
 
     return forkJoin({
-      subjects: this.fetchStatus(effectiveStudentId),
-      context: this.fetchContext(effectiveStudentId),
-      summary: this.fetchStudentSummary(effectiveStudentId),
+      subjects: this.fetchStatus(useSelfEndpoints ? null : targetId),
+      context: this.fetchContext(useSelfEndpoints ? null : targetId),
+      summary: this.fetchStudentSummary(targetId),
     }).pipe(
       map(({ subjects, context, summary }) => ({
-        cards: this.mapCards(subjects, context, effectiveStudentId),
+        cards: this.mapCards(subjects, context, targetId),
         summary,
       })),
       tap(({ cards, summary }) => {
