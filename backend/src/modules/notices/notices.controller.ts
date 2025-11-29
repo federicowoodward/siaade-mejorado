@@ -30,19 +30,12 @@ import { ROLE } from "@/shared/rbac/roles.constants";
 
 @ApiTags("Notices")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@AllowRoles(
-  ROLE.EXECUTIVE_SECRETARY,
-  ROLE.SECRETARY,
-  ROLE.PRECEPTOR,
-  ROLE.TEACHER,
-  ROLE.STUDENT,
-)
 @Controller("notices")
 export class NoticesController {
   constructor(private readonly service: NoticesService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @ApiOperation({ summary: "Crear aviso/post" })
   create(@Body() dto: CreateNoticeDto, @Req() req: Request) {
@@ -51,6 +44,7 @@ export class NoticesController {
   }
 
   @Patch(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @ApiOperation({ summary: "Editar aviso/post" })
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateNoticeDto) {
@@ -58,6 +52,7 @@ export class NoticesController {
   }
 
   @Delete(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @ApiOperation({ summary: "Eliminar aviso/post" })
   remove(@Param("id", ParseIntPipe) id: number) {
