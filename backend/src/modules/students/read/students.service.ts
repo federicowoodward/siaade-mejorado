@@ -174,8 +174,18 @@ export class StudentsReadService {
       condition: string | null;
     }>
   > {
-    const status =
-      await this.catalogsService.getStudentAcademicStatus(studentId);
+    let status: { byYear: Record<string, AcademicStatusRow[]> };
+    try {
+      status = await this.catalogsService.getStudentAcademicStatus(studentId);
+    } catch (error) {
+      // Evitar 500 si falla el origen de datos: devolvemos vacío y logueamos.
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[StudentsRead] getSubjectsStatusFlat fallback vacío",
+        { studentId, error },
+      );
+      return [];
+    }
     const flat: Array<{
       subjectId: number;
       subjectName: string;
@@ -204,6 +214,27 @@ export class StudentsReadService {
       return a.subjectName.localeCompare(b.subjectName);
     });
     return flat;
+  }
+
+  // Compat: contexto de acciones (ventanas/correlativas). Por ahora devolvemos estructura vacía.
+  getActionContext(
+    _studentId: string,
+  ): {
+    courseWindow: any;
+    examWindow: any;
+    correlatives: Array<{ subjectId: number; ok: boolean }>;
+    duplicates: number[];
+    quotaFull: number[];
+    quotaBlockedSubjects: number[];
+  } {
+    return {
+      courseWindow: null,
+      examWindow: null,
+      correlatives: [],
+      duplicates: [],
+      quotaFull: [],
+      quotaBlockedSubjects: [],
+    };
   }
 
   private mapAcademicStatusToYears(

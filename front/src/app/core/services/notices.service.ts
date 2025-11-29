@@ -187,6 +187,7 @@ export class NoticesService {
     content: string;
     visibleFor?: VisibleRole | 'all';
     commissionIds?: number[];
+    yearNumbers?: number[];
   }) {
     // Validación: el editor puede enviar <p><br></p> u HTML vacío; normalizamos
     const isEmptyHtml = (html: string | undefined | null) => {
@@ -211,6 +212,15 @@ export class NoticesService {
       body.commissionIds = Array.from(
         new Set(input.commissionIds.map((id) => Number(id))),
       ).filter((id) => Number.isFinite(id));
+    }
+    if (Array.isArray(input.yearNumbers)) {
+      body.yearNumbers = Array.from(
+        new Set(
+          input.yearNumbers
+            .map((n) => Number(n))
+            .filter((n) => Number.isFinite(n) && n > 0),
+        ),
+      );
     }
 
     try {

@@ -157,10 +157,26 @@
           { label: 'Docentes', value: 'teacher' },
         ]"
         [(ngModel)]="newNotice.visibleFor"
+        (onChange)="onVisibleForChange($event.value)"
         placeholder="Seleccionar destinatarios"
         styleClass="w-full"
+        appendTo="body"
       >
       </p-select>
+
+      <div class="mt-2" *ngIf="newNotice.visibleFor === ROLE.STUDENT">
+        <label>Filtro por año (opcional)</label>
+        <p-multiSelect
+          [options]="yearOptions"
+          [(ngModel)]="selectedYears"
+          defaultLabel="Todos los años"
+          optionLabel="label"
+          optionValue="value"
+          display="chip"
+          styleClass="w-full"
+          appendTo="body"
+        ></p-multiSelect>
+      </div>
 
       <div class="commission-selector" *ngIf="segmentByCommission()">
         <label>Comisiones destino</label>
@@ -171,6 +187,7 @@
           [(ngModel)]="selectedCommissionIds"
           placeholder="Todas las comisiones"
           styleClass="w-full"
+          appendTo="body"
         >
         </p-select>
         <small>

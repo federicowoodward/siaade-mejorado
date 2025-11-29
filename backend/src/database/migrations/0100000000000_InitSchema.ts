@@ -234,6 +234,28 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX "idx_sia_student" ON "student_inscription_audits" ("student_id")`,
     );
+    await queryRunner.query(`
+      CREATE TABLE "ui_alert_audits" (
+        "id" SERIAL NOT NULL,
+        "user_id" uuid NULL,
+        "severity" text NOT NULL,
+        "message" text NOT NULL,
+        "front_route" text NULL,
+        "front_module" text NULL,
+        "action" text NULL,
+        "metadata" jsonb NULL,
+        "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_ui_alert_audits" PRIMARY KEY ("id")
+      )
+    `);
+    await queryRunner.query(`
+      CREATE INDEX "idx_ui_alert_audits_created_at"
+      ON "ui_alert_audits" ("created_at")
+    `);
+    await queryRunner.query(`
+      CREATE INDEX "idx_ui_alert_audits_user"
+      ON "ui_alert_audits" ("user_id")
+    `);
     await queryRunner.query(
       `ALTER TABLE "user_info" ADD CONSTRAINT "FK_59c55ac40f267d450246040899e" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
@@ -685,6 +707,13 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `DROP TABLE IF EXISTS "student_inscription_audits"`,
     );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_ui_alert_audits_user"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_ui_alert_audits_created_at"`,
+    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "ui_alert_audits"`);
     await queryRunner.query(
       `DROP INDEX IF EXISTS "idx_subject_grade_audits_actor"`,
     );

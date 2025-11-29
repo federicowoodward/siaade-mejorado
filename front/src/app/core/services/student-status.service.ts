@@ -125,15 +125,16 @@ export class StudentStatusService {
 
   loadStatus(studentId?: string | null): Observable<StudentSubjectCard[]> {
     this.loadingSignal.set(true);
-    const effectiveStudentId = studentId ?? this.auth.getUserId();
+    const targetId = studentId ?? this.auth.getUserId();
+    const useSelfEndpoints = !studentId;
 
     return forkJoin({
-      subjects: this.fetchStatus(effectiveStudentId),
-      context: this.fetchContext(effectiveStudentId),
-      summary: this.fetchStudentSummary(effectiveStudentId),
+      subjects: this.fetchStatus(useSelfEndpoints ? null : targetId),
+      context: this.fetchContext(useSelfEndpoints ? null : targetId),
+      summary: this.fetchStudentSummary(targetId),
     }).pipe(
       map(({ subjects, context, summary }) => ({
-        cards: this.mapCards(subjects, context, effectiveStudentId),
+        cards: this.mapCards(subjects, context, targetId),
         summary,
       })),
       tap(({ cards, summary }) => {
@@ -154,49 +155,25 @@ export class StudentStatusService {
   private fetchStatus(
     studentId?: string | null,
   ): Observable<RawStatusResponse> {
-    const params = studentId ? { studentId } : undefined;
-    return this.api
-      .request<RawStatusResponse>(
-        'GET',
-        'students/read/status/subjects',
-        undefined,
-        params,
-      )
-      .pipe(
-        catchError((error) => {
-          if (!studentId) {
-            return throwError(() => error);
-          }
-          console.warn(
-            '[StudentStatus] Falling back to catalogs endpoint',
-            error,
-          );
-          return this.api
-            .request<any>(
-              'GET',
-              `catalogs/student/${studentId}/academic-status`,
-            )
-            .pipe(map((legacy) => this.legacyToNew(legacy, studentId)));
-        }),
-      );
+    const path = studentId
+      ? `students/read/${studentId}/subjects/status`
+      : 'students/read/me/subjects/status';
+    const targetId = studentId ?? this.auth.getUserId() ?? null;
+
+    return this.api.request<RawStatusResponse>('GET', path).pipe(
+      catchError((error) => {
+        console.warn('[StudentStatus] status endpoint unavailable', error);
+        if (!targetId) return throwError(() => error);
+        return this.api
+          .request<any>('GET', `catalogs/student/${targetId}/academic-status`)
+          .pipe(map((legacy) => this.legacyToNew(legacy, targetId)));
+      }),
+    );
   }
 
   private fetchContext(studentId?: string | null): Observable<ActionContext> {
-    const params = studentId ? { studentId } : undefined;
-    return this.api
-      .request<RawContextResponse>(
-        'GET',
-        'students/read/status/action-context',
-        undefined,
-        params,
-      )
-      .pipe(
-        map((payload) => this.mapContext(payload)),
-        catchError((error) => {
-          console.warn('[StudentStatus] context endpoint unavailable', error);
-          return of(this.buildFallbackContext());
-        }),
-      );
+    // Actualmente no hay endpoint de context; usar fallback inmediato para evitar 404.
+    return of(this.buildFallbackContext());
   }
 
   private fetchStudentSummary(
