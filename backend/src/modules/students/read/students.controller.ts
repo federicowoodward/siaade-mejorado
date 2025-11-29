@@ -103,6 +103,52 @@ export class StudentsReadController {
     return this.service.getSubjectsStatusFlat(req.user.id);
   }
 
+  // Compat: endpoint con query param studentId (o self si falta)
+  @Get("status/subjects")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("students.readSubjectsStatus")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({
+    summary:
+      "Listado de status del alumno (permite studentId como query; si falta usa el autenticado)",
+  })
+  getSubjectsStatusCompat(
+    @Req() req: any,
+    @Query("studentId") studentId?: string,
+  ) {
+    const targetId = studentId || req.user.id;
+    return this.service.getSubjectsStatusFlat(targetId);
+  }
+
+  // Compat: contexto de acciones (ventanas/correlativas); por ahora payload estandar vacío
+  @Get("status/action-context")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Action("students.readSubjectsStatus")
+  @AllowRoles(
+    ROLE.STUDENT,
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  @ApiOperation({
+    summary:
+      "Contexto de acciones para materias (windows/correlativas); devuelve estructura vacía",
+  })
+  getActionContextCompat(
+    @Req() req: any,
+    @Query("studentId") studentId?: string,
+  ) {
+    const targetId = studentId || req.user.id;
+    return this.service.getActionContext(targetId);
+  }
+
   @Get("me/full")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("students.readMyFull")

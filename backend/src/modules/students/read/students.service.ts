@@ -202,6 +202,27 @@ export class StudentsReadService {
     return flat;
   }
 
+  // Compat: contexto de acciones (ventanas/correlativas). Por ahora devolvemos estructura vacía.
+  getActionContext(
+    _studentId: string,
+  ): {
+    courseWindow: any;
+    examWindow: any;
+    correlatives: Array<{ subjectId: number; ok: boolean }>;
+    duplicates: number[];
+    quotaFull: number[];
+    quotaBlockedSubjects: number[];
+  } {
+    return {
+      courseWindow: null,
+      examWindow: null,
+      correlatives: [],
+      duplicates: [],
+      quotaFull: [],
+      quotaBlockedSubjects: [],
+    };
+  }
+
   private mapAcademicStatusToYears(
     byYear: Record<string, AcademicStatusRow[]>,
   ): Array<{
