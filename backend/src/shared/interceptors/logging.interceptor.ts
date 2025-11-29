@@ -1,5 +1,9 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { ExecutionContext, CallHandler, NestInterceptor } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import {
+  ExecutionContext,
+  CallHandler,
+  NestInterceptor,
+} from "@nestjs/common";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { JwtService } from "@nestjs/jwt";
@@ -18,7 +22,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
     const { method, url, ip } = request;
-    console.log("interceptor activado");
+    console.log("LoggingInterceptor active");
 
     // Verificar si la ruta está marcada como pública
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -40,17 +44,18 @@ export class LoggingInterceptor implements NestInterceptor {
     if (!isPublic && !isPublicUrl) {
       // Permitir preflight CORS sin exigir token
       if (method === "OPTIONS") {
-        console.log(`🌐 Preflight allowed: ${method} ${url} from ${ip}`);
+        console.log(`Preflight allowed: ${method} ${url} from ${ip}`);
         return next.handle().pipe(
           tap(() => {
             const responseTime = Date.now() - now;
             const statusCode = response.statusCode;
             console.log(
-              `📤 ${method} ${url} - ${statusCode} - ${responseTime}ms`,
+              `${method} ${url} - ${statusCode} - ${responseTime}ms`,
             );
           }),
         );
       }
+
       // Extraer token JWT del header Authorization
       const authHeader = request.headers.authorization;
 
@@ -58,30 +63,34 @@ export class LoggingInterceptor implements NestInterceptor {
         const token = authHeader.substring(7); // Remover 'Bearer '
         try {
           const payload = this.jwtService.verify(token);
-          request.user = payload; // Agregar usuario al request
+          // No sobrescribir un usuario ya seteado por JwtAuthGuard/JwtStrategy
+          if (!request.user) {
+            request.user = payload;
+          }
           console.log(
-            `🔐 JWT validated for user: ${payload.email || payload.username} accessing ${method} ${url}`,
+            `JWT validated for user: ${payload.email || payload.username} accessing ${method} ${url}`,
           );
-        } catch (error) {
-          console.log(`❌ Invalid JWT token for ${method} ${url} from ${ip}`);
+        } catch {
+          console.log(`Invalid JWT token for ${method} ${url} from ${ip}`);
           // No lanzamos aquí; dejamos que los guards manejen la autorización
         }
       } else {
         // Sin token: solo log y que la autorización la manejen los guards específicos
-        console.log(`⚠️ No JWT provided for ${method} ${url} from ${ip}`);
+        console.log(`No JWT provided for ${method} ${url} from ${ip}`);
       }
     } else {
-      console.log(`🌐 Public route accessed: ${method} ${url} from ${ip}`);
+      console.log(`Public route accessed: ${method} ${url} from ${ip}`);
     }
 
-    console.log(`📥 ${method} ${url} - Started at ${new Date().toISOString()}`);
+    console.log(`${method} ${url} - Started at ${new Date().toISOString()}`);
 
     return next.handle().pipe(
       tap(() => {
         const responseTime = Date.now() - now;
         const statusCode = response.statusCode;
-        console.log(`📤 ${method} ${url} - ${statusCode} - ${responseTime}ms`);
+        console.log(`${method} ${url} - ${statusCode} - ${responseTime}ms`);
       }),
     );
   }
 }
+
