@@ -170,8 +170,18 @@ export class StudentsReadService {
       condition: string | null;
     }>
   > {
-    const status =
-      await this.catalogsService.getStudentAcademicStatus(studentId);
+    let status: { byYear: Record<string, AcademicStatusRow[]> };
+    try {
+      status = await this.catalogsService.getStudentAcademicStatus(studentId);
+    } catch (error) {
+      // Evitar 500 si falla el origen de datos: devolvemos vacío y logueamos.
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[StudentsRead] getSubjectsStatusFlat fallback vacío",
+        { studentId, error },
+      );
+      return [];
+    }
     const flat: Array<{
       subjectId: number;
       subjectName: string;
