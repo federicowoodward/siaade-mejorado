@@ -13,6 +13,7 @@ import { EditorModule } from 'primeng/editor';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DialogModule } from 'primeng/dialog';
 import { PaginatorModule } from 'primeng/paginator';
@@ -41,6 +42,7 @@ import { firstValueFrom } from 'rxjs';
     ButtonModule,
     InputTextModule,
     SelectModule,
+    MultiSelectModule,
     ConfirmPopupModule,
     DialogModule,
     PaginatorModule,
@@ -95,6 +97,12 @@ export class NoticesPageComponent implements OnInit {
     commissionTargets: [],
   };
   selectedCommissionIds: number[] = [];
+  yearOptions = [
+    { label: '1er año', value: 1 },
+    { label: '2do año', value: 2 },
+    { label: '3er año', value: 3 },
+  ];
+  selectedYears: number[] = [];
 
   constructor() {
     effect(() => {
@@ -136,6 +144,7 @@ export class NoticesPageComponent implements OnInit {
 
   closeCreateDialog(): void {
     this.createDialogVisible.set(false);
+    this.resetSelections();
   }
 
   async addNotice() {
@@ -147,6 +156,10 @@ export class NoticesPageComponent implements OnInit {
         commissionIds: this.segmentByCommission()
           ? this.selectedCommissionIds
           : undefined,
+        yearNumbers:
+          (this.newNotice.visibleFor as VisibleRole | 'all') === ROLE.STUDENT
+            ? this.selectedYears
+            : [],
       });
 
       this.newNotice = {
@@ -155,7 +168,7 @@ export class NoticesPageComponent implements OnInit {
         visibleFor: ROLE.STUDENT as VisibleRole,
         commissionTargets: [],
       };
-      this.selectedCommissionIds = [];
+      this.resetSelections();
       this.createDialogVisible.set(false);
       this.loadPage(1);
     } catch (e: any) {
@@ -216,5 +229,17 @@ export class NoticesPageComponent implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  onVisibleForChange(value: VisibleRole | 'all') {
+    this.newNotice.visibleFor = value;
+    if (value !== ROLE.STUDENT) {
+      this.selectedYears = [];
+    }
+  }
+
+  private resetSelections() {
+    this.selectedCommissionIds = [];
+    this.selectedYears = [];
   }
 }
