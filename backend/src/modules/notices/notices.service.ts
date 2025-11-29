@@ -80,66 +80,99 @@ export class NoticesService {
     opts: { skip?: number; take?: number } | undefined,
     user?: AuthenticatedUser,
   ) {
-    const qb = this.repo
-      .createQueryBuilder("n")
-      .orderBy("n.created_at", "DESC");
+    try {
+      const qb = this.repo
+        .createQueryBuilder("n")
+        .orderBy("n.created_at", "DESC");
 
-    if (audience === "student") {
-      const roleId = await this.resolveRoleId("student");
-      qb.andWhere(
-        "n.visible_role_id IS NULL OR n.visible_role_id = :studentRoleId",
-        { studentRoleId: roleId },
-      );
-    } else if (audience === "teacher") {
-      const roleId = await this.resolveRoleId("teacher");
-      qb.andWhere(
-        "n.visible_role_id IS NULL OR n.visible_role_id = :teacherRoleId",
-        { teacherRoleId: roleId },
-      );
-    }
-
-    if (opts?.skip !== undefined) qb.skip(opts.skip);
-    if (opts?.take !== undefined) qb.take(opts.take);
-
-    if (this.segmentByCommission && user?.role === ROLE.STUDENT) {
-      const commissionIds = user.id
-        ? await this.resolveStudentCommissionIds(user.id)
-        : [];
-      if (commissionIds.length > 0) {
-        qb.andWhere(
-          `
-            (n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)
-            OR n.subject_commission_ids @> to_jsonb(:commissionIds::int[])
-          `,
-          { commissionIds: JSON.stringify(commissionIds) },
-        );
-      } else {
-        qb.andWhere(
-          `(n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)`,
-        );
+      if (audience === "student") {
+        const roleId = await this.resolveRoleIdSafe("student");
+        if (roleId) {
+          qb.andWhere(
+            "n.visible_role_id IS NULL OR n.visible_role_id = :studentRoleId",
+            { studentRoleId: roleId },
+          );
+        } else {
+          qb.andWhere("n.visible_role_id IS NULL");
+        }
+      } else if (audience === "teacher") {
+        const roleId = await this.resolveRoleIdSafe("teacher");
+        if (roleId) {
+          qb.andWhere(
+            "n.visible_role_id IS NULL OR n.visible_role_id = :teacherRoleId",
+            { teacherRoleId: roleId },
+          );
+        } else {
+          qb.andWhere("n.visible_role_id IS NULL");
+        }
       }
-    }
 
-    if (audience === "student" && user?.id) {
-      const studentYears = await this.resolveStudentYears(user.id);
-      if (studentYears.length > 0) {
-        qb.andWhere(
-          `
-            (n.year_numbers IS NULL OR jsonb_array_length(n.year_numbers) = 0)
-            OR n.year_numbers && to_jsonb(:studentYears::int[])
-          `,
-          { studentYears: JSON.stringify(studentYears) },
-        );
-      } else {
-        qb.andWhere(
-          `(n.year_numbers IS NULL OR jsonb_array_length(n.year_numbers) = 0)`,
-        );
+      if (opts?.skip !== undefined) qb.skip(opts.skip);
+      if (opts?.take !== undefined) qb.take(opts.take);
+
+      if (this.segmentByCommission && user?.role === ROLE.STUDENT) {
+        const commissionIds = user.id
+          ? await this.resolveStudentCommissionIds(user.id)
+          : [];
+        if (commissionIds.length > 0) {
+          qb.andWhere(
+            `
+              (n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)
+              OR n.subject_commission_ids @> to_jsonb(:commissionIds::int[])
+            `,
+            { commissionIds: commissionIds },
+          );
+        } else {
+          qb.andWhere(
+            `(n.subject_commission_ids IS NULL OR jsonb_array_length(n.subject_commission_ids) = 0)`,
+          );
+        }
       }
-    }
 
-    const [rows, total] = await qb.getManyAndCount();
-    const mapped = await Promise.all(rows.map((row) => this.mapNotice(row)));
-    return [mapped, total] as const;
+      if (audience === "student" && user?.id) {
+        const studentYears = await this.resolveStudentYears(user.id);
+        if (studentYears.length > 0) {
+          qb.andWhere(
+            `
+              (n.year_numbers IS NULL OR jsonb_array_length(n.year_numbers) = 0)
+              OR n.year_numbers && to_jsonb(:studentYears::int[])
+            `,
+            { studentYears: studentYears },
+          );
+        } else {
+          qb.andWhere(
+            `(n.year_numbers IS NULL OR jsonb_array_length(n.year_numbers) = 0)`,
+          );
+        }
+      }
+
+      const [rows, total] = await qb.getManyAndCount();
+      const mapped = await Promise.all(rows.map((row) => this.mapNotice(row)));
+      return [mapped, total] as const;
+    } catch (error) {
+      // Log y fallback vacío para evitar 500
+      // eslint-disable-next-line no-console
+      console.error("[NoticesService] findAllByAudience failed", {
+        audience,
+        error,
+      });
+      return [[], 0] as const;
+    }
+  }
+
+  private async resolveRoleIdSafe(
+    audience: "student" | "teacher",
+  ): Promise<number | null> {
+    try {
+      return await this.resolveRoleId(audience);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[NoticesService] resolveRoleIdSafe fallback", {
+        audience,
+        err,
+      });
+      return null;
+    }
   }
 
   private async findOneForReturn(id: number) {
