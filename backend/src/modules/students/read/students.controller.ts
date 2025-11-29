@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Req } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards, Req, Query } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOkResponse,
