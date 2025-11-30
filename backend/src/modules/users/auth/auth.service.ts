@@ -182,6 +182,7 @@ export class AuthService {
 
     await this.sendResetEmail({
       to: user.email,
+      name: `${user.name ?? ""} ${user.lastName ?? ""}`.trim(),
       code,
       token,
       codeTtlSec: codeExpiresInSeconds,
@@ -503,17 +504,20 @@ export class AuthService {
 
   private async sendResetEmail(params: {
     to: string;
+    name?: string;
     code: string;
     token: string;
     codeTtlSec: number;
     tokenTtlSec: number;
   }) {
-    const { to, code, token, codeTtlSec, tokenTtlSec } = params;
+    const { to, name, code, token, codeTtlSec, tokenTtlSec } = params;
     const codeMinutes = Math.max(1, Math.floor((codeTtlSec ?? 0) / 60));
     const tokenMinutes = Math.max(1, Math.floor((tokenTtlSec ?? 0) / 60));
 
+    const saludo = name && name.trim() ? `Hola ${name.trim()},` : "Hola,";
     const lines = [
-      "Hola,",
+      saludo,
+      "",
       "Recibimos una solicitud para restablecer tu contraseña.",
       `Código: ${code} (vence en ${codeMinutes} minutos).`,
       `El token expira en ${tokenMinutes} minutos.`,
@@ -523,13 +527,16 @@ export class AuthService {
     ];
 
     const html = [
-      "<p>Hola,</p>",
-      "<p>Recibimos una solicitud para restablecer tu contraseña.</p>",
-      `<p><strong>Código:</strong> ${code} (vence en ${codeMinutes} minutos).</p>`,
-      `<p><strong>El token expira en:</strong> ${tokenMinutes} minutos.</p>`,
-      "<p>Usa el código anterior para completar el proceso.</p>",
-      "<p>Si no solicitaste esto, ignorá este mensaje.</p>",
-      "<p>Equipo SIAD</p>",
+      "<p>",
+      saludo,
+      "<br>",
+      "Recibimos una solicitud para restablecer tu contraseña.<br>",
+      `<strong>Código:</strong> ${code} (vence en ${codeMinutes} minutos).<br>`,
+      `<strong>El token expira en:</strong> ${tokenMinutes} minutos.<br>`,
+      "Usa el código anterior para completar el proceso.<br>",
+      "Si no solicitaste esto, ignorá este mensaje.<br>",
+      "Equipo SIAD",
+      "</p>",
     ].join("");
 
     await this.mailer.sendMail({
