@@ -533,7 +533,7 @@ export class AuthService {
       "Recibimos una solicitud para restablecer tu contraseña.<br>",
       `Código: <strong>${code}</strong><br>`,
       `El código vence en: ${codeMinutes} minutos.<br><br>`,
-      `El enlace (token) expira en ${tokenMinutes} minutos.<br><br>`,
+      `El token expira en ${tokenMinutes} minutos.<br><br>`,
       "Usa el código anterior para completar el proceso.<br><br>",
       "Si no solicitaste esto, ignorá este mensaje.<br><br>",
       "Equipo SIAD",
