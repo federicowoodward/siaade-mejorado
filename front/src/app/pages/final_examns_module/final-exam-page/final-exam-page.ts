@@ -44,6 +44,9 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '@/core/auth/permission.service';
+import { ROLE } from '@/core/auth/roles';
 
 type Row = {
   id: number;
@@ -111,6 +114,10 @@ export class FinalExamPage implements OnInit {
 
   private uiAlertAudit = inject(UiAlertAuditService);
 
+  private auth = inject(AuthService);
+
+  private permissions = inject(PermissionService);
+
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Mesas de examen', routerLink: '/final_examns' },
     { label: 'Mesa' },
@@ -133,11 +140,14 @@ export class FinalExamPage implements OnInit {
 
   error = signal<string | null>(null);
 
-  // flags para edición futura (por ahora inputs deshabilitados)
+  // Edición permitida solo para docentes
+  canEditScores(): boolean {
+    return this.permissions.hasAnyRole([ROLE.TEACHER]);
+  }
 
-  canEditScores = signal<boolean>(false);
-
-  canEditNotes = signal<boolean>(false);
+  canEditNotes(): boolean {
+    return this.permissions.hasAnyRole([ROLE.TEACHER]);
+  }
 
   ngOnInit(): void {
     this.fetch();
@@ -275,5 +285,62 @@ export class FinalExamPage implements OnInit {
 
   isInscripto(r: Row) {
     return r.score == null && !!r.enrolled_at;
+  }
+
+  saveChanges(): void {
+    const exam = this.exam();
+    if (!exam) {
+      return;
+    }
+    const rows = this.rows();
+    if (!rows.length) {
+      return;
+    }
+    const userId = this.auth.getUserId();
+    if (!userId) {
+      this.toastErr('No se pudo identificar al usuario actual.');
+      return;
+    }
+
+    this.loading.set(true);
+    let remaining = rows.length;
+    let errors = 0;
+
+    const finalize = () => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        this.loading.set(false);
+        if (errors === 0) {
+          this.toastOk('Cambios guardados');
+          if (this.exam()?.table_id) {
+            this.syncService.notify({
+              action: 'updated',
+              mesaId: this.exam()!.table_id,
+            });
+          }
+        } else {
+          this.toastErr(
+            'Algunas filas no pudieron guardarse. Revisa los datos e intenta nuevamente.',
+          );
+        }
+      }
+    };
+
+    rows.forEach((row) => {
+      this.svc
+        .recordScore({
+          final_exams_student_id: row.id,
+          score: row.score,
+          notes: row.notes,
+          recorded_by: userId,
+        })
+        .subscribe({
+          next: () => finalize(),
+          error: () => {
+            errors += 1;
+            finalize();
+          },
+        });
+    });
   }
 }

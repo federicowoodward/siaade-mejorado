@@ -189,10 +189,12 @@ export class SubjectGradesController {
     @Query("q") q?: string,
     @Query("commissionId", new ParseIntPipe({ optional: true }))
     commissionId?: number,
+    @Req() req?: Request,
   ) {
     return this.subjectsService.getSubjectAcademicSituation(subjectId, {
       q: q?.trim() || undefined,
       commissionId: commissionId ?? undefined,
+      user: req?.user as AuthenticatedUser,
     });
   }
 
@@ -245,7 +247,6 @@ export class SubjectGradesController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({
     summary:

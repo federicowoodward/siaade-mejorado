@@ -6,15 +6,23 @@
     <h2>Datos personales del usuario</h2>
     <p class="pt-3">Visualiza y modifica datos del usuario seleccionado.</p>
   </div>
-  <app-personal-data *ngIf="userId" [userId]="userId"></app-personal-data>
+  <app-personal-data
+    *ngIf="userId"
+    [userId]="userId"
+    [readOnly]="isTeacher"
+  ></app-personal-data>
 
-  <div class="surface-card border-round p-4 shadow-1 mb-3 mt-3">
+  <div
+    class="surface-card border-round p-4 shadow-1 mb-3 mt-3"
+    *ngIf="!isTeacher"
+  >
     <h2>Accesos</h2>
     <p class="pt-3">Administra los accesos del usuario seleccionado.</p>
   </div>
 
   <!-- Controles de acceso/estado del alumno -->
   <div
+    *ngIf="!isTeacher"
     class="flex flex-column justify-content-around gap-5 flex-wrap surface-card p-3 border-round shadow-1"
   >
     <div class="grid">
@@ -85,7 +93,7 @@
   <!-- Diálogo para motivo de bloqueo del acceso -->
   <p-dialog
     header="Motivo del bloqueo"
-    [visible]="showReasonDialog()"
+    [visible]="showReasonDialog() && !isTeacher"
     (visibleChange)="showReasonDialog.set($event)"
     [modal]="true"
     [style]="{ width: '28rem' }"

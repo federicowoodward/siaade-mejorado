@@ -27,7 +27,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Obtener mi resumen acad��mico" })
   @ApiOkResponse({ description: "Resumen acad��mico del alumno (self)" })
@@ -42,7 +41,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Obtener resumen acad��mico de un alumno" })
   @ApiParam({ name: "id", type: String })
@@ -58,7 +56,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Obtener toda la data de un alumno" })
   @ApiParam({ name: "id", type: String })
@@ -74,7 +71,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
     ROLE.STUDENT,
   )
   @ApiOperation({
@@ -94,7 +90,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({
     summary: "Listado de status de MIS materias (usuario autenticado)",
@@ -113,7 +108,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({
     summary:
@@ -136,7 +130,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({
     summary:
@@ -158,7 +151,6 @@ export class StudentsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Obtener toda MI data (usuario autenticado)" })
   @ApiOkResponse({ description: "Datos completos del alumno (self)" })

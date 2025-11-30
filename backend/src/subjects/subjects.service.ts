@@ -370,7 +370,7 @@ export class SubjectsService {
 
   async getSubjectAcademicSituation(
     subjectId: number,
-    filters?: { q?: string; commissionId?: number },
+    filters?: { q?: string; commissionId?: number; user?: AuthenticatedUser },
   ): Promise<{
     subject: { id: number; name: string; partials: 2 | 4 };
     commissions: Array<{
@@ -402,6 +402,18 @@ export class SubjectsService {
       throw new NotFoundException(`Subject ${subjectId} was not found`);
     }
 
+    const user = filters?.user;
+    if (user?.role === ROLE.TEACHER) {
+      const count = await this.subjectCommissionRepo.count({
+        where: { subjectId, teacherId: user.id },
+      });
+      if (count === 0) {
+        throw new ForbiddenException(
+          "You are not assigned to this subject",
+        );
+      }
+    }
+
     const qb = this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .leftJoin(User, "user", "user.id = vg.student_id")
@@ -417,6 +429,18 @@ export class SubjectsService {
       .addSelect("user.cuil", "academicSituation_cuil")
       // bandera para saber si el alumno tiene progreso en esa comisiÃ³n
       .addSelect("prog.id", "academicSituation_hasProgress");
+
+    if (user?.role === ROLE.TEACHER) {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1
+          FROM subject_commissions sc
+          WHERE sc.id = vg.commission_id
+          AND sc.teacher_id = :teacherId
+        )`,
+        { teacherId: user.id },
+      );
+    }
 
     const commissionFilter =
       filters?.commissionId && filters.commissionId > 0

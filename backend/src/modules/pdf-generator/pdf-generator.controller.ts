@@ -36,7 +36,6 @@ export class PdfGeneratorController {
   @Action("pdfGenerator.generateStudentCertificate")
   @AllowRoles(
     ROLE.STUDENT,
-    ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
@@ -80,7 +79,6 @@ export class PdfGeneratorController {
   @Action("pdfGenerator.previewStudentCertificate")
   @AllowRoles(
     ROLE.STUDENT,
-    ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
@@ -123,7 +121,6 @@ export class PdfGeneratorController {
   @Action("pdfGenerator.generateExamRegistrationReceipt")
   @AllowRoles(
     ROLE.STUDENT,
-    ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
@@ -167,7 +164,6 @@ export class PdfGeneratorController {
   @Action("pdfGenerator.previewExamRegistrationReceipt")
   @AllowRoles(
     ROLE.STUDENT,
-    ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
@@ -210,7 +206,6 @@ export class PdfGeneratorController {
   @Action("pdfGenerator.generateAcademicPerformance")
   @AllowRoles(
     ROLE.STUDENT,
-    ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,
@@ -254,7 +249,6 @@ export class PdfGeneratorController {
   @Action("pdfGenerator.previewAcademicPerformance")
   @AllowRoles(
     ROLE.STUDENT,
-    ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
     ROLE.EXECUTIVE_SECRETARY,

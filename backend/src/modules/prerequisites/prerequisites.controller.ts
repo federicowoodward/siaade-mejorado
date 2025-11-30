@@ -45,7 +45,6 @@ export class PrerequisitesController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Lista correlativas por número de orden" })
   @ApiOkResponse({
@@ -103,7 +102,6 @@ export class PrerequisitesController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
     ROLE.STUDENT,
   )
   @UseGuards(OwnerGuard)
@@ -143,7 +141,6 @@ export class PrerequisitesController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
     ROLE.STUDENT,
   )
   @UseGuards(OwnerGuard)

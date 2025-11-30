@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Req,
+  UseGuards,
 } from "@nestjs/common";
 import { FinalExamTableService } from "../services/final-exam-table.service";
 import {
@@ -27,6 +28,10 @@ import {
   ApiParam,
   ApiTags,
 } from "@nestjs/swagger";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
 
 class ExamTableWindowDto {
   label!: string;
@@ -75,6 +80,13 @@ class DeletedResponseDto {
 
 @ApiTags("Finals / Exam Table")
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER
+)
 @Controller("finals/exam-table")
 export class FinalExamTableController {
   constructor(private readonly svc: FinalExamTableService) {}
@@ -86,6 +98,7 @@ export class FinalExamTableController {
     description: "Mesa creada",
   })
   @ApiBadRequestResponse({ description: "start_date must be <= end_date" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @Post("init")
   create(@Body() dto: InitFinalExamTableDto) {
     return this.svc.init(dto);
@@ -99,6 +112,7 @@ export class FinalExamTableController {
     description: "start_date must be <= end_date o finales fuera de rango",
   })
   @ApiNotFoundResponse({ description: "Exam table not found" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @Put("edit/:id")
   edit(@Param("id") id: string, @Body() dto: EditFinalExamTableDto) {
     return this.svc.edit(+id, dto);
@@ -111,6 +125,7 @@ export class FinalExamTableController {
   @ApiForbiddenResponse({
     description: "Insufficient hierarchy to delete old exam tables",
   })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @Delete("delete/:id")
   remove(@Param("id") id: string, @Req() req: any) {
     const role = req.user?.role ?? "PRECEPTOR";
@@ -120,8 +135,9 @@ export class FinalExamTableController {
   @ApiOperation({ summary: "Listar todas las mesas de examen" })
   @ApiOkResponse({ type: ExamTableResponseDto, isArray: true })
   @Get("list")
-  listAll() {
-    return this.svc.list();
+  listAll(@Req() req: any) {
+    const user = (req as any).user as { id?: string; role?: ROLE | null };
+    return this.svc.list(undefined, user);
   }
 
   @ApiOperation({ summary: "Obtener una mesa de examen por ID" })
@@ -129,9 +145,10 @@ export class FinalExamTableController {
   @ApiOkResponse({ type: ExamTableResponseDto })
   @ApiNotFoundResponse({ description: "Exam table not found" })
   @Get("list/:id")
-  listOne(@Param("id") id: string) {
+  listOne(@Param("id") id: string, @Req() req: any) {
     const n = Number(id);
     if (Number.isNaN(n)) throw new BadRequestException("id must be a number");
-    return this.svc.list(n);
+    const user = (req as any).user as { id?: string; role?: ROLE | null };
+    return this.svc.getOneForUser(n, user);
   }
 }

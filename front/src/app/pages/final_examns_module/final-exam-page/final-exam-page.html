@@ -121,11 +121,12 @@
 
   <div class="flex justify-end mt-3">
     <p-button
+      *ngIf="canEditScores() || canEditNotes()"
       label="Guardar cambios"
       icon="pi pi-check"
-      [disabled]="true"
+      [disabled]="loading()"
+      (onClick)="saveChanges()"
       blockedAction
-      pTooltip="MVP: sin persistencia"
     ></p-button>
   </div>
 </div>

@@ -26,7 +26,10 @@ export class FinalExamTableService {
     @InjectRepository(FinalExam) private finalRepo: Repository<FinalExam>,
   ) {}
 
-  async list(id?: number) {
+  async list(
+    id?: number,
+    user?: { id?: string; role?: ROLE | null },
+  ): Promise<any> {
     const qb = this.tableRepo
       .createQueryBuilder("t")
       .leftJoin("users", "u", "u.id = t.created_by")
@@ -44,10 +47,29 @@ export class FinalExamTableService {
       .orderBy("t.start_date", "DESC")
       .addOrderBy("t.id", "DESC");
 
-    if (id) qb.where("t.id = :id", { id });
+    qb.where("1=1");
+    if (id) {
+      qb.andWhere("t.id = :id", { id });
+    }
+
+    if (user?.role === ROLE.TEACHER && user.id) {
+      qb.innerJoin("final_exams", "fe", "fe.exam_table_id = t.id")
+        .innerJoin("subjects", "s", "s.id = fe.subject_id")
+        .innerJoin("subject_commissions", "sc", "sc.subject_id = s.id")
+        .andWhere("sc.teacher_id = :teacherId", { teacherId: user.id });
+    }
 
     const rows = await qb.getRawMany();
-    if (id && !rows.length) throw new NotFoundException("Exam table not found");
+
+    if (id && !rows.length) {
+      if (user?.role === ROLE.TEACHER && user.id) {
+        const baseExists = await this.tableRepo.findOne({ where: { id } });
+        if (baseExists) {
+          throw new ForbiddenException("You are not assigned to this exam table");
+        }
+      }
+      throw new NotFoundException("Exam table not found");
+    }
 
     const mapped = rows.map((r) => this.mapRawRow(r));
     return id ? mapped[0] : mapped;
@@ -68,6 +90,25 @@ export class FinalExamTableService {
     });
     const saved = await this.tableRepo.save(row);
     return this.mapEntity(saved);
+  }
+
+  async getOneForUser(
+    id: number,
+    user?: { id?: string; role?: ROLE | null },
+  ): Promise<any> {
+    const base = await this.tableRepo.findOne({ where: { id } });
+    if (!base) {
+      throw new NotFoundException("Exam table not found");
+    }
+
+    if (user?.role === ROLE.TEACHER && user.id) {
+      const hasAccess = await this.teacherOwnsTable(id, user.id);
+      if (!hasAccess) {
+        throw new ForbiddenException("You are not assigned to this exam table");
+      }
+    }
+
+    return this.mapEntity(base);
   }
 
   async edit(id: number, dto: EditFinalExamTableDto) {
@@ -119,6 +160,22 @@ export class FinalExamTableService {
 
     await this.tableRepo.remove(row);
     return { deleted: true };
+  }
+
+  private async teacherOwnsTable(
+    tableId: number,
+    teacherId: string,
+  ): Promise<boolean> {
+    const count = await this.tableRepo
+      .createQueryBuilder("t")
+      .innerJoin("final_exams", "fe", "fe.exam_table_id = t.id")
+      .innerJoin("subjects", "s", "s.id = fe.subject_id")
+      .innerJoin("subject_commissions", "sc", "sc.subject_id = s.id")
+      .where("t.id = :tableId", { tableId })
+      .andWhere("sc.teacher_id = :teacherId", { teacherId })
+      .getCount();
+
+    return count > 0;
   }
 
   private mapRawRow(row: any) {

@@ -65,11 +65,13 @@
               (onClick)="openTable(row)"
             ></p-button>
             <p-button
+              *ngIf="canManageTables()"
               icon="pi pi-pencil"
               severity="secondary"
               (onClick)="openEdit(row)"
             ></p-button>
             <p-button
+              *ngIf="canManageTables()"
               icon="pi pi-trash"
               severity="danger"
               variant="outlined"

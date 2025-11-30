@@ -14,11 +14,11 @@
         </small>
       </h2>
       <p>
-        Gestióna la mesa de examen, crea nuevos examenes, visualiza el estado de
-        los mismos.
+        Gestiona la mesa de examen y los exámenes asociados.
       </p>
     </div>
     <p-button
+      *ngIf="canManageExams"
       label="Crear examen"
       icon="pi pi-plus"
       (onClick)="openCreate()"
@@ -60,6 +60,7 @@
               (onClick)="openFinal(row)"
             ></p-button>
             <p-button
+              *ngIf="canManageExams"
               icon="pi pi-trash"
               severity="danger"
               outlined
@@ -75,6 +76,7 @@
               <i class="pi pi-inbox mr-2"></i>
               No hay ningún examen en esta mesa, puedes crear uno.
               <p-button
+                *ngIf="canManageExams"
                 label="Crear examen"
                 icon="pi pi-plus"
                 styleClass="ml-2"
