@@ -514,29 +514,22 @@ export class AuthService {
 
     const lines = [
       "Hola,",
-      "",
       "Recibimos una solicitud para restablecer tu contraseña.",
-      `Código: ${code}`,
-      `El código vence en: ${codeMinutes} minutos.`,
-      "",
-      `El enlace (token) expira en ${tokenMinutes} minutos.`,
-      "",
+      `Código: ${code} (vence en ${codeMinutes} minutos).`,
+      `El token expira en ${tokenMinutes} minutos.`,
       "Usa el código anterior para completar el proceso.",
-      "",
       "Si no solicitaste esto, ignorá este mensaje.",
-      "",
       "Equipo SIAD",
     ];
 
     const html = [
-      "Hola,<br><br>",
-      "Recibimos una solicitud para restablecer tu contraseña.<br>",
-      `Código: <strong>${code}</strong><br>`,
-      `El código vence en: ${codeMinutes} minutos.<br><br>`,
-      `El token expira en ${tokenMinutes} minutos.<br><br>`,
-      "Usa el código anterior para completar el proceso.<br><br>",
-      "Si no solicitaste esto, ignorá este mensaje.<br><br>",
-      "Equipo SIAD",
+      "<p>Hola,</p>",
+      "<p>Recibimos una solicitud para restablecer tu contraseña.</p>",
+      `<p><strong>Código:</strong> ${code} (vence en ${codeMinutes} minutos).</p>`,
+      `<p><strong>El token expira en:</strong> ${tokenMinutes} minutos.</p>`,
+      "<p>Usa el código anterior para completar el proceso.</p>",
+      "<p>Si no solicitaste esto, ignorá este mensaje.</p>",
+      "<p>Equipo SIAD</p>",
     ].join("");
 
     await this.mailer.sendMail({
