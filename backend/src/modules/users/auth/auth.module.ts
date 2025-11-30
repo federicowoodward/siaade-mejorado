@@ -15,10 +15,12 @@ import { PasswordResetToken } from "@/entities/users/password-reset-token.entity
 import { PasswordHistory } from "@/entities/users/password-history.entity";
 import { RateLimitService } from "@/shared/services/rate-limit/rate-limit.service";
 import { PasswordResetCleanupService } from "./password-reset-cleanup.service";
+import { MailerModule } from "@/shared/services/mailer/mailer.module";
 
 @Module({
   imports: [
     ConfigModule,
+    MailerModule,
     TypeOrmModule.forFeature([
       User,
       Role,

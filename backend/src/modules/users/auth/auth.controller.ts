@@ -245,23 +245,9 @@ export class AuthController {
     const user = await this.authService.validateUser(userId);
     if (!user) throw new UnauthorizedException("User not found");
     // Llamamos a resetPassword con identidad segura (email)
-    const result = await this.authService.resetPassword({
+    return this.authService.resetPassword({
       identity: user.email,
     } as any);
-    // En entorno dev/test exponemos el code y token para facilitar pruebas sin SMTP.
-    if (
-      process.env.NODE_ENV === "development" ||
-      process.env.NODE_ENV === "test"
-    ) {
-      return {
-        message: result.message,
-        code: result.code ?? undefined, // si internamente lo devolviera
-        token: result.token ?? undefined,
-        expiresInSeconds: result.expiresInSeconds ?? undefined,
-        devIdentity: user.email,
-      };
-    }
-    return result;
   }
 
   // Cambio con código (flujo interno) - requiere currentPassword y code (token ya emitido)

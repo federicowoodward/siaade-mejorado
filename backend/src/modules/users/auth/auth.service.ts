@@ -21,6 +21,7 @@ import { PasswordResetToken } from "@/entities/users/password-reset-token.entity
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
 import { PasswordHistory } from "@/entities/users/password-history.entity";
 import { UserAuthValidatorService } from "@/shared/services/user-auth-validator/user-auth-validator.service";
+import { MailerService } from "@/shared/services/mailer/mailer.service";
 import {
   ROLE,
   ROLE_IDS,
@@ -60,6 +61,7 @@ export class AuthService {
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
     private readonly configService: ConfigService,
+    private readonly mailer: MailerService,
   ) {
     this.refreshSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -178,28 +180,16 @@ export class AuthService {
     const { token, expiresInSeconds, code, codeExpiresInSeconds } =
       await this.issueResetToken(user.id);
 
-    // En modo seguro: no exponemos detalles en producción salvo que se habilite por bandera
-    const isProd =
-      (this.configService.get<string>("NODE_ENV") || "").toLowerCase() ===
-      "production";
-    // Permitir alias de variable por compatibilidad: RESET_DETAILS_EXPOSE_IN_RESPONSE o RESET_TOKEN_EXPOSE_IN_RESPONSE
-    const exposeEnv =
-      this.configService.get<string>("RESET_DETAILS_EXPOSE_IN_RESPONSE") ??
-      this.configService.get<string>("RESET_TOKEN_EXPOSE_IN_RESPONSE");
-    const expose = String(exposeEnv).toLowerCase() === "true";
-    if (isProd && !expose) {
-      return { message: "Si la cuenta existe, enviamos instrucciones." };
-    }
-
-    // En dev/QA (o bandera habilitada), devolvemos detalles para facilitar el flujo sin correo
-    this.logger.log(`DEV ONLY: Reset code for userId=${user.id} code=${code}`);
-    return {
-      message: "Código generado",
-      token,
-      expiresInSeconds,
+    await this.sendResetEmail({
+      to: user.email,
       code,
-      codeExpiresInSeconds,
-    };
+      token,
+      codeTtlSec: codeExpiresInSeconds,
+      tokenTtlSec: expiresInSeconds,
+    });
+
+    // Respuesta neutra: no se exponen códigos ni tokens
+    return { message: "Si la cuenta existe, enviamos instrucciones." };
   }
 
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
@@ -509,6 +499,50 @@ export class AuthService {
       code,
       codeExpiresInSeconds: codeTtl,
     };
+  }
+
+  private async sendResetEmail(params: {
+    to: string;
+    code: string;
+    token: string;
+    codeTtlSec: number;
+    tokenTtlSec: number;
+  }) {
+    const { to, code, token, codeTtlSec, tokenTtlSec } = params;
+    const appUrl =
+      this.configService.get<string>("PUBLIC_APP_URL") ??
+      this.configService.get<string>("APP_URL") ??
+      "";
+    const resetLink = appUrl
+      ? `${appUrl.replace(/\/$/, "")}/auth/reset?token=${token}`
+      : "";
+    const codeMinutes = Math.max(1, Math.floor((codeTtlSec ?? 0) / 60));
+    const tokenMinutes = Math.max(1, Math.floor((tokenTtlSec ?? 0) / 60));
+
+    const lines = [
+      "Hola,",
+      "",
+      "Recibimos una solicitud para restablecer tu contraseña.",
+      `Código: ${code}`,
+      `El código vence en: ${codeMinutes} minutos.`,
+    ];
+    if (resetLink) {
+      lines.push("", `También podés usar este enlace: ${resetLink}`);
+    }
+    lines.push(
+      "",
+      `El enlace expira en ${tokenMinutes} minutos.`,
+      "",
+      "Si no solicitaste esto, ignorá este mensaje.",
+      "",
+      "Equipo SIAD",
+    );
+
+    await this.mailer.sendMail({
+      to,
+      subject: "Recuperación de contraseña",
+      text: lines.join("\n"),
+    });
   }
 
   private generateToken(size = 32): string {
