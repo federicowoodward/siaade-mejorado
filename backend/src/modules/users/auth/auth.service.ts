@@ -509,13 +509,6 @@ export class AuthService {
     tokenTtlSec: number;
   }) {
     const { to, code, token, codeTtlSec, tokenTtlSec } = params;
-    const appUrl =
-      this.configService.get<string>("PUBLIC_APP_URL") ??
-      this.configService.get<string>("APP_URL") ??
-      "";
-    const resetLink = appUrl
-      ? `${appUrl.replace(/\/$/, "")}/auth/reset?token=${token}`
-      : "";
     const codeMinutes = Math.max(1, Math.floor((codeTtlSec ?? 0) / 60));
     const tokenMinutes = Math.max(1, Math.floor((tokenTtlSec ?? 0) / 60));
 
@@ -525,23 +518,32 @@ export class AuthService {
       "Recibimos una solicitud para restablecer tu contraseña.",
       `Código: ${code}`,
       `El código vence en: ${codeMinutes} minutos.`,
-    ];
-    if (resetLink) {
-      lines.push("", `También podés usar este enlace: ${resetLink}`);
-    }
-    lines.push(
       "",
-      `El enlace expira en ${tokenMinutes} minutos.`,
+      `El enlace (token) expira en ${tokenMinutes} minutos.`,
+      "",
+      "Usa el código anterior para completar el proceso.",
       "",
       "Si no solicitaste esto, ignorá este mensaje.",
       "",
       "Equipo SIAD",
-    );
+    ];
+
+    const html = [
+      "Hola,<br><br>",
+      "Recibimos una solicitud para restablecer tu contraseña.<br>",
+      `Código: <strong>${code}</strong><br>`,
+      `El código vence en: ${codeMinutes} minutos.<br><br>`,
+      `El enlace (token) expira en ${tokenMinutes} minutos.<br><br>`,
+      "Usa el código anterior para completar el proceso.<br><br>",
+      "Si no solicitaste esto, ignorá este mensaje.<br><br>",
+      "Equipo SIAD",
+    ].join("");
 
     await this.mailer.sendMail({
       to,
       subject: "Recuperación de contraseña",
       text: lines.join("\n"),
+      html,
     });
   }
 
