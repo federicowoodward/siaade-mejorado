@@ -52,6 +52,7 @@ import {
   SubjectStateSeverity,
   resolveSubjectStateSeverity,
 } from '@/shared/utils/subject-state.utils';
+import { PermissionService } from '@/core/auth/permission.service';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
@@ -85,6 +86,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
   private readonly rbac = inject(RbacService);
+  private readonly permissions = inject(PermissionService);
   private readonly uiAlertAudit = inject(UiAlertAuditService);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
@@ -204,13 +206,14 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       severity: 'warn',
       summary: 'Plazo cerrado',
       detail:
-        'El plazo del docente para esta comisiÃ³n ya estÃ¡ cerrado. Contacta a SecretarÃ­a para registrar cambios.',
+        'El plazo del docente para esta comisión ya está¡ cerrado. Contacta a Secretaría para registrar cambios.',
     });
   }
 
   readonly ROLE = ROLE;
-  canMoveStudents = computed(() =>
-    this.rbac.hasAny([
+  // Solo roles administrativos pueden mover alumnos: docente nunca
+  readonly canMoveStudents = computed(() =>
+    this.permissions.hasAnyRole([
       ROLE.PRECEPTOR,
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
@@ -262,7 +265,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         return { label: option.letter ?? 'Todas', value: option.id };
       }
       const window = this.commissionWindows().get(option.id);
-      const suffix = window?.status === 'closed' ? ' Â· Plazo cerrado' : '';
+      const suffix = window?.status === 'closed' ? '· Plazo cerrado' : '';
       return {
         label: `${option.letter ?? `Comision ${option.id}`}${suffix}`,
         value: option.id,
