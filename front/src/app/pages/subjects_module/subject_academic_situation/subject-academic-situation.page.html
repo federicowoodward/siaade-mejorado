@@ -232,7 +232,7 @@
                 <ng-template #condByEnrollmentTpl>
                   <p-tag
                     [value]="row.enrolled ? 'Inscripto' : 'No inscripto'"
-                    [severity]="row.enrolled ? 'secondary' : 'contrast'"
+                    [severity]="conditionSeverity(row.enrolled ? 'Inscripto' : 'No inscripto')"
                   ></p-tag>
                 </ng-template>
               </td>

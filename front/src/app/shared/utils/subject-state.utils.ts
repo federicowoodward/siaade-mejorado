@@ -1,12 +1,12 @@
 // Severidad visual para estados de materias, alineada con PrimeNG Tag.
 // Libre -> rojo (danger)
 // Promocionado -> verde (success)
-// Regular -> naranja (warning)
+// Regular -> naranja (warn)
 // Inscripto / No inscripto / Aprobado / otros -> gris (secondary/info)
 export type SubjectStateSeverity =
   | 'success'
   | 'info'
-  | 'warning'
+  | 'warn'
   | 'danger'
   | 'secondary';
 
@@ -15,6 +15,7 @@ export function resolveSubjectStateSeverity(
 ): SubjectStateSeverity {
   const raw = condition ?? '';
   const value = raw.trim().toLowerCase();
+  const normalized = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   // Gris por defecto cuando no hay información clara.
   // Usamos 'secondary' porque está soportado por PrimeNG 20 (p-tag-secondary).
@@ -22,26 +23,27 @@ export function resolveSubjectStateSeverity(
   // se puede reemplazar por 'info' como base y ajustar el color vía CSS.
   const defaultGray: SubjectStateSeverity = 'secondary';
 
-  if (!value) {
+  if (!normalized) {
     return defaultGray;
   }
 
-  const isPromo = value.includes('promo') || value.includes('promocionado');
-  const isLibre = value.includes('libre');
-  const isRegular = value.includes('regular');
+  const isPromo =
+    normalized.includes('promo') || normalized.includes('promocionado');
+  const isLibre = normalized.includes('libre');
+  const isRegular = normalized.includes('regular');
   const isAprobado =
-    value.includes('aproba') &&
+    normalized.includes('aproba') &&
     !isPromo &&
-    !value.includes('desaprob'); // evita clasificar "Desaprobado" como aprobado
+    !normalized.includes('desaprob'); // evita clasificar "Desaprobado" como aprobado
   const isInscripto =
-    value.includes('inscripto') ||
-    value.includes('inscrito') ||
-    value.includes('no inscripto') ||
-    value.includes('no inscrito');
+    normalized.includes('inscripto') ||
+    normalized.includes('inscrito') ||
+    normalized.includes('no inscripto') ||
+    normalized.includes('no inscrito');
 
   // Prioridad:
   // 1) Promocionado (verde)
-  // 2) Libre (rojo)
+  // 2) Libre / Desaprobado (rojo)
   // 3) Regular (naranja)
   // 4) Aprobado (gris)
   // 5) Inscripto / No inscripto (gris)
@@ -49,11 +51,11 @@ export function resolveSubjectStateSeverity(
   if (isPromo) {
     return 'success';
   }
-  if (isLibre) {
+  if (isLibre || normalized.includes('desaprob')) {
     return 'danger';
   }
   if (isRegular) {
-    return 'warning';
+    return 'warn';
   }
   if (isAprobado) {
     return defaultGray;
@@ -64,4 +66,3 @@ export function resolveSubjectStateSeverity(
 
   return defaultGray;
 }
-
