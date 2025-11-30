@@ -57,8 +57,8 @@ export class AuthApiService {
     token: string;
     password: string;
     currentPassword?: string;
-  }): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(
+  }): Observable<{ success: boolean; message?: string }> {
+    return this.http.post<{ success: boolean; message?: string }>(
       `${this.baseUrl}/auth/reset-password/confirm`,
       payload,
       { withCredentials: true },

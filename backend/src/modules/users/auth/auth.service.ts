@@ -36,6 +36,7 @@ type AuthPayload = {
   roleId: number;
   isDirective: boolean;
   requiresPasswordChange?: boolean;
+  tokenVersion: number;
 };
 
 type AuthProfile = Awaited<ReturnType<UserProfileReaderService["findById"]>>;
@@ -138,6 +139,19 @@ export class AuthService {
       throw new UnauthorizedException("Invalid or expired refresh token");
     }
 
+    const userForRefresh = await this.validateUser(incomingPayload.sub);
+    if (!userForRefresh) {
+      throw new UnauthorizedException("User not found");
+    }
+    const currentVersion = userForRefresh.tokenVersion ?? 0;
+    const incomingVersion = incomingPayload.tokenVersion ?? 0;
+    if (incomingVersion !== currentVersion) {
+      throw new UnauthorizedException({
+        code: "SESSION_EXPIRED",
+        message: "Session expired. Please log in again.",
+      });
+    }
+
     const { profile, payload } = await this.resolveProfileAndPayload(
       incomingPayload.sub
     );
@@ -169,7 +183,11 @@ export class AuthService {
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const id = (resetPasswordDto.identity || "").trim();
+    return this.sendRecoveryCode(resetPasswordDto.identity);
+  }
+
+  async sendRecoveryCode(identity: string | null | undefined) {
+    const id = (identity || "").trim();
 
     const user = await this.resolveUserByIdentity(id);
     if (!user) {
@@ -177,19 +195,33 @@ export class AuthService {
       return { message: "Si la cuenta existe, enviamos instrucciones" };
     }
 
-    const { token, expiresInSeconds, code, codeExpiresInSeconds } =
+    const { expiresInSeconds, code, codeExpiresInSeconds } =
       await this.issueResetToken(user.id);
 
-    await this.sendResetEmail({
+    await this.sendRecoveryCodeEmail({
       to: user.email,
       name: `${user.name ?? ""} ${user.lastName ?? ""}`.trim(),
       code,
-      token,
       codeTtlSec: codeExpiresInSeconds,
       tokenTtlSec: expiresInSeconds,
     });
 
     // Respuesta neutra: no se exponen códigos ni tokens
+    return { message: "Si la cuenta existe, enviamos instrucciones." };
+  }
+
+  async sendForceResetLink(userId: string) {
+    const user = await this.validateUser(userId);
+    if (!user) throw new UnauthorizedException("User not found");
+
+    const { token } = await this.issueResetToken(userId);
+
+    await this.sendResetLinkEmail({
+      to: user.email,
+      name: `${user.name ?? ""} ${user.lastName ?? ""}`.trim(),
+      token
+    });
+
     return { message: "Si la cuenta existe, enviamos instrucciones." };
   }
 
@@ -279,13 +311,19 @@ export class AuthService {
       .andWhere("id <> :id", { id: record.id })
       .execute();
 
+    // Invalidar todas las sesiones/tokens activos incrementando versionado
+    await this.bumpTokenVersion(user.id);
+
     this.logger.log(
       `Password reset confirm: userId=${
         record.userId
       } tokenHash=${tokenHash.substring(0, 8)}...`
     );
 
-    return { success: true };
+    return {
+      success: true,
+      message: "Contraseña actualizada. Todas las sesiones fueron cerradas.",
+    };
   }
 
   async forceChangePassword(userId: string, newPassword: string) {
@@ -320,6 +358,7 @@ export class AuthService {
     } as any);
     const hashed = await bcrypt.hash(newPassword, 10);
     await this.userRepository.update({ id: user.id }, { password: hashed });
+    await this.bumpTokenVersion(user.id);
     return { success: true };
   }
 
@@ -368,6 +407,7 @@ export class AuthService {
     const roleId = ROLE_IDS[role];
     const isDirective =
       userEntity.secretary?.isDirective ?? role === ROLE.EXECUTIVE_SECRETARY;
+    const tokenVersion = userEntity.tokenVersion ?? 0;
 
     // Gating de acceso global: si el usuario está INACTIVO o BLOQUEADO, no puede loguear.
     // INACTIVO se trata como eliminado (401 genérico); BLOQUEADO devuelve 403 con motivo (si existe).
@@ -411,6 +451,7 @@ export class AuthService {
       role,
       roleId,
       isDirective,
+      tokenVersion,
     };
 
     // Calcular si la contraseña es "default" (CUIL o "pass1234")
@@ -507,27 +548,27 @@ export class AuthService {
     };
   }
 
-  private async sendResetEmail(params: {
+  private async sendRecoveryCodeEmail(params: {
     to: string;
     name?: string;
     code: string;
-    token: string;
     codeTtlSec: number;
     tokenTtlSec: number;
   }) {
-    const { to, name, code, token, codeTtlSec, tokenTtlSec } = params;
+    const { to, name, code, codeTtlSec, tokenTtlSec } = params;
     const codeMinutes = Math.max(1, Math.floor((codeTtlSec ?? 0) / 60));
     const tokenMinutes = Math.max(1, Math.floor((tokenTtlSec ?? 0) / 60));
-
     const saludo = name && name.trim() ? `Hola ${name.trim()},` : "Hola,";
-    const lines = [
+
+    const lines: string[] = [
       saludo,
       "",
       "Recibimos una solicitud para restablecer tu contraseña.",
       `Código: ${code} (vence en ${codeMinutes} minutos).`,
-      `El token expira en ${tokenMinutes} minutos.`,
+      `El token expira en: ${tokenMinutes} minutos.`,
       "Usa el código anterior para completar el proceso.",
-      "Si no solicitaste esto, ignorá este mensaje.",
+      "",
+      "Si no solicitaste esto, ignora este mensaje.",
       "",
       "Equipo SIAD.",
     ];
@@ -539,20 +580,84 @@ export class AuthService {
       "Recibimos una solicitud para restablecer tu contraseña.<br>",
       `<strong>Código:</strong> ${code} (vence en ${codeMinutes} minutos).<br>`,
       `<strong>El token expira en:</strong> ${tokenMinutes} minutos.<br>`,
-      "Usa el código anterior para completar el proceso.<br>",
-      "Si no solicitaste esto, ignorá este mensaje.<br>",
-      "<br>",
-      "<br>",
+      "Usa el código anterior para completar el proceso.<br><br>",
+      "Si no solicitaste esto, ignora este mensaje.<br><br>",
       "Equipo SIAD.",
       "</p>",
     ].join("");
 
     await this.mailer.sendMail({
       to,
-      subject: "Recuperación de contraseña",
+      subject: "Recuperacion de contraseña",
       text: lines.join("\n"),
       html,
     });
+  }
+
+  private async sendResetLinkEmail(params: {
+    to: string;
+    name?: string;
+    token: string;
+  }) {
+    const { to, name, token } = params;
+    const saludo = name && name.trim() ? `Hola ${name.trim()},` : "Hola,";
+    const appUrl =
+      this.configService.get<string>("PUBLIC_APP_URL") ??
+      this.configService.get<string>("APP_URL") ??
+      "";
+    const resetLink = appUrl
+      ? `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${token}&mode=recovery`
+      : "";
+
+    const lines: string[] = [
+      saludo,
+      "",
+      "Solicitaste restablecer tu contraseña desde cero.",
+      "Utiliza el siguiente enlace para iniciar el proceso:",
+      "",
+      resetLink ? `Enlace directo: ${resetLink}` : "No pudimos generar el enlace.",
+      "",
+      "Si no solicitaste esto, ignora este mensaje.",
+      "",
+      "Equipo SIAD.",
+    ];
+
+    const html = [
+      "<p>",
+      saludo,
+      "<br>",
+      "Solicitaste restablecer tu contraseña desde cero.<br>",
+      "Utiliza el siguiente enlace para iniciar el proceso:<br><br>",
+      resetLink
+        ? `Enlace directo: <a href="${resetLink}">${resetLink}</a><br>`
+        : "No pudimos generar el enlace en este momento.<br>",
+      "<br>",
+      "Si no solicitaste esto, ignora este mensaje.<br><br>",
+      "Equipo SIAD.",
+      "</p>",
+    ].join("");
+
+    await this.mailer.sendMail({
+      to,
+      subject: "Enlace para restablecer tu contraseña",
+      text: lines.join("\n"),
+      html,
+    });
+  }
+
+  private async bumpTokenVersion(userId: string): Promise<number | null> {
+    try {
+      await this.userRepository.increment({ id: userId }, "tokenVersion", 1);
+      const updated = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+      return updated?.tokenVersion ?? null;
+    } catch (error) {
+      this.logger.error(
+        `Failed to bump tokenVersion for user ${userId}: ${error}`
+      );
+      return null;
+    }
   }
 
   private generateToken(size = 32): string {
@@ -606,6 +711,10 @@ export class AuthService {
     );
   }
 
+  async requestChangeLink(userId: string) {
+    return this.sendForceResetLink(userId);
+  }
+
   async verifyResetCode(
     dto: VerifyResetCodeDto
   ): Promise<{ token: string; expiresInSeconds: number }> {
@@ -627,6 +736,7 @@ export class AuthService {
     const record = await this.prtRepository.findOne({
       where: {
         userId: user.id,
+        codeHash,
         usedAt: IsNull(),
       },
       order: { createdAt: "DESC" },

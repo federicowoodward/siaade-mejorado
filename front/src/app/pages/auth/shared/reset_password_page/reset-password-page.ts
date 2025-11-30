@@ -38,6 +38,7 @@ export class ResetPasswordPage {
   mode: 'recovery' | 'change' = 'recovery'; // recovery = sin contraseña actual, change = con contraseña actual
   serverError: string | null = null;
   currentError: string | null = null;
+  sendingLink = false;
 
   form = this.fb.group({
     current: ['', [Validators.required]],
@@ -167,10 +168,13 @@ export class ResetPasswordPage {
       if (result.ok) {
         this.serverError = null;
         this.currentError = null;
+        const successMsg =
+          (result as { message?: string | null }).message ??
+          'Tu contraseña fue actualizada.';
         this.message.add({
           severity: 'success',
           summary: 'Listo',
-          detail: 'Tu contraseña fue actualizada.',
+          detail: successMsg,
         });
         await this.router.navigate(['/auth']);
       } else {
@@ -180,6 +184,27 @@ export class ResetPasswordPage {
       this.handleResetError();
     } finally {
       this.submitting = false;
+    }
+  }
+
+  async sendChangeLink() {
+    if (this.sendingLink) return;
+    this.sendingLink = true;
+    try {
+      await firstValueFrom(this.auth.requestPasswordChangeLink());
+      this.message.add({
+        severity: 'success',
+        summary: 'Enviado',
+        detail: 'Te enviamos un enlace para cambiar la contraseña.',
+      });
+    } catch (e) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No pudimos enviar el enlace. Intenta de nuevo.',
+      });
+    } finally {
+      this.sendingLink = false;
     }
   }
 

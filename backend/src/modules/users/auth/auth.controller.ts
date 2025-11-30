@@ -250,6 +250,21 @@ export class AuthController {
     } as any);
   }
 
+  // Solicitar link directo (sin pedir contraseña actual) para cambio voluntario
+  @Post("password/request-change-link")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      "Envia un link de cambio de contraseña al email del usuario autenticado (sin pedir contraseña actual).",
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async requestChangeLink(@Req() req: Request) {
+    const userId = (req as any).user?.sub || (req as any).user?.id;
+    if (!userId) throw new UnauthorizedException("Missing user in request");
+    return this.authService.requestChangeLink(userId);
+  }
+
   // Cambio con código (flujo interno) - requiere currentPassword y code (token ya emitido)
   @Post("password/change-with-code")
   @HttpCode(HttpStatus.OK)
