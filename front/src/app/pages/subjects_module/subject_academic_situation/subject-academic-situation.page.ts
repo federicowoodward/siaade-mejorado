@@ -48,6 +48,10 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import {
+  SubjectStateSeverity,
+  resolveSubjectStateSeverity,
+} from '@/shared/utils/subject-state.utils';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
@@ -213,23 +217,10 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     ]),
   );
 
-  conditionSeverity(condition: string | null | undefined): string {
-    switch ((condition || '').toLowerCase()) {
-      case 'promocionado':
-      case 'aprobado':
-        return 'success';
-      case 'regular':
-        return 'warn';
-      case 'libre':
-      case 'desaprobado':
-        return 'danger';
-      case 'no inscripto':
-        return 'contrast';
-      case 'inscripto':
-        return 'secondary';
-      default:
-        return 'secondary';
-    }
+  conditionSeverity(
+    condition: string | null | undefined,
+  ): SubjectStateSeverity {
+    return resolveSubjectStateSeverity(condition);
   }
 
   // Mover alumno de comision
