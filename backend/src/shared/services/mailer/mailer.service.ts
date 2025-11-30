@@ -28,7 +28,13 @@ export class MailerService {
   private fromDefault: string | null = null;
   private usingTestAccount = false;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {
+    // Priorizar remitente explícito configurado para evitar no-reply@example.com
+    this.fromDefault =
+      this.config.get<string>("MAILJET_FROM") ??
+      this.config.get<string>("SMTP_FROM") ??
+      null;
+  }
 
   async sendMail(req: MailRequest): Promise<void> {
     try {
