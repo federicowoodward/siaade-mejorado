@@ -20,7 +20,7 @@ function buildOptions(): DataSourceOptions {
     type: "postgres",
     entities: [entitiesGlob],
     migrations: [migrationsGlob],
-    migrationsRun: false,
+    migrationsRun: true,
     synchronize: false,
     logging: false,
     ssl: useSsl ? { rejectUnauthorized: false } : undefined,
