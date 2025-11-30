@@ -177,8 +177,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       state?.closesAt && state.closesAt.length
         ? this.formatWindowDate(state.closesAt)
         : null;
-    const when = date ? ` CerrÃ³ el ${date}.` : '';
-    return `Plazo cerrado para docentes.${when} GestionÃ¡ el cambio con SecretarÃ­a.`;
+    const when = date ? ` Cerró el ${date}.` : '';
+    return `Plazo cerrado para docentes.${when} Gestioná el cambio con Secretaría.`;
   }
 
   private canEditCommission(commissionId: number | null | undefined): boolean {
