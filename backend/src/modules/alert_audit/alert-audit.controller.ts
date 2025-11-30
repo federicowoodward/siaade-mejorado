@@ -17,7 +17,7 @@ import { buildPageMeta } from "@/shared/utils/pagination";
 import { AlertAuditService } from "./alert-audit.service";
 import { CreateAlertAuditDto } from "./dto/create-alert-audit.dto";
 
-type RequestUser = { id?: string | null };
+type RequestUser = { sub?: string; id?: string | null };
 
 @ApiTags("AlertAudit")
 @Controller("audit/alerts")
@@ -29,7 +29,8 @@ export class AlertAuditController {
     summary: "Registrar una alerta de UI (toast) desde el frontend",
   })
   async create(@Body() dto: CreateAlertAuditDto, @Req() req: Request) {
-    const userId = (req.user as RequestUser | undefined)?.id ?? undefined;
+    const user = req.user as RequestUser | undefined;
+    const userId = user?.sub || user?.id || undefined;
     await this.service.recordAlert(dto, userId);
     return { status: "queued" };
   }

@@ -114,7 +114,7 @@ export class AlertAuditBufferService {
     const toPrune = await this.repo
       .createQueryBuilder("a")
       .select(["a.id"])
-      .orderBy("a.created_at", "ASC")
+      .orderBy("a.createdAt", "ASC")
       .addOrderBy("a.id", "ASC")
       .limit(this.PRUNE_BATCH_SIZE)
       .getMany();

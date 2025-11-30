@@ -1,4 +1,4 @@
-# Auditoría de alertas de UI (toasts PrimeNG)
+﻿# Auditoría de alertas de UI (toasts PrimeNG)
 
 Este documento resume cómo funciona el sistema de auditoría de alertas que registra en backend los toasts que se muestran en el frontend.
 
@@ -29,13 +29,13 @@ Definida en `backend/database.dbml` y creada por la migración `0400000000000_Ui
 
 - Campos principales:
   - `id` (SERIAL, PK)
-  - `user_id` (UUID, opcional) — usuario autenticado que disparó la alerta.
-  - `severity` (TEXT) — `info | warn | error | success`.
-  - `message` (TEXT) — texto combinado de summary/detail del toast.
-  - `front_route` (TEXT, opcional) — ruta Angular (ej. `/students/enrollments`).
-  - `front_module` (TEXT, opcional) — reservado para futuros usos.
-  - `action` (TEXT, opcional) — identificador de acción (usa `key` del toast si existe).
-  - `metadata` (JSONB, opcional) — copia estructurada de summary/detail/data/id/key.
+  - `user_id` (UUID, opcional) → usuario autenticado que disparó la alerta.
+  - `severity` (TEXT) → `info | warn | error | success`.
+  - `message` (TEXT) → texto combinado de summary/detail del toast.
+  - `front_route` (TEXT, opcional) → ruta Angular (ej. `/students/enrollments`).
+  - `front_module` (TEXT, opcional) → reservado para futuros usos.
+  - `action` (TEXT, opcional) → identificador de acción (usa `key` del toast si existe).
+  - `metadata` (JSONB, opcional) → copia estructurada de summary/detail/data/id/key.
   - `created_at` (TIMESTAMPTZ, default `now()`).
 - Índices:
   - `idx_ui_alert_audits_created_at` sobre `created_at`.
@@ -185,8 +185,8 @@ A modo de referencia, el servicio se usa ya en varios flujos clave, por ejemplo:
 Cualquier nuevo componente que quiera auditar sus toasts puede seguir el mismo patrón:
 
 ```ts
-import { UiAlertAuditService } from '@/app/core/services/ui-alert-audit.service';
-import { MessageService } from 'primeng/api';
+import { UiAlertAuditService } from "@/app/core/services/ui-alert-audit.service";
+import { MessageService } from "primeng/api";
 
 // ...
 private readonly messages = inject(MessageService);
@@ -194,9 +194,9 @@ private readonly uiAlertAudit = inject(UiAlertAuditService);
 
 // En lugar de this.messages.add(...):
 this.uiAlertAudit.add(this.messages, {
-  severity: 'success',
-  summary: 'Operación exitosa',
-  detail: 'Se guardaron los cambios.',
+  severity: "success",
+  summary: "Operación exitosa",
+  detail: "Se guardaron los cambios.",
 });
 ```
 
@@ -230,15 +230,5 @@ curl -X POST "http://localhost:3000/api/audit/alerts" \
 
 - Actualmente se auditan **todos** los toasts que pasan por `UiAlertAuditService`; si en el futuro se desea filtrar (solo errores, solo ciertos módulos), puede hacerse ahí.
 - Es posible añadir más endpoints de lectura (filtros por usuario, severity, rango de fechas) y una pequeña UI interna para que Secretaría navegue las alertas desde el front.
-- El sistema está pensado como una auditoría liviana de UI, no como reemplazo de un sistema de logging completo.**_ End Patch_**`
-  +``` Add File: docs/auditoria-alertas-ui.md
+- El sistema está pensado como una auditoría liviana de UI, no como reemplazo de un sistema de logging completo.
 
-```markdown
-
-```
-
-\*\*\* End Patch мебошанд}…
-
-```assistant to=functions.apply_patchлекеттік ***!
-
-```
