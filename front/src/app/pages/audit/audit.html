@@ -30,15 +30,33 @@
           <ng-template pTemplate="header">
             <tr>
               <th style="width: 11rem">Fecha</th>
+              <th style="width: 13rem">Usuario</th>
               <th style="width: 7rem">Severidad</th>
               <th>Mensaje</th>
-              <th style="width: 12rem">Acción</th>
-              <th style="width: 11rem">Usuario</th>
+              <th style="width: 10rem">Acciones</th>
             </tr>
           </ng-template>
+
           <ng-template pTemplate="body" let-row>
             <tr>
               <td>{{ row.createdAtLabel }}</td>
+              <td>
+                <div
+                  class="flex justify-content-center align-items-center gap-2"
+                >
+                  <span class="text-xs">
+                    {{ row.userEmail || '(sin usuario)' }}
+                  </span>
+                  <p-button
+                    icon="pi pi-external-link"
+                    size="small"
+                    pTooltip="Ver usuario"
+                    tooltipPosition="bottom"
+                    [disabled]="!row.userId || !row.userEmail"
+                    (onClick)="goToUserDetail(row)"
+                  ></p-button>
+                </div>
+              </td>
               <td>
                 <p-tag
                   [value]="row.severity"
@@ -49,17 +67,20 @@
                 <span class="text-sm">{{ row.message }}</span>
               </td>
               <td>
-                <span class="text-xs">{{ row.action || '-' }}</span>
-              </td>
-              <td>
-                <span class="text-xs">{{ row.userId || '-' }}</span>
+                <p-button
+                  label="Ver detalle"
+                  icon="pi pi-search"
+                  size="small"
+                  (onClick)="openDetail(row)"
+                ></p-button>
               </td>
             </tr>
           </ng-template>
+
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="7" class="text-center text-color-secondary py-4">
-                No se encontraron alertas registradas.
+                No hay alertas registradas.
               </td>
             </tr>
           </ng-template>
@@ -68,13 +89,85 @@
 
       <div class="flex justify-content-end mt-3">
         <p-paginator
-          [rows]="20"
+          [rows]="pageSize"
           [totalRecords]="total() > 200 ? 200 : total()"
-          [first]="(page() - 1) * 20"
-          [rowsPerPageOptions]="[20]"
+          [first]="(page() - 1) * pageSize"
+          [rowsPerPageOptions]="[pageSize]"
           (onPageChange)="onPageChange($event)"
         ></p-paginator>
       </div>
+
+      <p-dialog
+        [visible]="detailDialog().visible"
+        [modal]="true"
+        [draggable]="false"
+        [resizable]="false"
+        [style]="{ width: '600px', maxWidth: '90vw' }"
+        [closable]="true"
+        (onHide)="closeDetail()"
+      >
+        <ng-template pTemplate="header">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-bell"></i>
+            <span>Detalle de alerta</span>
+          </div>
+        </ng-template>
+
+        <ng-container *ngIf="detailDialog().row as row">
+          <div class="flex flex-column gap-4 text-sm">
+            <div>
+              <b>Fecha:</b>
+              <span>{{ row.createdAtLabel }}</span>
+            </div>
+            <div>
+              <b>Usuario:</b>
+              <span>{{ row.userEmail || '(sin usuario)' }}</span>
+            </div>
+            <div>
+              <b>Severidad:</b>
+              <p-tag
+                [value]="row.severity"
+                [severity]="row.severityTag"
+              ></p-tag>
+            </div>
+            <div>
+              <b>Mensaje:</b>
+              <span>{{ row.message }}</span>
+            </div>
+            <div *ngIf="row.frontModule">
+              <b>Módulo:</b>
+              <span>{{ row.frontModule }}</span>
+            </div>
+            <div *ngIf="row.action">
+              <b>Acción:</b>
+              <span>{{ row.action }}</span>
+            </div>
+            <div *ngIf="row.metadata as meta">
+              <b>Metadata:</b>
+              <div class="mt-1 flex flex-column gap-1">
+                <div *ngIf="$any(meta)?.summary">
+                  <b>Summary:</b>
+                  <span>{{ $any(meta).summary }}</span>
+                </div>
+                <div *ngIf="$any(meta)?.detail">
+                  <b>Detail:</b>
+                  <span>{{ $any(meta).detail }}</span>
+                </div>
+                <pre class="metadata-json">{{ meta | json }}</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex pt-3 justify-content-end">
+            <p-button
+              label="Cerrar"
+              icon="pi pi-times"
+              severity="secondary"
+              (onClick)="closeDetail()"
+            ></p-button>
+          </div>
+        </ng-container>
+      </p-dialog>
     </ng-template>
   </ng-template>
 </div>

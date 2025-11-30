@@ -3,7 +3,10 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
 } from "typeorm";
+import { User } from "@/entities/users/user.entity";
 
 @Entity("ui_alert_audits")
 export class UiAlertAudit {
@@ -12,6 +15,10 @@ export class UiAlertAudit {
 
   @Column({ name: "user_id", type: "uuid", nullable: true })
   userId: string | null;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: "user_id" })
+  user?: User | null;
 
   @Column({ name: "severity", type: "text" })
   severity: string;
