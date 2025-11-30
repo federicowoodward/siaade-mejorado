@@ -4,3 +4,21 @@
   }
 }
 
+::ng-deep .notices-history-card .aviso-texto {
+  max-width: 100%;
+  white-space: normal; 
+  word-wrap: break-word; 
+  overflow-wrap: anywhere; 
+  line-height: 1.45;
+}
+
+::ng-deep .notices-history-card .aviso-texto ul {
+  padding-left: 1.25rem !important;
+  margin: 0.5rem 0;
+  list-style-type: disc;
+}
+
+::ng-deep .notices-history-card .aviso-texto ul li {
+  margin-bottom: 0.35rem;
+  line-height: 1.5;
+}

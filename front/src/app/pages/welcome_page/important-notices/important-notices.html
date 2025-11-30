@@ -6,9 +6,10 @@
       <li *ngFor="let aviso of noticesForHome()" class="mb-3">
         <div class="surface-card shadow-2 border-round p-3">
           <h3>{{ aviso.title }}</h3>
-          <div class="py-3">
+          <div class="py-3 aviso-texto">
             <span [innerHTML]="aviso.content"></span>
           </div>
+
           <div class="flex justify-content-end">
             <small class="text-gray-500">
               Publicado por {{ aviso.createdBy }} - {{ aviso.createdAt | date:

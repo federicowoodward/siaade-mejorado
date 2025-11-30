@@ -1,5 +1,23 @@
 ::ng-deep {
-    .notices .p-card {
-        background-color: #EEF2FF !important;
-    }
+  .notices .p-card {
+    background-color: #eef2ff !important;
+  }
+}
+
+.notices .aviso-texto {
+  max-width: 520px; // ajustá según estética del home
+  word-wrap: break-word;
+  white-space: normal; // evita que algo largo rompa layout
+  line-height: 1.4;
+}
+
+::ng-deep .notices .aviso-texto ul {
+  padding-left: 1.25rem !important;
+  margin: 0.5rem 0;
+  list-style-type: disc;
+}
+
+::ng-deep .notices .aviso-texto ul li {
+  margin-bottom: 0.35rem;
+  line-height: 1.45;
 }

@@ -81,3 +81,22 @@
     }
   }
 }
+
+::ng-deep .notices-page .notice-item .content {
+  max-width: 100%;
+  white-space: normal; 
+  word-wrap: break-word; 
+  overflow-wrap: anywhere; 
+  line-height: 1.45;
+}
+
+::ng-deep .notices-page .notice-item .content ul {
+  padding-left: 1.25rem !important;
+  margin: 0.5rem 0;
+  list-style-type: disc;
+}
+
+::ng-deep .notices-page .notice-item .content ul li {
+  margin-bottom: 0.35rem;
+  line-height: 1.5;
+}
