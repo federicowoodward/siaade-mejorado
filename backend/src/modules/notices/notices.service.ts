@@ -266,19 +266,46 @@ export class NoticesService {
       "https://siaade-mejorado-production.up.railway.app";
     const link = `${appUrl.replace(/\/$/, "")}/avisos`;
 
+    const title = (entity.title || "Aviso").trim();
+
     const lines = [
+      "Hola,",
+      "",
       "Tenés un aviso nuevo en la página.",
+      `Título: ${title}.`,
       "",
-      `Título: ${entity.title || "Aviso"}`,
+      `Podés ver tus avisos acá: ${link}`,
       "",
-      `Ver avisos: ${link}`,
+      "Si no esperabas este mensaje, podés ignorarlo.",
+      "",
+      "Equipo SIAD.",
     ];
 
-    await this.mailer.sendMail({
-      to: emails,
-      subject: "Tenés un aviso nuevo en la página",
-      text: lines.join("\n"),
-    });
+    const html = [
+      "<p>",
+      "Hola,<br>",
+      "Tenés un aviso nuevo en la página.<br>",
+      `<strong>Título:</strong> ${title}.<br>`,
+      `Ver avisos: <a href="${link}">${link}</a><br>`,
+      "<br>",
+      "Si no esperabas este mensaje, podés ignorarlo.<br><br>",
+      "Equipo SIAD.",
+      "</p>",
+    ].join("");
+
+    const subject = "Tenés un aviso nuevo en la página";
+
+    // Enviar un correo individual por destinatario para que no vean a los demás
+    await Promise.all(
+      emails.map((email) =>
+        this.mailer.sendMail({
+          to: email,
+          subject,
+          text: lines.join("\n"),
+          html,
+        }),
+      ),
+    );
   }
 
   private async resolveStudentCommissionIds(studentId: string) {
