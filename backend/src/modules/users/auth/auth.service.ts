@@ -518,38 +518,49 @@ export class AuthService {
     const { to, name, code, token, codeTtlSec, tokenTtlSec } = params;
     const codeMinutes = Math.max(1, Math.floor((codeTtlSec ?? 0) / 60));
     const tokenMinutes = Math.max(1, Math.floor((tokenTtlSec ?? 0) / 60));
-
     const saludo = name && name.trim() ? `Hola ${name.trim()},` : "Hola,";
-    const lines = [
+    const appUrl =
+      this.configService.get<string>("PUBLIC_APP_URL") ??
+      this.configService.get<string>("APP_URL") ??
+      "";
+    const resetLink = appUrl
+      ? `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${token}`
+      : "";
+
+    const lines: string[] = [
       saludo,
       "",
-      "Recibimos una solicitud para restablecer tu contraseña.",
-      `Código: ${code} (vence en ${codeMinutes} minutos).`,
+      "Recibimos una solicitud para restablecer tu contrasena.",
+      `Codigo: ${code} (vence en ${codeMinutes} minutos).`,
       `El token expira en ${tokenMinutes} minutos.`,
-      "Usa el código anterior para completar el proceso.",
-      "Si no solicitaste esto, ignorá este mensaje.",
-      "",
-      "Equipo SIAD.",
+      "Usa el codigo anterior para completar el proceso.",
     ];
+    if (resetLink) lines.push(`Enlace directo: ${resetLink}`);
+    lines.push(
+      "Si no solicitaste esto, ignora este mensaje.",
+      "",
+      "Equipo SIAD"
+    );
 
     const html = [
       "<p>",
       saludo,
       "<br>",
-      "Recibimos una solicitud para restablecer tu contraseña.<br>",
-      `<strong>Código:</strong> ${code} (vence en ${codeMinutes} minutos).<br>`,
+      "Recibimos una solicitud para restablecer tu contrasena.<br>",
+      `<strong>Codigo:</strong> ${code} (vence en ${codeMinutes} minutos).<br>`,
       `<strong>El token expira en:</strong> ${tokenMinutes} minutos.<br>`,
-      "Usa el código anterior para completar el proceso.<br>",
-      "Si no solicitaste esto, ignorá este mensaje.<br>",
-      "<br>",
-      "<br>",
+      "Usa el codigo anterior para completar el proceso.<br>",
+      resetLink
+        ? `Enlace directo: <a href="${resetLink}">${resetLink}</a><br>`
+        : "",
+      "Si no solicitaste esto, ignora este mensaje.<br><br>",
       "Equipo SIAD.",
       "</p>",
     ].join("");
 
     await this.mailer.sendMail({
       to,
-      subject: "Recuperación de contraseña",
+      subject: "Recuperacion de contrasena",
       text: lines.join("\n"),
       html,
     });
@@ -604,6 +615,22 @@ export class AuthService {
       },
       HttpStatus.LOCKED
     );
+  }
+
+  async requestChangeLink(userId: string) {
+    const user = await this.validateUser(userId);
+    if (!user) throw new UnauthorizedException("User not found");
+    const { token, expiresInSeconds, code, codeExpiresInSeconds } =
+      await this.issueResetToken(userId);
+    await this.sendResetEmail({
+      to: user.email,
+      name: `${user.name ?? ""} ${user.lastName ?? ""}`.trim(),
+      code,
+      token,
+      codeTtlSec: codeExpiresInSeconds,
+      tokenTtlSec: expiresInSeconds,
+    });
+    return { message: "Si la cuenta existe, enviamos instrucciones." };
   }
 
   async verifyResetCode(

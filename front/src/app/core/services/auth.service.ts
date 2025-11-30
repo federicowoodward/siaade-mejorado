@@ -260,6 +260,14 @@ export class AuthService {
       );
   }
 
+  requestPasswordChangeLink() {
+    return this.api.request<{ message?: string }>(
+      'POST',
+      'auth/password/request-change-link',
+      {},
+    );
+  }
+
   changePasswordWithCode(
     code: string,
     currentPassword: string,
