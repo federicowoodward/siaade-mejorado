@@ -17,7 +17,12 @@ import {
 @Component({
   selector: 'app-students-page',
   standalone: true,
-  imports: [CommonModule, AppBreadcrumbComponent, UsersTableComponent, ButtonModule],
+  imports: [
+    CommonModule,
+    AppBreadcrumbComponent,
+    UsersTableComponent,
+    ButtonModule,
+  ],
   templateUrl: './students-page.html',
   styleUrls: ['./students-page.scss'],
 })

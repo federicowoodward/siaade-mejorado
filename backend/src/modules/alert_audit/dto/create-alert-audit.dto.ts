@@ -60,4 +60,3 @@ export class CreateAlertAuditDto {
   @IsObject()
   metadata?: Record<string, unknown>;
 }
-

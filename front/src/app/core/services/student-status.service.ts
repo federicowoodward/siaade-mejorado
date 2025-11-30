@@ -207,20 +207,18 @@ export class StudentStatusService {
   private fetchSummaryFallback(
     targetId: string,
   ): Observable<StudentStatusSummary | null> {
-    return this.api
-      .request<any>('GET', `students/read/${targetId}/full`)
-      .pipe(
-        map((full) =>
-          this.mapSummary(this.buildSummaryFallbackPayload(full, targetId)),
-        ),
-        catchError((fallbackError) => {
-          console.warn(
-            '[StudentStatus] fallback full endpoint unavailable',
-            fallbackError,
-          );
-          return of(null);
-        }),
-      );
+    return this.api.request<any>('GET', `students/read/${targetId}/full`).pipe(
+      map((full) =>
+        this.mapSummary(this.buildSummaryFallbackPayload(full, targetId)),
+      ),
+      catchError((fallbackError) => {
+        console.warn(
+          '[StudentStatus] fallback full endpoint unavailable',
+          fallbackError,
+        );
+        return of(null);
+      }),
+    );
   }
 
   private buildSummaryFallbackPayload(
@@ -237,7 +235,9 @@ export class StudentStatusService {
       lastName: full?.user?.lastName ?? null,
       fullName: this.composeFullName(full?.user?.name, full?.user?.lastName),
       documentNumber: full?.user?.cuil ?? null,
-      registeredSince: this.coerceStartYearToDate(full?.student?.studentStartYear),
+      registeredSince: this.coerceStartYearToDate(
+        full?.student?.studentStartYear,
+      ),
       currentAcademicYear: this.resolveCurrentAcademicYearFromYears(years),
       years,
     };
@@ -340,8 +340,7 @@ export class StudentStatusService {
         coerceText(payload?.career_plan_name) ??
         coerceText(payload?.planName) ??
         coerceText(payload?.studyPlan),
-      planName:
-        coerceText(payload?.planName) ?? coerceText(payload?.studyPlan),
+      planName: coerceText(payload?.planName) ?? coerceText(payload?.studyPlan),
       registeredSince: this.normalizeSummaryDate(
         payload?.registeredSince ??
           payload?.registered_since ??
@@ -425,9 +424,7 @@ export class StudentStatusService {
         subjects: subjects.map((row: any) => ({
           id: this.toNumber(row?.subjectId),
           name:
-            typeof row?.subjectName === 'string'
-              ? row.subjectName
-              : 'Materia',
+            typeof row?.subjectName === 'string' ? row.subjectName : 'Materia',
           calendarYear: this.toNumber(row?.year),
           division:
             typeof row?.commissionLetter === 'string'
@@ -756,7 +753,8 @@ export class StudentStatusService {
     const hasScore =
       this.toNumber(raw?.final ?? raw?.finalScore ?? raw?.score) !== null;
     const hasCondition =
-      typeof raw?.finalCondition === 'string' && raw.finalCondition.trim().length > 0;
+      typeof raw?.finalCondition === 'string' &&
+      raw.finalCondition.trim().length > 0;
     const hasSummary =
       typeof raw?.lastExamSummary === 'string' &&
       raw.lastExamSummary.trim().length > 0 &&

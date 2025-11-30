@@ -46,16 +46,20 @@ export class AlertAuditService {
     await this.buffer.enqueue(event);
   }
 
-  async findAll(page?: number, limit?: number): Promise<{
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<{
     data: AlertAuditListItem[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const { page: p, limit: l, offset } = normalizePagination(
-      { page, limit },
-      { page: 1, limit: 50 },
-    );
+    const {
+      page: p,
+      limit: l,
+      offset,
+    } = normalizePagination({ page, limit }, { page: 1, limit: 50 });
 
     const [rows, total] = await this.repo
       .createQueryBuilder("a")
@@ -79,4 +83,3 @@ export class AlertAuditService {
     return { data, total, page: p, limit: l };
   }
 }
-

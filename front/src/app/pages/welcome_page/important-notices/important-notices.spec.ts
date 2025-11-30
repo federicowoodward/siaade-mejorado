@@ -8,9 +8,8 @@ describe('ImportantNotices', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ImportantNotices]
-    })
-    .compileComponents();
+      imports: [ImportantNotices],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ImportantNotices);
     component = fixture.componentInstance;

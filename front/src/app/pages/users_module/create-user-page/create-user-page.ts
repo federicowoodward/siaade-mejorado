@@ -232,7 +232,9 @@ export class CreateUserPage implements OnInit {
       const backendMsg = (err as any)?.error?.message;
       let detail = 'No se pudo crear el usuario. Verifique los datos.';
       if (backendMsg) {
-        detail = Array.isArray(backendMsg) ? backendMsg.join(' | ') : backendMsg;
+        detail = Array.isArray(backendMsg)
+          ? backendMsg.join(' | ')
+          : backendMsg;
       } else if ((err as any)?.status === 409) {
         detail = 'Datos duplicados. Revise email, CUIL o legajo.';
       }

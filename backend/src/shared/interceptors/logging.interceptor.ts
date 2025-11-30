@@ -1,9 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import {
-  ExecutionContext,
-  CallHandler,
-  NestInterceptor,
-} from "@nestjs/common";
+import { ExecutionContext, CallHandler, NestInterceptor } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { JwtService } from "@nestjs/jwt";
@@ -49,9 +45,7 @@ export class LoggingInterceptor implements NestInterceptor {
           tap(() => {
             const responseTime = Date.now() - now;
             const statusCode = response.statusCode;
-            console.log(
-              `${method} ${url} - ${statusCode} - ${responseTime}ms`,
-            );
+            console.log(`${method} ${url} - ${statusCode} - ${responseTime}ms`);
           }),
         );
       }
@@ -93,4 +87,3 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 }
-

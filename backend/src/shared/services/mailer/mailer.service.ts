@@ -90,7 +90,9 @@ export class MailerService {
             ...(fromParsed.name ? { Name: fromParsed.name } : {}),
           },
           To: toList.map((email) => ({ Email: email })),
-          ...(bccList ? { Bcc: bccList.map((email) => ({ Email: email })) } : {}),
+          ...(bccList
+            ? { Bcc: bccList.map((email) => ({ Email: email })) }
+            : {}),
           Subject: req.subject,
           TextPart: req.text ?? req.html ?? "",
           HTMLPart: req.html ?? req.text ?? "",
@@ -115,7 +117,11 @@ export class MailerService {
           let data = "";
           res.on("data", (chunk) => (data += chunk));
           res.on("end", () => {
-            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            if (
+              res.statusCode &&
+              res.statusCode >= 200 &&
+              res.statusCode < 300
+            ) {
               this.logger.log("[MailerService] Mailjet API send OK");
               resolve();
             } else {
@@ -158,14 +164,20 @@ export class MailerService {
       const pass = this.config.get<string>("SMTP_PASS");
       const port = Number(this.config.get<number>("SMTP_PORT") ?? 587);
       const secure =
-        String(this.config.get<string>("SMTP_SECURE") ?? "false").toLowerCase() ===
-        "true";
+        String(
+          this.config.get<string>("SMTP_SECURE") ?? "false",
+        ).toLowerCase() === "true";
 
       if (host && user && pass) {
         this.fromDefault =
           this.config.get<string>("SMTP_FROM") ?? `no-reply@${host}`;
         this.usingTestAccount = false;
-        return nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+        return nodemailer.createTransport({
+          host,
+          port,
+          secure,
+          auth: { user, pass },
+        });
       }
 
       // Fallback: Ethereal auto generado

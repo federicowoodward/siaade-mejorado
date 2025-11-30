@@ -42,12 +42,13 @@ export class AlertAuditController {
     summary: "Listar alertas de UI auditadas (solo secretaria)",
   })
   async findAll(@Query("page") page?: number, @Query("limit") limit?: number) {
-    const { data, total, page: p, limit: l } = await this.service.findAll(
-      page,
-      limit,
-    );
+    const {
+      data,
+      total,
+      page: p,
+      limit: l,
+    } = await this.service.findAll(page, limit);
     const meta = buildPageMeta(total, p, l);
     return { data, meta };
   }
 }
-

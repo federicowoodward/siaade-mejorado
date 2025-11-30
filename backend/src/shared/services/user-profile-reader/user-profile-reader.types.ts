@@ -6,9 +6,9 @@ export interface UserProfileResult {
   email: string | null;
   cuil: string | null;
   role: { id: number; name: string } | null;
-  isBlocked?: boolean; 
-  blockedReason?: string | null; 
-  requiresPasswordChange?: boolean; 
+  isBlocked?: boolean;
+  blockedReason?: string | null;
+  requiresPasswordChange?: boolean;
 
   userInfo?: {
     id: number;

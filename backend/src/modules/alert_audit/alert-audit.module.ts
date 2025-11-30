@@ -11,4 +11,3 @@ import { AlertAuditBufferService } from "./alert-audit-buffer.service";
   providers: [AlertAuditService, AlertAuditBufferService],
 })
 export class AlertAuditModule {}
-

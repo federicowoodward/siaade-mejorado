@@ -54,9 +54,7 @@ export class AlertAuditBufferService {
     }, this.INACTIVITY_MS);
   }
 
-  private async flush(
-    reason: "buffer-full" | "inactivity",
-  ): Promise<void> {
+  private async flush(reason: "buffer-full" | "inactivity"): Promise<void> {
     if (this.isFlushing || this.buffer.length === 0) {
       return;
     }

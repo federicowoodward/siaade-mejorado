@@ -42,7 +42,7 @@ export class Navbar implements OnInit {
         label: 'Cerrar sesión',
         icon: 'pi pi-sign-out',
         command: () => this.authService.logout(),
-        styleClass: 'logout-item', 
+        styleClass: 'logout-item',
       },
     ];
   }

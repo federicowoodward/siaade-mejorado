@@ -110,9 +110,7 @@ export class SubjectStatusDetailComponent implements OnInit {
     });
   }
 
-  stateSeverity(
-    condition: string | null | undefined,
-  ): SubjectStateSeverity {
+  stateSeverity(condition: string | null | undefined): SubjectStateSeverity {
     // Wrapper para reutilizar la lógica compartida de severidad de estado.
     return resolveSubjectStateSeverity(condition);
   }
