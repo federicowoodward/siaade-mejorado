@@ -55,11 +55,8 @@ export class ApiService {
     const fullUrl = `${base}/${url}`;
 
     const token = this.authState.getAccessTokenSnapshot();
-    const baseHeaders = headers ?? new HttpHeaders();
-    const finalHeaders = baseHeaders
-      .set('Content-Type', 'application/json')
-      .set('Cache-Control', 'no-store, no-cache, must-revalidate')
-      .set('Pragma', 'no-cache');
+    const finalHeaders =
+      headers ?? new HttpHeaders({ 'Content-Type': 'application/json' });
 
     const options: {
       headers: HttpHeaders;
