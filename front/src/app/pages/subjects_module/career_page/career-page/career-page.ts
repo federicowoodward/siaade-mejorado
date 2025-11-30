@@ -74,9 +74,11 @@ export class CareerPage implements OnInit {
     const periods = this.data().academicPeriods ?? [];
 
     type PeriodEntry = {
-      academicPeriod:
-        | { id: number; name: string; partialsScoreNeeded: number }
-        | null;
+      academicPeriod: {
+        id: number;
+        name: string;
+        partialsScoreNeeded: number;
+      } | null;
       subjects: any[];
     };
 
@@ -271,4 +273,3 @@ export class CareerPage implements OnInit {
     });
   }
 }
-

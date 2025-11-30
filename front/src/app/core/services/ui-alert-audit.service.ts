@@ -58,10 +58,7 @@ export class UiAlertAuditService {
 
   private buildMessageText(msg: { [key: string]: any }): string {
     const parts: string[] = [];
-    if (
-      typeof msg['summary'] === 'string' &&
-      msg['summary'].trim().length
-    ) {
+    if (typeof msg['summary'] === 'string' && msg['summary'].trim().length) {
       parts.push(msg['summary'].trim());
     }
     if (typeof msg['detail'] === 'string' && msg['detail'].trim().length) {

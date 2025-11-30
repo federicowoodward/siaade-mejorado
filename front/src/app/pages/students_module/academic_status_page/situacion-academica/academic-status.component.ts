@@ -55,11 +55,7 @@ type HeaderViewModel = {
   styleUrl: './academic-status.component.scss',
 })
 export class AcademicStatusComponent implements OnInit {
-  breadcrumbItems: SimpleBreadcrumbItem[] = [
-    
-    
-    { label: 'Situación académica' },
-  ];
+  breadcrumbItems: SimpleBreadcrumbItem[] = [{ label: 'Situación académica' }];
 
   private readonly statusService = inject(StudentStatusService);
   private readonly destroyRef = inject(DestroyRef);
@@ -102,9 +98,7 @@ export class AcademicStatusComponent implements OnInit {
       .subscribe();
   }
 
-  stateSeverity(
-    condition: string | null,
-  ): SubjectStateSeverity {
+  stateSeverity(condition: string | null): SubjectStateSeverity {
     // Wrapper para reutilizar la lógica compartida de severidad de estado.
     return resolveSubjectStateSeverity(condition);
   }

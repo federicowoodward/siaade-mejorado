@@ -409,7 +409,9 @@ export class StudentInscriptionsService {
   ): { mesaId: number; table: StudentExamTable } | null {
     const tables = this.tablesSignal();
     for (const table of tables) {
-      const match = table.availableCalls.some((call) => call.id === finalExamId);
+      const match = table.availableCalls.some(
+        (call) => call.id === finalExamId,
+      );
       if (match) {
         return { mesaId: table.mesaId, table };
       }

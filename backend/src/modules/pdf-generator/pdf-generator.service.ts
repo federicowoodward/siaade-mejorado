@@ -18,7 +18,7 @@ export class PdfGeneratorService {
     @InjectRepository(FinalExamsStudent)
     private readonly finalExamsStudentRepo: Repository<FinalExamsStudent>,
     private readonly pdfEngineService: PdfEngineService,
-    private readonly catalogsService: CatalogsService
+    private readonly catalogsService: CatalogsService,
   ) {}
 
   private formatDate(date?: Date | string | null): string {
@@ -83,7 +83,7 @@ export class PdfGeneratorService {
         (typeof value === "string" && value.trim() === "")
       ) {
         throw new Error(
-          `Missing required field '${field}' for template '${templateName}'`
+          `Missing required field '${field}' for template '${templateName}'`,
         );
       }
     }
@@ -95,27 +95,27 @@ export class PdfGeneratorService {
     const payload = await this.buildStudentCertificatePayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "student-certificate",
-      payload
+      payload,
     );
   }
 
   async getExamRegistrationReceiptPdf(
-    studentId: string | number
+    studentId: string | number,
   ): Promise<Buffer> {
     const payload = await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
       "exam-registration-receipt",
-      payload
+      payload,
     );
   }
 
   async getExamRegistrationReceiptHtml(
-    studentId: string | number
+    studentId: string | number,
   ): Promise<string> {
     const payload = await this.buildExamRegistrationReceiptPayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "exam-registration-receipt",
-      payload
+      payload,
     );
   }
 
@@ -123,17 +123,17 @@ export class PdfGeneratorService {
     const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
       "academic-performance",
-      viewModel as unknown as Record<string, unknown>
+      viewModel as unknown as Record<string, unknown>,
     );
   }
 
   async getAcademicPerformanceHtml(
-    studentId: string | number
+    studentId: string | number,
   ): Promise<string> {
     const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.renderTemplateToHtml(
       "academic-performance",
-      viewModel as unknown as Record<string, unknown>
+      viewModel as unknown as Record<string, unknown>,
     );
   }
 
@@ -141,12 +141,12 @@ export class PdfGeneratorService {
     const viewModel = await this.buildAcademicSummaryPayload(studentId);
     return this.pdfEngineService.generatePdfFromTemplate(
       "academic-performance",
-      viewModel as unknown as Record<string, unknown>
+      viewModel as unknown as Record<string, unknown>,
     );
   }
 
   private async buildAcademicSummaryPayload(
-    studentId: string | number
+    studentId: string | number,
   ): Promise<AcademicSummaryViewModel> {
     const student = await this.loadStudent(studentId);
     const user = student.user;
@@ -198,7 +198,7 @@ export class PdfGeneratorService {
     }
 
     const academicStatus = await this.catalogsService.getStudentAcademicStatus(
-      student.userId
+      student.userId,
     );
 
     const years: AcademicSummaryYearView[] = [];
@@ -315,7 +315,7 @@ export class PdfGeneratorService {
       });
 
       const yearAverage = this.computeYearAverage(
-        subjects.map((s) => s.finalScore)
+        subjects.map((s) => s.finalScore),
       );
       const yearStatus = this.computeYearStatus(subjects);
 
@@ -352,7 +352,7 @@ export class PdfGeneratorService {
   private buildSubjectDescriptor(
     info: { year: number | null; condition: string | null },
     examDate: Date | null,
-    studentStartYear: number
+    studentStartYear: number,
   ): string {
     let month: string | null = null;
     let yearText: string | null = null;
@@ -388,7 +388,7 @@ export class PdfGeneratorService {
 
   private computeYearAverage(scores: Array<number | null>): string {
     const valid = scores.filter(
-      (n): n is number => typeof n === "number" && !Number.isNaN(n) && n >= 4
+      (n): n is number => typeof n === "number" && !Number.isNaN(n) && n >= 4,
     );
     if (valid.length === 0) return "-";
     const sum = valid.reduce((acc, n) => acc + n, 0);
@@ -444,7 +444,7 @@ export class PdfGeneratorService {
   }
 
   private async buildStudentCertificatePayload(
-    studentId: string | number
+    studentId: string | number,
   ): Promise<StudentCertificatePayload> {
     const student = await this.loadStudent(studentId);
     const commonData = student.user.commonData;
@@ -467,7 +467,7 @@ export class PdfGeneratorService {
   }
 
   private async buildExamRegistrationReceiptPayload(
-    studentId: string | number
+    studentId: string | number,
   ): Promise<ExamRegistrationReceiptPayload> {
     const student = await this.loadStudent(studentId);
     const user = student.user;

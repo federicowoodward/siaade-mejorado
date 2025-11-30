@@ -707,9 +707,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `DROP TABLE IF EXISTS "student_inscription_audits"`,
     );
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "idx_ui_alert_audits_user"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_ui_alert_audits_user"`);
     await queryRunner.query(
       `DROP INDEX IF EXISTS "idx_ui_alert_audits_created_at"`,
     );

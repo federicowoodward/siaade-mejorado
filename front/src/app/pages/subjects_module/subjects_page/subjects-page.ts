@@ -11,7 +11,12 @@ import {
 @Component({
   selector: 'app-subjects-page',
   standalone: true,
-  imports: [CommonModule, AppBreadcrumbComponent, SubjectTableComponent, Button],
+  imports: [
+    CommonModule,
+    AppBreadcrumbComponent,
+    SubjectTableComponent,
+    Button,
+  ],
   templateUrl: './subjects-page.html',
   styleUrl: './subjects-page.scss',
 })

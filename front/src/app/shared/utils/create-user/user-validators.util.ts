@@ -17,14 +17,7 @@ export function canCreateStep2(params: {
   birthDate: string;
   legajo?: string;
 }): boolean {
-  const {
-    role,
-    documentType,
-    documentValue,
-    sex,
-    birthDate,
-    legajo,
-  } = params;
+  const { role, documentType, documentValue, sex, birthDate, legajo } = params;
   if (!role) return false;
   const req = ROLE_REQUIREMENTS[role];
 

@@ -302,8 +302,8 @@ export class NewSubjectPage implements OnInit {
     }
 
     // Verificar si los datos están cargados
-      if (this.teachers.length === 0) {
-        this.uiAlertAudit.add(this.messageService, {
+    if (this.teachers.length === 0) {
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Datos no cargados',
         detail: 'Los profesores aún se están cargando. Intente nuevamente.',
@@ -316,10 +316,10 @@ export class NewSubjectPage implements OnInit {
     let preceptorId: string;
 
     // Si teacherId es un objeto con id, extraer el id
-      if (typeof this.teacherId === 'object' && this.teacherId?.id) {
-        teacherId = this.teacherId.id;
-      } else {
-        this.uiAlertAudit.add(this.messageService, {
+    if (typeof this.teacherId === 'object' && this.teacherId?.id) {
+      teacherId = this.teacherId.id;
+    } else {
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Profesor no válido',
         detail: 'Por favor seleccione un profesor válido de la lista',
@@ -328,10 +328,10 @@ export class NewSubjectPage implements OnInit {
     }
 
     // Si preceptorId es un objeto con id, extraer el id
-      if (typeof this.preceptorId === 'object' && this.preceptorId?.id) {
-        preceptorId = this.preceptorId.id;
-      } else {
-        this.uiAlertAudit.add(this.messageService, {
+    if (typeof this.preceptorId === 'object' && this.preceptorId?.id) {
+      preceptorId = this.preceptorId.id;
+    } else {
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'warn',
         summary: 'Preceptor no válido',
         detail: 'Por favor seleccione un preceptor válido de la lista',
@@ -363,11 +363,11 @@ export class NewSubjectPage implements OnInit {
       // Log de depuración del payload
       console.debug('[Subjects] Creating with payload:', subjectData);
 
-        await firstValueFrom(
-          this.api.create<Subject>('subjects/manage/create', subjectData),
-        );
+      await firstValueFrom(
+        this.api.create<Subject>('subjects/manage/create', subjectData),
+      );
 
-        this.uiAlertAudit.add(this.messageService, {
+      this.uiAlertAudit.add(this.messageService, {
         severity: 'success',
         summary: 'Éxito',
         detail: 'Materia creada correctamente',
@@ -401,11 +401,11 @@ export class NewSubjectPage implements OnInit {
         }
       }
 
-        this.uiAlertAudit.add(this.messageService, {
-          severity: 'error',
-          summary: 'Error',
-          detail: errorMessage,
-        });
+      this.uiAlertAudit.add(this.messageService, {
+        severity: 'error',
+        summary: 'Error',
+        detail: errorMessage,
+      });
     } finally {
       this.creating = false;
     }

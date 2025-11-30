@@ -22,11 +22,10 @@ export class StudentsReadService {
     @InjectRepository(Notice) private readonly noticeRepo: Repository<Notice>,
     @InjectRepository(FinalExam)
     private readonly finalExamRepo: Repository<FinalExam>,
-    private readonly catalogsService: CatalogsService
+    private readonly catalogsService: CatalogsService,
   ) {}
 
   async getStudentSummary(studentId: string) {
-
     if (!studentId)
       throw new NotFoundException("Id de estudiante no proporcionado");
 
@@ -180,10 +179,10 @@ export class StudentsReadService {
     } catch (error) {
       // Evitar 500 si falla el origen de datos: devolvemos vacío y logueamos.
       // eslint-disable-next-line no-console
-      console.warn(
-        "[StudentsRead] getSubjectsStatusFlat fallback vacío",
-        { studentId, error },
-      );
+      console.warn("[StudentsRead] getSubjectsStatusFlat fallback vacío", {
+        studentId,
+        error,
+      });
       return [];
     }
     const flat: Array<{
@@ -217,9 +216,7 @@ export class StudentsReadService {
   }
 
   // Compat: contexto de acciones (ventanas/correlativas). Por ahora devolvemos estructura vacía.
-  getActionContext(
-    _studentId: string,
-  ): {
+  getActionContext(_studentId: string): {
     courseWindow: any;
     examWindow: any;
     correlatives: Array<{ subjectId: number; ok: boolean }>;
@@ -238,7 +235,7 @@ export class StudentsReadService {
   }
 
   private mapAcademicStatusToYears(
-    byYear: Record<string, AcademicStatusRow[]>
+    byYear: Record<string, AcademicStatusRow[]>,
   ): Array<{
     year: number;
     subjects: Array<{
@@ -287,7 +284,8 @@ export class StudentsReadService {
 
   private resolveYearNumber(label: string, rows: AcademicStatusRow[]): number {
     const explicitYear = rows.find(
-      (r) => typeof r.year === "number" && Number.isFinite(r.year) && r.year > 0
+      (r) =>
+        typeof r.year === "number" && Number.isFinite(r.year) && r.year > 0,
     )?.year;
     if (explicitYear) return explicitYear;
     const match = label?.match(/\d+/);
@@ -301,7 +299,7 @@ export class StudentsReadService {
   private buildLastExamSummary(row: AcademicStatusRow): string | null {
     const parts: string[] = [];
     const notes = [row.note1, row.note2, row.note3, row.note4].filter(
-      (n): n is number => typeof n === "number"
+      (n): n is number => typeof n === "number",
     );
     if (notes.length) {
       parts.push(`Parciales: ${notes.join(", ")}`);
@@ -335,12 +333,12 @@ export class StudentsReadService {
 
   private resolveCurrentAcademicYear(
     years: Array<{ year: number; subjects: unknown[] }>,
-    byYear: Record<string, AcademicStatusRow[]>
+    byYear: Record<string, AcademicStatusRow[]>,
   ): number | null {
     const numericYears = years
       .map((y) => y.year)
       .filter(
-        (y): y is number => y != null && Number.isFinite(y) && y > 0
+        (y): y is number => y != null && Number.isFinite(y) && y > 0,
       ) as number[];
     if (numericYears.length) return Math.max(...numericYears);
 
@@ -366,7 +364,7 @@ export class StudentsReadService {
 
   private buildFullName(
     firstName: string | null | undefined,
-    lastName: string | null | undefined
+    lastName: string | null | undefined,
   ): string | null {
     const parts = [firstName, lastName]
       .map((value) => (value ?? "").trim())

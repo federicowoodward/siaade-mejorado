@@ -109,18 +109,23 @@ export class NoticesService {
     const { audience, page, limit } = options;
 
     return this.api
-      .request<
-        {
-          data: any[];
-          meta?: {
-            total?: number;
-            page?: number;
-            limit?: number;
-            pages?: number;
-            segment_by_commission?: boolean;
-          };
-        }
-      >('GET', 'notices', undefined, { audience, page, limit }, undefined, false)
+      .request<{
+        data: any[];
+        meta?: {
+          total?: number;
+          page?: number;
+          limit?: number;
+          pages?: number;
+          segment_by_commission?: boolean;
+        };
+      }>(
+        'GET',
+        'notices',
+        undefined,
+        { audience, page, limit },
+        undefined,
+        false,
+      )
       .pipe(
         map((resp) => {
           const rows = Array.isArray((resp as any)?.data)
@@ -147,9 +152,7 @@ export class NoticesService {
           );
 
           const resolvedPage =
-            typeof meta?.page === 'number' && meta.page > 0
-              ? meta.page
-              : page;
+            typeof meta?.page === 'number' && meta.page > 0 ? meta.page : page;
           const resolvedLimit =
             typeof meta?.limit === 'number' && meta.limit > 0
               ? meta.limit

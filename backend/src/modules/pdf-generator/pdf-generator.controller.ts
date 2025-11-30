@@ -39,7 +39,7 @@ export class PdfGeneratorController {
     ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY
+    ROLE.EXECUTIVE_SECRETARY,
   )
   @ApiOperation({
     summary: "Generate Student Certificate PDF",
@@ -68,7 +68,7 @@ export class PdfGeneratorController {
   })
   async getStudentCertificate(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const pdf =
       await this.pdfGeneratorService.getStudentCertificatePdf(studentId);
@@ -83,7 +83,7 @@ export class PdfGeneratorController {
     ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY
+    ROLE.EXECUTIVE_SECRETARY,
   )
   @ApiOperation({
     summary: "Preview Student Certificate HTML",
@@ -108,7 +108,7 @@ export class PdfGeneratorController {
   })
   async previewStudentCertificateHtml(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const html =
       await this.pdfGeneratorService.getStudentCertificateHtml(studentId);
@@ -126,7 +126,7 @@ export class PdfGeneratorController {
     ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY
+    ROLE.EXECUTIVE_SECRETARY,
   )
   @ApiOperation({
     summary: "Generate Exam Registration Receipt PDF",
@@ -155,7 +155,7 @@ export class PdfGeneratorController {
   })
   async getExamRegistrationReceipt(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const pdf =
       await this.pdfGeneratorService.getExamRegistrationReceiptPdf(studentId);
@@ -170,7 +170,7 @@ export class PdfGeneratorController {
     ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY
+    ROLE.EXECUTIVE_SECRETARY,
   )
   @ApiOperation({
     summary: "Preview Exam Registration Receipt HTML",
@@ -195,7 +195,7 @@ export class PdfGeneratorController {
   })
   async previewExamRegistrationReceiptHtml(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const html =
       await this.pdfGeneratorService.getExamRegistrationReceiptHtml(studentId);
@@ -213,7 +213,7 @@ export class PdfGeneratorController {
     ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY
+    ROLE.EXECUTIVE_SECRETARY,
   )
   @ApiOperation({
     summary: "Generate Academic Performance PDF",
@@ -242,7 +242,7 @@ export class PdfGeneratorController {
   })
   async getAcademicPerformance(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const pdf =
       await this.pdfGeneratorService.getAcademicPerformancePdf(studentId);
@@ -257,7 +257,7 @@ export class PdfGeneratorController {
     ROLE.TEACHER,
     ROLE.PRECEPTOR,
     ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY
+    ROLE.EXECUTIVE_SECRETARY,
   )
   @ApiOperation({
     summary: "Preview Academic Performance HTML",
@@ -282,7 +282,7 @@ export class PdfGeneratorController {
   })
   async previewAcademicPerformanceHtml(
     @Param("studentId") studentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     const html =
       await this.pdfGeneratorService.getAcademicPerformanceHtml(studentId);

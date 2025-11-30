@@ -73,7 +73,10 @@ export class ArgentinaGeoService {
     return this.departmentsCache.get(key)!;
   }
 
-  getLocalities(province: string, department?: string): Observable<GeoOption[]> {
+  getLocalities(
+    province: string,
+    department?: string,
+  ): Observable<GeoOption[]> {
     if (!province) {
       return of([]);
     }

@@ -38,4 +38,3 @@ export class UiAlertAudit {
   })
   createdAt: Date;
 }
-
