@@ -7,6 +7,18 @@
   overflow: hidden;
 }
 
+@media (max-width: 1324px) {
+  .auth-shell {
+    width: 80%;
+  }
+}
+
+@media (max-width: 900px) {
+  .auth-shell {
+    width: 90%;
+  }
+}
+
 /* Ocultar elementos móviles en desktop */
 .mobile-auth-header {
   display: none;
