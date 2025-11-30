@@ -7,6 +7,8 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { PermissionService } from '@/core/auth/permission.service';
+import { ROLE } from '@/core/auth/roles';
 
 @Component({
   selector: 'app-subjects-page',
@@ -22,11 +24,16 @@ import {
 })
 export class SubjectsPage {
   private router = inject(Router);
+  private permissions = inject(PermissionService);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Gestión de materias', routerLink: '/subjects' },
     { label: 'Listado de materias' },
   ];
+
+  get isTeacher(): boolean {
+    return this.permissions.currentRole() === ROLE.TEACHER;
+  }
 
   goToNewSubject() {
     this.router.navigate(['subjects/new']);

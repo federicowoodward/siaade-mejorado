@@ -15,6 +15,7 @@
       <td class="px-3">{{ subject.name }}</td>
       <td class="flex w-23rem justify-content-around">
         <button
+          *ngIf="!isTeacher"
           pButton
           type="button"
           outlined="true"
@@ -35,6 +36,7 @@
   </ng-template>
 </p-table>
 <p-dialog
+  *ngIf="!isTeacher"
   [modal]="true"
   [(visible)]="dialogTeachers().visible"
   (onHide)="closeTeachersDialog()"
@@ -132,6 +134,7 @@
 
 <!-- Diálogo cambio de docente -->
 <p-dialog
+  *ngIf="!isTeacher"
   [modal]="true"
   [(visible)]="changeTeacherDialog().visible"
   (onHide)="closeChangeTeacherDialog()"

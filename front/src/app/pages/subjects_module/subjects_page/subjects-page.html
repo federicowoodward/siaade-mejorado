@@ -8,6 +8,7 @@
       <p>Gestiona las materias, alumnos y sus comisiones.</p>
     </div>
     <p-button
+      *ngIf="!isTeacher"
       (onClick)="goToCareerInfo()"
       icon="pi pi-info-circle"
       severity="secondary"
