@@ -524,13 +524,13 @@ export class AuthService {
       this.configService.get<string>("APP_URL") ??
       "";
     const resetLink = appUrl
-      ? `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${token}`
+      ? `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${token}&mode=recovery`
       : "";
 
     const lines: string[] = [
       saludo,
       "",
-      "Recibimos una solicitud para restablecer tu contrasena.",
+      "Recibimos una solicitud para restablecer tu contraseña.",
       `Codigo: ${code} (vence en ${codeMinutes} minutos).`,
       `El token expira en ${tokenMinutes} minutos.`,
       "Usa el codigo anterior para completar el proceso.",
@@ -546,7 +546,7 @@ export class AuthService {
       "<p>",
       saludo,
       "<br>",
-      "Recibimos una solicitud para restablecer tu contrasena.<br>",
+      "Recibimos una solicitud para restablecer tu contraseña.<br>",
       `<strong>Codigo:</strong> ${code} (vence en ${codeMinutes} minutos).<br>`,
       `<strong>El token expira en:</strong> ${tokenMinutes} minutos.<br>`,
       "Usa el codigo anterior para completar el proceso.<br>",
@@ -560,7 +560,7 @@ export class AuthService {
 
     await this.mailer.sendMail({
       to,
-      subject: "Recuperacion de contrasena",
+      subject: "Recuperacion de contraseña",
       text: lines.join("\n"),
       html,
     });

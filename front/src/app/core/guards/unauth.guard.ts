@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { CanActivate, Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({
@@ -11,9 +11,13 @@ export class UnAuthGuard implements CanActivate {
     private auth: AuthService,
   ) {}
 
-  async canActivate(): Promise<boolean | UrlTree> {
+  async canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot,
+  ): Promise<boolean | UrlTree> {
     await this.auth.ensureSessionLoaded();
-    if (this.auth.isLoggedIn()) {
+    const isResetPasswordRoute = state.url.startsWith('/auth/reset-password');
+    if (this.auth.isLoggedIn() && !isResetPasswordRoute) {
       return this.router.createUrlTree(['/welcome']);
     }
     return true;

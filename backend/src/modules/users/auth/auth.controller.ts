@@ -250,12 +250,12 @@ export class AuthController {
     } as any);
   }
 
-  // Solicitar link directo (sin pedir contrasena actual) para cambio voluntario
+  // Solicitar link directo (sin pedir contraseña actual) para cambio voluntario
   @Post("password/request-change-link")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
-      "Envia un link de cambio de contrasena al email del usuario autenticado (sin pedir contrasena actual).",
+      "Envia un link de cambio de contraseña al email del usuario autenticado (sin pedir contraseña actual).",
   })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
