@@ -82,7 +82,9 @@ export type PasswordChangeCodeResult =
     }
   | ApiFailureResult;
 
-export type ConfirmPasswordResetResult = { ok: true } | ApiFailureResult;
+export type ConfirmPasswordResetResult =
+  | { ok: true; message?: string | null }
+  | ApiFailureResult;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -163,13 +165,24 @@ export class AuthService {
     currentPassword?: string,
   ): Observable<ConfirmPasswordResetResult> {
     return this.api
-      .request<{ success: boolean }>('POST', 'auth/reset-password/confirm', {
-        token,
-        password,
-        currentPassword,
-      })
+      .request<{ success: boolean; message?: string }>(
+        'POST',
+        'auth/reset-password/confirm',
+        {
+          token,
+          password,
+          currentPassword,
+        },
+      )
       .pipe(
-        map(() => ({ ok: true as const })),
+        map((resp) => {
+          // Al cambiar contraseña se invalidan todas las sesiones, limpiar localmente
+          this.authState.clearSession({ emit: true });
+          return {
+            ok: true as const,
+            message: resp?.message ?? null,
+          };
+        }),
         catchError((err) => of(this.asFailure(err))),
       );
   }
@@ -202,16 +215,8 @@ export class AuthService {
       ),
     );
     if (result?.success) {
-      // Actualizar el usuario local para que deje de pedir cambio de contraseña
-      const current =
-        this.authState.getCurrentUserSnapshot() as LocalUser | null;
-      if (current) {
-        const updated: LocalUser = {
-          ...current,
-          requiresPasswordChange: false,
-        };
-        this.authState.setCurrentUser(updated, { persist: true });
-      }
+      // El backend invalida todas las sesiones; limpiar cliente
+      this.authState.clearSession({ emit: true });
     }
     return !!result?.success;
   }
@@ -273,15 +278,24 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ) {
-    return this.api.request<{ success: boolean }>(
-      'POST',
-      'auth/password/change-with-code',
-      {
-        code,
-        currentPassword,
-        newPassword,
-      },
-    );
+    return this.api
+      .request<{ success: boolean }>(
+        'POST',
+        'auth/password/change-with-code',
+        {
+          code,
+          currentPassword,
+          newPassword,
+        },
+      )
+      .pipe(
+        tap((resp) => {
+          if (resp?.success) {
+            // Forzar relogin tras cambio de contraseña
+            this.authState.clearSession({ emit: true });
+          }
+        }),
+      );
   }
 
   private loginRequest(payload: LoginDto) {

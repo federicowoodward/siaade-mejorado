@@ -168,10 +168,13 @@ export class ResetPasswordPage {
       if (result.ok) {
         this.serverError = null;
         this.currentError = null;
+        const successMsg =
+          (result as { message?: string | null }).message ??
+          'Tu contraseña fue actualizada.';
         this.message.add({
           severity: 'success',
           summary: 'Listo',
-          detail: 'Tu contraseña fue actualizada.',
+          detail: successMsg,
         });
         await this.router.navigate(['/auth']);
       } else {

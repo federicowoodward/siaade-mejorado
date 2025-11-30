@@ -17,6 +17,7 @@ type JwtPayload = {
   role?: ROLE;
   roleId?: number;
   isDirective?: boolean;
+  tokenVersion?: number;
 };
 
 @Injectable()
@@ -36,6 +37,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.authService.validateUserById(payload.sub);
     if (!user) {
       throw new UnauthorizedException();
+    }
+
+    const userVersion = user.tokenVersion ?? 0;
+    const payloadVersion = payload.tokenVersion ?? 0;
+    if (payloadVersion !== userVersion) {
+      throw new UnauthorizedException({
+        code: "SESSION_EXPIRED",
+        message: "Session expired. Please log in again.",
+      });
     }
 
     const roleFromUser = normalizeRole(user.role?.name);

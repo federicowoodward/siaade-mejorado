@@ -36,6 +36,7 @@ type AuthPayload = {
   roleId: number;
   isDirective: boolean;
   requiresPasswordChange?: boolean;
+  tokenVersion: number;
 };
 
 type AuthProfile = Awaited<ReturnType<UserProfileReaderService["findById"]>>;
@@ -136,6 +137,19 @@ export class AuthService {
       });
     } catch (error) {
       throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+
+    const userForRefresh = await this.validateUser(incomingPayload.sub);
+    if (!userForRefresh) {
+      throw new UnauthorizedException("User not found");
+    }
+    const currentVersion = userForRefresh.tokenVersion ?? 0;
+    const incomingVersion = incomingPayload.tokenVersion ?? 0;
+    if (incomingVersion !== currentVersion) {
+      throw new UnauthorizedException({
+        code: "SESSION_EXPIRED",
+        message: "Session expired. Please log in again.",
+      });
     }
 
     const { profile, payload } = await this.resolveProfileAndPayload(
@@ -297,13 +311,19 @@ export class AuthService {
       .andWhere("id <> :id", { id: record.id })
       .execute();
 
+    // Invalidar todas las sesiones/tokens activos incrementando versionado
+    await this.bumpTokenVersion(user.id);
+
     this.logger.log(
       `Password reset confirm: userId=${
         record.userId
       } tokenHash=${tokenHash.substring(0, 8)}...`
     );
 
-    return { success: true };
+    return {
+      success: true,
+      message: "Contraseña actualizada. Todas las sesiones fueron cerradas.",
+    };
   }
 
   async forceChangePassword(userId: string, newPassword: string) {
@@ -338,6 +358,7 @@ export class AuthService {
     } as any);
     const hashed = await bcrypt.hash(newPassword, 10);
     await this.userRepository.update({ id: user.id }, { password: hashed });
+    await this.bumpTokenVersion(user.id);
     return { success: true };
   }
 
@@ -386,6 +407,7 @@ export class AuthService {
     const roleId = ROLE_IDS[role];
     const isDirective =
       userEntity.secretary?.isDirective ?? role === ROLE.EXECUTIVE_SECRETARY;
+    const tokenVersion = userEntity.tokenVersion ?? 0;
 
     // Gating de acceso global: si el usuario está INACTIVO o BLOQUEADO, no puede loguear.
     // INACTIVO se trata como eliminado (401 genérico); BLOQUEADO devuelve 403 con motivo (si existe).
@@ -429,6 +451,7 @@ export class AuthService {
       role,
       roleId,
       isDirective,
+      tokenVersion,
     };
 
     // Calcular si la contraseña es "default" (CUIL o "pass1234")
@@ -620,6 +643,21 @@ export class AuthService {
       text: lines.join("\n"),
       html,
     });
+  }
+
+  private async bumpTokenVersion(userId: string): Promise<number | null> {
+    try {
+      await this.userRepository.increment({ id: userId }, "tokenVersion", 1);
+      const updated = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+      return updated?.tokenVersion ?? null;
+    } catch (error) {
+      this.logger.error(
+        `Failed to bump tokenVersion for user ${userId}: ${error}`
+      );
+      return null;
+    }
   }
 
   private generateToken(size = 32): string {

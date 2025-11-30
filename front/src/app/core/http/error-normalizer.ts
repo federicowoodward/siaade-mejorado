@@ -114,6 +114,8 @@ function normalizeFromPayload(
         return respond('user_not_found', status || 404);
       case 'USER_BLOCKED':
         return respond('user_blocked', status || 423);
+      case 'SESSION_EXPIRED':
+        return respond('invalid_credentials', status || 401);
     }
   }
 
