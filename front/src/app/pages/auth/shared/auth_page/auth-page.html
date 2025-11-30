@@ -43,35 +43,35 @@
     <div class="cover-slider">
       <div class="cover-content" *ngIf="loginMode(); else recoverCta">
         <div class="cover-text">
-          <h2 class="cover-title">¿Olvidaste tu contraseña?</h2>
-          <p class="cover-desc">Podés recuperarla en segundos.</p>
-          <button
-            pButton
-            type="button"
-            label="Recuperar"
-            class="p-button-outlined p-button-rounded cover-btn"
-            (click)="changeMode()"
-          ></button>
+          <img
+            src="assets/images/logo.png"
+            alt="SIAD Logo"
+            class="w-5rem h-auto mb-3"
+          />
+          <h2 class="cover-title">Bienvenido al SIAD</h2>
+          <p class="cover-desc">Iniciá sesión para continuar.</p>
+          <!-- <button
+          pButton
+          type="button"
+          label="Recuperar"
+          class="p-button-outlined p-button-rounded cover-btn"
+          (click)="changeMode()"
+          ></button> -->
         </div>
       </div>
       <ng-template #recoverCta>
         <div class="cover-content">
           <div class="cover-text">
-            <h2 class="cover-title">Bienvenido de nuevo</h2>
-            <p class="cover-desc">Iniciá sesión para continuar.</p>
-            <button
-              pButton
-              type="button"
-              label="Iniciar sesión"
-              class="p-button-outlined p-button-rounded cover-btn"
-              (click)="changeMode()"
-            ></button>
+            <h2 class="cover-title">¿Olvidaste tu contraseña?</h2>
+            <p class="cover-desc">Podés recuperarla en segundos.</p>
           </div>
         </div>
       </ng-template>
     </div>
 
-    <div class="auth-content px-4 md:px-6 relative overflow-hidden">
+    <div
+      class="auth-content px-4 md:px-6 relative overflow-hidden flex flex-column justify-content-center h-full"
+    >
       <div class="panes">
         <!-- Pane Recuperar (primer panel - izquierda) -->
         <div class="pane recover-pane" [attr.aria-hidden]="loginMode()">
@@ -83,8 +83,11 @@
             novalidate
             class="form-block center-form"
           >
-            <label for="recover_identity" class="block mb-2 label-inline"
-              >Nombre, Email o CUIL</label
+            <h3 class="text-xl mb-3 font-semibold">Recuperá tu contraseña</h3>
+            <label
+              for="recover_identity"
+              class="block mb-1 label-inline text-sm"
+              >Email o CUIL</label
             >
             <input
               id="recover_identity"
@@ -102,11 +105,17 @@
               class="w-full mb-3"
               [disabled]="recoverForm.invalid || submittingRecover()"
             ></button>
+            <button
+              type="button"
+              pButton
+              label="Iniciar sesión"
+              class="p-button-text w-full"
+              (click)="changeMode()"
+            ></button>
           </form>
         </div>
         <!-- Pane Login (segundo panel - derecha) -->
         <div class="pane login-pane" [attr.aria-hidden]="!loginMode()">
-          <h2 class="pane-title">Iniciar sesión</h2>
           <form
             [formGroup]="loginForm"
             (ngSubmit)="submitLogin()"
@@ -114,8 +123,9 @@
             novalidate
             class="form-block center-form"
           >
-            <label for="login_identity" class="block mb-2 label-inline"
-              >Nombre, Email o CUIL</label
+            <h3 class="text-xl mb-3 font-semibold">Iniciá sesión en SIAD</h3>
+            <label for="login_identity" class="block mb-1 label-inline text-sm"
+              >Email o CUIL</label
             >
             <input
               id="login_identity"
@@ -126,7 +136,7 @@
               placeholder="Ej: juan@mail.com"
               autocomplete="username"
             />
-            <label for="login_password" class="block mb-2 label-inline"
+            <label for="login_password" class="block mb-1 label-inline text-sm"
               >Contraseña</label
             >
             <p-password
@@ -146,6 +156,13 @@
               label="Ingresar"
               class="w-full mb-3"
               [disabled]="loginForm.invalid || submittingLogin()"
+            ></button>
+            <button
+              type="button"
+              pButton
+              label="¿Olvidaste tu contraseña?"
+              class="p-button-text w-full"
+              (click)="changeMode()"
             ></button>
           </form>
         </div>

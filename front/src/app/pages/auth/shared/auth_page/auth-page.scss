@@ -1,8 +1,7 @@
 /* Contenedor principal */
 .auth-shell {
-  width: 48rem;
+  width: 50%;
   max-width: 95vw;
-  min-height: 28rem;
   position: relative;
   border-radius: var(--p-surface-border-radius, 12px);
   overflow: hidden;
@@ -225,11 +224,11 @@
 .cover-title {
   margin: 0 0 0.75rem;
   font-weight: 600;
-  font-size: 1.3rem;
+  font-size: 1.7rem;
 }
 .cover-desc {
   margin: 0 0 1rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   opacity: 0.9;
 }
 .cover-btn {
@@ -435,6 +434,7 @@
   flex-direction: column;
   position: relative;
   z-index: 2;
+  height: 30rem;
 }
 
 .center-form {
