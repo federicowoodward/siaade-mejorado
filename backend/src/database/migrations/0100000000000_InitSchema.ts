@@ -102,7 +102,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       "role_id" integer NOT NULL,
       "is_blocked" boolean NOT NULL DEFAULT false,
       "blocked_reason" text,
-      "token_version" integer NOT NULL DEFAULT 0,
       "is_active" boolean NOT NULL DEFAULT true,
       CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"),
       CONSTRAINT "UQ_ad7818505b07e9124cc186da6b7" UNIQUE ("cuil"),
