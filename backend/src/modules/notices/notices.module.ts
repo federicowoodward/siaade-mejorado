@@ -6,6 +6,8 @@ import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { CareerSubject } from "@/entities/registration/career-subject.entity";
 import { CareerStudent } from "@/entities/registration/career-student.entity";
+import { User } from "@/entities/users/user.entity";
+import { MailerModule } from "@/shared/services/mailer/mailer.module";
 import { NoticesService } from "./notices.service";
 import { NoticesController } from "./notices.controller";
 
@@ -18,7 +20,9 @@ import { NoticesController } from "./notices.controller";
       SubjectCommission,
       CareerSubject,
       CareerStudent,
+      User,
     ]),
+    MailerModule,
   ],
   controllers: [NoticesController],
   providers: [NoticesService],

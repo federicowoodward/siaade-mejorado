@@ -10,6 +10,8 @@ import { CareerStudent } from "@/entities/registration/career-student.entity";
 import { CreateNoticeDto } from "./dto/create-notice.dto";
 import { UpdateNoticeDto } from "./dto/update-notice.dto";
 import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
+import { User } from "@/entities/users/user.entity";
+import { MailerService } from "@/shared/services/mailer/mailer.service";
 
 export type AuthenticatedUser = { id?: string; role?: ROLE | null };
 
@@ -31,6 +33,9 @@ export class NoticesService {
     private readonly careerStudentRepo: Repository<CareerStudent>,
     @InjectRepository(Role)
     private readonly rolesRepo: Repository<Role>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    private readonly mailer: MailerService,
   ) {}
 
   get segmentingByCommission(): boolean {
@@ -47,6 +52,7 @@ export class NoticesService {
       yearNumbers: dto.yearNumbers ?? [],
     });
     const saved = await this.repo.save(notice);
+    await this.sendNoticeEmail(saved);
     return this.findOneForReturn(saved.id);
   }
 
@@ -235,6 +241,44 @@ export class NoticesService {
     if (audience === "teacher") return ROLE_IDS[ROLE.TEACHER];
     if (audience === "student") return ROLE_IDS[ROLE.STUDENT];
     return null;
+  }
+
+  private async sendNoticeEmail(entity: Notice) {
+    // Seleccionar destinatarios según visibleRoleId (null = todos)
+    let roleFilter: number | null = entity.visibleRoleId ?? null;
+    const where: any = { isActive: true };
+    if (roleFilter) {
+      where.roleId = roleFilter;
+    }
+
+    const users = await this.userRepo.find({
+      where,
+      select: ["email"],
+    });
+    const emails = users
+      .map((u) => u.email)
+      .filter((e) => typeof e === "string" && e.trim().length > 0);
+    if (!emails.length) return;
+
+    const appUrl =
+      process.env.PUBLIC_APP_URL ??
+      process.env.APP_URL ??
+      "https://siaade-mejorado-production.up.railway.app";
+    const link = `${appUrl.replace(/\/$/, "")}/avisos`;
+
+    const lines = [
+      "Tenés un aviso nuevo en la página.",
+      "",
+      `Título: ${entity.title || "Aviso"}`,
+      "",
+      `Ver avisos: ${link}`,
+    ];
+
+    await this.mailer.sendMail({
+      to: emails,
+      subject: "Tenés un aviso nuevo en la página",
+      text: lines.join("\n"),
+    });
   }
 
   private async resolveStudentCommissionIds(studentId: string) {

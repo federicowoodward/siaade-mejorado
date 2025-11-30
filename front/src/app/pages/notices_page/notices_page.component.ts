@@ -149,7 +149,7 @@ export class NoticesPageComponent implements OnInit {
 
   async addNotice() {
     try {
-      await this.noticesSrv.create({
+      const created = await this.noticesSrv.create({
         title: this.newNotice.title?.trim(),
         content: this.newNotice.content!,
         visibleFor: (this.newNotice.visibleFor as VisibleRole | 'all') ?? 'all',
@@ -170,6 +170,11 @@ export class NoticesPageComponent implements OnInit {
       };
       this.resetSelections();
       this.createDialogVisible.set(false);
+      // Refrescar la UI al instante mientras sincronizamos con backend
+      this.paginatedNotices.update((curr) =>
+        [created, ...curr].slice(0, this.pageSize),
+      );
+      this.total.set(this.total() + 1);
       this.loadPage(1);
     } catch (e: any) {
       alert(String(e?.message ?? 'No se pudo publicar el aviso.'));
@@ -190,6 +195,8 @@ export class NoticesPageComponent implements OnInit {
       target: event.target as EventTarget,
       message: '¿Estás seguro de continuar?',
       icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Si',
+      rejectLabel: 'No',
       accept: () => callback(),
       reject: () => {
         if (onReject) {

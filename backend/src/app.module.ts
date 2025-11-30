@@ -24,6 +24,7 @@ import { PdfGeneratorModule } from "./modules/pdf-generator/pdf-generator.module
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TYPEORM_OPTIONS } from "./config/typeorm-options.provider";
 import { AlertAuditModule } from "./modules/alert_audit/alert-audit.module";
+import { MailerModule } from "./shared/services/mailer/mailer.module";
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { AlertAuditModule } from "./modules/alert_audit/alert-audit.module";
     StudentsReadModule,
     PdfGeneratorModule,
     AlertAuditModule,
+    MailerModule,
   ],
   providers: [
     {
