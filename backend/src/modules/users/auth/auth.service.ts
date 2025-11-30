@@ -233,28 +233,7 @@ export class AuthService {
       throw new BadRequestException("Token y contraseña son requeridos");
     }
 
-    const tokenHash = this.sha256(rawToken);
-    const now = new Date();
-
-    const record = await this.prtRepository.findOne({
-      where: {
-        tokenHash,
-        usedAt: IsNull(),
-        expiresAt: MoreThan(now),
-      },
-    });
-
-    if (!record) {
-      throw new UnauthorizedException("Token inválido o expirado");
-    }
-
-    // Cargar usuario actual
-    const user = await this.userRepository.findOne({
-      where: { id: record.userId },
-    });
-    if (!user) {
-      throw new UnauthorizedException("User not found");
-    }
+    const { record, user } = await this.getValidResetTokenOrThrow(rawToken);
 
     const bcrypt = await import("bcryptjs");
 
@@ -300,6 +279,7 @@ export class AuthService {
 
     // Marcar token como usado y anular otros tokens activos del usuario
     const usedAt = new Date();
+    const now = usedAt;
     await this.prtRepository.update({ id: record.id }, { usedAt });
     await this.prtRepository
       .createQueryBuilder()
@@ -314,11 +294,7 @@ export class AuthService {
     // Invalidar todas las sesiones/tokens activos incrementando versionado
     await this.bumpTokenVersion(user.id);
 
-    this.logger.log(
-      `Password reset confirm: userId=${
-        record.userId
-      } tokenHash=${tokenHash.substring(0, 8)}...`
-    );
+    this.logger.log(`Password reset confirm: userId=${record.userId}`);
 
     return {
       success: true,
@@ -511,7 +487,9 @@ export class AuthService {
     code: string;
     codeExpiresInSeconds: number;
   }> {
-    const token = this.generateToken();
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const tokenVersion = user?.tokenVersion ?? 0;
+    const token = `${this.generateToken()}.${tokenVersion}`;
     const tokenHash = this.sha256(token);
     const ttl =
       this.configService.get<number>("RESET_TOKEN_TTL_SECONDS") ?? 30 * 60; // 30 min por defecto
@@ -645,6 +623,54 @@ export class AuthService {
     });
   }
 
+  private async getValidResetTokenOrThrow(rawToken: string): Promise<{
+    record: PasswordResetToken;
+    user: User;
+  }> {
+    const token = (rawToken || "").trim();
+    if (!token) {
+      throw this.buildInvalidResetTokenException();
+    }
+
+    const parts = token.split(".");
+    let versionInToken: number | null = null;
+    if (parts.length >= 2) {
+      const maybeVersion = Number(parts[parts.length - 1]);
+      if (Number.isInteger(maybeVersion) && maybeVersion >= 0) {
+        versionInToken = maybeVersion;
+      }
+    }
+
+    const tokenHash = this.sha256(token);
+    const now = new Date();
+
+    const record = await this.prtRepository.findOne({
+      where: {
+        tokenHash,
+        usedAt: IsNull(),
+        expiresAt: MoreThan(now),
+      },
+    });
+
+    if (!record) {
+      throw this.buildInvalidResetTokenException();
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: record.userId },
+    });
+    if (!user || user.isActive === false) {
+      throw this.buildInvalidResetTokenException();
+    }
+
+    const currentVersion = user.tokenVersion ?? 0;
+    if (versionInToken === null ? currentVersion > 0 : versionInToken !== currentVersion) {
+      throw this.buildInvalidResetTokenException();
+    }
+
+    return { record, user };
+  }
+
   private async bumpTokenVersion(userId: string): Promise<number | null> {
     try {
       await this.userRepository.increment({ id: userId }, "tokenVersion", 1);
@@ -668,6 +694,11 @@ export class AuthService {
   private sha256(input: string): string {
     const nodeCrypto = require("crypto");
     return nodeCrypto.createHash("sha256").update(input).digest("hex");
+  }
+
+  async validateResetTokenPublic(rawToken: string) {
+    await this.getValidResetTokenOrThrow(rawToken);
+    return { valid: true };
   }
 
   private async resolveUserByIdentity(id: string): Promise<User | null> {
@@ -709,6 +740,13 @@ export class AuthService {
       },
       HttpStatus.LOCKED
     );
+  }
+
+  private buildInvalidResetTokenException(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: "RESET_TOKEN_INVALID",
+      message: "El enlace de recuperación ya no es válido.",
+    });
   }
 
   async requestChangeLink(userId: string) {

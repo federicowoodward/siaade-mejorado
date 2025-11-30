@@ -3,7 +3,9 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Get,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -214,6 +216,19 @@ export class AuthController {
     this.rateLimit.check(`reset-verify:${ip}`, max, windowMs);
     this.rateLimit.check(`reset-verify-id:${id}`, max, windowMs);
     return this.authService.verifyResetCode(dto);
+  }
+
+  // Validar token de reseteo antes de renderizar pantallas de cambio de contraseña
+  @Public()
+  @Get("validate-reset-token")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Valida un token de restablecimiento de contraseña" })
+  @ApiResponse({ status: 200, description: "Token válido" })
+  async validateResetToken(@Query("token") token: string) {
+    if (!token || !token.trim()) {
+      throw new BadRequestException("Token requerido");
+    }
+    return this.authService.validateResetTokenPublic(token);
   }
 
   // Cambio forzado (primer login) - requiere estar autenticado, por eso NO es @Public

@@ -39,6 +39,8 @@ export class ResetPasswordPage {
   serverError: string | null = null;
   currentError: string | null = null;
   sendingLink = false;
+  tokenValid = false;
+  tokenChecking = false;
 
   form = this.fb.group({
     current: ['', [Validators.required]],
@@ -46,7 +48,7 @@ export class ResetPasswordPage {
     confirm: ['', [Validators.required]],
   });
 
-  ngOnInit() {
+  async ngOnInit() {
     this.token = this.route.snapshot.queryParamMap.get('token');
     // Detectar el modo: si viene 'mode=change', es cambio voluntario (requiere contraseña actual)
     const modeParam = this.route.snapshot.queryParamMap.get('mode');
@@ -64,6 +66,13 @@ export class ResetPasswordPage {
       this.currentError = null;
       this.serverError = null;
     });
+
+    if (!this.token) {
+      await this.handleInvalidToken();
+      return;
+    }
+
+    await this.validateTokenOnLoad();
   }
 
   submitting = false;
@@ -116,6 +125,33 @@ export class ResetPasswordPage {
     );
   }
 
+  private async validateTokenOnLoad() {
+    if (!this.token) return;
+    this.tokenChecking = true;
+    try {
+      const ok = await firstValueFrom(
+        this.auth.validateResetToken(this.token),
+      );
+      if (!ok) {
+        await this.handleInvalidToken();
+        return;
+      }
+      this.tokenValid = true;
+    } finally {
+      this.tokenChecking = false;
+    }
+  }
+
+  private async handleInvalidToken() {
+    this.serverError = 'El enlace de recuperación ya no es válido.';
+    this.message.add({
+      severity: 'warn',
+      summary: 'Enlace inválido',
+      detail: this.serverError,
+    });
+    await this.router.navigate(['/auth']);
+  }
+
   async submit() {
     if (!this.token) {
       this.message.add({
@@ -123,6 +159,10 @@ export class ResetPasswordPage {
         summary: 'Atención',
         detail: 'Falta el token.',
       });
+      return;
+    }
+    if (!this.tokenValid) {
+      await this.handleInvalidToken();
       return;
     }
     this.serverError = null;
