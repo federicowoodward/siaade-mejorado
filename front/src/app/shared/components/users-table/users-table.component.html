@@ -71,11 +71,15 @@
         <td class="text-center" *ngIf="viewerRole !== 'teacher'">
           <ng-container *ngIf="userStatusChip(user) as status">
             <span
-              class="status-dot"
-              [ngClass]="'status-dot--' + status.modifier"
+              class="status-dot-container"
               [pTooltip]="status.label"
               tooltipPosition="top"
-            ></span>
+            >
+              <span
+                class="status-dot"
+                [ngClass]="'status-dot--' + status.modifier"
+              ></span>
+            </span>
           </ng-container>
         </td>
 
