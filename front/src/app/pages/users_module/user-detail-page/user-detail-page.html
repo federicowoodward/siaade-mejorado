@@ -52,26 +52,18 @@
             label="Habilitar"
             icon="pi pi-lock-open"
             severity="danger"
-            [ngClass]="{
-              'p-button-success': accessEnabled(),
-              'p-button-danger': !accessEnabled()
-            }"
-            (onClick)="confirmAction('unblock', $event)"
-            [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
-          ></p-button>
-          <span
-            class="status-dot"
-            [ngClass]="{
-              'status-dot--inactive': isActive() === false,
-              'status-dot--blocked': isActive() !== false && !accessEnabled(),
-              'status-dot--active': accessEnabled()
-            }"
-          ></span>
-          <span class="text-sm text-color-secondary">
-            Estado:
-            {{
-              isActive() === false
-                ? 'Inactivo'
+        [ngClass]="{
+          'p-button-success': accessEnabled(),
+          'p-button-danger': !accessEnabled()
+        }"
+        (onClick)="confirmAction('unblock', $event)"
+        [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
+      ></p-button>
+      <span class="text-sm text-color-secondary">
+        Estado:
+        {{
+          isActive() === false
+            ? 'Inactivo'
                 : accessEnabled()
                   ? 'Habilitado'
                   : 'Bloqueado'
@@ -123,23 +115,15 @@
             [ngClass]="{
               'p-button-success': isActive() !== false,
               'p-button-danger': isActive() === false
-            }"
-            (onClick)="confirmAction('activate', $event)"
-            [disabled]="saving() || !canToggleIsActive()"
-          ></p-button>
-          <span
-            class="status-dot"
-            [ngClass]="{
-              'status-dot--inactive': isActive() === false,
-              'status-dot--blocked': isActive() !== false && isBlocked(),
-              'status-dot--active': isActive() !== false && !isBlocked()
-            }"
-          ></span>
-          <span class="text-sm text-color-secondary">
-            Estado: {{ isActive() === false ? 'Inactivo' : 'Activo' }}
-          </span>
-        </div>
-      </div>
+        }"
+        (onClick)="confirmAction('activate', $event)"
+        [disabled]="saving() || !canToggleIsActive()"
+      ></p-button>
+      <span class="text-sm text-color-secondary">
+        Estado: {{ isActive() === false ? 'Inactivo' : 'Activo' }}
+      </span>
+    </div>
+  </div>
     </div>
   </div>
 
