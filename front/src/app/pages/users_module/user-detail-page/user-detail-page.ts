@@ -198,7 +198,7 @@ export class UserDetailPage implements OnInit {
         this.uiAlertAudit.add(this.messages, {
           severity: 'error',
           summary: 'Acceso no permitido',
-          detail: 'No ten�s permiso para ver este usuario.',
+          detail: 'No tenés permiso para ver este usuario.',
         });
         this.router.navigate(['/users']);
         return;

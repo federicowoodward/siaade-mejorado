@@ -628,7 +628,7 @@ export class StudentInscriptionsController {
     summary: "Desinscribir alumno de un examen final (por callId)",
   })
   @ApiParam({ name: "mesaId", type: Number })
-  @ApiOkResponse({ description: "Respuesta normalizada de desinscripci�n" })
+  @ApiOkResponse({ description: "Respuesta normalizada de desinscripción" })
   async unenroll(
     @Param("mesaId") mesaIdParam: string,
     @Body() body: { callId?: number; studentId?: string },
@@ -697,7 +697,7 @@ export class StudentInscriptionsController {
       return {
         ok: true,
         blocked: false,
-        message: "No se registraba una inscripci�n activa para este llamado.",
+        message: "No se registraba una inscripción activa para este llamado.",
       };
     }
 
@@ -727,7 +727,7 @@ export class StudentInscriptionsController {
     return {
       ok: true,
       blocked: false,
-      message: "Inscripci�n cancelada correctamente.",
+      message: "Inscripción cancelada correctamente.",
     };
   }
 

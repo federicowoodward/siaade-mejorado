@@ -25,20 +25,20 @@ async function main() {
   const nowTag = Date.now();
 
   try {
-    // 1) Insertar cat�logos simples
+    // 1) Insertar catálogos simples
     const apRepo = qr.manager.getRepository(AcademicPeriod);
     const fesRepo = qr.manager.getRepository(FinalExamStatus);
     const sstRepo = qr.manager.getRepository(SubjectStatusType);
     const comRepo = qr.manager.getRepository(Commission);
 
     const ap = apRepo.create({
-      periodName: `2025 - Per�odo de Prueba ${nowTag}`,
+      periodName: `2025 - Período de Prueba ${nowTag}`,
       partialsScoreNeeded: 2,
     });
     await apRepo.save(ap);
     log("academic_period OK", ap.academicPeriodId);
 
-    // Crear un status de final �nico para poder borrarlo sin afectar otros
+    // Crear un status de final único para poder borrarlo sin afectar otros
     const fes = fesRepo.create({ name: `APROBADO (SMOKE) ${nowTag}` });
     await fesRepo.save(fes);
     log("final_exam_status OK", fes.id);
@@ -51,7 +51,7 @@ async function main() {
     await comRepo.save(com);
     log("commission OK", com.id);
 
-    // 2) Si hay un subject + teacher v�lido, intentar crear subject_commission
+    // 2) Si hay un subject + teacher válido, intentar crear subject_commission
     const subject = await qr.manager
       .getRepository(Subject)
       .createQueryBuilder("s")
@@ -65,7 +65,7 @@ async function main() {
       const teacherId: string | undefined = teacherRow?.[0]?.user_id;
       if (teacherId) {
         const scRepo = qr.manager.getRepository(SubjectCommission);
-        // Primero intentamos obtener existente para evitar violaciones de unicidad dentro de la transacci�n
+        // Primero intentamos obtener existente para evitar violaciones de unicidad dentro de la transacción
         let existing = await scRepo.findOne({
           where: { subjectId: subject.id, commissionId: com.id },
         });
@@ -109,7 +109,7 @@ async function main() {
         await sspRepo.save(ssp);
         log("student_subject_progress OK", ssp.id);
       } catch {
-        log("student_subject_progress ya existente (�ndice �nico)");
+        log("student_subject_progress ya existente (índice único)");
       }
     } else {
       log("SKIP student_subject_progress: falta subject_commission o student");
@@ -143,7 +143,7 @@ async function main() {
       });
       await csRepo.save(cso1);
       log("career_subjects OK", cso1.id);
-      // Intento duplicado esperado (mismo careerId, orderNo) usando savepoint para no abortar la transacci�n
+      // Intento duplicado esperado (mismo careerId, orderNo) usando savepoint para no abortar la transacción
       const sp1 = `sp_cs_${nowTag}`;
       await qr.query(`SAVEPOINT ${sp1}`);
       try {
@@ -154,7 +154,7 @@ async function main() {
         });
         await csRepo.save(dup);
         log(
-          "WARN: career_subjects duplicate no lanz� error (revisar �ndice �nico)",
+          "WARN: career_subjects duplicate no lanzó error (revisar índice único)",
         );
       } catch {
         log("career_subjects UNIQUE (careerId, orderNo) OK (fallo esperado)");
@@ -179,7 +179,7 @@ async function main() {
           prereq_order_no: 1,
         });
         await spRepo.save(sproDup);
-        log("WARN: subject_prerequisites_by_order duplicate no lanz� error");
+        log("WARN: subject_prerequisites_by_order duplicate no lanzó error");
       } catch {
         log("subject_prerequisites_by_order UNIQUE OK (fallo esperado)");
       } finally {
@@ -275,7 +275,7 @@ async function main() {
 
     // Rollback para no dejar datos de prueba
     await qr.rollbackTransaction();
-    log("Transacci�n revertida (DB limpia)");
+    log("Transacción revertida (DB limpia)");
   } catch (err) {
     await qr.rollbackTransaction();
     console.error("[SMOKE] Error:", err);

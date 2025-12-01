@@ -96,7 +96,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   ];
 
   // =======================
-  // Estado y seÃƒÂ±ales
+  // Estado y señales
   // =======================
   loading = signal(true);
   error = signal<string | null>(null);
@@ -250,7 +250,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     ];
   });
 
-  // Opciones para el diÃƒÂ¡logo de mover alumno (sin la opciÃƒÂ³n "Todas")
+  // Opciones para el diálogo de mover alumno (sin la opción "Todas")
   moveCommissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
     return base.map((entry) => ({
@@ -309,7 +309,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   // =======================
-  // Handlers de UI (clicks, ediciones, inscripciÃ³n)
+  // Handlers de UI (clicks, ediciones, inscripción)
   // =======================
   back(): void {
     this.goBackSvc.back();
@@ -576,7 +576,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       this.partials() === 4
         ? ['note1', 'note2', 'note3', 'note4']
         : ['note1', 'note2'];
-    // tambiÃƒÂ©n hacemos editable la asistencia
+    // también hacemos editable la asistencia
     return [...gradeFields, 'attendancePercentage'];
   }
 
@@ -713,7 +713,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         next: () => {
           this.moveDialog.update((v) => ({ ...v, loading: false }));
           this.closeMoveDialog();
-          // refrescar situaciÃƒÂ³n acadÃƒÂ©mica
+          // refrescar situación académica
           this.onReload();
           this.uiAlertAudit.add(this.messages, {
             severity: 'success',

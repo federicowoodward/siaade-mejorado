@@ -130,7 +130,7 @@ export class UsersController {
   @Patch(":id/activate")
   @ApiOperation({
     summary:
-      "Marca un usuario como ACTIVO (reversi�n de inactivo/eliminado l�gico)",
+      "Marca un usuario como ACTIVO (reversión de inactivo/eliminado lógico)",
   })
   @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   async activateUser(@Param("id") id: string) {
@@ -141,7 +141,7 @@ export class UsersController {
   @Patch(":id/inactivate")
   @ApiOperation({
     summary:
-      "Marca un usuario como INACTIVO (equivalente a eliminado l�gico, bloquea login)",
+      "Marca un usuario como INACTIVO (equivalente a eliminado lógico, bloquea login)",
   })
   @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   async inactivateUser(@Param("id") id: string) {

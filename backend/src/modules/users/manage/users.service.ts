@@ -166,8 +166,8 @@ export class UsersService {
   }
 
   /**
-   * Lista de usuarios visible para un docente: s�lo estudiantes vinculados
-   * a alguna comisi�n de materias donde figura como teacher.
+   * Lista de usuarios visible para un docente: sólo estudiantes vinculados
+   * a alguna comisión de materias donde figura como teacher.
    */
   async findAllForTeacher(teacherId: string): Promise<any[]> {
     if (!teacherId) {
@@ -191,7 +191,7 @@ export class UsersService {
   }
 
   /**
-   * Verifica si un usuario pertenece a alguna comisi�n de un docente.
+   * Verifica si un usuario pertenece a alguna comisión de un docente.
    */
   async userBelongsToTeacher(
     userId: string,

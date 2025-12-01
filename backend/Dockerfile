@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 # Usamos npm install (no-ci) en la etapa de build para evitar fallos por
-# desincronizaci�n menor del lockfile con dependencias de desarrollo.
+# desincronización menor del lockfile con dependencias de desarrollo.
 RUN npm install
 
 # Copiar el resto y compilar
@@ -28,7 +28,7 @@ RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefo
 COPY package*.json ./
 # TODO(PDF-GENERATOR): instalar dependencias del sistema para Chromium/Puppeteer en Alpine.
 # En runtime instalamos solo dependencias de prod sin exigir lock estricto
-# para evitar el error de desincronizaci�n en CI.
+# para evitar el error de desincronización en CI.
 RUN npm install --omit=dev
 
 # Copiar build y env

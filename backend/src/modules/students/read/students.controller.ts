@@ -28,8 +28,8 @@ export class StudentsReadController {
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
   )
-  @ApiOperation({ summary: "Obtener mi resumen acad��mico" })
-  @ApiOkResponse({ description: "Resumen acad��mico del alumno (self)" })
+  @ApiOperation({ summary: "Obtener mi resumen académico" })
+  @ApiOkResponse({ description: "Resumen académico del alumno (self)" })
   getMySummary(@Req() req: any) {
     return this.service.getStudentSummary(req.user.id);
   }
@@ -42,9 +42,9 @@ export class StudentsReadController {
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
   )
-  @ApiOperation({ summary: "Obtener resumen acad��mico de un alumno" })
+  @ApiOperation({ summary: "Obtener resumen académico de un alumno" })
   @ApiParam({ name: "id", type: String })
-  @ApiOkResponse({ description: "Resumen acad��mico del alumno" })
+  @ApiOkResponse({ description: "Resumen académico del alumno" })
   getSummary(@Param("id") id: string) {
     return this.service.getStudentSummary(id);
   }

@@ -141,7 +141,7 @@ export class FinalExamTableService {
   }
 
   /**
-   * Regla: si la mesa es "vieja" (+2 meses), PRECEPTOR no puede borrar (SECRETARIO/ADMIN s�).
+   * Regla: si la mesa es "vieja" (+2 meses), PRECEPTOR no puede borrar (SECRETARIO/ADMIN sí).
    */
   async remove(id: number, requesterRole: ROLE) {
     const row = await this.tableRepo.findOne({ where: { id } });
