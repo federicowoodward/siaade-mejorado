@@ -212,8 +212,8 @@ export class UsersService {
 
   async findAll(): Promise<any[]> {
     const users = await this.usersRepository.find({
-      where: { isActive: true } as any,
       relations: ["role"],
+      order: { createdAt: "DESC" } as any,
     });
     return users.map((user) => this.mapToResponseDto(user, user.role));
   }
