@@ -6,6 +6,9 @@ export type UserFlagsCacheEntry = {
   isStudent: boolean;
   isActive: boolean | null;
   canLogin: boolean | null;
+  isBlocked?: boolean;
+  blockedReason?: string | null;
+  reasonUpdatedAt?: number;
   updatedAt: number;
 };
 
@@ -62,6 +65,9 @@ export class UserFlagsCacheService {
       isStudent: false,
       isActive: null,
       canLogin: null,
+      isBlocked: false,
+      blockedReason: null,
+      reasonUpdatedAt: 0,
       updatedAt: 0,
     };
     this.set(userId, { ...prev, ...patch, updatedAt: Date.now() });

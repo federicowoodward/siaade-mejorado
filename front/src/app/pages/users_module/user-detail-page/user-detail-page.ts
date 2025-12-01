@@ -148,6 +148,9 @@ export class UserDetailPage implements OnInit {
           isStudent: true,
           isActive: nextIsActive,
           canLogin: nextCanLogin,
+          isBlocked,
+          blockedReason,
+          reasonUpdatedAt: Date.now(),
           updatedAt: Date.now(),
         });
       } else if (roleName === ROLE.TEACHER && data?.teacher) {
@@ -163,6 +166,9 @@ export class UserDetailPage implements OnInit {
           isStudent: false,
           isActive: this.isActive(),
           canLogin: this.canLogin(),
+          isBlocked,
+          blockedReason,
+          reasonUpdatedAt: Date.now(),
           updatedAt: Date.now(),
         });
       } else if (roleName === ROLE.PRECEPTOR && data?.preceptor) {
@@ -178,6 +184,9 @@ export class UserDetailPage implements OnInit {
           isStudent: false,
           isActive: this.isActive(),
           canLogin: this.canLogin(),
+          isBlocked,
+          blockedReason,
+          reasonUpdatedAt: Date.now(),
           updatedAt: Date.now(),
         });
       } else {
@@ -185,12 +194,17 @@ export class UserDetailPage implements OnInit {
         const fallbackIsActive =
           data?.isActive ?? (data as any)?.is_active ?? true;
         this.isActive.set(fallbackIsActive === null ? null : !!fallbackIsActive);
-        this.canLogin.set(true);
+        const fallbackCanLogin =
+          data?.canLogin ?? (data as any)?.can_login ?? true;
+        this.canLogin.set(fallbackCanLogin === null ? null : !!fallbackCanLogin);
         this.cache.set(id, {
           role: roleName,
           isStudent: false,
           isActive: this.isActive(),
-          canLogin: true,
+          canLogin: this.canLogin(),
+          isBlocked,
+          blockedReason,
+          reasonUpdatedAt: Date.now(),
           updatedAt: Date.now(),
         });
       }
