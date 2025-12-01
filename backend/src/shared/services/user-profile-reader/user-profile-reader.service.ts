@@ -31,12 +31,47 @@ export class UserProfileReaderService {
         userInfo: true,
         commonData: { address: true },
         student: true,
+        teacher: true,
+        preceptor: true,
       },
     });
 
     if (!user) throw new NotFoundException("User not found");
 
     const normalizedRole = normalizeRole(user.role?.name);
+
+    const coalesce = <T>(
+      values: Array<T | null | undefined>,
+    ): T | null | undefined => {
+      for (const value of values) {
+        if (value !== undefined && value !== null) {
+          return value;
+        }
+      }
+      return undefined;
+    };
+
+    const normalizeFlag = (
+      value: boolean | null | undefined,
+      fallback: boolean,
+    ): boolean | null => {
+      if (value === undefined) return fallback;
+      if (value === null) return null;
+      return !!value;
+    };
+
+    const rawIsActive = coalesce<boolean | null>([
+      (user as any).isActive,
+      (user as any).student?.isActive ?? null,
+      (user as any).teacher?.isActive ?? null,
+      (user as any).preceptor?.isActive ?? null,
+    ]);
+
+    const rawCanLogin = coalesce<boolean | null>([
+      (user as any).student?.canLogin ?? null,
+      (user as any).teacher?.canLogin ?? null,
+      (user as any).preceptor?.canLogin ?? null,
+    ]);
 
     const result: UserProfileResult = {
       id: user.id,
@@ -53,7 +88,8 @@ export class UserProfileReaderService {
       // Campos de bloqueo
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
-      isActive: (user as any).isActive ?? true,
+      isActive: normalizeFlag(rawIsActive, true),
+      canLogin: normalizeFlag(rawCanLogin, true),
     };
 
     const ui = user.userInfo

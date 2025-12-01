@@ -6,7 +6,8 @@ export interface UserProfileResult {
   email: string | null;
   cuil: string | null;
   role: { id: number; name: string } | null;
-  isActive?: boolean;
+  isActive?: boolean | null;
+  canLogin?: boolean | null;
   isBlocked?: boolean;
   blockedReason?: string | null;
   requiresPasswordChange?: boolean;

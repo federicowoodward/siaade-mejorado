@@ -21,7 +21,9 @@ import {
 import { UserProfileReaderService } from "../../../shared/services/user-profile-reader/user-profile-reader.service";
 import { SubjectCommission } from "@/entities/subjects/subject-commission.entity";
 import { Career } from "@/entities/registration/career.entity";
-import { DataSource } from "typeorm";
+import { Student } from "@/entities/users/student.entity";
+import { Teacher } from "@/entities/users/teacher.entity";
+import { Preceptor } from "@/entities/users/preceptor.entity";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -177,6 +179,7 @@ export class UsersService {
     const qb = this.usersRepository
       .createQueryBuilder("u")
       .innerJoinAndSelect("u.role", "role")
+      .leftJoinAndSelect("u.student", "student")
       .innerJoin("subject_students", "ss", "ss.student_id = u.id")
       .innerJoin("subject_commissions", "sc", "sc.id = ss.commission_id")
       .where("sc.teacher_id = :teacherId", { teacherId })
@@ -275,18 +278,49 @@ export class UsersService {
   async setUserActiveState(userId: string, active: boolean) {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ["role"],
+      relations: ["role", "student", "teacher", "preceptor"],
     });
     if (!user) throw new NotFoundException("User not found");
-    if ((user as any).isActive === active) {
-      return this.mapToResponseDto(user, user.role);
+
+    await this.usersRepository.update(
+      { id: userId },
+      {
+        isActive: active,
+      } as any,
+    );
+
+    // Propagar flags espec�ficos de rol
+    if (user.student) {
+      const studentPatch: Partial<Student> = { isActive: active };
+      if (!active) studentPatch.canLogin = false;
+      await this.usersRepository.manager.update(
+        Student,
+        { userId },
+        studentPatch,
+      );
     }
-    await this.usersRepository.update({ id: userId }, {
-      isActive: active,
-    } as any);
+    if (user.teacher) {
+      const teacherPatch: Partial<Teacher> = { isActive: active };
+      if (!active) teacherPatch.canLogin = false;
+      await this.usersRepository.manager.update(
+        Teacher,
+        { userId },
+        teacherPatch,
+      );
+    }
+    if (user.preceptor) {
+      const preceptorPatch: Partial<Preceptor> = { isActive: active };
+      if (!active) preceptorPatch.canLogin = false;
+      await this.usersRepository.manager.update(
+        Preceptor,
+        { userId },
+        preceptorPatch,
+      );
+    }
+
     const updated = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ["role"],
+      relations: ["role", "student", "teacher", "preceptor"],
     });
     return this.mapToResponseDto(updated!, updated?.role);
   }
@@ -443,11 +477,19 @@ export class UsersService {
   }
 
   private mapToResponseDto(user: User, role?: Role): any {
+    const normalizeFlag = (value: boolean | null | undefined): boolean | null =>
+      value === undefined ? true : value === null ? null : !!value;
     const roleActive =
       (user as any).isActive ??
       (user as any).student?.isActive ??
       (user as any).teacher?.isActive ??
-      (user as any).preceptor?.isActive;
+      (user as any).preceptor?.isActive ??
+      null;
+    const roleCanLogin =
+      (user as any).student?.canLogin ??
+      (user as any).teacher?.canLogin ??
+      (user as any).preceptor?.canLogin ??
+      null;
     return {
       id: user.id,
       name: user.name,
@@ -463,13 +505,17 @@ export class UsersService {
         : undefined,
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
-      isActive: roleActive === undefined || roleActive === null ? true : !!roleActive,
+      isActive: normalizeFlag(roleActive),
+      canLogin: normalizeFlag(roleCanLogin),
     };
   }
 
   // ---------------- BLOQUEO / DESBLOQUEO -----------------
   async blockUser(userId: string, reason?: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role", "student", "teacher", "preceptor"],
+    });
     if (!user) throw new NotFoundException("User not found");
     const final = (reason ?? "").trim();
     const dbReason: string | null = final.length ? final : null;
@@ -485,13 +531,16 @@ export class UsersService {
     } as any);
     const updated = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ["role"],
+      relations: ["role", "student", "teacher", "preceptor"],
     });
     return this.mapToResponseDto(updated!, updated?.role);
   }
 
   async unblockUser(userId: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ["role", "student", "teacher", "preceptor"],
+    });
     if (!user) throw new NotFoundException("User not found");
     if (!(user as any).isBlocked && !(user as any).blockedReason) {
       return this.mapToResponseDto(user, undefined as any);
@@ -502,7 +551,7 @@ export class UsersService {
     } as any);
     const updated = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ["role"],
+      relations: ["role", "student", "teacher", "preceptor"],
     });
     return this.mapToResponseDto(updated!, updated?.role);
   }
