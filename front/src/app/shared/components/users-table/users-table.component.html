@@ -64,26 +64,19 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-user>
-      <tr (click)="rowClick.emit(user)">
+      <tr>
         <td>{{ user.name }} {{ user.lastName }}</td>
         <td>{{ user.cuil }}</td>
         <td *ngIf="viewerRole !== 'teacher'">{{ user.role | roleLabel }}</td>
-        <td
-          class="text-center"
-          [pTooltip]="
-            user.isBlocked ? 'Bloqueado' : user.isActive ? 'Activo' : 'Inactivo'
-          "
-          *ngIf="viewerRole !== 'teacher'"
-        >
-          <span
-            class="status-dot"
-            [ngClass]="{
-              'status-dot--active': user.isActive && !user.isBlocked,
-              'status-dot--blocked': user.isActive && user.isBlocked,
-              'status-dot--inactive': !user.isActive,
-            }"
-            tooltipPosition="top"
-          ></span>
+        <td class="text-center" *ngIf="viewerRole !== 'teacher'">
+          <ng-container *ngIf="userStatusChip(user) as status">
+            <span
+              class="status-dot"
+              [ngClass]="'status-dot--' + status.modifier"
+              [pTooltip]="status.label"
+              tooltipPosition="top"
+            ></span>
+          </ng-container>
         </td>
 
         <td class="flex gap-2 justify-content-start align-items-center">

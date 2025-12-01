@@ -40,20 +40,6 @@ export class UsersPage {
 
   rows = signal<UserRow[]>([]);
 
-  // Estado de acceso seleccionado (solo lectura)
-  selectedUserId = signal<string | null>(null);
-  selectedUserName = signal<string | null>(null);
-  selectedFlagsLoading = signal(false);
-  selectedFlagsError = signal<string | null>(null);
-  selectedFlags = signal<{
-    role: ROLE | null;
-    isStudent: boolean;
-    isActive: boolean | null;
-    canLogin: boolean | null;
-    isBlocked: boolean;
-    blockedReason: string | null;
-  } | null>(null);
-
   breadcrumbItems: SimpleBreadcrumbItem[] = [{ label: 'Gestión de usuarios' }];
 
   // Modal "Materias a cargo" (docente)
@@ -133,13 +119,6 @@ export class UsersPage {
     }
   }
 
-  onRowClick(row: UserRow) {
-    const displayName = `${row.name} ${row.lastName}`.trim();
-    this.selectedUserId.set(row.id);
-    this.selectedUserName.set(displayName || row.email || row.cuil);
-    this.loadUserAccessState(row.id);
-  }
-
   // Abre y carga el modal de materias a cargo del docente
   private openTeacherAssignments(teacherId: string) {
     this.dialogTeacher.set({ visible: true, teacherId });
@@ -180,68 +159,4 @@ export class UsersPage {
     this.dialogData.set(null);
   }
 
-  // Lee desde backend el estado real de acceso/actividad para el usuario seleccionado
-  private loadUserAccessState(userId: string): void {
-    this.selectedFlagsLoading.set(true);
-    this.selectedFlagsError.set(null);
-    this.selectedFlags.set(null);
-
-    this.api.request<any>('GET', `users/${userId}`).subscribe({
-      next: (resp) => {
-        const data = (resp as any)?.data ?? resp;
-        const roleName: ROLE | null = (data?.role?.name as ROLE) ?? null;
-
-        const student = data?.student ?? data?.students ?? null;
-        let isStudent = false;
-        let isActive: boolean | null = null;
-        let canLogin: boolean | null = null;
-
-        if (student) {
-          isStudent = true;
-          const rawActive = student?.isActive ?? student?.is_active ?? null;
-          const rawCanLogin = student?.canLogin ?? student?.can_login ?? null;
-          isActive = rawActive === null ? null : !!rawActive;
-          canLogin = rawCanLogin === null ? null : !!rawCanLogin;
-        } else if (roleName === ROLE.TEACHER && (data as any).teacher) {
-          const teacher = (data as any).teacher;
-          const rawActive = teacher?.isActive ?? teacher?.is_active ?? null;
-          const rawCanLogin = teacher?.canLogin ?? teacher?.can_login ?? null;
-          isActive = rawActive === null ? null : !!rawActive;
-          canLogin = rawCanLogin === null ? null : !!rawCanLogin;
-        } else if (roleName === ROLE.PRECEPTOR && (data as any).preceptor) {
-          const preceptor = (data as any).preceptor;
-          const rawActive = preceptor?.isActive ?? preceptor?.is_active ?? null;
-          const rawCanLogin =
-            preceptor?.canLogin ?? preceptor?.can_login ?? null;
-          isActive = rawActive === null ? null : !!rawActive;
-          canLogin = rawCanLogin === null ? null : !!rawCanLogin;
-        } else {
-          isStudent = false;
-          isActive = true;
-          canLogin = true;
-        }
-
-        const isBlocked = !!(data as any)?.isBlocked;
-        const blockedReason = ((data as any)?.blockedReason ?? null) as
-          | string
-          | null;
-
-        this.selectedFlags.set({
-          role: roleName,
-          isStudent,
-          isActive,
-          canLogin,
-          isBlocked,
-          blockedReason,
-        });
-        this.selectedFlagsLoading.set(false);
-      },
-      error: () => {
-        this.selectedFlagsError.set(
-          'No se pudo leer el estado de acceso de este usuario.',
-        );
-        this.selectedFlagsLoading.set(false);
-      },
-    });
-  }
 }

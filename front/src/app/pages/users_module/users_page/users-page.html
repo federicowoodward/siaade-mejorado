@@ -27,52 +27,7 @@
       [roleFilterEnabled]="viewerRole !== ROLE.TEACHER"
       [rows]="rows()"
       (rowAction)="onRowAction($event)"
-      (rowClick)="onRowClick($event)"
     />
-  </div>
-
-  <!-- Estado rápido de acceso/actividad del usuario seleccionado -->
-  <div class="surface-card border-round p-3 mt-3" *ngIf="selectedUserId()">
-    <h3 class="mb-2 text-base">Estado de acceso</h3>
-    <p class="text-sm text-color-secondary mb-2" *ngIf="selectedUserName()">
-      Usuario seleccionado:
-      <b>{{ selectedUserName() }}</b>
-    </p>
-
-    <ng-container *ngIf="selectedFlagsLoading(); else flagsLoadedTpl">
-      <span class="text-sm">Cargando estado de acceso...</span>
-    </ng-container>
-
-    <ng-template #flagsLoadedTpl>
-      <div
-        *ngIf="selectedFlagsError(); else flagsContentTpl"
-        class="text-sm text-red-600"
-      >
-        {{ selectedFlagsError() }}
-      </div>
-
-      <ng-template #flagsContentTpl>
-        <ng-container *ngIf="selectedFlags() as f">
-          <div class="text-sm flex flex-column gap-1">
-            <div>
-              <b>Acceso:</b>
-              <span>
-                {{ f.isBlocked || f.canLogin === false ? 'Bloqueado' :
-                'Habilitado' }}
-              </span>
-            </div>
-            <div>
-              <b>Estado:</b>
-              <span> {{ f.isActive === false ? 'Inactivo' : 'Activo' }} </span>
-            </div>
-            <div *ngIf="f.isBlocked && f.blockedReason">
-              <b>Motivo de bloqueo:</b>
-              <span>{{ f.blockedReason }}</span>
-            </div>
-          </div>
-        </ng-container>
-      </ng-template>
-    </ng-template>
   </div>
   <!-- Modal: Materias a cargo (Docente) -->
   <p-dialog

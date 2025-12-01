@@ -4,7 +4,6 @@ import {
   Input,
   Output,
   EventEmitter,
-  signal,
   OnChanges,
   SimpleChanges,
   ViewChild,
@@ -52,7 +51,6 @@ export class UsersTableComponent implements OnChanges {
 
   // Output de acciones
   @Output() rowAction = new EventEmitter<{ actionId: string; row: UserRow }>();
-  @Output() rowClick = new EventEmitter<UserRow>();
 
   // Filtros UI locales
   selectedRole: Role | null = null;
@@ -75,6 +73,16 @@ export class UsersTableComponent implements OnChanges {
 
   onActionClick(action: RowAction, row: UserRow) {
     this.rowAction.emit({ actionId: action.id, row });
+  }
+
+  userStatusChip(row: UserRow): { label: string; modifier: 'active' | 'blocked' | 'inactive' } {
+    if (row.isBlocked) {
+      return { label: 'Bloqueado', modifier: 'blocked' };
+    }
+    if (!row.isActive) {
+      return { label: 'Inactivo', modifier: 'inactive' };
+    }
+    return { label: 'Activo', modifier: 'active' };
   }
 
   clear(table: Table, filterInput: HTMLInputElement) {
