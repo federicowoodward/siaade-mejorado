@@ -52,6 +52,7 @@ import {
   SubjectStateSeverity,
   resolveSubjectStateSeverity,
 } from '@/shared/utils/subject-state.utils';
+import { PermissionService } from '@/core/auth/permission.service';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
@@ -85,6 +86,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
   private readonly rbac = inject(RbacService);
+  private readonly permissions = inject(PermissionService);
   private readonly uiAlertAudit = inject(UiAlertAuditService);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
@@ -94,7 +96,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   ];
 
   // =======================
-  // Estado y seÃƒÂ±ales
+  // Estado y señales
   // =======================
   loading = signal(true);
   error = signal<string | null>(null);
@@ -177,8 +179,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       state?.closesAt && state.closesAt.length
         ? this.formatWindowDate(state.closesAt)
         : null;
-    const when = date ? ` CerrÃ³ el ${date}.` : '';
-    return `Plazo cerrado para docentes.${when} GestionÃ¡ el cambio con SecretarÃ­a.`;
+    const when = date ? ` Cerró el ${date}.` : '';
+    return `Plazo cerrado para docentes.${when} Gestioná el cambio con Secretaría.`;
   }
 
   private canEditCommission(commissionId: number | null | undefined): boolean {
@@ -204,13 +206,14 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       severity: 'warn',
       summary: 'Plazo cerrado',
       detail:
-        'El plazo del docente para esta comisiÃ³n ya estÃ¡ cerrado. Contacta a SecretarÃ­a para registrar cambios.',
+        'El plazo del docente para esta comisión ya está¡ cerrado. Contacta a Secretaría para registrar cambios.',
     });
   }
 
   readonly ROLE = ROLE;
-  canMoveStudents = computed(() =>
-    this.rbac.hasAny([
+  // Solo roles administrativos pueden mover alumnos: docente nunca
+  readonly canMoveStudents = computed(() =>
+    this.permissions.hasAnyRole([
       ROLE.PRECEPTOR,
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
@@ -247,7 +250,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     ];
   });
 
-  // Opciones para el diÃƒÂ¡logo de mover alumno (sin la opciÃƒÂ³n "Todas")
+  // Opciones para el diálogo de mover alumno (sin la opción "Todas")
   moveCommissionOptions = computed(() => {
     const base = this.data()?.commissions ?? [];
     return base.map((entry) => ({
@@ -262,7 +265,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         return { label: option.letter ?? 'Todas', value: option.id };
       }
       const window = this.commissionWindows().get(option.id);
-      const suffix = window?.status === 'closed' ? ' Â· Plazo cerrado' : '';
+      const suffix = window?.status === 'closed' ? '· Plazo cerrado' : '';
       return {
         label: `${option.letter ?? `Comision ${option.id}`}${suffix}`,
         value: option.id,
@@ -306,7 +309,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   // =======================
-  // Handlers de UI (clicks, ediciones, inscripciÃ³n)
+  // Handlers de UI (clicks, ediciones, inscripción)
   // =======================
   back(): void {
     this.goBackSvc.back();
@@ -573,7 +576,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       this.partials() === 4
         ? ['note1', 'note2', 'note3', 'note4']
         : ['note1', 'note2'];
-    // tambiÃƒÂ©n hacemos editable la asistencia
+    // también hacemos editable la asistencia
     return [...gradeFields, 'attendancePercentage'];
   }
 
@@ -710,7 +713,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         next: () => {
           this.moveDialog.update((v) => ({ ...v, loading: false }));
           this.closeMoveDialog();
-          // refrescar situaciÃƒÂ³n acadÃƒÂ©mica
+          // refrescar situación académica
           this.onReload();
           this.uiAlertAudit.add(this.messages, {
             severity: 'success',

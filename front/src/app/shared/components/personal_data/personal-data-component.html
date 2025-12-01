@@ -379,7 +379,7 @@
   </div>
 
   <!-- Acciones -->
-  <div class="flex justify-content-end gap-2">
+  <div class="flex justify-content-end gap-2" *ngIf="!readOnly">
     <p-button
       label="Restaurar"
       icon="pi pi-refresh"

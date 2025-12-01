@@ -63,6 +63,14 @@ class DeletedResponseDto {
 
 @ApiTags("Finals / Exam")
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER,
+  ROLE.STUDENT,
+)
 @Controller("finals/exam")
 export class FinalExamController {
   constructor(private readonly svc: FinalExamService) {}
@@ -92,6 +100,7 @@ export class FinalExamController {
   @ApiNotFoundResponse({
     description: "Exam table not found / Subject not found",
   })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @Post("create")
   async create(@Body() dto: CreateFinalExamDto) {
     const saved = await this.svc.create(dto);
@@ -102,6 +111,7 @@ export class FinalExamController {
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiOkResponse({ type: DeletedResponseDto })
   @ApiNotFoundResponse({ description: "Final exam not found" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @Delete("delete/:id")
   remove(@Param("id") id: string) {
     return this.svc.remove(+id);
@@ -148,10 +158,12 @@ export class FinalExamController {
     @Param("exam_table_id") tableId: string,
     @Query("page") page?: number,
     @Query("limit") limit?: number,
+    @Req() req?: Request,
   ) {
     const { page: p, limit: l, offset } = normalizePagination({ page, limit });
+    const user = (req as any)?.user as { id?: string; role?: ROLE | null };
     return this.svc
-      .listAllByTable(+tableId, { skip: offset, take: l })
+      .listAllByTable(+tableId, { skip: offset, take: l }, user)
       .then(([rows, total]) => ({
         data: rows,
         meta: buildPageMeta(total, p, l),
@@ -163,21 +175,29 @@ export class FinalExamController {
   @ApiOkResponse({ type: FinalExamDto })
   @ApiNotFoundResponse({ description: "Final exam not found" })
   @Get("list/:final_exam_id")
-  getOne(@Param("final_exam_id") examId: string) {
-    return this.svc.getOne(+examId);
+  getOne(@Param("final_exam_id") examId: string, @Req() req: Request) {
+    const user = (req as any).user as { id?: string; role?: ROLE | null };
+    return this.svc.getOne(+examId, user);
   }
 
   @ApiOperation({ summary: "Registrar nota de final (estado: registrado)" })
   @ApiBody({ type: RecordFinalDto })
+  @AllowRoles(ROLE.TEACHER)
   @Post("record")
-  record(@Body() dto: RecordFinalDto) {
-    return this.svc.record(dto);
+  record(@Body() dto: RecordFinalDto, @Req() req: Request) {
+    const user = (req as any).user as { id?: string; sub?: string };
+    const userId = (user?.id as string) ?? (user?.sub as string);
+    return this.svc.record(
+      { ...dto, recorded_by: userId },
+      { id: userId, role: ROLE.TEACHER },
+    );
   }
 
   @ApiOperation({
     summary: "Aprobacion administrativa del final (estado: aprobado_admin)",
   })
   @ApiBody({ type: ApproveFinalDto })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   @Post("approve")
   approve(@Body() dto: ApproveFinalDto) {
     return this.svc.approve(dto);

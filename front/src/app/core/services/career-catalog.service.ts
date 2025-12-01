@@ -2,6 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { AuthStateService } from './auth/auth-state.service';
+import { ROLE } from '../auth/roles';
 
 type ApiResponse = {
   career: { id: number; name: string; createdAt: string; academicPeriod: any };
@@ -46,6 +48,7 @@ export type SubjectPrereqListDto = {
 @Injectable({ providedIn: 'root' })
 export class CareerCatalogService {
   private api = inject(ApiService);
+  private authState = inject(AuthStateService);
 
   private _careerId = signal<number | null>(null);
   private _raw = signal<ApiResponse | null>(null);
@@ -88,11 +91,21 @@ export class CareerCatalogService {
             }
           }
 
-          const subjects = Array.from(subjectsMap.entries()).map(([id, s]) => ({
+          let subjects = Array.from(subjectsMap.entries()).map(([id, s]) => ({
             id,
             name: s.name,
             teacherId: s.teacherId,
           }));
+
+          // Si el usuario actual es docente, filtrar solo las materias a su cargo
+          const currentUser = this.authState.getCurrentUserSnapshot() as
+            | { id?: string; role?: string | null }
+            | null;
+          const isTeacher = currentUser?.role === ROLE.TEACHER;
+          const teacherId = currentUser?.id ?? null;
+          if (isTeacher && teacherId) {
+            subjects = subjects.filter((s) => s.teacherId === teacherId);
+          }
 
           this._basicSubjects.set(subjects);
         }),

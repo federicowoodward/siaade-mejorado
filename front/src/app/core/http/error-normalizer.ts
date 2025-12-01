@@ -116,6 +116,8 @@ function normalizeFromPayload(
         return respond('user_blocked', status || 423);
       case 'SESSION_EXPIRED':
         return respond('invalid_credentials', status || 401);
+      case 'RESET_TOKEN_INVALID':
+        return respond('invalid_credentials', status || 401);
     }
   }
 

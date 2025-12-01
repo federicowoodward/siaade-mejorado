@@ -13,6 +13,8 @@ import { Router } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { BlockedActionDirective } from '../../directives/blocked-action.directive';
 import { CardModule } from 'primeng/card';
+import { PermissionService } from '@/core/auth/permission.service';
+import { ROLE } from '@/core/auth/roles';
 @Component({
   selector: 'app-subjects-table',
   standalone: true,
@@ -32,6 +34,7 @@ export class SubjectTableComponent implements OnInit {
   private catalog = inject(CareerCatalogService);
   private router = inject(Router);
   private api = inject(ApiService);
+  private permissions = inject(PermissionService);
 
   basicSubjects = signal<
     { id: number; name: string; teacherId: string | null }[]
@@ -71,6 +74,10 @@ export class SubjectTableComponent implements OnInit {
   }>({ visible: false, loading: false, subjectId: null, commissionId: null });
   teacherOptions = signal<{ label: string; value: string }[]>([]);
   selectedNewTeacher: string | null = null;
+
+  get isTeacher(): boolean {
+    return this.permissions.currentRole() === ROLE.TEACHER;
+  }
 
   // Abre el diálogo y carga comisiones+docentes
   viewComissions(subjectId: number): void {

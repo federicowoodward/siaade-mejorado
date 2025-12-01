@@ -267,20 +267,24 @@
                     severity="secondary"
                     blockedAction
                   ></button>
-                  <button
-                    *ngIf="!editing"
-                    pButton
-                    pRipple
-                    type="button"
-                    icon="pi pi-arrow-right-arrow-left"
-                    pTooltip="Mover a otra comision"
-                    tooltipPosition="top"
-                    (click)="$event.stopPropagation(); openMoveCommission(row)"
-                    text
-                    rounded
-                    severity="secondary"
-                    blockedAction
-                  ></button>
+                  <ng-container *ngIf="canMoveStudents()">
+                    <button
+                      *ngIf="!editing"
+                      pButton
+                      pRipple
+                      type="button"
+                      icon="pi pi-arrow-right-arrow-left"
+                      pTooltip="Mover a otra comision"
+                      tooltipPosition="top"
+                      (click)="
+                        $event.stopPropagation(); openMoveCommission(row)
+                      "
+                      text
+                      rounded
+                      severity="secondary"
+                      blockedAction
+                    ></button>
+                  </ng-container>
                   <div
                     class="flex items-center justify-center gap-2"
                     *appCanAnyRole="['PRECEPTOR']"

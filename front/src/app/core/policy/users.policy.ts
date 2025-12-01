@@ -5,7 +5,8 @@ type VisibilityMatrix = Record<ROLE, Set<ROLE>>;
 
 const VISIBILITY: VisibilityMatrix = {
   [ROLE.STUDENT]: new Set<ROLE>([ROLE.STUDENT]),
-  [ROLE.TEACHER]: new Set<ROLE>([ROLE.STUDENT, ROLE.TEACHER]),
+  // Docente: sólo puede ver alumnos
+  [ROLE.TEACHER]: new Set<ROLE>([ROLE.STUDENT]),
   [ROLE.PRECEPTOR]: new Set<ROLE>([
     ROLE.STUDENT,
     ROLE.TEACHER,

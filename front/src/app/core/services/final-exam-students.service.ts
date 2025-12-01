@@ -34,4 +34,17 @@ export class FinalExamStudentsService {
       `finals/exam/list/${finalExamId}`,
     );
   }
+
+  recordScore(payload: {
+    final_exams_student_id: number;
+    score: number | null;
+    notes: string;
+    recorded_by: string;
+  }): Observable<{ ok: boolean }> {
+    return this.api.request<{ ok: boolean }>(
+      'POST',
+      'finals/exam/record',
+      payload,
+    );
+  }
 }

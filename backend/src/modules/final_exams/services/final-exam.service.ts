@@ -1,6 +1,7 @@
 // src/modules/final_exams/services/final-exam.service.ts
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -30,6 +31,7 @@ import {
   EnrollmentAction,
   EnrollmentActor,
 } from "@/modules/shared/dto/toggle-enrollment.dto";
+import { ROLE } from "@/shared/rbac/roles.constants";
 
 @Injectable()
 export class FinalExamService {
@@ -51,6 +53,7 @@ export class FinalExamService {
   async listAllByTable(
     examTableId: number,
     opts?: { skip?: number; take?: number },
+    user?: { id?: string; role?: ROLE | null },
   ) {
     const qb = this.finalRepo
       .createQueryBuilder("f")
@@ -67,6 +70,13 @@ export class FinalExamService {
       .orderBy("f.exam_date", "ASC")
       .addOrderBy("f.id", "ASC");
 
+    if (user?.role === ROLE.TEACHER && user.id) {
+      qb.innerJoin("subject_commissions", "sc", "sc.subject_id = s.id").andWhere(
+        "sc.teacher_id = :teacherId",
+        { teacherId: user.id },
+      );
+    }
+
     if (opts?.skip !== undefined) qb.skip(opts.skip);
     if (opts?.take !== undefined) qb.take(opts.take);
 
@@ -81,7 +91,10 @@ export class FinalExamService {
     return [rows, total] as const;
   }
 
-  async getOne(finalExamId: number): Promise<FinalExamDto> {
+  async getOne(
+    finalExamId: number,
+    user?: { id?: string; role?: ROLE | null },
+  ): Promise<FinalExamDto> {
     const header = await this.finalRepo
       .createQueryBuilder("fe")
       .leftJoin("fe.subject", "s")
@@ -103,7 +116,14 @@ export class FinalExamService {
 
     if (!header) throw new NotFoundException("Final exam not found");
 
-    const students = await this.linkRepo
+    if (user?.role === ROLE.TEACHER && user.id) {
+      const owns = await this.teacherOwnsFinal(finalExamId, user.id);
+      if (!owns) {
+        throw new ForbiddenException("You are not assigned to this exam");
+      }
+    }
+
+    const studentsQb = this.linkRepo
       .createQueryBuilder("fes")
       .leftJoin("fes.student", "st")
       .leftJoin("st.user", "u")
@@ -115,7 +135,31 @@ export class FinalExamService {
         "fes.score::float AS score",
         "fes.notes AS notes",
       ])
-      .where("fes.finalExamId = :id", { id: finalExamId })
+      .where("fes.finalExamId = :id", { id: finalExamId });
+
+    if (user?.role === ROLE.TEACHER && user.id) {
+      const subjectId =
+        (header as any).subject_id ?? (header as any).subjectId ?? null;
+      if (!subjectId) {
+        throw new ForbiddenException("You are not assigned to this exam");
+      }
+
+      studentsQb
+        .innerJoin(
+          "subject_students",
+          "ss",
+          "ss.student_id = fes.student_id AND ss.subject_id = :subjectId",
+          { subjectId },
+        )
+        .innerJoin(
+          "subject_commissions",
+          "sc",
+          "sc.id = ss.commission_id",
+        )
+        .andWhere("sc.teacher_id = :teacherId", { teacherId: user.id });
+    }
+
+    const students = await studentsQb
       .orderBy("u.last_name", "ASC")
       .addOrderBy("u.name", "ASC")
       .getRawMany();
@@ -181,7 +225,10 @@ export class FinalExamService {
     return { deleted: true };
   }
 
-  async record(dto: RecordFinalDto) {
+  async record(
+    dto: RecordFinalDto,
+    _user?: { id?: string; role?: ROLE | null },
+  ) {
     const link = await this.linkRepo.findOne({
       where: { id: dto.final_exams_student_id },
     });
@@ -190,6 +237,12 @@ export class FinalExamService {
       where: { userId: dto.recorded_by },
     });
     if (!teacher) throw new NotFoundException("Teacher not found");
+
+    await this.ensureTeacherOwnsLink(
+      teacher.userId,
+      link.finalExamId,
+      link.studentId,
+    );
     const status = await this.statusRepo.findOne({
       where: { name: "registrado" },
     });
@@ -223,6 +276,58 @@ export class FinalExamService {
     (link as any).approvedAt = new Date();
     await this.linkRepo.save(link);
     return { ok: true };
+  }
+
+  private async teacherOwnsFinal(
+    finalExamId: number,
+    teacherId: string,
+  ): Promise<boolean> {
+    const count = await this.finalRepo
+      .createQueryBuilder("fe")
+      .innerJoin("fe.subject", "s")
+      .innerJoin("subject_commissions", "sc", "sc.subject_id = s.id")
+      .where("fe.id = :finalExamId", { finalExamId })
+      .andWhere("sc.teacher_id = :teacherId", { teacherId })
+      .getCount();
+    return count > 0;
+  }
+
+  private async ensureTeacherOwnsLink(
+    teacherId: string,
+    finalExamId: number,
+    studentId?: string,
+  ): Promise<void> {
+    let owns = await this.teacherOwnsFinal(finalExamId, teacherId);
+
+    if (owns && studentId) {
+      owns = await this.teacherOwnsFinalStudent(finalExamId, studentId, teacherId);
+    }
+
+    if (!owns) {
+      throw new ForbiddenException("You are not assigned to this exam");
+    }
+  }
+
+  private async teacherOwnsFinalStudent(
+    finalExamId: number,
+    studentId: string,
+    teacherId: string,
+  ): Promise<boolean> {
+    const count = await this.linkRepo
+      .createQueryBuilder("fes")
+      .innerJoin("fes.finalExam", "fe")
+      .innerJoin(
+        "subject_students",
+        "ss",
+        "ss.subject_id = fe.subject_id AND ss.student_id = fes.student_id",
+      )
+      .innerJoin("subject_commissions", "sc", "sc.id = ss.commission_id")
+      .where("fes.finalExamId = :finalExamId", { finalExamId })
+      .andWhere("fes.studentId = :studentId", { studentId })
+      .andWhere("sc.teacher_id = :teacherId", { teacherId })
+      .getCount();
+
+    return count > 0;
   }
 
   async toggleFinalExamEnrollmentRich(

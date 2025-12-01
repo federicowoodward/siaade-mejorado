@@ -342,7 +342,7 @@ export class StudentsReadService {
       ) as number[];
     if (numericYears.length) return Math.max(...numericYears);
 
-    // Fallbacks: intentar leer a��o desde las claves o las filas
+    // Fallbacks: intentar leer año desde las claves o las filas
     const parsedFromKeys = Object.keys(byYear ?? {})
       .map((label) => this.parseYearFromLabel(label))
       .filter((y): y is number => y != null && Number.isFinite(y) && y > 0);

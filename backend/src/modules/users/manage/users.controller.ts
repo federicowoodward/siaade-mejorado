@@ -1,24 +1,29 @@
 import {
-  Controller,
-  Post,
+  BadRequestException,
   Body,
-  Put,
-  Param,
+  Controller,
   Delete,
+  ForbiddenException,
   Get,
-  Patch,
   HttpCode,
   HttpStatus,
-  BadRequestException,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Req,
+  UseGuards,
 } from "@nestjs/common";
 import {
-  ApiTags,
+  ApiBearerAuth,
+  ApiBody,
+  ApiConflictResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
-  ApiBody,
-  ApiOkResponse,
-  ApiConflictResponse,
+  ApiTags,
 } from "@nestjs/swagger";
+import { Request } from "express";
 import { CreationMode, UsersService } from "./users.service";
 import { CreatePreceptorDto } from "./dto/create-preceptor.dto";
 import { CreateSecretaryDto } from "./dto/create-secretary.dto";
@@ -26,7 +31,20 @@ import { CreateTeacherDto } from "./dto/create-teacher.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { UsersPatchService } from "@/shared/services/users-patch/users-patch.service";
 import { UserProfileReaderService } from "@/shared/services/user-profile-reader/user-profile-reader.service";
+import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
+import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
+import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
+import { ROLE } from "@/shared/rbac/roles.constants";
+
 @ApiTags("Users Management")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@AllowRoles(
+  ROLE.EXECUTIVE_SECRETARY,
+  ROLE.SECRETARY,
+  ROLE.PRECEPTOR,
+  ROLE.TEACHER,
+)
 @Controller("users")
 export class UsersController {
   constructor(
@@ -39,6 +57,7 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Alta usuario secretario (isDirective opcional)" })
   @ApiResponse({ status: 201, description: "Secretary created" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   createSecretary(@Body() dto: CreateSecretaryDto) {
     return this.usersService.createSecretary(dto);
   }
@@ -47,6 +66,7 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Alta de preceptor con datos extra (user_info)" })
   @ApiResponse({ status: 201, description: "Preceptor created" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   createPreceptor(@Body() dto: CreatePreceptorDto) {
     return this.usersService.createPreceptor(dto);
   }
@@ -58,6 +78,7 @@ export class UsersController {
       "Alta docente (con user_info y common_data; address_data opcional dentro de common_data)",
   })
   @ApiResponse({ status: 201, description: "Teacher created" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   createTeacher(@Body() dto: CreateTeacherDto) {
     return this.usersService.createTeacher(dto);
   }
@@ -69,6 +90,7 @@ export class UsersController {
       "Alta estudiante (con user_info, common_data ; address_data opcional)",
   })
   @ApiResponse({ status: 201, description: "Student created" })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   createStudent(@Body() dto: CreateStudentDto) {
     return this.usersService.createStudent(dto);
   }
@@ -85,9 +107,11 @@ export class UsersController {
       properties: { reason: { type: "string", nullable: true } },
     } as any,
   })
+  @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   async blockUser(
     @Param("id") id: string,
     @Body() body: { reason?: string | null },
+    @Req() _req: Request,
   ) {
     const reason = (body?.reason ?? "").trim();
     const data = await this.usersService.blockUser(id, reason);
@@ -96,7 +120,8 @@ export class UsersController {
 
   @Patch(":id/unblock")
   @ApiOperation({ summary: "Desbloquea un usuario y limpia el motivo" })
-  async unblockUser(@Param("id") id: string) {
+  @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
+  async unblockUser(@Param("id") id: string, @Req() _req: Request) {
     const data = await this.usersService.unblockUser(id);
     return { data, message: "Usuario desbloqueado" };
   }
@@ -107,6 +132,7 @@ export class UsersController {
     summary:
       "Marca un usuario como ACTIVO (reversión de inactivo/eliminado lógico)",
   })
+  @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   async activateUser(@Param("id") id: string) {
     const data = await this.usersService.setUserActiveState(id, true);
     return { data, message: "Usuario activado" };
@@ -117,6 +143,7 @@ export class UsersController {
     summary:
       "Marca un usuario como INACTIVO (equivalente a eliminado lógico, bloquea login)",
   })
+  @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   async inactivateUser(@Param("id") id: string) {
     const data = await this.usersService.setUserActiveState(id, false);
     return { data, message: "Usuario inactivado" };
@@ -127,11 +154,22 @@ export class UsersController {
   @Get()
   @ApiOperation({ summary: "Get all users" })
   @ApiResponse({ status: 200, description: "Users retrieved successfully" })
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('ADMIN_GENERAL', 'SECRETARIO')
-  async getAllUsers(): Promise<{ data: any[]; message: string }> {
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  async getAllUsers(@Req() req: Request): Promise<{
+    data: any[];
+    message: string;
+  }> {
     try {
-      const users = await this.usersService.findAll();
+      const auth = req.user as { id?: string; role?: ROLE | null } | undefined;
+      const isTeacher = auth?.role === ROLE.TEACHER && !!auth?.id;
+      const users = isTeacher
+        ? await this.usersService.findAllForTeacher(auth!.id as string)
+        : await this.usersService.findAll();
       return {
         data: users,
         message: "Users retrieved successfully",
@@ -147,8 +185,25 @@ export class UsersController {
   @Get(":id")
   @ApiOperation({ summary: "Get user by ID" })
   @ApiResponse({ status: 200, description: "User retrieved successfully" })
-  async getUserById(@Param("id") id: string) {
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+  )
+  async getUserById(@Param("id") id: string, @Req() req: Request) {
     try {
+      const auth = req.user as { id?: string; role?: ROLE | null } | undefined;
+      if (auth?.role === ROLE.TEACHER && auth?.id) {
+        const allowed = await this.usersService.userBelongsToTeacher(
+          id,
+          auth.id,
+        );
+        if (!allowed) {
+          throw new ForbiddenException("Access to this user is forbidden");
+        }
+      }
+
       const user = await this.usersService.findById(id);
       return {
         data: user,
@@ -171,7 +226,15 @@ export class UsersController {
       additionalProperties: true,
     } as any,
   })
-  async updateUser(@Param("id") id: string, @Body() body: Record<string, any>) {
+  @AllowRoles(
+    ROLE.PRECEPTOR,
+    ROLE.SECRETARY,
+    ROLE.EXECUTIVE_SECRETARY,
+  )
+  async updateUser(
+    @Param("id") id: string,
+    @Body() body: Record<string, any>,
+  ) {
     try {
       await this.usersPatchService.patchUser(id, body);
       // devolvemos el perfil unificado ya existente en tu lector
@@ -181,6 +244,7 @@ export class UsersController {
       throw new BadRequestException(error?.message || "Failed to update user");
     }
   }
+
   @Delete(":id")
   // @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete user" })
@@ -188,6 +252,7 @@ export class UsersController {
   @ApiConflictResponse({
     description: "User cannot be deleted due to linked subjects",
   })
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   async deleteUser(@Param("id") id: string) {
     await this.usersService.deleteTx(id);
     return { data: { deleted: true }, message: "User deleted successfully" };

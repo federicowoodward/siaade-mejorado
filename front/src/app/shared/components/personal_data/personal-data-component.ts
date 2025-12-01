@@ -44,6 +44,8 @@ export class PersonalDataComponent implements OnInit {
 
   /** Si no viene, usa el usuario logueado */
   @Input() userId!: string;
+  /** Modo solo lectura (ej. vista docente sobre alumnos) */
+  @Input() readOnly = false;
 
   readonly docTypeOptions = [
     { label: 'DNI', value: 'DNI' },

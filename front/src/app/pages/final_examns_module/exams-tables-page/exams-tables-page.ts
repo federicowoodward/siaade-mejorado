@@ -225,6 +225,14 @@ export class ExamsTablesPage implements OnInit {
     ]);
   }
 
+  // Roles con permisos de gestión administrativa sobre mesas (crear/editar/eliminar)
+  canManageTables(): boolean {
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
+  }
+
   confirm(event: Event, callback: () => void, onReject?: () => void) {
     this.confirmationService.confirm({
       target: event.target as EventTarget,

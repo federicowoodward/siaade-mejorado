@@ -9,7 +9,7 @@ import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { User } from "@/entities/users/user.entity";
 import { Role } from "@/entities/roles/role.entity";
-import { ROLE, normalizeRole } from "@/shared/rbac/roles.constants";
+import { ROLE, ROLE_IDS, normalizeRole } from "@/shared/rbac/roles.constants";
 import { UserProvisioningService } from "../../../shared/services/user-provisioning/user-provisioning.service";
 import {
   CreateSecretaryDto,
@@ -163,6 +163,51 @@ export class UsersService {
         studentStartYear: startYear,
       },
     });
+  }
+
+  /**
+   * Lista de usuarios visible para un docente: sólo estudiantes vinculados
+   * a alguna comisión de materias donde figura como teacher.
+   */
+  async findAllForTeacher(teacherId: string): Promise<any[]> {
+    if (!teacherId) {
+      return [];
+    }
+
+    const qb = this.usersRepository
+      .createQueryBuilder("u")
+      .innerJoinAndSelect("u.role", "role")
+      .innerJoin("subject_students", "ss", "ss.student_id = u.id")
+      .innerJoin("subject_commissions", "sc", "sc.id = ss.commission_id")
+      .where("sc.teacher_id = :teacherId", { teacherId })
+      .andWhere("u.is_active = :active", { active: true })
+      .andWhere("u.role_id = :studentRoleId", {
+        studentRoleId: ROLE_IDS[ROLE.STUDENT],
+      })
+      .distinct(true);
+
+    const users = await qb.getMany();
+    return users.map((user) => this.mapToResponseDto(user, user.role));
+  }
+
+  /**
+   * Verifica si un usuario pertenece a alguna comisión de un docente.
+   */
+  async userBelongsToTeacher(
+    userId: string,
+    teacherId: string,
+  ): Promise<boolean> {
+    if (!userId || !teacherId) return false;
+
+    const exists = await this.usersRepository
+      .createQueryBuilder("u")
+      .innerJoin("subject_students", "ss", "ss.student_id = u.id")
+      .innerJoin("subject_commissions", "sc", "sc.id = ss.commission_id")
+      .where("u.id = :userId", { userId })
+      .andWhere("sc.teacher_id = :teacherId", { teacherId })
+      .getExists();
+
+    return exists;
   }
 
   async findAll(): Promise<any[]> {

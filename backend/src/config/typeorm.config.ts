@@ -8,6 +8,17 @@ export function createTypeOrmConfig(
   const dbUrl = config.get<string>("DATABASE_URL");
   const useSsl = config.get<string>("DB_SSL") === "true";
   const shouldSync = config.get<string>("TYPEORM_SYNC") === "true";
+  // Por defecto ejecutamos migraciones al arrancar; se puede desactivar con TYPEORM_MIGRATIONS_RUN=false
+  const migrationsRun =
+    config.get<string>("TYPEORM_MIGRATIONS_RUN") !== "false";
+
+  const migrationsGlob = path.join(
+    __dirname,
+    "..",
+    "database",
+    "migrations",
+    "*{.ts,.js}"
+  );
 
   const base: TypeOrmModuleOptions = {
     type: "postgres",
@@ -15,6 +26,9 @@ export function createTypeOrmConfig(
       path.join(__dirname, "..", "entities", "**", "*.entity{.ts,.js}"),
     ],
     synchronize: shouldSync,
+    migrations: [migrationsGlob],
+    migrationsRun,
+    migrationsTableName: "migrations",
     logging: true,
     ssl: useSsl ? ({ rejectUnauthorized: false } as any) : undefined,
   };

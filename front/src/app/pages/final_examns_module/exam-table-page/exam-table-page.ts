@@ -19,6 +19,8 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { PermissionService } from '@/core/auth/permission.service';
+import { ROLE } from '@/core/auth/roles';
 
 @Component({
   selector: 'app-exam-table-page',
@@ -46,6 +48,7 @@ export class ExamTablePage implements OnInit {
   private confirmationService = inject(ConfirmationService);
   private sync = inject(ExamTableSyncService);
   private uiAlertAudit = inject(UiAlertAuditService);
+  private permissions = inject(PermissionService);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Mesas de examen', routerLink: '/final_examns' },
@@ -64,6 +67,14 @@ export class ExamTablePage implements OnInit {
   // límites para el datepicker 24h (se los pasamos al diálogo)
   minDate: Date | null = null;
   maxDate: Date | null = null;
+
+  get canManageExams(): boolean {
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+      ROLE.PRECEPTOR,
+    ]);
+  }
 
   ngOnInit(): void {
     this.loadTable();

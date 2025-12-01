@@ -45,11 +45,11 @@
                 type="number"
                 [ngModel]="year()"
                 (ngModelChange)="year.set($event ? +$event : null)"
-                placeholder="A��o ingreso (ej: 2026)"
+                placeholder="Año ingreso (ej: 2026)"
                 style="width: 12rem"
               />
               <p-button
-                label="Aplicar a��o"
+                label="Aplicar año"
                 icon="pi pi-filter"
                 (onClick)="onApplyYearFilter()"
                 [disabled]="loading()"

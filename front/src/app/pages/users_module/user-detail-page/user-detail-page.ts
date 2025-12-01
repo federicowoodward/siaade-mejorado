@@ -13,11 +13,12 @@ import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.service';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 @Component({
   selector: 'app-user-detail-page',
@@ -42,6 +43,8 @@ export class UserDetailPage implements OnInit {
   private permissions = inject(PermissionService);
   private cache = inject(UserFlagsCacheService);
   private confirmationService = inject(ConfirmationService);
+  private messages = inject(MessageService);
+  private uiAlertAudit = inject(UiAlertAuditService);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Gestión de usuarios', routerLink: '/users' },
@@ -76,6 +79,10 @@ export class UserDetailPage implements OnInit {
 
   back(): void {
     this.goBack.back();
+  }
+
+  get isTeacher(): boolean {
+    return this.permissions.hasAnyRole([ROLE.TEACHER]);
   }
 
   // ---- permisos ----
@@ -185,7 +192,18 @@ export class UserDetailPage implements OnInit {
           updatedAt: Date.now(),
         });
       }
-    } catch (e) {
+    } catch (e: any) {
+      const status = e?.status ?? e?.error?.status ?? null;
+      if (status === 403) {
+        this.uiAlertAudit.add(this.messages, {
+          severity: 'error',
+          summary: 'Acceso no permitido',
+          detail: 'No tenés permiso para ver este usuario.',
+        });
+        this.router.navigate(['/users']);
+        return;
+      }
+
       if (!cached) {
         this.isStudent.set(false);
         this.isActive.set(true);

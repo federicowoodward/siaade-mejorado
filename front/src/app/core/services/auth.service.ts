@@ -298,6 +298,20 @@ export class AuthService {
       );
   }
 
+  validateResetToken(token: string): Observable<boolean> {
+    return this.api
+      .request<{ valid: boolean }>(
+        'GET',
+        'auth/validate-reset-token',
+        undefined,
+        { token },
+      )
+      .pipe(
+        map((resp) => !!resp?.valid),
+        catchError(() => of(false)),
+      );
+  }
+
   private loginRequest(payload: LoginDto) {
     const response = this.api.request<LoginResponseDto>(
       'POST',

@@ -32,7 +32,6 @@ export class SubjectsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Listar materias (mínimo)" })
   @ApiOkResponse({
@@ -58,7 +57,6 @@ export class SubjectsReadController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
   )
   @ApiOperation({ summary: "Obtener una materia por id (mínimo)" })
   @ApiParam({ name: "id", type: Number })

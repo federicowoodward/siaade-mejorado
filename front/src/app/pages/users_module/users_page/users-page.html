@@ -24,6 +24,7 @@
     <app-users-table
       [viewerRole]="viewerRole ?? ROLE.STUDENT"
       [context]="'default'"
+      [roleFilterEnabled]="viewerRole !== ROLE.TEACHER"
       [rows]="rows()"
       (rowAction)="onRowAction($event)"
       (rowClick)="onRowClick($event)"
