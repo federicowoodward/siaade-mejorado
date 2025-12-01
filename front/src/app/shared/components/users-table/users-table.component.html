@@ -34,7 +34,7 @@
               { label: 'Docente', value: 'teacher' },
               { label: 'Preceptor', value: 'preceptor' },
               { label: 'Secretario', value: 'secretary' },
-              { label: 'Director', value: 'director' },
+              { label: 'Director', value: 'director' }
             ]"
             [(ngModel)]="selectedRole"
             (onChange)="
@@ -71,8 +71,12 @@
         <td class="text-center">
           <span
             class="status-dot"
-            [ngClass]="user.isBlocked ? 'status-dot--blocked' : 'status-dot--active'"
-            [pTooltip]="user.isBlocked ? 'Bloqueado' : 'Activo'"
+            [ngClass]="{
+              'status-dot--active': user.isActive && !user.isBlocked,
+              'status-dot--blocked': user.isBlocked,
+              'status-dot--inactive': !user.isActive && !user.isBlocked
+            }"
+            [pTooltip]="user.isBlocked ? 'Bloqueado' : (user.isActive ? 'Activo' : 'Inactivo')"
             tooltipPosition="top"
           ></span>
         </td>

@@ -18,3 +18,7 @@
 .status-dot--blocked {
   background-color: var(--red-500, #ef4444);
 }
+
+.status-dot--inactive {
+  background-color: var(--gray-500, #9ca3af);
+}
