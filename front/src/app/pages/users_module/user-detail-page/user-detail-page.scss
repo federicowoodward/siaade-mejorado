@@ -13,3 +13,22 @@
 ::ng-deep .p-togglebutton-icon {
   color: #ffffff !important;
 }
+
+.status-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+}
+
+.status-dot--active {
+  background-color: var(--green-500, #22c55e);
+}
+
+.status-dot--blocked {
+  background-color: var(--red-500, #ef4444);
+}
+
+.status-dot--inactive {
+  background-color: var(--red-500, #ef4444);
+}

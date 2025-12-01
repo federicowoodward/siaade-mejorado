@@ -12,6 +12,7 @@ import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.service';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import {
   AppBreadcrumbComponent,
@@ -29,6 +30,7 @@ import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.servi
     FormsModule,
     DialogModule,
     ConfirmPopupModule,
+    TooltipModule,
   ],
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
