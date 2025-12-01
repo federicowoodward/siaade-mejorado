@@ -17,6 +17,7 @@ import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DialogModule } from 'primeng/dialog';
+import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -69,6 +70,7 @@ import { PermissionService } from '@/core/auth/permission.service';
     ToastModule,
     ProgressSpinnerModule,
     DialogModule,
+    DatePickerModule,
     TooltipModule,
     Tag,
     BlockedActionDirective,
@@ -111,9 +113,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   readonly pageSize = 30;
 
   readonly selectedCommission = signal<number>(0);
-  readonly selectedStudentYear = signal<number | null>(null);
-
-  readonly originalRows = signal<AcademicSituationRow[]>([]);
 
   private filtersInitialized = false;
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
@@ -133,25 +132,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   subjectName = computed(() => this.data()?.subject.name ?? 'Materia');
   partials = computed(() => this.data()?.subject.partials ?? 2);
   rows = computed(() => this.allRows());
-  studentYearOptions = computed(() => {
-    const rows = this.originalRows();
-    const years = new Set<number>();
-    for (const row of rows as any[]) {
-      const year = this.extractStudentYear(row);
-      if (year != null) {
-        years.add(year);
-      }
-    }
-    return Array.from(years).sort((a, b) => a - b);
-  });
-
-  studentYearSelectItems = computed(() => {
-    const items = this.studentYearOptions().map((year) => ({
-      label: `${year}º año`,
-      value: year,
-    }));
-    return [{ label: 'Todos los años', value: null }, ...items];
-  });
   readonly rowsTrackBy = rowsTrackByFn;
   readonly finalClass = finalClassUtil;
   private readonly teacherBypassRoles = [
@@ -194,7 +174,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   deadlineDialog: {
     visible: boolean;
     commissionId: number | null;
-    value: string | null;
+    value: Date | null;
   } = {
     visible: false,
     commissionId: null,
@@ -204,8 +184,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   openDeadlineEditor(commissionId: number, currentDeadline: string | null) {
     this.deadlineDialog.visible = true;
     this.deadlineDialog.commissionId = commissionId;
-    const base = currentDeadline ? new Date(currentDeadline) : new Date();
-    this.deadlineDialog.value = this.formatDeadlineForInput(base);
+    this.deadlineDialog.value = currentDeadline
+      ? new Date(currentDeadline)
+      : new Date();
   }
 
   closeDeadlineDialog() {
@@ -219,9 +200,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       return;
     }
 
-    const date = new Date(this.deadlineDialog.value);
     const payload = {
-      deadline: date.toISOString(),
+      deadline: this.deadlineDialog.value.toISOString(),
     };
 
     this.api
@@ -248,16 +228,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           });
         },
       });
-  }
-
-  private formatDeadlineForInput(date: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const year = date.getFullYear();
-    const month = pad(date.getMonth() + 1);
-    const day = pad(date.getDate());
-    const hours = pad(date.getHours());
-    const minutes = pad(date.getMinutes());
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
   canEditRow(row: AcademicSituationRow): boolean {
     return this.canEditCommission(row?.commissionId ?? null);
@@ -384,16 +354,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }, 300);
   });
 
-  private readonly studentYearFilterEffect = effect(() => {
-    const selected = this.selectedStudentYear();
-    const base = this.originalRows();
-
-    if (!base || base.length === 0) return;
-    if (this.loading()) return;
-
-    this.applyStudentYearFilter();
-  });
-
   // =======================
   // Efectos (effects) y ciclo de vida
   // =======================
@@ -409,7 +369,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.currentFetch?.unsubscribe();
     this.clonedRows.clear();
     this.filtersEffect.destroy();
-    this.studentYearFilterEffect.destroy();
   }
 
   // =======================
@@ -431,7 +390,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     table?.reset();
     this.searchTerm.set('');
     this.selectedCommission.set(0);
-    this.selectedStudentYear.set(null);
   }
 
   onReload(): void {
@@ -442,17 +400,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       q: q ? q : undefined,
       commissionId: commissionId > 0 ? commissionId : undefined,
     });
-  }
-
-  onStudentYearChange(value: number | null | undefined): void {
-    if (value === null || value === undefined) {
-      this.selectedStudentYear.set(null);
-      return;
-    }
-    const numeric = Number(value);
-    this.selectedStudentYear.set(
-      Number.isFinite(numeric) && numeric > 0 ? numeric : null,
-    );
   }
 
   onLazyLoad(event: TableLazyLoadEvent): void {
@@ -600,8 +547,13 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
           this.data.set({ ...payload, rows: rowsWithComputedFinal });
           const all = rowsWithComputedFinal;
-          this.originalRows.set(all);
-          this.applyStudentYearFilter();
+          this.allRows.set(all);
+          this.totalRecords.set(all.length);
+          const placeholders = Array.from({
+            length: all.length,
+          }) as AcademicSituationRow[];
+          this.virtualRows.set(placeholders);
+          this.onLazyLoad({ first: 0, rows: this.pageSize });
           this.clonedRows.clear();
           this.loading.set(false);
         },
@@ -616,46 +568,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   // =======================
   // Utilidades internas
   // =======================
-  private applyStudentYearFilter(): void {
-    const base = this.originalRows();
-    const selected = this.selectedStudentYear();
-    const filtered = this.filterRowsByYear(base, selected);
-
-    this.allRows.set(filtered);
-    this.totalRecords.set(filtered.length);
-
-    const placeholders = Array.from({
-      length: filtered.length,
-    }) as AcademicSituationRow[];
-    this.virtualRows.set(placeholders);
-    this.onLazyLoad({ first: 0, rows: this.pageSize });
-  }
-
-  private filterRowsByYear(
-    rows: AcademicSituationRow[],
-    selectedYear: number | null,
-  ): AcademicSituationRow[] {
-    if (selectedYear == null) {
-      return [...rows];
-    }
-    return rows.filter(
-      (row) => this.extractStudentYear(row) === selectedYear,
-    );
-  }
-
-  private extractStudentYear(row: AcademicSituationRow | any): number | null {
-    const candidate =
-      row?.student_year ??
-      row?.studentYear ??
-      row?.year ??
-      row?.yearNo ??
-      row?.year_number ??
-      null;
-
-    const numeric = Number(candidate);
-    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
-  }
-
   /** Reemplaza una fila por studentId en el array de la tabla (inmutable). */
   private replaceRowInTable(updated: AcademicSituationRow): void {
     const normalized = { ...updated };
@@ -668,13 +580,6 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       );
       return { ...snapshot, rows: nextRows };
     });
-    this.originalRows.update((rows) =>
-      rows.map((row) =>
-        row.studentId === normalized.studentId
-          ? { ...row, ...normalized }
-          : row,
-      ),
-    );
     this.allRows.update((rows) =>
       rows.map((row) =>
         row.studentId === normalized.studentId
