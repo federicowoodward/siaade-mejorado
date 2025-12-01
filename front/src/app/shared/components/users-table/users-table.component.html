@@ -69,18 +69,18 @@
         <td>{{ user.cuil }}</td>
         <td *ngIf="viewerRole !== 'teacher'">{{ user.role | roleLabel }}</td>
         <td class="text-center" *ngIf="viewerRole !== 'teacher'">
-          <ng-container *ngIf="userStatusChip(user) as status">
-            <span
-              class="status-dot-container"
-              [pTooltip]="status.label"
-              tooltipPosition="top"
-            >
-              <span
-                class="status-dot"
-                [ngClass]="'status-dot--' + status.modifier"
-              ></span>
-            </span>
-          </ng-container>
+          <span
+            class="status-dot"
+            [ngClass]="{
+              'status-dot--active': user.isActive && !user.isBlocked,
+              'status-dot--blocked': user.isActive && user.isBlocked,
+              'status-dot--inactive': !user.isActive
+            }"
+            [pTooltip]="
+              user.isBlocked ? 'Bloqueado' : user.isActive ? 'Activo' : 'Inactivo'
+            "
+            tooltipPosition="top"
+          ></span>
         </td>
 
         <td class="flex gap-2 justify-content-start align-items-center">

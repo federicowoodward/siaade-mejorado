@@ -75,16 +75,6 @@ export class UsersTableComponent implements OnChanges {
     this.rowAction.emit({ actionId: action.id, row });
   }
 
-  userStatusChip(row: UserRow): { label: string; modifier: 'active' | 'blocked' | 'inactive' } {
-    if (row.isBlocked) {
-      return { label: 'Bloqueado', modifier: 'blocked' };
-    }
-    if (!row.isActive) {
-      return { label: 'Inactivo', modifier: 'inactive' };
-    }
-    return { label: 'Activo', modifier: 'active' };
-  }
-
   clear(table: Table, filterInput: HTMLInputElement) {
     filterInput.value = '';
     this.dt?.filterGlobal('', 'contains');
