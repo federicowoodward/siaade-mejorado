@@ -65,6 +65,11 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "final_exam_status" ("id" SERIAL NOT NULL, "name" text NOT NULL, CONSTRAINT "UQ_39b4b051ba8a346f6ca54d1ee32" UNIQUE ("name"), CONSTRAINT "PK_a3aa4a16e0cb5e2c87fcd8261f8" PRIMARY KEY ("id"))`,
     );
+    await queryRunner.query(`
+      INSERT INTO "final_exam_status" ("name")
+      VALUES ('registrado'), ('aprobado_admin')
+      ON CONFLICT ("name") DO NOTHING
+    `);
     await queryRunner.query(
       `CREATE TABLE "secretaries" ("user_id" uuid NOT NULL, "is_directive" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_81e71815c5d4bed8e8dae6ce734" PRIMARY KEY ("user_id"))`,
     );
