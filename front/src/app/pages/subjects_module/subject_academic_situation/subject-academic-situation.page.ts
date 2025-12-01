@@ -385,13 +385,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   });
 
   private readonly studentYearFilterEffect = effect(() => {
-    // Dependencias reactivas
-    const _selected = this.selectedStudentYear();
+    const selected = this.selectedStudentYear();
     const base = this.originalRows();
 
-    if (!base.length) {
-      return;
-    }
+    if (!base || base.length === 0) return;
+    if (this.loading()) return;
 
     this.applyStudentYearFilter();
   });
@@ -646,14 +644,14 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   private extractStudentYear(row: AcademicSituationRow | any): number | null {
-    const raw: any = row as any;
     const candidate =
-      raw?.student_year ??
-      raw?.studentYear ??
-      raw?.year ??
-      raw?.yearNo ??
-      raw?.year_number ??
+      row?.student_year ??
+      row?.studentYear ??
+      row?.year ??
+      row?.yearNo ??
+      row?.year_number ??
       null;
+
     const numeric = Number(candidate);
     return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
   }

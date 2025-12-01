@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { SubjectTableComponent } from '../../../shared/components/subjects-table/subjects-table';
 import { Button } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -17,6 +18,7 @@ import { CareerCatalogService } from '../../../core/services/career-catalog.serv
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     AppBreadcrumbComponent,
     SubjectTableComponent,
     Button,
