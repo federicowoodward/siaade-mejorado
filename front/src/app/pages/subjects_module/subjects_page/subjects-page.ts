@@ -42,7 +42,7 @@ export class SubjectsPage {
   private readonly cleanYearLabel = (year: number) => `${year} año`;
 
   readonly yearFilterOptions = [
-    { label: 'Todas', value: null },
+    { label: 'Todos los años', value: null },
     { label: this.cleanYearLabel(1), value: 1 },
     { label: this.cleanYearLabel(2), value: 2 },
     { label: this.cleanYearLabel(3), value: 3 },
