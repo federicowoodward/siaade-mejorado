@@ -66,17 +66,16 @@
               'status-dot--blocked': isActive() !== false && !accessEnabled(),
               'status-dot--active': accessEnabled()
             }"
-            [pTooltip]="
+          ></span>
+          <span class="text-sm text-color-secondary">
+            Estado:
+            {{
               isActive() === false
                 ? 'Inactivo'
                 : accessEnabled()
                   ? 'Habilitado'
                   : 'Bloqueado'
-            "
-            tooltipPosition="top"
-          ></span>
-          <span class="text-sm text-color-secondary">
-            Estado: {{ accessEnabled() ? 'Habilitado' : 'Bloqueado' }}
+            }}
           </span>
         </div>
         <div
@@ -135,10 +134,6 @@
               'status-dot--blocked': isActive() !== false && isBlocked(),
               'status-dot--active': isActive() !== false && !isBlocked()
             }"
-            [pTooltip]="
-              isActive() === false ? 'Inactivo' : isBlocked() ? 'Bloqueado' : 'Activo'
-            "
-            tooltipPosition="top"
           ></span>
           <span class="text-sm text-color-secondary">
             Estado: {{ isActive() === false ? 'Inactivo' : 'Activo' }}
