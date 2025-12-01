@@ -13,6 +13,8 @@ export function mapApiUserToRow(
     cuil: u.cuil,
     email: u.email || '',
     role: resolvedRole,
+    isBlocked: Boolean(u?.isBlocked),
+    isActive: u?.isActive === undefined ? true : Boolean(u?.isActive),
   };
 }
 

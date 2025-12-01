@@ -9,6 +9,8 @@ export interface UserRow {
   cuil: string;
   email: string;
   role: Role;
+  isBlocked: boolean;
+  isActive: boolean;
 }
 
 export type UsersTableContext =

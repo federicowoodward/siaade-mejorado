@@ -3,3 +3,18 @@
     text-align: center !important;
   }
 }
+
+.status-dot {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+}
+
+.status-dot--active {
+  background-color: var(--green-500, #22c55e);
+}
+
+.status-dot--blocked {
+  background-color: var(--red-500, #ef4444);
+}

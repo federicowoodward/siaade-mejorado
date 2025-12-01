@@ -57,6 +57,7 @@
         <th>Nombre</th>
         <th>DNI/CUIL</th>
         <th *ngIf="viewerRole !== 'teacher'">Rol</th>
+        <th style="width: 80px">Estado</th>
         <!-- agregar width aca si se agregan acciones -->
         <th style="width: 100px">Acciones</th>
       </tr>
@@ -67,6 +68,14 @@
         <td>{{ user.name }} {{ user.lastName }}</td>
         <td>{{ user.cuil }}</td>
         <td *ngIf="viewerRole !== 'teacher'">{{ user.role | roleLabel }}</td>
+        <td class="text-center">
+          <span
+            class="status-dot"
+            [ngClass]="user.isBlocked ? 'status-dot--blocked' : 'status-dot--active'"
+            [pTooltip]="user.isBlocked ? 'Bloqueado' : 'Activo'"
+            tooltipPosition="top"
+          ></span>
+        </td>
 
         <td class="flex gap-2 justify-content-start align-items-center">
           <ng-container *ngFor="let action of getRowActions(user)">
