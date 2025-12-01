@@ -157,24 +157,25 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }));
   });
   readonly teacherWindowNotice = computed(() => {
-    if (!this.teacherHasRestrictions()) {
-      return null;
-    }
+    if (!this.teacherHasRestrictions()) return null;
     const cards = this.teacherWindowCards();
     const closed = cards.filter((c) => c.status === 'closed');
     const open = cards.filter((c) => c.status === 'open');
-    let msg =
-      closed.length > 0
-        ? 'El plazo de edicion de notas esta cerrado para algunas comisiones. Para modificaciones adicionales debes contactar a Secretaria.'
-        : null;
-
     if (closed.length === 0 && open.length > 0) {
       const letters = open.map((c) => c.label).join(', ');
-      msg = `Plazo reabierto para comisión ${letters}. Ya puedes continuar editando.`;
+      return `Plazo reabierto para comisión ${letters}. Ya puedes continuar editando.`;
     }
-    return msg;
+    if (closed.length > 0 && open.length > 0) {
+      const openLetters = open.map((c) => c.label).join(', ');
+      const closedLetters = closed.map((c) => c.label).join(', ');
+      return `Algunas comisiones tienen el plazo cerrado (${closedLetters}). Plazo reabierto para comisión ${openLetters}.`;
+    }
+    if (closed.length > 0 && open.length === 0) {
+      return 'El plazo de edición de notas está cerrado para todas las comisiones. Para modificaciones adicionales debes contactar a Secretaría.';
+    }
+    return null;
   });
-
+  
   deadlineDialog: {
     visible: boolean;
     commissionId: number | null;
