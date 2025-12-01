@@ -174,10 +174,22 @@ export class FinalExamController {
   @ApiParam({ name: "final_exam_id", type: Number, required: true })
   @ApiOkResponse({ type: FinalExamDto })
   @ApiNotFoundResponse({ description: "Final exam not found" })
+  @ApiQuery({ name: "year", required: false, type: Number })
   @Get("list/:final_exam_id")
-  getOne(@Param("final_exam_id") examId: string, @Req() req: Request) {
+  getOne(
+    @Param("final_exam_id") examId: string,
+    @Req() req: Request,
+    @Query("year") year?: string,
+  ) {
     const user = (req as any).user as { id?: string; role?: ROLE | null };
-    return this.svc.getOne(+examId, user);
+    const parsedYear =
+      year !== undefined && year !== null && String(year).trim() !== ""
+        ? Number(year)
+        : undefined;
+    if (parsedYear !== undefined && Number.isNaN(parsedYear)) {
+      throw new BadRequestException("year must be a valid number");
+    }
+    return this.svc.getOne(+examId, user, parsedYear);
   }
 
   @ApiOperation({ summary: "Registrar nota de final (estado: registrado)" })

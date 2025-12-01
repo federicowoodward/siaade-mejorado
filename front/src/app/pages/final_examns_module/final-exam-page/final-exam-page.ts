@@ -9,6 +9,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { SelectModule } from 'primeng/select';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -62,6 +63,7 @@ type Row = {
     TagModule,
     BlockedActionDirective,
     ToastModule,
+    SelectModule,
     CanAnyRoleDirective,
     AppBreadcrumbComponent,
   ],
@@ -107,6 +109,10 @@ export class FinalExamPage implements OnInit {
 
   rows = signal<Row[]>([]);
 
+  yearOptions = signal<Array<{ label: string; value: number | null }>>([]);
+
+  selectedYear = signal<number | null>(null);
+
   loadingRow = signal<string | null>(null);
 
   savingRow = signal<string | null>(null);
@@ -133,9 +139,12 @@ export class FinalExamPage implements OnInit {
 
     this.error.set(null);
 
-    this.svc.getExamDetail(this.examId).subscribe({
+    const year = this.selectedYear();
+
+    this.svc.getExamDetail(this.examId, { year }).subscribe({
       next: (data) => {
         this.exam.set(data);
+        this.buildYearOptions(data);
 
         const mapped: Row[] = (data.students ?? []).map(
           (s: FinalExamStudentDto) => ({
@@ -168,6 +177,47 @@ export class FinalExamPage implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  onYearChange(year: number | null | undefined): void {
+    const normalized =
+      year === null || year === undefined ? null : Number(year);
+    this.selectedYear.set(
+      Number.isFinite(normalized as number) ? (normalized as number) : null,
+    );
+    this.fetch();
+  }
+
+  private buildYearOptions(exam: FinalExamDetailDto | null): void {
+    if (!exam) {
+      this.yearOptions.set([]);
+      return;
+    }
+
+    const years = new Set<number>();
+
+    const tableStart = exam.table_start_date
+      ? new Date(exam.table_start_date).getFullYear()
+      : undefined;
+    const tableEnd = exam.table_end_date
+      ? new Date(exam.table_end_date).getFullYear()
+      : undefined;
+
+    if (tableStart && Number.isFinite(tableStart)) {
+      years.add(tableStart);
+    }
+    if (tableEnd && Number.isFinite(tableEnd)) {
+      years.add(tableEnd);
+    }
+
+    const sortedYears = Array.from(years).sort((a, b) => a - b);
+
+    const options: Array<{ label: string; value: number | null }> = [
+      { label: 'Todos los años', value: null },
+      ...sortedYears.map((y) => ({ label: String(y), value: y })),
+    ];
+
+    this.yearOptions.set(options);
   }
 
   back() {

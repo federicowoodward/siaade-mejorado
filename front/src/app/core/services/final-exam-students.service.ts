@@ -28,10 +28,15 @@ export interface FinalExamDetailDto {
 export class FinalExamStudentsService {
   private api = inject(ApiService); // ajusta el path si tu estructura difiere
 
-  getExamDetail(finalExamId: number): Observable<FinalExamDetailDto> {
+  getExamDetail(
+    finalExamId: number,
+    opts?: { year?: number | null },
+  ): Observable<FinalExamDetailDto> {
+    const year = opts?.year ?? null;
+    const suffix = year !== null && year !== undefined ? `?year=${year}` : '';
     return this.api.request<FinalExamDetailDto>(
       'GET',
-      `finals/exam/list/${finalExamId}`,
+      `finals/exam/list/${finalExamId}${suffix}`,
     );
   }
 

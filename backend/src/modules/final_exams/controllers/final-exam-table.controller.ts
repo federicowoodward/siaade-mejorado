@@ -98,7 +98,7 @@ export class FinalExamTableController {
     description: "Mesa creada",
   })
   @ApiBadRequestResponse({ description: "start_date must be <= end_date" })
-  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   @Post("init")
   create(@Body() dto: InitFinalExamTableDto) {
     return this.svc.init(dto);
@@ -112,7 +112,7 @@ export class FinalExamTableController {
     description: "start_date must be <= end_date o finales fuera de rango",
   })
   @ApiNotFoundResponse({ description: "Exam table not found" })
-  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)
   @Put("edit/:id")
   edit(@Param("id") id: string, @Body() dto: EditFinalExamTableDto) {
     return this.svc.edit(+id, dto);

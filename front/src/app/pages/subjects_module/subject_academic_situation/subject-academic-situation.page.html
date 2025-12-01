@@ -323,6 +323,17 @@
             </tr>
           </ng-container>
         </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="10">
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-inbox"></i>
+                No tenés alumnos asignados en esta materia/comisión.
+              </div>
+            </td>
+          </tr>
+        </ng-template>
       </p-table>
       <ng-template #loadingRowTpl>
         <tr class="row-placeholder">

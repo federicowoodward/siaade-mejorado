@@ -12,6 +12,17 @@
     </h2>
   </div>
   <div class="surface-card border-round p-1">
+    <div class="flex justify-content-end mb-2">
+      <p-select
+        [options]="yearOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="selectedYear()"
+        (onChange)="onYearChange($event.value)"
+        placeholder="Filtrar por año"
+        [showClear]="true"
+      ></p-select>
+    </div>
     <p-table
       [value]="rows()"
       dataKey="student_id"
@@ -207,7 +218,7 @@
           <td colspan="5">
             <div class="flex align-items-center gap-2">
               <i class="pi pi-inbox"></i>
-              No hay alumnos para este examen.
+              No tenés alumnos asignados en esta materia/comisión.
             </div>
           </td>
         </tr>

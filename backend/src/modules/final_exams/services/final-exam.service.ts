@@ -94,6 +94,7 @@ export class FinalExamService {
   async getOne(
     finalExamId: number,
     user?: { id?: string; role?: ROLE | null },
+    year?: number,
   ): Promise<FinalExamDto> {
     const header = await this.finalRepo
       .createQueryBuilder("fe")
@@ -123,6 +124,9 @@ export class FinalExamService {
       }
     }
 
+    const subjectId: number | null =
+      (header as any).subject_id ?? (header as any).subjectId ?? null;
+
     const studentsQb = this.linkRepo
       .createQueryBuilder("fes")
       .leftJoin("fes.student", "st")
@@ -137,13 +141,7 @@ export class FinalExamService {
       ])
       .where("fes.finalExamId = :id", { id: finalExamId });
 
-    if (user?.role === ROLE.TEACHER && user.id) {
-      const subjectId =
-        (header as any).subject_id ?? (header as any).subjectId ?? null;
-      if (!subjectId) {
-        throw new ForbiddenException("You are not assigned to this exam");
-      }
-
+    if (year !== undefined && year !== null && subjectId) {
       studentsQb
         .innerJoin(
           "subject_students",
@@ -151,6 +149,24 @@ export class FinalExamService {
           "ss.student_id = fes.student_id AND ss.subject_id = :subjectId",
           { subjectId },
         )
+        .andWhere("EXTRACT(YEAR FROM ss.enrollment_date) = :year", { year });
+    }
+
+    if (user?.role === ROLE.TEACHER && user.id) {
+      if (!subjectId) {
+        throw new ForbiddenException("You are not assigned to this exam");
+      }
+
+      if (year === undefined || year === null) {
+        studentsQb.innerJoin(
+          "subject_students",
+          "ss",
+          "ss.student_id = fes.student_id AND ss.subject_id = :subjectId",
+          { subjectId },
+        );
+      }
+
+      studentsQb
         .innerJoin(
           "subject_commissions",
           "sc",
