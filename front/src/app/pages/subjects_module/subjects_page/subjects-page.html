@@ -15,27 +15,28 @@
       label="Información de la carrera"
     ></p-button>
   </div>
-  <div class="flex justify-content-end mb-3 gap-3">
+  <div class="flex justify-content-end gap-2 mb-3">
+    <!-- Buscador placeholder: se puede implementar luego -->
+    <!--
+    <input
+      pInputText
+      type="text"
+      placeholder="Buscar materia"
+      class="p-inputtext-sm"
+    />
+    -->
     <div class="flex align-items-center gap-2">
-      <label for="subjectYearFilter" class="font-medium">A�o</label>
-      <select
-        id="subjectYearFilter"
-        class="p-inputtext p-component"
-        [value]="selectedYear() ?? ''"
-        (change)="onYearFilterChange($event)"
-      >
-        <option value="">Todas</option>
-        <ng-container *ngFor="let year of availableYears()">
-          <option [value]="year">{{ year }}� a�o</option>
-        </ng-container>
-      </select>
+      <p-select
+        [options]="yearFilterOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="yearFilter"
+        placeholder="Todos los a�os"
+        (onChange)="onYearFilterChange($event.value)"
+        style="width: 150px"
+        [showClear]="true"
+      ></p-select>
     </div>
-    <!-- <p-button
-      (onClick)="goToNewSubject()"
-      icon="pi pi-plus"
-      label="Nueva materia"
-      variant="outlined"
-    ></p-button> -->
   </div>
   <div class="surface-card border-round p-1">
     <app-subjects-table></app-subjects-table>

@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SubjectTableComponent } from '../../../shared/components/subjects-table/subjects-table';
 import { Button } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
 import { Router } from '@angular/router';
 import {
   AppBreadcrumbComponent,
@@ -19,6 +20,7 @@ import { CareerCatalogService } from '../../../core/services/career-catalog.serv
     AppBreadcrumbComponent,
     SubjectTableComponent,
     Button,
+    SelectModule,
   ],
   templateUrl: './subjects-page.html',
   styleUrl: './subjects-page.scss',
@@ -33,6 +35,16 @@ export class SubjectsPage {
   >([]);
 
   readonly selectedYear = signal<number | null>(null);
+
+  yearFilter: number | null = null;
+
+  yearFilterOptions = [
+    { label: 'Todas', value: null },
+    { label: '1° a�o', value: 1 },
+    { label: '2° a�o', value: 2 },
+    { label: '3° a�o', value: 3 },
+    { label: '4° a�o', value: 4 },
+  ];
 
   // Capturamos el listado original de materias (sin filtro por a�o)
   private readonly captureSubjectsEffect = effect(() => {
@@ -120,16 +132,12 @@ export class SubjectsPage {
     this.router.navigate(['subjects/career-data']);
   }
 
-  onYearFilterChange(event: Event) {
-    const target = event.target as HTMLSelectElement | null;
-    const value = target?.value?.trim() ?? '';
-    if (!value) {
+  onYearFilterChange(year: number | null) {
+    this.yearFilter = year;
+    if (!year) {
       this.selectedYear.set(null);
-      return;
+    } else {
+      this.selectedYear.set(year);
     }
-    const numeric = Number(value);
-    this.selectedYear.set(
-      Number.isFinite(numeric) && numeric > 0 ? numeric : null,
-    );
   }
 }
