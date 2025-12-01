@@ -123,7 +123,7 @@ export class FinalExamService {
       }
     }
 
-    const students = await this.linkRepo
+    const studentsQb = this.linkRepo
       .createQueryBuilder("fes")
       .leftJoin("fes.student", "st")
       .leftJoin("st.user", "u")
@@ -135,7 +135,31 @@ export class FinalExamService {
         "fes.score::float AS score",
         "fes.notes AS notes",
       ])
-      .where("fes.finalExamId = :id", { id: finalExamId })
+      .where("fes.finalExamId = :id", { id: finalExamId });
+
+    if (user?.role === ROLE.TEACHER && user.id) {
+      const subjectId =
+        (header as any).subject_id ?? (header as any).subjectId ?? null;
+      if (!subjectId) {
+        throw new ForbiddenException("You are not assigned to this exam");
+      }
+
+      studentsQb
+        .innerJoin(
+          "subject_students",
+          "ss",
+          "ss.student_id = fes.student_id AND ss.subject_id = :subjectId",
+          { subjectId },
+        )
+        .innerJoin(
+          "subject_commissions",
+          "sc",
+          "sc.id = ss.commission_id",
+        )
+        .andWhere("sc.teacher_id = :teacherId", { teacherId: user.id });
+    }
+
+    const students = await studentsQb
       .orderBy("u.last_name", "ASC")
       .addOrderBy("u.name", "ASC")
       .getRawMany();
@@ -214,7 +238,11 @@ export class FinalExamService {
     });
     if (!teacher) throw new NotFoundException("Teacher not found");
 
-    await this.ensureTeacherOwnsLink(teacher.userId, link.finalExamId);
+    await this.ensureTeacherOwnsLink(
+      teacher.userId,
+      link.finalExamId,
+      link.studentId,
+    );
     const status = await this.statusRepo.findOne({
       where: { name: "registrado" },
     });
@@ -267,11 +295,39 @@ export class FinalExamService {
   private async ensureTeacherOwnsLink(
     teacherId: string,
     finalExamId: number,
+    studentId?: string,
   ): Promise<void> {
-    const owns = await this.teacherOwnsFinal(finalExamId, teacherId);
+    let owns = await this.teacherOwnsFinal(finalExamId, teacherId);
+
+    if (owns && studentId) {
+      owns = await this.teacherOwnsFinalStudent(finalExamId, studentId, teacherId);
+    }
+
     if (!owns) {
       throw new ForbiddenException("You are not assigned to this exam");
     }
+  }
+
+  private async teacherOwnsFinalStudent(
+    finalExamId: number,
+    studentId: string,
+    teacherId: string,
+  ): Promise<boolean> {
+    const count = await this.linkRepo
+      .createQueryBuilder("fes")
+      .innerJoin("fes.finalExam", "fe")
+      .innerJoin(
+        "subject_students",
+        "ss",
+        "ss.subject_id = fe.subject_id AND ss.student_id = fes.student_id",
+      )
+      .innerJoin("subject_commissions", "sc", "sc.id = ss.commission_id")
+      .where("fes.finalExamId = :finalExamId", { finalExamId })
+      .andWhere("fes.studentId = :studentId", { studentId })
+      .andWhere("sc.teacher_id = :teacherId", { teacherId })
+      .getCount();
+
+    return count > 0;
   }
 
   async toggleFinalExamEnrollmentRich(
