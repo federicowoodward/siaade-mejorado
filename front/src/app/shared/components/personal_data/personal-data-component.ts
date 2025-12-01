@@ -20,6 +20,9 @@ import { FormsModule } from '@angular/forms';
 import { ArgentinaGeoService } from '../../services/argentina-geo.service';
 import { MessageService } from 'primeng/api';
 import { TagModule } from 'primeng/tag';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE } from '../../../core/auth/roles';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-personal-data',
@@ -41,6 +44,8 @@ export class PersonalDataComponent implements OnInit {
   private api = inject(ApiService);
   private geo = inject(ArgentinaGeoService);
   private readonly messages = inject(MessageService);
+  private readonly permissions = inject(PermissionService);
+  private readonly auth = inject(AuthService);
 
   /** Si no viene, usa el usuario logueado */
   @Input() userId!: string;
@@ -421,5 +426,24 @@ export class PersonalDataComponent implements OnInit {
       return serverMessage;
     }
     return 'Intenta nuevamente en unos minutos.';
+  }
+
+  shouldShowAddress(): boolean {
+    const isTeacher = this.permissions.hasAnyRole([ROLE.TEACHER]);
+    if (!isTeacher) {
+      return true;
+    }
+
+    const viewerId = this.auth.getUserId();
+    const targetId = this.userId || null;
+    const isSelf = !!viewerId && !!targetId && viewerId === targetId;
+    if (isSelf) {
+      return true;
+    }
+
+    const targetRole = String(this.userData().role || '').toLowerCase();
+    const isStudent = targetRole === 'student';
+
+    return !isStudent;
   }
 }

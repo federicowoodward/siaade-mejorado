@@ -1,43 +1,27 @@
 import { formatDDMMYYYY } from '../../../shared/utils/date-utils';
 import { Component, OnInit, inject, signal } from '@angular/core';
-
 import { CommonModule } from '@angular/common';
-
 import { FormsModule } from '@angular/forms';
-
 import { TableModule } from 'primeng/table';
-
-import { Button } from 'primeng/button';
-
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-
 import { InputNumberModule } from 'primeng/inputnumber';
-
 import { CheckboxModule } from 'primeng/checkbox';
-
 import { TagModule } from 'primeng/tag';
-
 import { ToastModule } from 'primeng/toast';
-
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
-
 import { CanAnyRoleDirective } from '@/shared/directives/can-any-role.directive';
-
 import { ActivatedRoute, Router } from '@angular/router';
-
 import {
   FinalExamStudentsService,
   FinalExamDetailDto,
   FinalExamStudentDto,
 } from '../../../core/services/final-exam-students.service';
-
 import {
   ApiService,
   ToggleEnrollmentResponse,
 } from '../../../core/services/api.service';
-
 import { ExamTableSyncService } from '../../../core/services/exam-table-sync.service';
-
 import { MessageService } from 'primeng/api';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 import {
@@ -66,32 +50,19 @@ type Row = {
 
 @Component({
   selector: 'app-final-exam-page',
-
   standalone: true,
-
   imports: [
     CommonModule,
-
     FormsModule,
-
     TableModule,
-
-    Button,
-
+    ButtonModule,
     InputTextModule,
-
     InputNumberModule,
-
     CheckboxModule,
-
     TagModule,
-
     BlockedActionDirective,
-
     ToastModule,
-
     CanAnyRoleDirective,
-
     AppBreadcrumbComponent,
   ],
 
@@ -118,6 +89,8 @@ export class FinalExamPage implements OnInit {
 
   private permissions = inject(PermissionService);
 
+  private clonedRows = new Map<string, Row>();
+
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Mesas de examen', routerLink: '/final_examns' },
     { label: 'Mesa' },
@@ -135,6 +108,8 @@ export class FinalExamPage implements OnInit {
   rows = signal<Row[]>([]);
 
   loadingRow = signal<string | null>(null);
+
+  savingRow = signal<string | null>(null);
 
   loading = signal<boolean>(false);
 
@@ -287,30 +262,106 @@ export class FinalExamPage implements OnInit {
     return r.score == null && !!r.enrolled_at;
   }
 
-  saveChanges(): void {
+  onRowEditInit(row: Row): void {
+    if (!row?.student_id) {
+      return;
+    }
+    if (!this.canEditScores() && !this.canEditNotes()) {
+      return;
+    }
+    this.clonedRows.set(row.student_id, { ...row });
+  }
+
+  onRowEditSave(row: Row): void {
+    if (!row?.student_id) {
+      return;
+    }
+    if (!this.canEditScores() && !this.canEditNotes()) {
+      this.restoreRowFromClone(row);
+      return;
+    }
+
+    const score = row.score;
+    if (
+      !(
+        score === null ||
+        score === undefined ||
+        (typeof score === 'number' &&
+          !Number.isNaN(score) &&
+          score >= 0 &&
+          score <= 10)
+      )
+    ) {
+      this.restoreRowFromClone(row);
+      this.showValidationError();
+      return;
+    }
+
+    this.saveRow(row);
+  }
+
+  onRowEditCancel(row: Row, _index: number): void {
+    if (!row?.student_id) {
+      return;
+    }
+    this.restoreRowFromClone(row);
+    this.clonedRows.delete(row.student_id);
+  }
+
+  private restoreRowFromClone(row: Row): void {
+    if (!row?.student_id) {
+      return;
+    }
+    const original = this.clonedRows.get(row.student_id);
+    if (!original) {
+      return;
+    }
+    Object.assign(row, original);
+  }
+
+  private showValidationError(): void {
+    this.uiAlertAudit.add(this.messages, {
+      severity: 'error',
+      summary: 'Valores inválidos',
+      detail: 'La nota final debe estar entre 0 y 10 o vacía.',
+    });
+  }
+
+  saveRow(row: Row): void {
     const exam = this.exam();
     if (!exam) {
       return;
     }
-    const rows = this.rows();
-    if (!rows.length) {
+
+    if (!row) {
       return;
     }
+
     const userId = this.auth.getUserId();
     if (!userId) {
       this.toastErr('No se pudo identificar al usuario actual.');
       return;
     }
 
-    this.loading.set(true);
-    let remaining = rows.length;
-    let errors = 0;
+    this.savingRow.set(row.student_id);
 
     const finalize = () => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        this.loading.set(false);
-        if (errors === 0) {
+      this.savingRow.set(null);
+    };
+
+    this.svc
+      .recordScore({
+        final_exams_student_id: row.id,
+        // enviamos undefined cuando no hay nota para evitar fallos de validación
+        score:
+          row.score === null || row.score === undefined
+            ? (undefined as any)
+            : row.score,
+        notes: row.notes,
+        recorded_by: userId,
+      })
+      .subscribe({
+        next: () => {
           this.toastOk('Cambios guardados');
           if (this.exam()?.table_id) {
             this.syncService.notify({
@@ -318,29 +369,20 @@ export class FinalExamPage implements OnInit {
               mesaId: this.exam()!.table_id,
             });
           }
-        } else {
-          this.toastErr(
-            'Algunas filas no pudieron guardarse. Revisa los datos e intenta nuevamente.',
-          );
-        }
-      }
-    };
-
-    rows.forEach((row) => {
-      this.svc
-        .recordScore({
-          final_exams_student_id: row.id,
-          score: row.score,
-          notes: row.notes,
-          recorded_by: userId,
-        })
-        .subscribe({
-          next: () => finalize(),
-          error: () => {
-            errors += 1;
-            finalize();
-          },
-        });
-    });
+          this.clonedRows.delete(row.student_id);
+          finalize();
+        },
+        error: (err: unknown) => {
+          console.error('Error recording final exam score', err);
+          this.restoreRowFromClone(row);
+          this.uiAlertAudit.add(this.messages, {
+            severity: 'error',
+            summary: 'Error al guardar',
+            detail:
+              'No se pudieron guardar los cambios de este alumno. Intenta nuevamente.',
+          });
+          finalize();
+        },
+      });
   }
 }

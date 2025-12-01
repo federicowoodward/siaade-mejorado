@@ -14,6 +14,8 @@
   <div class="surface-card border-round p-1">
     <p-table
       [value]="rows()"
+      dataKey="student_id"
+      editMode="row"
       responsiveLayout="scroll"
       [paginator]="true"
       [rows]="10"
@@ -25,14 +27,25 @@
         <tr>
           <th style="width: 8rem">Alumno</th>
           <th style="width: 14rem">Estado</th>
-          <th style="width: 8rem">Accion</th>
+          <th
+            style="width: 8rem"
+            *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']"
+          >
+            Accion
+          </th>
           <th style="width: 7rem">Nota</th>
           <th>Observaciones</th>
+          <th style="width: 6rem" *appCanAnyRole="['TEACHER']">Acciones</th>
         </tr>
       </ng-template>
 
-      <ng-template pTemplate="body" let-row>
-        <tr>
+      <ng-template
+        pTemplate="body"
+        let-row
+        let-editing="editing"
+        let-ri="rowIndex"
+      >
+        <tr [pEditableRow]="row">
           <td class="font-medium">{{ row.name }}</td>
 
           <td class="">
@@ -53,62 +66,145 @@
               </p-tag>
             </ng-template>
           </td>
-          <td class="">
-            <div
-              class="mt-2"
-              *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']"
-            >
+          <td
+            class="mt-2"
+            *appCanAnyRole="['PRECEPTOR','SECRETARY','EXECUTIVE_SECRETARY']"
+          >
+            <p-button
+              *ngIf="row.enrolled_at; else insBtn"
+              label="Desinscribir"
+              icon="pi pi-user-minus"
+              severity="danger"
+              size="small"
+              [loading]="loadingRow() === row.student_id"
+              (onClick)="onToggleExamEnrollment(row, 'unenroll')"
+              blockedAction
+            ></p-button>
+            <ng-template #insBtn>
               <p-button
-                *ngIf="row.enrolled_at; else insBtn"
-                label="Desinscribir"
-                icon="pi pi-user-minus"
-                severity="danger"
+                label="Inscribir"
+                icon="pi pi-user-plus"
+                severity="success"
                 size="small"
                 [loading]="loadingRow() === row.student_id"
-                (onClick)="onToggleExamEnrollment(row, 'unenroll')"
+                (onClick)="onToggleExamEnrollment(row, 'enroll')"
                 blockedAction
               ></p-button>
-              <ng-template #insBtn>
-                <p-button
-                  label="Inscribir"
-                  icon="pi pi-user-plus"
-                  severity="success"
-                  size="small"
-                  [loading]="loadingRow() === row.student_id"
-                  (onClick)="onToggleExamEnrollment(row, 'enroll')"
-                  blockedAction
-                ></p-button>
-              </ng-template>
-            </div>
+            </ng-template>
           </td>
           <td>
-            <p-inputNumber
-              [min]="0"
-              [max]="10"
-              [step]="0.5"
-              [useGrouping]="false"
-              mode="decimal"
-              [(ngModel)]="row.score"
-              inputStyleClass="w-7rem"
-              [disabled]="!canEditScores()"
-            ></p-inputNumber>
+            <ng-container *ngIf="canEditScores(); else noteReadOnlyTpl">
+              <ng-container *ngIf="!editing; else noteEditTpl">
+                <span class="font-medium">
+                  {{
+                    row.score !== null && row.score !== undefined
+                      ? row.score
+                      : '-'
+                  }}
+                </span>
+              </ng-container>
+              <ng-template #noteEditTpl>
+                <p-inputNumber
+                  [min]="0"
+                  [max]="10"
+                  [step]="0.5"
+                  [useGrouping]="false"
+                  mode="decimal"
+                  [(ngModel)]="row.score"
+                  inputStyleClass="w-7rem"
+                ></p-inputNumber>
+              </ng-template>
+            </ng-container>
+            <ng-template #noteReadOnlyTpl>
+              <span class="font-medium">
+                {{
+                  row.score !== null && row.score !== undefined
+                    ? row.score
+                    : '-'
+                }}
+              </span>
+            </ng-template>
           </td>
 
           <td>
-            <input
-              pInputText
-              class="w-full"
-              [(ngModel)]="row.notes"
-              placeholder="Notas del acta (opcional)"
-              [disabled]="!canEditNotes()"
-            />
+            <ng-container *ngIf="canEditNotes(); else notesReadOnlyTpl">
+              <ng-container *ngIf="!editing; else notesEditTpl">
+                <span class="text-color-secondary">
+                  {{ row.notes?.trim() || 'Sin observaciones' }}
+                </span>
+              </ng-container>
+              <ng-template #notesEditTpl>
+                <input
+                  pInputText
+                  class="w-full"
+                  [(ngModel)]="row.notes"
+                  placeholder="Notas del acta (opcional)"
+                />
+              </ng-template>
+            </ng-container>
+            <ng-template #notesReadOnlyTpl>
+              <span class="text-color-secondary">
+                {{ row.notes?.trim() || 'Sin observaciones' }}
+              </span>
+            </ng-template>
+          </td>
+
+          <td *appCanAnyRole="['TEACHER']">
+            <div class="flex items-center justify-center">
+              <button
+                *ngIf="!editing"
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-pencil"
+                pInitEditableRow
+                pTooltip="Editar nota"
+                tooltipPosition="top"
+                text
+                rounded
+                severity="secondary"
+                blockedAction
+              ></button>
+              <button
+                *ngIf="editing"
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-check"
+                pSaveEditableRow
+                (click)="onRowEditSave(row)"
+                pTooltip="Guardar cambios"
+                tooltipPosition="top"
+                text
+                rounded
+                severity="secondary"
+                blockedAction
+                [disabled]="savingRow() === row.student_id"
+              ></button>
+              <button
+                *ngIf="editing"
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-times"
+                pCancelEditableRow
+                (click)="onRowEditCancel(row, ri)"
+                pTooltip="Cancelar"
+                tooltipPosition="top"
+                text
+                rounded
+                severity="secondary"
+                blockedAction
+                [disabled]="savingRow() === row.student_id"
+              ></button>
+            </div>
           </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="4">
+          <td colspan="5">
             <div class="flex align-items-center gap-2">
               <i class="pi pi-inbox"></i>
               No hay alumnos para este examen.
@@ -117,16 +213,5 @@
         </tr>
       </ng-template>
     </p-table>
-  </div>
-
-  <div class="flex justify-end mt-3">
-    <p-button
-      *ngIf="canEditScores() || canEditNotes()"
-      label="Guardar cambios"
-      icon="pi pi-check"
-      [disabled]="loading()"
-      (onClick)="saveChanges()"
-      blockedAction
-    ></p-button>
   </div>
 </div>

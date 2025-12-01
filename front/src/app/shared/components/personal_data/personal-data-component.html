@@ -237,6 +237,7 @@
     <!-- Domicilio -->
     <section
       class="surface-card border-round shadow-1 p-3 flex flex-column gap-3"
+      *ngIf="shouldShowAddress()"
     >
       <div class="flex flex-column gap-1">
         <h3 class="m-0">Domicilio en Córdoba</h3>
