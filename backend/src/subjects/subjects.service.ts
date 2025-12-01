@@ -418,7 +418,6 @@ export class SubjectsService {
     const qb = this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .leftJoin(User, "user", "user.id = vg.student_id")
-      .leftJoin(Subject, "s", "s.id = vg.subject_id")
       .leftJoin(
         StudentSubjectProgress,
         "prog",
@@ -430,9 +429,7 @@ export class SubjectsService {
       .addOrderBy("vg.full_name", "ASC")
       .addSelect("user.cuil", "academicSituation_cuil")
       // bandera para saber si el alumno tiene progreso en esa comisión
-      .addSelect("prog.id", "academicSituation_hasProgress")
-      // a�o acad�mico de la materia
-      .addSelect("s.year", "student_year");
+      .addSelect("prog.id", "academicSituation_hasProgress");
 
     if (user?.role === ROLE.TEACHER) {
       qb.andWhere(
@@ -552,19 +549,20 @@ export class SubjectsService {
       const rawRow = raw[index] as Record<string, any>;
       const cuil =
         (rawRow?.academicSituation_cuil as string | null | undefined) ?? "";
-      const rawStudentYear = rawRow?.student_year as
-        | string
-        | number
-        | null
-        | undefined;
-      const parsedStudentYear =
-        rawStudentYear == null || rawStudentYear === ""
-          ? null
-          : Number(rawStudentYear);
-      const studentYear =
-        parsedStudentYear != null && Number.isFinite(parsedStudentYear)
-          ? parsedStudentYear
-          : null;
+
+      // extraer student_year si existe
+      let studentYear: number | null = null;
+
+      if (rawRow?.student_year !== undefined && rawRow?.student_year !== null) {
+        const parsed = Number(rawRow.student_year);
+        studentYear = Number.isFinite(parsed) ? parsed : null;
+      }
+
+      // fallback por si en el futuro SubjectGradesView trae la info
+      if ((entity as any).subjectYear && studentYear === null) {
+        const parsed = Number((entity as any).subjectYear);
+        studentYear = Number.isFinite(parsed) ? parsed : null;
+      }
 
       const enrollment = enrollmentMap.get(mapped.studentId);
       const isEnrolled =
