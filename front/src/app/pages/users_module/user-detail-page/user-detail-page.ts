@@ -295,14 +295,13 @@ export class UserDetailPage implements OnInit {
   async onToggleIsActive(next: boolean): Promise<void> {
     if (!this.canToggleIsActive()) return;
     const prefix = this.getUpdatePrefix();
-    if (!prefix) return;
     try {
       this.saving.set(true);
-      const payload: any = {
-        [`${prefix}isActive`]: !!next,
-        isActive: !!next,
-      };
-      if (next === false) payload[`${prefix}canLogin`] = false;
+      const payload: any = { isActive: !!next };
+      if (prefix) {
+        payload[`${prefix}isActive`] = !!next;
+        if (next === false) payload[`${prefix}canLogin`] = false;
+      }
       await firstValueFrom(this.api.update('users', this.userId, payload));
       this.isActive.set(!!next);
       if (next === false) this.canLogin.set(false);
