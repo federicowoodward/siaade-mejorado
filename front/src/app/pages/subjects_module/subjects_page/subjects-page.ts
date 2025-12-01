@@ -120,8 +120,9 @@ export class SubjectsPage {
     this.router.navigate(['subjects/career-data']);
   }
 
-  onYearFilterChange(raw: string) {
-    const value = raw?.trim();
+  onYearFilterChange(event: Event) {
+    const target = event.target as HTMLSelectElement | null;
+    const value = target?.value?.trim() ?? '';
     if (!value) {
       this.selectedYear.set(null);
       return;

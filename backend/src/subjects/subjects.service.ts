@@ -393,6 +393,7 @@ export class SubjectsService {
       attendancePercentage: number;
       condition: string | null;
       enrolled: boolean;
+      student_year: number | null;
     }>;
   }> {
     const subject = await this.subjectRepo.findOne({
@@ -417,6 +418,7 @@ export class SubjectsService {
     const qb = this.subjectGradesViewRepo
       .createQueryBuilder("vg")
       .leftJoin(User, "user", "user.id = vg.student_id")
+      .leftJoin(Subject, "s", "s.id = vg.subject_id")
       .leftJoin(
         StudentSubjectProgress,
         "prog",
@@ -428,7 +430,9 @@ export class SubjectsService {
       .addOrderBy("vg.full_name", "ASC")
       .addSelect("user.cuil", "academicSituation_cuil")
       // bandera para saber si el alumno tiene progreso en esa comisión
-      .addSelect("prog.id", "academicSituation_hasProgress");
+      .addSelect("prog.id", "academicSituation_hasProgress")
+      // a�o acad�mico de la materia
+      .addSelect("s.year", "student_year");
 
     if (user?.role === ROLE.TEACHER) {
       qb.andWhere(
@@ -548,6 +552,19 @@ export class SubjectsService {
       const rawRow = raw[index] as Record<string, any>;
       const cuil =
         (rawRow?.academicSituation_cuil as string | null | undefined) ?? "";
+      const rawStudentYear = rawRow?.student_year as
+        | string
+        | number
+        | null
+        | undefined;
+      const parsedStudentYear =
+        rawStudentYear == null || rawStudentYear === ""
+          ? null
+          : Number(rawStudentYear);
+      const studentYear =
+        parsedStudentYear != null && Number.isFinite(parsedStudentYear)
+          ? parsedStudentYear
+          : null;
 
       const enrollment = enrollmentMap.get(mapped.studentId);
       const isEnrolled =
@@ -601,6 +618,7 @@ export class SubjectsService {
           attendancePercentage: mapped.attendancePercentage,
           condition: computedCondition,
           enrolled: isEnrolled,
+          student_year: studentYear,
         },
       ];
     });

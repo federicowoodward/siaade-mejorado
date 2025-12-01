@@ -94,6 +94,13 @@
                 [ngModel]="selectedCommission()"
                 (onChange)="onCommissionChange($event.value)"
               ></p-select>
+              <p-select
+                [options]="studentYearSelectItems()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="selectedStudentYear()"
+                (onChange)="onStudentYearChange($event.value)"
+              ></p-select>
             </div>
           </div>
         </ng-template>
@@ -399,11 +406,11 @@
     [closable]="false"
   >
     <div class="mb-3">
-      <p-datepicker
+      <input
+        type="datetime-local"
+        class="p-inputtext p-component w-full"
         [(ngModel)]="deadlineDialog.value"
-        [showTime]="true"
-        hourFormat="24"
-      ></p-datepicker>
+      />
     </div>
 
     <div class="flex justify-content-end gap-2 mt-3">

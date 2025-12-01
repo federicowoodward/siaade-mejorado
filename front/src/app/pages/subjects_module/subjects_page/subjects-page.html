@@ -16,6 +16,20 @@
     ></p-button>
   </div>
   <div class="flex justify-content-end mb-3 gap-3">
+    <div class="flex align-items-center gap-2">
+      <label for="subjectYearFilter" class="font-medium">A�o</label>
+      <select
+        id="subjectYearFilter"
+        class="p-inputtext p-component"
+        [value]="selectedYear() ?? ''"
+        (change)="onYearFilterChange($event)"
+      >
+        <option value="">Todas</option>
+        <ng-container *ngFor="let year of availableYears()">
+          <option [value]="year">{{ year }}� a�o</option>
+        </ng-container>
+      </select>
+    </div>
     <!-- <p-button
       (onClick)="goToNewSubject()"
       icon="pi pi-plus"
