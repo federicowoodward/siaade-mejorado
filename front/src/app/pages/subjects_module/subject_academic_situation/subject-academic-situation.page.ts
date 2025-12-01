@@ -147,10 +147,10 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
   studentYearSelectItems = computed(() => {
     const items = this.studentYearOptions().map((year) => ({
-      label: `${year}� a�o`,
+      label: `${year}º año`,
       value: year,
     }));
-    return [{ label: 'Todos los a�os', value: null }, ...items];
+    return [{ label: 'Todos los años', value: null }, ...items];
   });
   readonly rowsTrackBy = rowsTrackByFn;
   readonly finalClass = finalClassUtil;
