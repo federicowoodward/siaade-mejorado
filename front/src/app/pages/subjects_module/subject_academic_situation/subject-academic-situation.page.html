@@ -19,6 +19,14 @@
             [value]="card.status === 'open' ? 'Plazo abierto' : 'Plazo cerrado'"
             severity="secondary"
           ></p-tag>
+          <button
+            *appCanAnyRole="['SECRETARY','EXECUTIVE_SECRETARY']"
+            pButton
+            type="button"
+            label="Editar plazo"
+            class="p-button-sm p-button-secondary ml-2"
+            (click)="openDeadlineEditor(card.id, card.closesAt)"
+          ></button>
         </div>
         <small *ngIf="card.closesAt">
           {{ card.status === 'open' ? 'Cierra' : 'Cerró' }}: {{ card.closesAt |
@@ -383,4 +391,36 @@
       (confirm)="confirmMoveCommission($event)"
     ></app-subject-move-commission-dialog>
   </ng-container>
+
+  <p-dialog
+    [(visible)]="deadlineDialog.visible"
+    header="Editar plazo"
+    [modal]="true"
+    [closable]="false"
+  >
+    <div class="mb-3">
+      <p-calendar
+        [(ngModel)]="deadlineDialog.value"
+        showTime="true"
+        hourFormat="24"
+      ></p-calendar>
+    </div>
+
+    <div class="flex justify-content-end gap-2 mt-3">
+      <button
+        pButton
+        type="button"
+        label="Cancelar"
+        class="p-button-text"
+        (click)="closeDeadlineDialog()"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="Guardar"
+        class="p-button-primary"
+        (click)="saveDeadline()"
+      ></button>
+    </div>
+  </p-dialog>
 </div>

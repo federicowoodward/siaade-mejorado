@@ -40,6 +40,7 @@ import {
   ToggleEnrollmentDto,
   ToggleEnrollmentResponseDto,
 } from "@/modules/shared/dto/toggle-enrollment.dto";
+import { UpdateGradeWindowDto } from "./dto/update-grade-window.dto";
 
 type AuthenticatedUser = {
   id: string;
@@ -196,6 +197,21 @@ export class SubjectGradesController {
       commissionId: commissionId ?? undefined,
       user: req?.user as AuthenticatedUser,
     });
+  }
+
+  @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
+  @Patch("commissions/:id/grade-window")
+  @Action("subjects.updateGradeWindow")
+  @ApiOperation({
+    summary: "Actualizar el plazo de edición de notas de una comisión",
+  })
+  @ApiParam({ name: "id", type: Number })
+  @ApiBody({ type: UpdateGradeWindowDto })
+  async updateGradeWindow(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateGradeWindowDto,
+  ) {
+    return this.subjectsService.updateGradeWindow(id, dto.deadline);
   }
 
   @Patch(":subjectId/grades/:studentId")

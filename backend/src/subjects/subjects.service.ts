@@ -766,6 +766,18 @@ export class SubjectsService {
     };
   }
 
+  async updateGradeWindow(id: number, deadline: string): Promise<{ success: true }> {
+    const commission = await this.subjectCommissionRepo.findOne({
+      where: { id },
+    });
+    if (!commission) {
+      throw new NotFoundException("Commission not found");
+    }
+    commission.gradeWindowExpiresAt = new Date(deadline);
+    await this.subjectCommissionRepo.save(commission);
+    return { success: true };
+  }
+
   private serializeTeacherWindow(
     commission: SubjectCommission,
   ): TeacherWindowDto {

@@ -16,6 +16,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { DialogModule } from 'primeng/dialog';
+import { CalendarModule } from 'primeng/calendar';
 import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -67,6 +69,8 @@ import { PermissionService } from '@/core/auth/permission.service';
     SelectModule,
     ToastModule,
     ProgressSpinnerModule,
+    DialogModule,
+    CalendarModule,
     TooltipModule,
     Tag,
     BlockedActionDirective,
@@ -166,6 +170,65 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }
     return 'El plazo de edicion de notas esta cerrado para algunas comisiones. Para modificaciones adicionales debes contactar a Secretaria.';
   });
+
+  deadlineDialog: {
+    visible: boolean;
+    commissionId: number | null;
+    value: Date | null;
+  } = {
+    visible: false,
+    commissionId: null,
+    value: null,
+  };
+
+  openDeadlineEditor(commissionId: number, currentDeadline: string | null) {
+    this.deadlineDialog.visible = true;
+    this.deadlineDialog.commissionId = commissionId;
+    this.deadlineDialog.value = currentDeadline
+      ? new Date(currentDeadline)
+      : new Date();
+  }
+
+  closeDeadlineDialog() {
+    this.deadlineDialog.visible = false;
+    this.deadlineDialog.commissionId = null;
+    this.deadlineDialog.value = null;
+  }
+
+  saveDeadline() {
+    if (!this.deadlineDialog.commissionId || !this.deadlineDialog.value) {
+      return;
+    }
+
+    const payload = {
+      deadline: this.deadlineDialog.value.toISOString(),
+    };
+
+    this.api
+      .request(
+        'PATCH',
+        `subjects/commissions/${this.deadlineDialog.commissionId}/grade-window`,
+        payload,
+      )
+      .subscribe({
+        next: () => {
+          this.closeDeadlineDialog();
+          this.onReload();
+          this.uiAlertAudit.add(this.messages, {
+            severity: 'success',
+            summary: 'Plazo actualizado',
+          });
+        },
+        error: () => {
+          this.uiAlertAudit.add(this.messages, {
+            severity: 'error',
+            summary: 'Error al actualizar el plazo',
+            detail:
+              'No se pudo actualizar el plazo de edición de notas. Intenta nuevamente o contacta a Secretaría.',
+          });
+        },
+      });
+  }
   canEditRow(row: AcademicSituationRow): boolean {
     return this.canEditCommission(row?.commissionId ?? null);
   }
