@@ -298,7 +298,10 @@ export class UserDetailPage implements OnInit {
     if (!prefix) return;
     try {
       this.saving.set(true);
-      const payload: any = { [`${prefix}isActive`]: !!next };
+      const payload: any = {
+        [`${prefix}isActive`]: !!next,
+        isActive: !!next,
+      };
       if (next === false) payload[`${prefix}canLogin`] = false;
       await firstValueFrom(this.api.update('users', this.userId, payload));
       this.isActive.set(!!next);

@@ -212,7 +212,7 @@ export class UsersService {
 
   async findAll(): Promise<any[]> {
     const users = await this.usersRepository.find({
-      relations: ["role"],
+      relations: ["role", "student", "teacher", "preceptor"],
     });
     return users.map((user) => this.mapToResponseDto(user, user.role));
   }
@@ -443,6 +443,11 @@ export class UsersService {
   }
 
   private mapToResponseDto(user: User, role?: Role): any {
+    const roleActive =
+      (user as any).isActive ??
+      (user as any).student?.isActive ??
+      (user as any).teacher?.isActive ??
+      (user as any).preceptor?.isActive;
     return {
       id: user.id,
       name: user.name,
@@ -458,7 +463,7 @@ export class UsersService {
         : undefined,
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
-      isActive: (user as any).isActive ?? true,
+      isActive: roleActive === undefined || roleActive === null ? true : !!roleActive,
     };
   }
 
