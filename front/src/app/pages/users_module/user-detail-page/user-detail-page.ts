@@ -182,12 +182,14 @@ export class UserDetailPage implements OnInit {
         });
       } else {
         this.isStudent.set(false);
-        this.isActive.set(true);
+        const fallbackIsActive =
+          data?.isActive ?? (data as any)?.is_active ?? true;
+        this.isActive.set(fallbackIsActive === null ? null : !!fallbackIsActive);
         this.canLogin.set(true);
         this.cache.set(id, {
           role: roleName,
           isStudent: false,
-          isActive: true,
+          isActive: this.isActive(),
           canLogin: true,
           updatedAt: Date.now(),
         });

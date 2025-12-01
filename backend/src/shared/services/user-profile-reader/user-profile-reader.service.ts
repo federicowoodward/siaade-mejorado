@@ -53,6 +53,7 @@ export class UserProfileReaderService {
       // Campos de bloqueo
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
+      isActive: (user as any).isActive ?? true,
     };
 
     const ui = user.userInfo
