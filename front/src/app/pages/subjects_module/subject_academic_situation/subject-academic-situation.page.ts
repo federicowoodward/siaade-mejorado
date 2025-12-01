@@ -17,7 +17,7 @@ import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DialogModule } from 'primeng/dialog';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -70,7 +70,7 @@ import { PermissionService } from '@/core/auth/permission.service';
     ToastModule,
     ProgressSpinnerModule,
     DialogModule,
-    CalendarModule,
+    DatePickerModule,
     TooltipModule,
     Tag,
     BlockedActionDirective,
