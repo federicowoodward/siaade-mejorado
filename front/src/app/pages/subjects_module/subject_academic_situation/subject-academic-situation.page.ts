@@ -17,7 +17,6 @@ import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DialogModule } from 'primeng/dialog';
-import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -70,7 +69,6 @@ import { PermissionService } from '@/core/auth/permission.service';
     ToastModule,
     ProgressSpinnerModule,
     DialogModule,
-    DatePickerModule,
     TooltipModule,
     Tag,
     BlockedActionDirective,
@@ -174,7 +172,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   deadlineDialog: {
     visible: boolean;
     commissionId: number | null;
-    value: Date | null;
+    value: string | null;
   } = {
     visible: false,
     commissionId: null,
@@ -184,9 +182,8 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   openDeadlineEditor(commissionId: number, currentDeadline: string | null) {
     this.deadlineDialog.visible = true;
     this.deadlineDialog.commissionId = commissionId;
-    this.deadlineDialog.value = currentDeadline
-      ? new Date(currentDeadline)
-      : new Date();
+    const base = currentDeadline ? new Date(currentDeadline) : new Date();
+    this.deadlineDialog.value = this.formatDeadlineForInput(base);
   }
 
   closeDeadlineDialog() {
@@ -200,8 +197,9 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       return;
     }
 
+    const date = new Date(this.deadlineDialog.value);
     const payload = {
-      deadline: this.deadlineDialog.value.toISOString(),
+      deadline: date.toISOString(),
     };
 
     this.api
@@ -228,6 +226,16 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           });
         },
       });
+  }
+
+  private formatDeadlineForInput(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
   canEditRow(row: AcademicSituationRow): boolean {
     return this.canEditCommission(row?.commissionId ?? null);
@@ -657,7 +665,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     action: 'enroll' | 'unenroll',
   ) {
     if (!row?.commissionId) {
-      this.showError('Error', 'La fila no tiene una comisiï¿½n asociada.');
+      this.showError('Error', 'La fila no tiene una comisión asociada.');
 
       return;
     }
@@ -709,7 +717,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
           this.replaceRowInTable(confirmedRow);
 
-          const actorLabel = res?.enrolled_by ?? 'ï¿½';
+          const actorLabel = res?.enrolled_by ?? 'Usuario';
 
           const dateLabel = res?.enrolled_at
             ? new Date(res.enrolled_at).toLocaleString()
@@ -717,7 +725,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
           const detail = serverEnrolled
             ? `Por ${actorLabel}${dateLabel ? ` el ${dateLabel}` : ''}`
-            : 'Se removiï¿½ la inscripciï¿½n en la comisiï¿½n.';
+            : 'Se removió la inscripción en la comisión.';
 
           this.uiAlertAudit.add(this.messages, {
             severity: 'success',
@@ -735,7 +743,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
           this.replaceRowInTable(prev);
 
-          this.showError('Error', 'No se pudo actualizar la inscripciï¿½n.');
+          this.showError('Error', 'No se pudo actualizar la inscripción.');
         },
 
         complete: () => this.enrollmentLoading.set(null),

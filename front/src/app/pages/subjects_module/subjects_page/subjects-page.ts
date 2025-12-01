@@ -40,15 +40,17 @@ export class SubjectsPage {
 
   yearFilter: number | null = null;
 
+  // Solo números sin símbolos raros
+  private readonly cleanYearLabel = (year: number) => `${year} año`;
+
   yearFilterOptions = [
     { label: 'Todas', value: null },
-    { label: '1° a�o', value: 1 },
-    { label: '2° a�o', value: 2 },
-    { label: '3° a�o', value: 3 },
-    { label: '4° a�o', value: 4 },
+    { label: this.cleanYearLabel(1), value: 1 },
+    { label: this.cleanYearLabel(2), value: 2 },
+    { label: this.cleanYearLabel(3), value: 3 },
   ];
 
-  // Capturamos el listado original de materias (sin filtro por a�o)
+  // Capturamos el listado original de materias (sin filtro por año)
   private readonly captureSubjectsEffect = effect(() => {
     const current = this.originalSubjects();
     if (current.length) {
@@ -60,7 +62,7 @@ export class SubjectsPage {
     }
   });
 
-  // A�os disponibles seg�n las materias visibles para el usuario actual
+  // Años disponibles según las materias visibles para el usuario actual
   readonly availableYears = computed(() => {
     const base = this.originalSubjects();
     const periods = this.catalog.periods() as any[];
