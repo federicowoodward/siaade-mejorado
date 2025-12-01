@@ -39,7 +39,11 @@
             *ngIf="accessEnabled()"
             label="Bloquear"
             icon="pi pi-lock"
-            severity="danger"
+            severity="success"
+            [ngClass]="{
+              'p-button-success': accessEnabled(),
+              'p-button-danger': !accessEnabled()
+            }"
             (onClick)="confirmAction('block', $event)"
             [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
           ></p-button>
@@ -47,7 +51,11 @@
             *ngIf="!accessEnabled()"
             label="Habilitar"
             icon="pi pi-lock-open"
-            severity="success"
+            severity="danger"
+            [ngClass]="{
+              'p-button-success': accessEnabled(),
+              'p-button-danger': !accessEnabled()
+            }"
             (onClick)="confirmAction('unblock', $event)"
             [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
           ></p-button>
@@ -100,7 +108,11 @@
             *ngIf="isActive() !== false"
             label="Inactivar"
             icon="pi pi-times"
-            severity="danger"
+            severity="success"
+            [ngClass]="{
+              'p-button-success': isActive() !== false,
+              'p-button-danger': isActive() === false
+            }"
             (onClick)="confirmAction('inactivate', $event)"
             [disabled]="saving() || !canToggleIsActive()"
           ></p-button>
@@ -108,7 +120,11 @@
             *ngIf="isActive() === false"
             label="Activar"
             icon="pi pi-check"
-            severity="success"
+            severity="danger"
+            [ngClass]="{
+              'p-button-success': isActive() !== false,
+              'p-button-danger': isActive() === false
+            }"
             (onClick)="confirmAction('activate', $event)"
             [disabled]="saving() || !canToggleIsActive()"
           ></p-button>
