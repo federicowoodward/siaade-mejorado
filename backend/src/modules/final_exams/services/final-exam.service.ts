@@ -215,15 +215,11 @@ export class FinalExamService {
     if (!teacher) throw new NotFoundException("Teacher not found");
 
     await this.ensureTeacherOwnsLink(teacher.userId, link.finalExamId);
-    let status = await this.statusRepo.findOne({
+    const status = await this.statusRepo.findOne({
       where: { name: "registrado" },
     });
-    // Auto‑crear status "registrado" si falta para evitar 404 en entornos ya migrados
-    if (!status) {
-      status = await this.statusRepo.save(
-        this.statusRepo.create({ name: "registrado" }),
-      );
-    }
+    if (!status)
+      throw new NotFoundException('FinalExamStatus "registrado" not found');
     link.score = (dto.score ?? null) as any;
     link.notes = dto.notes ?? link.notes;
     (link as any).statusId = status.id;
@@ -242,15 +238,11 @@ export class FinalExamService {
       where: { userId: dto.approved_by },
     });
     if (!sec) throw new NotFoundException("Secretary not found");
-    let status = await this.statusRepo.findOne({
+    const status = await this.statusRepo.findOne({
       where: { name: "aprobado_admin" },
     });
-    // Auto‑crear status "aprobado_admin" si falta
-    if (!status) {
-      status = await this.statusRepo.save(
-        this.statusRepo.create({ name: "aprobado_admin" }),
-      );
-    }
+    if (!status)
+      throw new NotFoundException('FinalExamStatus "aprobado_admin" not found');
     (link as any).statusId = status.id;
     (link as any).approvedById = sec.userId;
     (link as any).approvedAt = new Date();
