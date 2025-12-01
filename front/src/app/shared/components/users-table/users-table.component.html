@@ -57,7 +57,7 @@
         <th>Nombre</th>
         <th>DNI/CUIL</th>
         <th *ngIf="viewerRole !== 'teacher'">Rol</th>
-        <th style="width: 80px">Estado</th>
+        <th style="width: 80px" *ngIf="viewerRole !== 'teacher'">Estado</th>
         <!-- agregar width aca si se agregan acciones -->
         <th style="width: 100px">Acciones</th>
       </tr>
@@ -73,6 +73,7 @@
           [pTooltip]="
             user.isBlocked ? 'Bloqueado' : user.isActive ? 'Activo' : 'Inactivo'
           "
+          *ngIf="viewerRole !== 'teacher'"
         >
           <span
             class="status-dot"
