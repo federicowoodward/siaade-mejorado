@@ -1,41 +1,30 @@
 <div class="m-w-custom px-3 md:px-0">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
   <div
-    class="surface-card shadow-2 border-round p-4 flex justify-content-between align-content-center"
+    class="surface-card shadow-2 border-round p-4 flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-3"
   >
     <div>
       <h2 class="mb-2">Gestión de Materias</h2>
       <p>Gestiona las materias, alumnos y sus comisiones.</p>
     </div>
-    <p-button
-      *ngIf="!isTeacher"
-      (onClick)="goToCareerInfo()"
-      icon="pi pi-info-circle"
-      severity="secondary"
-      label="Información de la carrera"
-    ></p-button>
-  </div>
-  <div class="flex justify-content-end gap-2 mb-3">
-    <!-- Buscador placeholder: se puede implementar luego -->
-    <!--
-    <input
-      pInputText
-      type="text"
-      placeholder="Buscar materia"
-      class="p-inputtext-sm"
-    />
-    -->
-    <div class="flex align-items-center gap-2">
+    <div class="flex align-items-center justify-content-end w-full md:w-auto">
       <p-select
+        *ngIf="isTeacher"
         [options]="yearFilterOptions"
         optionLabel="label"
         optionValue="value"
-        [ngModel]="yearFilter"
-        placeholder="Todos los años"
-        (onChange)="onYearFilterChange($event.value)"
-        style="width: 150px"
-        [showClear]="true"
+        [ngModel]="selectedYear()"
+        placeholder="Todas"
+        (onChange)="fetchSubjects({ year: $event.value })"
+        style="min-width: 12rem"
       ></p-select>
+      <p-button
+        *ngIf="!isTeacher"
+        (onClick)="goToCareerInfo()"
+        icon="pi pi-info-circle"
+        severity="secondary"
+        label="Información de la carrera"
+      ></p-button>
     </div>
   </div>
   <div class="surface-card border-round p-1">

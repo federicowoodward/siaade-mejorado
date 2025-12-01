@@ -32,91 +32,65 @@ export class SubjectsPage {
   private permissions = inject(PermissionService);
   private catalog = inject(CareerCatalogService);
 
-  private readonly originalSubjects = signal<
+  private readonly baseSubjects = signal<
     { id: number; name: string; teacherId: string | null }[]
   >([]);
 
   readonly selectedYear = signal<number | null>(null);
 
-  yearFilter: number | null = null;
-
   // Solo números sin símbolos raros
   private readonly cleanYearLabel = (year: number) => `${year} año`;
 
-  yearFilterOptions = [
+  readonly yearFilterOptions = [
     { label: 'Todas', value: null },
     { label: this.cleanYearLabel(1), value: 1 },
     { label: this.cleanYearLabel(2), value: 2 },
     { label: this.cleanYearLabel(3), value: 3 },
   ];
 
+  private readonly subjectYearMap = computed(() => {
+    const periods = this.catalog.periods() as any[];
+    const yearBySubject = new Map<number, number>();
+    for (const period of periods ?? []) {
+      const subjects = period?.subjects ?? [];
+      for (const subject of subjects) {
+        const id = Number(subject?.id ?? 0);
+        const yearNo = Number(subject?.careerOrdering?.yearNo ?? 0);
+        if (!id || !Number.isFinite(yearNo) || yearNo <= 0) {
+          continue;
+        }
+        yearBySubject.set(id, yearNo);
+      }
+    }
+    return yearBySubject;
+  });
+
+  readonly filteredSubjects = computed(() => {
+    const base = this.baseSubjects();
+    if (!base.length) {
+      return base;
+    }
+    const selected = this.selectedYear();
+    if (selected == null) {
+      return base;
+    }
+    const yearMap = this.subjectYearMap();
+    return base.filter((subject) => yearMap.get(subject.id) === selected);
+  });
+
   // Capturamos el listado original de materias (sin filtro por año)
   private readonly captureSubjectsEffect = effect(() => {
-    const current = this.originalSubjects();
-    if (current.length) {
+    if (this.baseSubjects().length) {
       return;
     }
     const subjects = this.catalog.basicSubjects();
     if (subjects && subjects.length) {
-      this.originalSubjects.set(subjects);
+      this.baseSubjects.set(subjects);
     }
   });
 
-  // Años disponibles según las materias visibles para el usuario actual
-  readonly availableYears = computed(() => {
-    const base = this.originalSubjects();
-    const periods = this.catalog.periods() as any[];
-    if (!base.length || !periods.length) return [];
-
-    const yearBySubject = new Map<number, number>();
-    for (const period of periods) {
-      const subjects = period?.subjects ?? [];
-      for (const subject of subjects) {
-        const id = Number(subject?.id ?? 0);
-        const yearNo = Number(subject?.careerOrdering?.yearNo ?? 0);
-        if (!id || !Number.isFinite(yearNo) || yearNo <= 0) continue;
-        yearBySubject.set(id, yearNo);
-      }
-    }
-
-    const years = new Set<number>();
-    for (const subj of base) {
-      const year = yearBySubject.get(subj.id);
-      if (year && Number.isFinite(year)) {
-        years.add(year);
-      }
-    }
-
-    return Array.from(years).sort((a, b) => a - b);
-  });
-
-  // Aplica el filtro sobre el listado usado por la tabla compartida
-  private readonly applyYearFilterEffect = effect(() => {
-    const selected = this.selectedYear();
-    const base = this.originalSubjects();
-    const periods = this.catalog.periods() as any[];
-
-    if (!base.length || !periods.length) {
-      return;
-    }
-
-    const yearBySubject = new Map<number, number>();
-    for (const period of periods) {
-      const subjects = period?.subjects ?? [];
-      for (const subject of subjects) {
-        const id = Number(subject?.id ?? 0);
-        const yearNo = Number(subject?.careerOrdering?.yearNo ?? 0);
-        if (!id || !Number.isFinite(yearNo) || yearNo <= 0) continue;
-        yearBySubject.set(id, yearNo);
-      }
-    }
-
-    const filtered =
-      selected == null
-        ? base
-        : base.filter((s) => yearBySubject.get(s.id) === selected);
-
-    // Mutamos el estado interno del servicio para que la tabla use la lista filtrada.
+  private readonly syncFilteredSubjectsEffect = effect(() => {
+    const filtered = this.filteredSubjects();
     (this.catalog as any)._basicSubjects.set(filtered);
   });
 
@@ -136,12 +110,8 @@ export class SubjectsPage {
     this.router.navigate(['subjects/career-data']);
   }
 
-  onYearFilterChange(year: number | null) {
-    this.yearFilter = year;
-    if (!year) {
-      this.selectedYear.set(null);
-    } else {
-      this.selectedYear.set(year);
-    }
+  fetchSubjects(filters?: { year?: number | null }) {
+    const year = filters?.year ?? null;
+    this.selectedYear.set(year);
   }
 }
