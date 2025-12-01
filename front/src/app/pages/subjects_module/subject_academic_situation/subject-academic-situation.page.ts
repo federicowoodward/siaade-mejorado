@@ -138,7 +138,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   ];
   readonly teacherHasRestrictions = computed(
     () =>
-      this.rbac.has(ROLE.TEACHER) && !this.rbac.hasAny(this.teacherBypassRoles),
+      this.rbac.has(ROLE.TEACHER) && !this.rbac.hasAny(this.teacherBypassRoles)
   );
   readonly commissionWindows = computed(() => {
     const map = new Map<number, TeacherWindowState | null>();
@@ -160,13 +160,19 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     if (!this.teacherHasRestrictions()) {
       return null;
     }
-    const closed = this.teacherWindowCards().filter(
-      (card) => card.status === 'closed',
-    );
-    if (!closed.length) {
-      return null;
+    const cards = this.teacherWindowCards();
+    const closed = cards.filter((c) => c.status === 'closed');
+    const open = cards.filter((c) => c.status === 'open');
+    let msg =
+      closed.length > 0
+        ? 'El plazo de edicion de notas esta cerrado para algunas comisiones. Para modificaciones adicionales debes contactar a Secretaria.'
+        : null;
+
+    if (closed.length === 0 && open.length > 0) {
+      const letters = open.map((c) => c.label).join(', ');
+      msg = `Plazo reabierto para comisión ${letters}. Ya puedes continuar editando.`;
     }
-    return 'El plazo de edicion de notas esta cerrado para algunas comisiones. Para modificaciones adicionales debes contactar a Secretaria.';
+    return msg;
   });
 
   deadlineDialog: {
@@ -206,7 +212,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       .request(
         'PATCH',
         `subjects/commissions/${this.deadlineDialog.commissionId}/grade-window`,
-        payload,
+        payload
       )
       .subscribe({
         next: () => {
@@ -288,11 +294,11 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
       ROLE.PRECEPTOR,
       ROLE.SECRETARY,
       ROLE.EXECUTIVE_SECRETARY,
-    ]),
+    ])
   );
 
   conditionSeverity(
-    condition: string | null | undefined,
+    condition: string | null | undefined
   ): SubjectStateSeverity {
     return resolveSubjectStateSeverity(condition);
   }
@@ -341,7 +347,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         label: `${option.letter ?? `Comision ${option.id}`}${suffix}`,
         value: option.id,
       };
-    }),
+    })
   );
 
   private readonly filtersEffect = effect(() => {
@@ -467,7 +473,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         this.restoreRowFromClone(row.studentId);
         this.showError(
           'Valores invalidos',
-          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacias.',
+          'Las notas deben estar entre 0 y 10 (o asistencia entre 0 y 100) o vacias.'
         );
         return;
       }
@@ -479,7 +485,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           ? parseAttendanceValue(row[field])
           : parseGradeValue(row[field]);
       const normalized =
-        field === 'attendancePercentage' ? (parsed ?? 0) : (parsed ?? null);
+        field === 'attendancePercentage' ? parsed ?? 0 : parsed ?? null;
       if (field === 'attendancePercentage') {
         row.attendancePercentage = normalized as number;
       } else {
@@ -511,7 +517,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
           this.restoreRowFromClone(row.studentId);
           this.showError(
             'Error al guardar',
-            'No se pudieron guardar los cambios de esta fila. Intenta nuevamente.',
+            'No se pudieron guardar los cambios de esta fila. Intenta nuevamente.'
           );
         },
       });
@@ -582,18 +588,14 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     this.data.update((snapshot) => {
       if (!snapshot) return snapshot;
       const nextRows = snapshot.rows.map((row) =>
-        row.studentId === normalized.studentId
-          ? { ...row, ...normalized }
-          : row,
+        row.studentId === normalized.studentId ? { ...row, ...normalized } : row
       );
       return { ...snapshot, rows: nextRows };
     });
     this.allRows.update((rows) =>
       rows.map((row) =>
-        row.studentId === normalized.studentId
-          ? { ...row, ...normalized }
-          : row,
-      ),
+        row.studentId === normalized.studentId ? { ...row, ...normalized } : row
+      )
     );
     this.virtualRows.update((rows) =>
       rows.map((row) => {
@@ -603,7 +605,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
         return row.studentId === normalized.studentId
           ? { ...row, ...normalized }
           : row;
-      }),
+      })
     );
   }
 
@@ -624,7 +626,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   }
 
   private buildSingleRowPayload(
-    row: AcademicSituationRow,
+    row: AcademicSituationRow
   ): CommissionPayloadRow {
     const payload: CommissionPayloadRow = {
       studentId: row.studentId,
@@ -662,7 +664,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
   onToggleSubjectEnrollment(
     row: AcademicSituationRow,
 
-    action: 'enroll' | 'unenroll',
+    action: 'enroll' | 'unenroll'
   ) {
     if (!row?.commissionId) {
       this.showError('Error', 'La fila no tiene una comisión asociada.');
@@ -709,7 +711,7 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
               res?.condition ??
               optimisticRow.condition ??
               (serverEnrolled
-                ? (optimisticRow.condition ?? null)
+                ? optimisticRow.condition ?? null
                 : 'No inscripto'),
           };
 
