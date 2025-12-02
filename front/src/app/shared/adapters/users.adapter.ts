@@ -18,6 +18,12 @@ export function mapApiUserToRow(
     if (typeof value === 'number') return value !== 0;
     return !!value;
   };
+  const rawIsActive = u?.isActive ?? (u as any)?.is_active;
+  const rawIsBlocked =
+    u?.isBlocked ??
+    (u as any)?.is_blocked ??
+    (u as any)?.blocked ??
+    (u as any)?.isBlocked;
   return {
     id: u.id,
     name: u.name,
@@ -25,8 +31,8 @@ export function mapApiUserToRow(
     cuil: u.cuil,
     email: u.email || '',
     role: resolvedRole,
-    isBlocked: toBool(u?.isBlocked, false),
-    isActive: toBool(u?.isActive, true),
+    isBlocked: toBool(rawIsBlocked, false),
+    isActive: toBool(rawIsActive, true),
   };
 }
 
