@@ -9,13 +9,11 @@
       <h2 class="m-0">
         Mesa: {{ table()?.name || 'Mesa' }}
         <small class="text-color-secondary block text-sm">
-          {{ table()?.start_date | date:'dd/MM/yyyy' }} → {{ table()?.end_date |
+          {{ table()?.start_date | date:'dd/MM/yyyy' }} {{ table()?.end_date |
           date:'dd/MM/yyyy' }}
         </small>
       </h2>
-      <p>
-        Gestiona la mesa de examen y los exámenes asociados.
-      </p>
+      <p>Gestiona la mesa de examen y los exámenes asociados.</p>
     </div>
     <p-button
       *ngIf="canManageExams"
@@ -63,7 +61,7 @@
               *ngIf="canManageExams"
               icon="pi pi-trash"
               severity="danger"
-              outlined
+              outlined="true"
               (onClick)="confirm($event, deleteFinal.bind(this, row))"
             ></p-button>
           </td>
@@ -73,8 +71,12 @@
         <tr>
           <td colspan="5">
             <div class="flex justify-content-between align-items-center">
-              <i class="pi pi-inbox mr-2"></i>
-              No hay ningún examen en esta mesa, puedes crear uno.
+              <p *ngIf="canManageExams" class="py-2">
+                No hay ningún examen en esta mesa, puedes crear uno.
+              </p>
+              <p *ngIf="!canManageExams" class="py-2">
+                No tienes examenes asignados en esta mesa.
+              </p>
               <p-button
                 *ngIf="canManageExams"
                 label="Crear examen"
