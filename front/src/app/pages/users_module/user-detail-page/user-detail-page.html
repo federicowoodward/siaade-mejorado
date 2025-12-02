@@ -36,43 +36,17 @@
       <div class="col-12 md:col-6 flex justify-content-center flex-column">
         <div class="pb-2 flex align-items-center gap-2">
           <p-button
-            *ngIf="accessEnabled()"
-            label="Bloquear"
-            icon="pi pi-lock"
-            severity="danger"
-            (onClick)="confirmAction('block', $event)"
+            [label]="accessEnabled() ? 'Habilitado' : 'Bloqueado'"
+            [icon]="accessEnabled() ? 'pi pi-lock-open' : 'pi pi-lock'"
+            [severity]="isActive() === false ? 'secondary' : accessEnabled() ? 'success' : 'danger'"
+            (onClick)="accessEnabled() ? confirmAction('block', $event) : confirmAction('unblock', $event)"
             [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
+            outlined="true"
           ></p-button>
-          <p-button
-            *ngIf="!accessEnabled()"
-            label="Habilitar"
-            icon="pi pi-lock-open"
-            severity="success"
-            (onClick)="confirmAction('unblock', $event)"
-            [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
-          ></p-button>
-          <span
-            class="status-dot"
-            [ngClass]="{
-              'status-dot--inactive': isActive() === false,
-              'status-dot--blocked': isActive() !== false && !accessEnabled(),
-              'status-dot--active': accessEnabled()
-            }"
-          ></span>
-          <span class="text-sm text-color-secondary">
-            Estado: {{ isActive() === false ? 'Inactivo' : accessEnabled() ?
-            'Habilitado' : 'Bloqueado' }}
-          </span>
-        </div>
-        <div
-          class="mt-1 text-xs text-color-secondary"
-          *ngIf="isActive() === false"
-        >
-          Inactivo: acceso bloqueado
         </div>
         <div
           class="mt-1 text-xs text-color-secondary w-20rem"
-          *ngIf="isActive() !== false && isBlocked() && blockedReason()"
+          *ngIf="isActive() !== false && isBlocked()"
         >
           Motivo del bloqueo: {{ blockedReason() }}
         </div>
@@ -91,31 +65,22 @@
         <div class="flex align-items-center gap-2">
           <p-button
             *ngIf="isActive() !== false"
-            label="Inactivar"
-            icon="pi pi-times"
-            severity="danger"
+            label="Activado"
+            severity="success"
+            icon="pi pi-check"
+            outlined="true"
             (onClick)="confirmAction('inactivate', $event)"
             [disabled]="saving() || !canToggleIsActive()"
           ></p-button>
           <p-button
             *ngIf="isActive() === false"
-            label="Activar"
-            icon="pi pi-check"
-            severity="success"
+            label="Desactivado"
+            icon="pi pi-times"
+            outlined="true"
+            severity="danger"
             (onClick)="confirmAction('activate', $event)"
             [disabled]="saving() || !canToggleIsActive()"
           ></p-button>
-          <span
-            class="status-dot"
-            [ngClass]="{
-              'status-dot--inactive': isActive() === false,
-              'status-dot--blocked': isActive() !== false && isBlocked(),
-              'status-dot--active': isActive() !== false && !isBlocked()
-            }"
-          ></span>
-          <span class="text-sm text-color-secondary">
-            Estado: {{ isActive() === false ? 'Inactivo' : 'Activo' }}
-          </span>
         </div>
       </div>
     </div>

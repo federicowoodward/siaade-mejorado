@@ -12,13 +12,13 @@ import { PermissionService } from '../../../core/auth/permission.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import { UserFlagsCacheService } from '../../../core/services/user-flags-cache.service';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
+
 @Component({
   selector: 'app-user-detail-page',
   standalone: true,
@@ -30,7 +30,6 @@ import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.servi
     FormsModule,
     DialogModule,
     ConfirmPopupModule,
-    TooltipModule,
   ],
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
@@ -44,11 +43,14 @@ export class UserDetailPage implements OnInit {
   private confirmationService = inject(ConfirmationService);
   private messages = inject(MessageService);
   private uiAlertAudit = inject(UiAlertAuditService);
+
   breadcrumbItems: SimpleBreadcrumbItem[] = [
-    { label: 'GestiÃ³n de usuarios', routerLink: '/users' },
+    { label: 'Gestión de usuarios', routerLink: '/users' },
     { label: 'Detalle de usuario' },
   ];
+
   userId!: string;
+
   // flags alumno
   isActive = signal<boolean | null>(null);
   isBlocked = signal<boolean>(false);
@@ -57,25 +59,31 @@ export class UserDetailPage implements OnInit {
   targetRole = signal<ROLE | null>(null);
   targetRoleId = signal<number | null>(null);
   saving = signal(false);
+
   // UI de motivo al bloquear acceso
   showReasonDialog = signal(false);
   reasonDraft = signal('');
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
   ) {}
-  ngOnInit() {
+
+  ngOnInit(): void {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.userId) {
       this.primeFromCacheThenRefresh(this.userId);
     }
   }
+
   back(): void {
     this.goBack.back();
   }
+
   get isTeacher(): boolean {
     return this.permissions.hasAnyRole([ROLE.TEACHER]);
   }
+
   // ---- permisos ----
   canToggleCanLogin(): boolean {
     const actorOk = this.permissions.hasAnyRole([
@@ -87,6 +95,7 @@ export class UserDetailPage implements OnInit {
       (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
     return actorOk && targetOk;
   }
+
   canToggleIsActive(): boolean {
     const actorOk = this.permissions.hasAnyRole([
       ROLE.SECRETARY,
@@ -96,7 +105,8 @@ export class UserDetailPage implements OnInit {
       (this.targetRoleId() ?? Infinity) < ROLE_IDS[ROLE.SECRETARY];
     return actorOk && targetOk;
   }
-  // ---- carga de flags con cachÃ© ----
+
+  // ---- carga de flags con caché ----
   private async primeFromCacheThenRefresh(id: string): Promise<void> {
     const cached = this.cache.get(id);
     if (cached) {
@@ -109,6 +119,7 @@ export class UserDetailPage implements OnInit {
       this.isBlocked.set(!!cached.isBlocked);
       this.blockedReason.set(cached.blockedReason ?? null);
     }
+
     try {
       const resp: any = await firstValueFrom(
         this.api.request('GET', `users/${id}`),
@@ -121,7 +132,7 @@ export class UserDetailPage implements OnInit {
         this.uiAlertAudit.add(this.messages, {
           severity: 'error',
           summary: 'Acceso no permitido',
-          detail: 'No tenÃ©s permiso para ver este usuario.',
+          detail: 'No tenés permiso para ver este usuario.',
         });
         this.router.navigate(['/users']);
         return;
@@ -132,6 +143,7 @@ export class UserDetailPage implements OnInit {
       }
     }
   }
+
   private normalizeOptionalBool(
     value: boolean | null | undefined,
     fallback: boolean | null,
@@ -140,27 +152,33 @@ export class UserDetailPage implements OnInit {
     if (value === null) return null;
     return !!value;
   }
+
   private applyUserPayload(data: any): void {
     if (!data) return;
+
     const blockedReason = (data as any)?.blockedReason ?? null;
     const isBlocked = !!(data as any)?.isBlocked;
     this.blockedReason.set(blockedReason);
     this.isBlocked.set(isBlocked);
+
     const roleName: ROLE | null = (data?.role?.name as ROLE) ?? null;
     const roleId: number | null =
       Number(data?.role?.id) || (roleName ? ROLE_IDS[roleName] : null);
     this.targetRole.set(roleName);
     this.targetRoleId.set(roleId);
+
     const isStudent =
       roleName === ROLE.STUDENT ||
       !!(data?.student ?? data?.students ?? null);
     this.isStudent.set(isStudent);
+
     const rawActive = data?.isActive ?? (data as any)?.is_active;
     const nextIsActive = this.normalizeOptionalBool(
       rawActive,
       this.isActive(),
     );
     this.isActive.set(nextIsActive);
+
     const now = Date.now();
     this.cache.set(this.userId, {
       role: roleName,
@@ -172,6 +190,7 @@ export class UserDetailPage implements OnInit {
       updatedAt: now,
     });
   }
+
   // Acceso efectivo (combina flags de rol y bloqueo global)
   accessEnabled(): boolean {
     const blocked = this.isBlocked();
@@ -180,21 +199,26 @@ export class UserDetailPage implements OnInit {
     if (blocked) return false;
     return true;
   }
+
   // ---- acciones ----
   confirmAction(
     action: 'block' | 'unblock' | 'activate' | 'inactivate',
     event?: Event,
   ): void {
     if (this.saving()) return;
+
     const messages: Record<
       'block' | 'unblock' | 'activate' | 'inactivate',
       string
     > = {
-      block: '¿Estás seguro de que quieres bloquear al usuario?',
-      unblock: '¿Estás seguro de que quieres habilitar al usuario?',
-      activate: '¿Estás seguro de que quieres activar al usuario?',
-      inactivate: '¿Estás seguro de que quieres inactivar al usuario?',
+      block: '¿Estás seguro de que querés bloquear al usuario?',
+      unblock: '¿Estás seguro de que querés habilitar al usuario?',
+      activate:
+        '¿Estás seguro de que querés activar la cuenta del usuario?',
+      inactivate:
+        '¿Estás seguro de que querés desactivar la cuenta del usuario?',
     };
+
     this.confirmationService.confirm({
       target: event?.target as EventTarget,
       message: messages[action],
@@ -204,6 +228,7 @@ export class UserDetailPage implements OnInit {
       },
     });
   }
+
   private async runConfirmedAction(
     action: 'block' | 'unblock' | 'activate' | 'inactivate',
   ): Promise<void> {
@@ -225,9 +250,11 @@ export class UserDetailPage implements OnInit {
         return;
     }
   }
+
   private async enableAccess(): Promise<void> {
     if (this.isActive() === false) return;
     if (!this.canToggleCanLogin()) return;
+
     try {
       this.saving.set(true);
       const unblocked = await firstValueFrom(
@@ -240,8 +267,10 @@ export class UserDetailPage implements OnInit {
       this.saving.set(false);
     }
   }
+
   private async updateActiveState(next: boolean): Promise<void> {
     if (!this.canToggleIsActive()) return;
+
     try {
       this.saving.set(true);
       const url = next ? 'activate' : 'inactivate';
@@ -255,9 +284,11 @@ export class UserDetailPage implements OnInit {
       this.saving.set(false);
     }
   }
+
   // Confirmación de bloqueo con motivo (bloquea acceso y registra motivo)
   async confirmBlockAccessWithReason(): Promise<void> {
     const reason = (this.reasonDraft() || '').trim();
+
     try {
       this.saving.set(true);
       const blocked = await firstValueFrom(
@@ -271,11 +302,14 @@ export class UserDetailPage implements OnInit {
       this.saving.set(false);
     }
   }
+
   cancelBlockAccess(): void {
     this.showReasonDialog.set(false);
     this.reasonDraft.set('');
   }
+
   onReasonDialogHide(): void {
     this.reasonDraft.set('');
   }
 }
+
