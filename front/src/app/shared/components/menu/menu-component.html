@@ -1,5 +1,11 @@
 <div
-  class="card side-menu flex justify-center h-full menu-component border-custom"
+  class="card side-menu flex flex-column h-full menu-component border-custom"
 >
-  <p-menu [model]="menuItems()" styleClass="h-full w-17rem" />
+  <div class="flex-1 flex justify-center pt-8">
+    <p-menu [model]="mainMenuItems()" styleClass="h-full w-17rem" />
+  </div>
+
+  <div class="mt-auto flex justify-center pb-3">
+    <p-menu [model]="bottomMenuItems()" styleClass="w-17rem" />
+  </div>
 </div>

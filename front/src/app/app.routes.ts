@@ -82,6 +82,13 @@ export const routes: Routes = [
     children: FINAL_EXAMS_ROUTES,
   },
   {
+    path: 'terms',
+    loadComponent: () =>
+      import('./pages/termns-and-conditions/termns-and-conditions').then(
+        (m) => m.TermnsAndConditions,
+      ),
+  },
+  {
     path: 'audit',
     canActivate: [
       AuthGuard,
@@ -94,6 +101,12 @@ export const routes: Routes = [
     path: 'welcome',
     component: WelcomePage,
     canActivate: [AuthGuard],
+  },
+  {
+    path: 'faq',
+    canActivate: [AuthGuard],
+    loadComponent: () =>
+      import('./pages/faq-page/faq-page').then((m) => m.FaqPage),
   },
   {
     path: 'personal-data',

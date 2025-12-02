@@ -1,5 +1,5 @@
 import { Component, signal, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { MessageService } from 'primeng/api';
@@ -24,6 +24,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     PasswordModule,
     ButtonModule,
     ToastModule,
+    RouterLink,
   ],
 })
 export class AuthPage {

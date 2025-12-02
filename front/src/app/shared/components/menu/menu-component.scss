@@ -6,6 +6,7 @@
     border-top: 1px solid transparent !important;
   }
 }
+
 ::ng-deep {
   .side-menu .p-menu {
     width: 7.1rem !important;
@@ -15,6 +16,7 @@
     align-items: center;
     border-color: transparent !important;
   }
+
   .menu-component {
     .p-menu-item-link {
       flex-direction: column;
@@ -28,15 +30,13 @@
     .p-menu-item-icon {
       font-size: 22px !important;
     }
-  }
-  .menu-component {
+
     .is-active-menu-item {
       color: var(--p-primary-color) !important;
     }
 
     .is-active-menu-item .p-menu-item-icon,
     .is-active-menu-item .p-menu-item-label {
-      color: var(--p-primary-contrast-color);
       color: var(--p-primary-color) !important;
     }
   }

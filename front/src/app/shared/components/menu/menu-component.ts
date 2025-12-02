@@ -31,14 +31,29 @@ function addCommandToMenu(items: MenuItem[], command: () => void): MenuItem[] {
   standalone: true,
 })
 export class MenuComponent {
-  menuItems = signal<MenuItem[]>([]);
+  // menú principal (por rol)
+  mainMenuItems = signal<MenuItem[]>([]);
+  // menú inferior (ayuda / tyc)
+  bottomMenuItems = signal<MenuItem[]>([]);
+
   private permissions = inject(PermissionService);
   private drawerVisibility = inject(DrawerVisibility);
   private authService = inject(AuthService);
   private router = inject(Router);
   private activeUrl = signal<string>('');
 
-  private readonly generalMenuItems: MenuItem[] = [];
+  private readonly generalMenuItems: MenuItem[] = [
+    {
+      label: 'Ayuda',
+      icon: 'pi pi-question-circle',
+      routerLink: ['/faq'],
+    },
+    {
+      label: 'T y C',
+      icon: 'pi pi-list-check',
+      routerLink: ['/terms'],
+    },
+  ];
 
   private readonly menuByRole: Record<ROLE, MenuItem[]> = {
     [ROLE.STUDENT]: [
@@ -96,28 +111,21 @@ export class MenuComponent {
     this.drawerVisibility.closeSidebar();
   }
 
-  private mergeWithGeneralMenu(role: ROLE | null): MenuItem[] {
-    const roleSpecific = role ? (this.menuByRole[role] ?? []) : [];
-    return [...roleSpecific, ...this.generalMenuItems];
+  private getRoleMenu(role: ROLE | null): MenuItem[] {
+    return role ? (this.menuByRole[role] ?? []) : [];
   }
 
   private isItemActive(item: MenuItem, currentUrl: string): boolean {
     const link = item.routerLink;
-    if (!link) {
-      return false;
-    }
+    if (!link) return false;
 
     let linkUrl: string;
-
     if (Array.isArray(link)) {
       linkUrl = link.join('');
     } else {
       linkUrl = String(link);
     }
-
-    if (!linkUrl) {
-      return false;
-    }
+    if (!linkUrl) return false;
 
     return currentUrl === linkUrl || currentUrl.startsWith(`${linkUrl}/`);
   }
@@ -155,10 +163,19 @@ export class MenuComponent {
     effect(() => {
       const role = this.permissions.role();
       const currentUrl = this.activeUrl();
-      const mergedMenu = this.mergeWithGeneralMenu(role);
-      const menuWithActive = this.withActiveState(mergedMenu, currentUrl);
-      this.menuItems.set(
-        addCommandToMenu(menuWithActive, () => this.onMenuItemClick()),
+
+      const roleMenu = this.getRoleMenu(role);
+      const mainWithActive = this.withActiveState(roleMenu, currentUrl);
+      const bottomWithActive = this.withActiveState(
+        this.generalMenuItems,
+        currentUrl,
+      );
+
+      this.mainMenuItems.set(
+        addCommandToMenu(mainWithActive, () => this.onMenuItemClick()),
+      );
+      this.bottomMenuItems.set(
+        addCommandToMenu(bottomWithActive, () => this.onMenuItemClick()),
       );
     });
   }
