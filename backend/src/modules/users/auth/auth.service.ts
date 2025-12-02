@@ -62,7 +62,7 @@ export class AuthService {
     private readonly userAuthValidator: UserAuthValidatorService,
     private readonly userReader: UserProfileReaderService,
     private readonly configService: ConfigService,
-    private readonly mailer: MailerService
+    private readonly mailer: MailerService,
   ) {
     this.refreshSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -96,7 +96,7 @@ export class AuthService {
 
     const validationResult = await this.userAuthValidator.validateUser(
       identity,
-      loginDto.password
+      loginDto.password,
     );
 
     if (!validationResult) {
@@ -153,7 +153,7 @@ export class AuthService {
     }
 
     const { profile, payload } = await this.resolveProfileAndPayload(
-      incomingPayload.sub
+      incomingPayload.sub,
     );
 
     const { accessToken, refreshToken: rotatedRefreshToken } =
@@ -219,7 +219,7 @@ export class AuthService {
     await this.sendResetLinkEmail({
       to: user.email,
       name: `${user.name ?? ""} ${user.lastName ?? ""}`.trim(),
-      token
+      token,
     });
 
     return { message: "Si la cuenta existe, enviamos instrucciones." };
@@ -249,7 +249,7 @@ export class AuthService {
     const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
     if (isSameAsCurrent) {
       throw new BadRequestException(
-        "La nueva contraseña no puede ser igual a la actual"
+        "La nueva contraseña no puede ser igual a la actual",
       );
     }
 
@@ -262,7 +262,7 @@ export class AuthService {
     for (const entry of last10) {
       if (await bcrypt.compare(newPassword, entry.passwordHash)) {
         throw new BadRequestException(
-          "Ya usaste esa contraseña anteriormente. Elegí una diferente."
+          "Ya usaste esa contraseña anteriormente. Elegí una diferente.",
         );
       }
     }
@@ -310,7 +310,7 @@ export class AuthService {
     // No permitir igual a actual
     if (await bcrypt.compare(newPassword, user.password)) {
       throw new BadRequestException(
-        "La nueva contraseña no puede ser igual a la actual"
+        "La nueva contraseña no puede ser igual a la actual",
       );
     }
 
@@ -323,7 +323,7 @@ export class AuthService {
     for (const entry of last10) {
       if (await bcrypt.compare(newPassword, entry.passwordHash)) {
         throw new BadRequestException(
-          "Ya usaste esa contraseña anteriormente. Elegí una diferente."
+          "Ya usaste esa contraseña anteriormente. Elegí una diferente.",
         );
       }
     }
@@ -409,7 +409,7 @@ export class AuthService {
       }
       if (student.canLogin === false) {
         throw this.buildUserBlockedException(
-          "El acceso está deshabilitado para este alumno"
+          "El acceso está deshabilitado para este alumno",
         );
       }
     }
@@ -437,7 +437,7 @@ export class AuthService {
       try {
         const isPass1234 = await bcrypt.compare(
           "pass1234",
-          userEntity.password
+          userEntity.password,
         );
         const isCuil = userEntity.cuil
           ? await bcrypt.compare(userEntity.cuil, userEntity.password)
@@ -514,8 +514,8 @@ export class AuthService {
     this.logger.log(
       `Password reset token issued: userId=${userId} tokenHash=${tokenHash.substring(
         0,
-        8
-      )}... ttl=${ttl}s`
+        8,
+      )}... ttl=${ttl}s`,
     );
 
     return {
@@ -593,7 +593,9 @@ export class AuthService {
       "Solicitaste restablecer tu contraseña desde cero.",
       "Utiliza el siguiente enlace para iniciar el proceso:",
       "",
-      resetLink ? `Enlace directo: ${resetLink}` : "No pudimos generar el enlace.",
+      resetLink
+        ? `Enlace directo: ${resetLink}`
+        : "No pudimos generar el enlace.",
       "",
       "Si no solicitaste esto, ignora este mensaje.",
       "",
@@ -664,7 +666,11 @@ export class AuthService {
     }
 
     const currentVersion = user.tokenVersion ?? 0;
-    if (versionInToken === null ? currentVersion > 0 : versionInToken !== currentVersion) {
+    if (
+      versionInToken === null
+        ? currentVersion > 0
+        : versionInToken !== currentVersion
+    ) {
       throw this.buildInvalidResetTokenException();
     }
 
@@ -680,7 +686,7 @@ export class AuthService {
       return updated?.tokenVersion ?? null;
     } catch (error) {
       this.logger.error(
-        `Failed to bump tokenVersion for user ${userId}: ${error}`
+        `Failed to bump tokenVersion for user ${userId}: ${error}`,
       );
       return null;
     }
@@ -716,7 +722,7 @@ export class AuthService {
           .createQueryBuilder("u")
           .where(
             "LOWER(CONCAT(TRIM(u.name), ' ', TRIM(u.last_name))) = :full",
-            { full }
+            { full },
           )
           .getOne();
       }
@@ -738,7 +744,7 @@ export class AuthService {
         message: "Usuario bloqueado",
         reason: reason ?? null,
       },
-      HttpStatus.LOCKED
+      HttpStatus.LOCKED,
     );
   }
 
@@ -754,7 +760,7 @@ export class AuthService {
   }
 
   async verifyResetCode(
-    dto: VerifyResetCodeDto
+    dto: VerifyResetCodeDto,
   ): Promise<{ token: string; expiresInSeconds: number }> {
     const identity = (dto.identity || "").trim();
     const code = (dto.code || "").trim();
@@ -798,8 +804,8 @@ export class AuthService {
     this.logger.log(
       `Reset code verificado: userId=${user.id} codeHash=${codeHash.substring(
         0,
-        8
-      )}...`
+        8,
+      )}...`,
     );
     return { token, expiresInSeconds };
   }

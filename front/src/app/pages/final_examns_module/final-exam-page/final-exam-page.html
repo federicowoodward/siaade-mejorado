@@ -107,11 +107,8 @@
             <ng-container *ngIf="canEditScores(); else noteReadOnlyTpl">
               <ng-container *ngIf="!editing; else noteEditTpl">
                 <span class="font-medium">
-                  {{
-                    row.score !== null && row.score !== undefined
-                      ? row.score
-                      : '-'
-                  }}
+                  {{ row.score !== null && row.score !== undefined ? row.score :
+                  '-' }}
                 </span>
               </ng-container>
               <ng-template #noteEditTpl>
@@ -128,11 +125,8 @@
             </ng-container>
             <ng-template #noteReadOnlyTpl>
               <span class="font-medium">
-                {{
-                  row.score !== null && row.score !== undefined
-                    ? row.score
-                    : '-'
-                }}
+                {{ row.score !== null && row.score !== undefined ? row.score :
+                '-' }}
               </span>
             </ng-template>
           </td>

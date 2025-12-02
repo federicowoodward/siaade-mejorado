@@ -28,11 +28,7 @@ export class SubjectsReadController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("subjects.readAll")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @ApiOperation({ summary: "Listar materias (mínimo)" })
   @ApiOkResponse({
     schema: {
@@ -53,11 +49,7 @@ export class SubjectsReadController {
   @Get(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("subjects.readOne")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @ApiOperation({ summary: "Obtener una materia por id (mínimo)" })
   @ApiParam({ name: "id", type: Number })
   @ApiOkResponse({

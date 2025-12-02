@@ -168,15 +168,11 @@ export class UserDetailPage implements OnInit {
     this.targetRoleId.set(roleId);
 
     const isStudent =
-      roleName === ROLE.STUDENT ||
-      !!(data?.student ?? data?.students ?? null);
+      roleName === ROLE.STUDENT || !!(data?.student ?? data?.students ?? null);
     this.isStudent.set(isStudent);
 
     const rawActive = data?.isActive ?? (data as any)?.is_active;
-    const nextIsActive = this.normalizeOptionalBool(
-      rawActive,
-      this.isActive(),
-    );
+    const nextIsActive = this.normalizeOptionalBool(rawActive, this.isActive());
     this.isActive.set(nextIsActive);
 
     const now = Date.now();
@@ -213,8 +209,7 @@ export class UserDetailPage implements OnInit {
     > = {
       block: '¿Estás seguro de que querés bloquear al usuario?',
       unblock: '¿Estás seguro de que querés habilitar al usuario?',
-      activate:
-        '¿Estás seguro de que querés activar la cuenta del usuario?',
+      activate: '¿Estás seguro de que querés activar la cuenta del usuario?',
       inactivate:
         '¿Estás seguro de que querés desactivar la cuenta del usuario?',
     };
@@ -312,4 +307,3 @@ export class UserDetailPage implements OnInit {
     this.reasonDraft.set('');
   }
 }
-

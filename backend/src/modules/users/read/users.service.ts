@@ -8,7 +8,7 @@ import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>
+    private usersRepository: Repository<User>,
   ) {}
 
   async getUserInfo(id: string): Promise<User | null> {
@@ -26,7 +26,7 @@ export class UsersService {
 
   async getUserInfoForTeacher(
     id: string,
-    teacherId: string
+    teacherId: string,
   ): Promise<User | null> {
     if (!teacherId) return null;
 

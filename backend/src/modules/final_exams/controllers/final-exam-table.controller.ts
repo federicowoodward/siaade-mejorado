@@ -85,7 +85,7 @@ class DeletedResponseDto {
   ROLE.EXECUTIVE_SECRETARY,
   ROLE.SECRETARY,
   ROLE.PRECEPTOR,
-  ROLE.TEACHER
+  ROLE.TEACHER,
 )
 @Controller("finals/exam-table")
 export class FinalExamTableController {

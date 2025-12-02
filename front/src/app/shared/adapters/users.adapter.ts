@@ -20,9 +20,7 @@ export function mapApiUserToRow(
   };
   const rawIsActive = u?.isActive ?? (u as any)?.is_active;
   const rawIsBlocked =
-    u?.isBlocked ??
-    (u as any)?.is_blocked ??
-    (u as any)?.blocked;
+    u?.isBlocked ?? (u as any)?.is_blocked ?? (u as any)?.blocked;
   const rawBlockedReason =
     u?.blockedReason ?? (u as any)?.blocked_reason ?? null;
   return {

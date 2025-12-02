@@ -222,7 +222,9 @@ export class AuthController {
   @Public()
   @Get("validate-reset-token")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Valida un token de restablecimiento de contraseña" })
+  @ApiOperation({
+    summary: "Valida un token de restablecimiento de contraseña",
+  })
   @ApiResponse({ status: 200, description: "Token válido" })
   async validateResetToken(@Query("token") token: string) {
     if (!token || !token.trim()) {

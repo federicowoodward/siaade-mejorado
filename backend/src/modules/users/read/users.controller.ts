@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Req, UseGuards, ForbiddenException } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  Req,
+  UseGuards,
+  ForbiddenException,
+} from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { UserResponseDto } from "../manage/dto/create-user.dto";
 import { JwtAuthGuard } from "@/guards/jwt-auth.guard";
@@ -41,11 +48,7 @@ export class UsersController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("users.readAll")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.TEACHER,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.TEACHER)
   async getAllUsers(@Req() req: Request): Promise<UserResponseDto[]> {
     const auth = req.user as { id?: string; role?: ROLE | null } | undefined;
 

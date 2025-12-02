@@ -65,7 +65,9 @@ export class FinalExamTableService {
       if (user?.role === ROLE.TEACHER && user.id) {
         const baseExists = await this.tableRepo.findOne({ where: { id } });
         if (baseExists) {
-          throw new ForbiddenException("You are not assigned to this exam table");
+          throw new ForbiddenException(
+            "You are not assigned to this exam table",
+          );
         }
       }
       throw new NotFoundException("Exam table not found");

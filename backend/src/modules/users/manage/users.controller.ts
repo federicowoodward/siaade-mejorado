@@ -226,15 +226,8 @@ export class UsersController {
       additionalProperties: true,
     } as any,
   })
-  @AllowRoles(
-    ROLE.PRECEPTOR,
-    ROLE.SECRETARY,
-    ROLE.EXECUTIVE_SECRETARY,
-  )
-  async updateUser(
-    @Param("id") id: string,
-    @Body() body: Record<string, any>,
-  ) {
+  @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
+  async updateUser(@Param("id") id: string, @Body() body: Record<string, any>) {
     try {
       await this.usersPatchService.patchUser(id, body);
       // devolvemos el perfil unificado ya existente en tu lector

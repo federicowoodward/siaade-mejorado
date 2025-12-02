@@ -98,9 +98,10 @@ export class CareerCatalogService {
           }));
 
           // Si el usuario actual es docente, filtrar solo las materias a su cargo
-          const currentUser = this.authState.getCurrentUserSnapshot() as
-            | { id?: string; role?: string | null }
-            | null;
+          const currentUser = this.authState.getCurrentUserSnapshot() as {
+            id?: string;
+            role?: string | null;
+          } | null;
           const isTeacher = currentUser?.role === ROLE.TEACHER;
           const teacherId = currentUser?.id ?? null;
           if (isTeacher && teacherId) {

@@ -129,9 +129,7 @@ export class ResetPasswordPage {
     if (!this.token) return;
     this.tokenChecking = true;
     try {
-      const ok = await firstValueFrom(
-        this.auth.validateResetToken(this.token),
-      );
+      const ok = await firstValueFrom(this.auth.validateResetToken(this.token));
       if (!ok) {
         await this.handleInvalidToken();
         return;

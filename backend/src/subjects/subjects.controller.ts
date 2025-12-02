@@ -259,11 +259,7 @@ export class SubjectGradesController {
 
   @Patch(":subjectId/students/:studentId/commission")
   @Action("subjects.moveStudentCommission")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @ApiOperation({
     summary:
       "Mover alumno de comisión dentro de la misma materia transfiriendo notas y estado",

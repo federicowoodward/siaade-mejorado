@@ -41,11 +41,7 @@ export class PrerequisitesController {
   constructor(private readonly prerequisitesService: PrerequisitesService) {}
 
   @Get("careers/:careerId/subjects/:orderNo")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @ApiOperation({ summary: "Lista correlativas por número de orden" })
   @ApiOkResponse({
     schema: {

@@ -71,10 +71,11 @@ export class FinalExamService {
       .addOrderBy("f.id", "ASC");
 
     if (user?.role === ROLE.TEACHER && user.id) {
-      qb.innerJoin("subject_commissions", "sc", "sc.subject_id = s.id").andWhere(
-        "sc.teacher_id = :teacherId",
-        { teacherId: user.id },
-      );
+      qb.innerJoin(
+        "subject_commissions",
+        "sc",
+        "sc.subject_id = s.id",
+      ).andWhere("sc.teacher_id = :teacherId", { teacherId: user.id });
     }
 
     if (opts?.skip !== undefined) qb.skip(opts.skip);
@@ -167,11 +168,7 @@ export class FinalExamService {
       }
 
       studentsQb
-        .innerJoin(
-          "subject_commissions",
-          "sc",
-          "sc.id = ss.commission_id",
-        )
+        .innerJoin("subject_commissions", "sc", "sc.id = ss.commission_id")
         .andWhere("sc.teacher_id = :teacherId", { teacherId: user.id });
     }
 
@@ -316,7 +313,11 @@ export class FinalExamService {
     let owns = await this.teacherOwnsFinal(finalExamId, teacherId);
 
     if (owns && studentId) {
-      owns = await this.teacherOwnsFinalStudent(finalExamId, studentId, teacherId);
+      owns = await this.teacherOwnsFinalStudent(
+        finalExamId,
+        studentId,
+        teacherId,
+      );
     }
 
     if (!owns) {

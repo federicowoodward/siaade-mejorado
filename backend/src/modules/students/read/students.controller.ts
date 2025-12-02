@@ -37,11 +37,7 @@ export class StudentsReadController {
   @Get(":id/summary")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("students.readSummary")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @ApiOperation({ summary: "Obtener resumen académico de un alumno" })
   @ApiParam({ name: "id", type: String })
   @ApiOkResponse({ description: "Resumen académico del alumno" })
@@ -52,11 +48,7 @@ export class StudentsReadController {
   @Get(":id/full")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Action("students.readFull")
-  @AllowRoles(
-    ROLE.EXECUTIVE_SECRETARY,
-    ROLE.SECRETARY,
-    ROLE.PRECEPTOR,
-  )
+  @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY, ROLE.PRECEPTOR)
   @ApiOperation({ summary: "Obtener toda la data de un alumno" })
   @ApiParam({ name: "id", type: String })
   @ApiOkResponse({ description: "Datos completos del alumno" })

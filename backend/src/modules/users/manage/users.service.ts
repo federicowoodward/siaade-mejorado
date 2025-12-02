@@ -282,12 +282,9 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException("User not found");
 
-    await this.usersRepository.update(
-      { id: userId },
-      {
-        isActive: active,
-      } as any,
-    );
+    await this.usersRepository.update({ id: userId }, {
+      isActive: active,
+    } as any);
 
     // Propagar flags espec�ficos de rol
     if (user.student) {
@@ -477,7 +474,9 @@ export class UsersService {
   }
 
   private mapToResponseDto(user: User, role?: Role): any {
-    const normalizeFlag = (value: boolean | null | undefined): boolean | null =>
+    const normalizeFlag = (
+      value: boolean | null | undefined,
+    ): boolean | null =>
       value === undefined ? true : value === null ? null : !!value;
     const roleActive =
       (user as any).isActive ??

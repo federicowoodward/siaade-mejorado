@@ -11,42 +11,42 @@ Elaborado por: Federico Woodward
 ## **ÍNDICE**
 
 1. Introducción
-    
-    1.1 Propósito del sistema
-    
-    1.2 Alcance
-    
-    1.3 Público objetivo
-    
-    1.4 Breve descripción general
-    
+
+   1.1 Propósito del sistema
+
+   1.2 Alcance
+
+   1.3 Público objetivo
+
+   1.4 Breve descripción general
+
 2. Requisitos Previos
-    
-    2.1 Requisitos técnicos
-    
-    2.2 Requisitos de acceso
-    
+
+   2.1 Requisitos técnicos
+
+   2.2 Requisitos de acceso
+
 3. Instalación o Acceso
-    
-    3.1 Acceso mediante navegador
-    
-    3.2 Recuperación de contraseña
-    
+
+   3.1 Acceso mediante navegador
+
+   3.2 Recuperación de contraseña
+
 4. Navegación General
 5. Funciones Principales del Sistema
-    
-    5.1 Crear registros
-    
-    5.2 Editar registros
-    
-    5.3 Eliminar registros
-    
-    5.4 Buscar información
-    
-    5.5 Generar reportes
-    
-    5.6 Exportar datos
-    
+
+   5.1 Crear registros
+
+   5.2 Editar registros
+
+   5.3 Eliminar registros
+
+   5.4 Buscar información
+
+   5.5 Generar reportes
+
+   5.6 Exportar datos
+
 6. Ejemplos de uso
 7. Solución de Problemas
 8. Soporte y Contacto
@@ -150,24 +150,24 @@ El sistema es una plataforma web que integra toda la gestión académica institu
 El sistema define distintos perfiles de usuario, cada uno con permisos específicos:
 
 - **Alumno:**
-    - Consulta su situación académica.
-    - Visualiza materias, inscripciones, mesas de examen y notas.
-    - Actualiza parte de sus datos personales (según permisos definidos).
+  - Consulta su situación académica.
+  - Visualiza materias, inscripciones, mesas de examen y notas.
+  - Actualiza parte de sus datos personales (según permisos definidos).
 - **Docente:**
-    - Visualiza las materias a su cargo.
-    - Consulta listados de alumnos.
-    - Carga y actualiza notas de exámenes parciales.
+  - Visualiza las materias a su cargo.
+  - Consulta listados de alumnos.
+  - Carga y actualiza notas de exámenes parciales.
 - **Preceptor:**
-    - Consulta cursos y comisiones.
-    - Supervisa situación académica general de los alumnos.
+  - Consulta cursos y comisiones.
+  - Supervisa situación académica general de los alumnos.
 - **Secretario:**
-    - Administra mesas de examen.
-    - Gestiona inscripciones y resultados finales.
-    - Colabora en la gestión general académica.
-    - Habilita y deshabilita cuentas.
+  - Administra mesas de examen.
+  - Gestiona inscripciones y resultados finales.
+  - Colabora en la gestión general académica.
+  - Habilita y deshabilita cuentas.
 - Director:
-    - Puede visualizar todos los datos del sistema.
-    - Puede revisar datos de auditoria.
+  - Puede visualizar todos los datos del sistema.
+  - Puede revisar datos de auditoria.
 
 # 2. Requisitos previos
 
@@ -179,7 +179,7 @@ Sistema operativo compatible
 - Windows
 - Mac
 
-Navegador 
+Navegador
 
 - Google Chrome
 - Microsoft Edge
@@ -188,7 +188,6 @@ Navegador
 ## **2.2 Requisitos de acceso**
 
 Para utilizar el sistema, cada usuario debe contar con un rol asignado, credenciales válidas y seguir el proceso de autenticación indicado por la institución.
-
 
 ---
 
@@ -203,9 +202,9 @@ El sistema SIAD es una aplicación web que se utiliza directamente desde el nave
 1. Abrir un navegador web compatible (Chrome, Edge o Firefox).
 2. Ingresar la **URL oficial del sistema**, provista por la institución (por ejemplo: `https://siad.<dominio-institucional>`).
 3. Esperar a que cargue la **pantalla de inicio de sesión**, donde se visualiza:
-    - el logo de la institución,
-    - el formulario de acceso con campos de **usuario** y **contraseña**,
-    - y opciones adicionales para **recuperar contraseña**.
+   - el logo de la institución,
+   - el formulario de acceso con campos de **usuario** y **contraseña**,
+   - y opciones adicionales para **recuperar contraseña**.
 
 > (Se recomienda incluir aquí una captura de pantalla de la **pantalla de inicio de sesión**, mostrando el logo y el formulario de acceso).
 
@@ -234,9 +233,9 @@ La pantalla de autenticación incluye un flujo de recuperación de contraseña p
 4. Confirmar la solicitud utilizando el botón de envío.
 5. El sistema enviará un **código** o **enlace de recuperación** al correo registrado.
 6. Desde el correo recibido:
-    - ingresar al enlace o pantalla indicada;
-    - escribir el código, si corresponde;
-    - definir una **nueva contraseña**, respetando las políticas indicadas en pantalla (longitud mínima, combinación de mayúsculas, minúsculas y números).
+   - ingresar al enlace o pantalla indicada;
+   - escribir el código, si corresponde;
+   - definir una **nueva contraseña**, respetando las políticas indicadas en pantalla (longitud mínima, combinación de mayúsculas, minúsculas y números).
 7. Guardar la nueva contraseña y volver a la pestaña de **“Login”** para iniciar sesión con los datos actualizados.
 
 > (Se recomienda incluir aquí una captura de pantalla de la **pestaña de recuperación** y otra del **formulario para definir la nueva contraseña**).
@@ -254,13 +253,13 @@ Además del flujo de recuperación, los usuarios pueden cambiar su contraseña c
 
 1. Iniciar sesión en el sistema.
 2. Acceder a la sección **“Datos personales”** desde:
-    - el menú superior (**“Mi perfil / Datos personales”**), o
-    - la opción correspondiente del menú lateral.
+   - el menú superior (**“Mi perfil / Datos personales”**), o
+   - la opción correspondiente del menú lateral.
 3. Utilizar el botón **“Cambiar contraseña”**.
 4. Completar el formulario indicando:
-    - contraseña actual (si se solicita),
-    - nueva contraseña,
-    - confirmación de la nueva contraseña.
+   - contraseña actual (si se solicita),
+   - nueva contraseña,
+   - confirmación de la nueva contraseña.
 5. Guardar los cambios y volver a iniciar sesión si el sistema lo requiere.
 
 > (Se recomienda incluir una captura de pantalla del **módulo de Datos personales** destacando el botón de “Cambiar contraseña”).
@@ -288,8 +287,8 @@ La barra superior aparece cuando el usuario está autenticado e incluye:
 - El **nombre completo** del usuario conectado.
 - El **rol actual** (por ejemplo: Alumno, Docente, Preceptor, Secretario, Director).
 - Un **menú desplegable de usuario**, desde el cual se puede:
-    - acceder a **“Mi perfil / Datos personales”**;
-    - cerrar sesión de forma segura.
+  - acceder a **“Mi perfil / Datos personales”**;
+  - cerrar sesión de forma segura.
 
 En dispositivos móviles, la barra superior también incluye un **botón de menú** (ícono de tres líneas) que permite abrir o cerrar el menú lateral.
 
@@ -300,20 +299,20 @@ En dispositivos móviles, la barra superior también incluye un **botón de men�
 El menú lateral agrupa los módulos principales del sistema. Su contenido se adapta automáticamente según el rol del usuario:
 
 - **Alumno:**
-    - Inicio
-    - Inscripciones a exámenes
-    - Situación académica
+  - Inicio
+  - Inscripciones a exámenes
+  - Situación académica
 - **Docente:**
-    - Inicio
-    - Materias
-    - Finales
+  - Inicio
+  - Materias
+  - Finales
 - **Preceptor / Secretario / Director:**
-    - Inicio
-    - Materias
-    - Usuarios
-    - Finales
-    - Avisos
-    - Auditoría (según permisos definidos por la institución)
+  - Inicio
+  - Materias
+  - Usuarios
+  - Finales
+  - Avisos
+  - Auditoría (según permisos definidos por la institución)
 
 Cada opción se acompaña de un ícono sencillo que facilita la identificación del módulo (casa para inicio, libro para materias y finales, grupo de personas para usuarios, campana para avisos, gráfico para auditoría).
 
@@ -330,15 +329,15 @@ Para cambiar de módulo:
 Dentro de cada módulo, el área principal suele incluir:
 
 - Un **encabezado de página** con:
-    - título del módulo (por ejemplo, “Gestión de usuarios”, “Mesas de examen”, “Situación académica”);
-    - breve descripción de lo que se puede hacer en esa pantalla.
+  - título del módulo (por ejemplo, “Gestión de usuarios”, “Mesas de examen”, “Situación académica”);
+  - breve descripción de lo que se puede hacer en esa pantalla.
 - Una **barra de acciones**, donde se ubican botones como:
-    - **“Nuevo usuario”**;
-    - **“Crear mesa”**;
-    - **“Crear examen”**;
-    - **“Actualizar”**;
-    - **“Imprimir comprobante”**;
-    - filtros y búsqueda.
+  - **“Nuevo usuario”**;
+  - **“Crear mesa”**;
+  - **“Crear examen”**;
+  - **“Actualizar”**;
+  - **“Imprimir comprobante”**;
+  - filtros y búsqueda.
 - Una o varias **tablas de datos**, donde se listan alumnos, usuarios, materias, exámenes, avisos u otras entidades.
 
 En la parte superior del contenido se presenta la barra de **migajas de pan** (breadcrumbs), que indica la ruta navegada. Algunos ejemplos:

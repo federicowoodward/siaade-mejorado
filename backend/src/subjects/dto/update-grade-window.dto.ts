@@ -4,4 +4,3 @@ export class UpdateGradeWindowDto {
   @IsISO8601()
   deadline!: string;
 }
-

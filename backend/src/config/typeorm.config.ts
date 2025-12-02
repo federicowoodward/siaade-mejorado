@@ -17,7 +17,7 @@ export function createTypeOrmConfig(
     "..",
     "database",
     "migrations",
-    "*{.ts,.js}"
+    "*{.ts,.js}",
   );
 
   const base: TypeOrmModuleOptions = {

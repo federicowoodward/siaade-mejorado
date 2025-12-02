@@ -409,9 +409,7 @@ export class SubjectsService {
         where: { subjectId, teacherId: user.id },
       });
       if (count === 0) {
-        throw new ForbiddenException(
-          "You are not assigned to this subject",
-        );
+        throw new ForbiddenException("You are not assigned to this subject");
       }
     }
 
@@ -782,7 +780,10 @@ export class SubjectsService {
     };
   }
 
-  async updateGradeWindow(id: number, deadline: string): Promise<{ success: true }> {
+  async updateGradeWindow(
+    id: number,
+    deadline: string,
+  ): Promise<{ success: true }> {
     const commission = await this.subjectCommissionRepo.findOne({
       where: { id },
     });

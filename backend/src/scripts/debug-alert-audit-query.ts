@@ -9,22 +9,25 @@ async function main() {
     console.log("[DEBUG] Data source initialized");
 
     const meta = AppDataSource.getMetadata(UiAlertAudit);
-    console.log("[DEBUG] UiAlertAudit relations:", meta.relations.map((r) => ({
-      propertyPath: r.propertyPath,
-      type: r.relationType,
-      isManyToOne: r.isManyToOne,
-      isOneToMany: r.isOneToMany,
-      isOneToOne: r.isOneToOne,
-      isTreeParent: (r as any).isTreeParent || false,
-      joinColumns: r.joinColumns.map((jc) => ({
-        databaseName: jc.databaseName,
-        givenDatabaseName: jc.givenDatabaseName,
-        referencedColumn: jc.referencedColumn && {
-          propertyPath: jc.referencedColumn.propertyPath,
-          databaseName: jc.referencedColumn.databaseName,
-        },
+    console.log(
+      "[DEBUG] UiAlertAudit relations:",
+      meta.relations.map((r) => ({
+        propertyPath: r.propertyPath,
+        type: r.relationType,
+        isManyToOne: r.isManyToOne,
+        isOneToMany: r.isOneToMany,
+        isOneToOne: r.isOneToOne,
+        isTreeParent: (r as any).isTreeParent || false,
+        joinColumns: r.joinColumns.map((jc) => ({
+          databaseName: jc.databaseName,
+          givenDatabaseName: jc.givenDatabaseName,
+          referencedColumn: jc.referencedColumn && {
+            propertyPath: jc.referencedColumn.propertyPath,
+            databaseName: jc.referencedColumn.databaseName,
+          },
+        })),
       })),
-    })));
+    );
 
     const repo = AppDataSource.getRepository(UiAlertAudit);
 
@@ -45,7 +48,9 @@ async function main() {
       console.error("[DEBUG] ERROR in no-join query:", e);
     }
 
-    console.log("[DEBUG] Running query builder with leftJoinAndSelect(a.user)...");
+    console.log(
+      "[DEBUG] Running query builder with leftJoinAndSelect(a.user)...",
+    );
     const qbWithJoin = repo
       .createQueryBuilder("a")
       .leftJoinAndSelect("a.user", "u")

@@ -231,4 +231,3 @@ curl -X POST "http://localhost:3000/api/audit/alerts" \
 - Actualmente se auditan **todos** los toasts que pasan por `UiAlertAuditService`; si en el futuro se desea filtrar (solo errores, solo ciertos módulos), puede hacerse ahí.
 - Es posible añadir más endpoints de lectura (filtros por usuario, severity, rango de fechas) y una pequeña UI interna para que Secretaría navegue las alertas desde el front.
 - El sistema está pensado como una auditoría liviana de UI, no como reemplazo de un sistema de logging completo.
-

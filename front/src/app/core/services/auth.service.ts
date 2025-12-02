@@ -279,15 +279,11 @@ export class AuthService {
     newPassword: string,
   ) {
     return this.api
-      .request<{ success: boolean }>(
-        'POST',
-        'auth/password/change-with-code',
-        {
-          code,
-          currentPassword,
-          newPassword,
-        },
-      )
+      .request<{ success: boolean }>('POST', 'auth/password/change-with-code', {
+        code,
+        currentPassword,
+        newPassword,
+      })
       .pipe(
         tap((resp) => {
           if (resp?.success) {
@@ -300,12 +296,9 @@ export class AuthService {
 
   validateResetToken(token: string): Observable<boolean> {
     return this.api
-      .request<{ valid: boolean }>(
-        'GET',
-        'auth/validate-reset-token',
-        undefined,
-        { token },
-      )
+      .request<{
+        valid: boolean;
+      }>('GET', 'auth/validate-reset-token', undefined, { token })
       .pipe(
         map((resp) => !!resp?.valid),
         catchError(() => of(false)),
