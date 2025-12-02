@@ -5,7 +5,6 @@ export type UserFlagsCacheEntry = {
   role: ROLE | null; // rol del usuario destino
   isStudent: boolean;
   isActive: boolean | null;
-  canLogin: boolean | null;
   isBlocked?: boolean;
   blockedReason?: string | null;
   reasonUpdatedAt?: number;
@@ -64,7 +63,6 @@ export class UserFlagsCacheService {
       role: null,
       isStudent: false,
       isActive: null,
-      canLogin: null,
       isBlocked: false,
       blockedReason: null,
       reasonUpdatedAt: 0,

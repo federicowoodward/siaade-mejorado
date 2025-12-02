@@ -39,11 +39,7 @@
             *ngIf="accessEnabled()"
             label="Bloquear"
             icon="pi pi-lock"
-            severity="success"
-            [ngClass]="{
-              'p-button-success': accessEnabled(),
-              'p-button-danger': !accessEnabled()
-            }"
+            severity="danger"
             (onClick)="confirmAction('block', $event)"
             [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
           ></p-button>
@@ -51,11 +47,7 @@
             *ngIf="!accessEnabled()"
             label="Habilitar"
             icon="pi pi-lock-open"
-            severity="danger"
-            [ngClass]="{
-              'p-button-success': accessEnabled(),
-              'p-button-danger': !accessEnabled()
-            }"
+            severity="success"
             (onClick)="confirmAction('unblock', $event)"
             [disabled]="saving() || showReasonDialog() || !canToggleCanLogin() || isActive() === false"
           ></p-button>
@@ -68,14 +60,8 @@
             }"
           ></span>
           <span class="text-sm text-color-secondary">
-            Estado:
-            {{
-              isActive() === false
-                ? 'Inactivo'
-                : accessEnabled()
-                  ? 'Habilitado'
-                  : 'Bloqueado'
-            }}
+            Estado: {{ isActive() === false ? 'Inactivo' : accessEnabled() ?
+            'Habilitado' : 'Bloqueado' }}
           </span>
         </div>
         <div
@@ -86,7 +72,7 @@
         </div>
         <div
           class="mt-1 text-xs text-color-secondary w-20rem"
-          *ngIf="isActive() !== false && (isBlocked() || canLogin() === false) && blockedReason()"
+          *ngIf="isActive() !== false && isBlocked() && blockedReason()"
         >
           Motivo del bloqueo: {{ blockedReason() }}
         </div>
@@ -107,11 +93,7 @@
             *ngIf="isActive() !== false"
             label="Inactivar"
             icon="pi pi-times"
-            severity="success"
-            [ngClass]="{
-              'p-button-success': isActive() !== false,
-              'p-button-danger': isActive() === false
-            }"
+            severity="danger"
             (onClick)="confirmAction('inactivate', $event)"
             [disabled]="saving() || !canToggleIsActive()"
           ></p-button>
@@ -119,11 +101,7 @@
             *ngIf="isActive() === false"
             label="Activar"
             icon="pi pi-check"
-            severity="danger"
-            [ngClass]="{
-              'p-button-success': isActive() !== false,
-              'p-button-danger': isActive() === false
-            }"
+            severity="success"
             (onClick)="confirmAction('activate', $event)"
             [disabled]="saving() || !canToggleIsActive()"
           ></p-button>

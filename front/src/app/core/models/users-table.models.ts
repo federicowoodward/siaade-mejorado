@@ -11,6 +11,7 @@ export interface UserRow {
   role: Role;
   isBlocked: boolean;
   isActive: boolean;
+  blockedReason?: string | null;
 }
 
 export type UsersTableContext =

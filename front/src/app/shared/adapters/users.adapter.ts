@@ -22,8 +22,9 @@ export function mapApiUserToRow(
   const rawIsBlocked =
     u?.isBlocked ??
     (u as any)?.is_blocked ??
-    (u as any)?.blocked ??
-    (u as any)?.isBlocked;
+    (u as any)?.blocked;
+  const rawBlockedReason =
+    u?.blockedReason ?? (u as any)?.blocked_reason ?? null;
   return {
     id: u.id,
     name: u.name,
@@ -33,6 +34,7 @@ export function mapApiUserToRow(
     role: resolvedRole,
     isBlocked: toBool(rawIsBlocked, false),
     isActive: toBool(rawIsActive, true),
+    blockedReason: rawBlockedReason,
   };
 }
 

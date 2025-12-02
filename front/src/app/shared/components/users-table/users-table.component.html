@@ -68,18 +68,27 @@
         <td>{{ user.name }} {{ user.lastName }}</td>
         <td>{{ user.cuil }}</td>
         <td *ngIf="viewerRole !== 'teacher'">{{ user.role | roleLabel }}</td>
-        <td class="text-center" *ngIf="viewerRole !== 'teacher'">
+        <td
+          class="text-center"
+          *ngIf="viewerRole !== 'teacher'"
+          [pTooltip]="
+            user.isActive === false
+              ? 'Inactivo'
+              : user.isBlocked
+                ? (user.blockedReason
+                    ? 'Bloqueado: ' + user.blockedReason
+                    : 'Bloqueado')
+                : 'Activo'
+          "
+          tooltipPosition="top"
+        >
           <span
             class="status-dot"
             [ngClass]="{
-              'status-dot--active': user.isActive && !user.isBlocked,
-              'status-dot--blocked': user.isActive && user.isBlocked,
-              'status-dot--inactive': !user.isActive
+              'status-dot--inactive': user.isActive === false,
+              'status-dot--blocked': user.isActive !== false && user.isBlocked,
+              'status-dot--active': user.isActive !== false && !user.isBlocked,
             }"
-            [pTooltip]="
-              user.isBlocked ? 'Bloqueado' : user.isActive ? 'Activo' : 'Inactivo'
-            "
-            tooltipPosition="top"
           ></span>
         </td>
 

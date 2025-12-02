@@ -51,7 +51,6 @@ export class UserDetailPage implements OnInit {
   userId!: string;
   // flags alumno
   isActive = signal<boolean | null>(null);
-  canLogin = signal<boolean | null>(null);
   isBlocked = signal<boolean>(false);
   blockedReason = signal<string | null>(null);
   isStudent = signal<boolean>(false);
@@ -107,7 +106,6 @@ export class UserDetailPage implements OnInit {
         this.targetRoleId.set(ROLE_IDS[(cached as any).role as ROLE]);
       }
       this.isActive.set(cached.isActive);
-      this.canLogin.set(cached.canLogin);
       this.isBlocked.set(!!cached.isBlocked);
       this.blockedReason.set(cached.blockedReason ?? null);
     }
@@ -131,16 +129,8 @@ export class UserDetailPage implements OnInit {
       if (!cached) {
         this.isStudent.set(false);
         this.isActive.set(true);
-        this.canLogin.set(true);
       }
     }
-  }
-  private getUpdatePrefix(): string | null {
-    const role = this.targetRole();
-    if (role === ROLE.STUDENT) return 'student.';
-    if (role === ROLE.TEACHER) return 'teacher.';
-    if (role === ROLE.PRECEPTOR) return 'preceptor.';
-    return null;
   }
   private normalizeOptionalBool(
     value: boolean | null | undefined,
@@ -161,121 +151,33 @@ export class UserDetailPage implements OnInit {
       Number(data?.role?.id) || (roleName ? ROLE_IDS[roleName] : null);
     this.targetRole.set(roleName);
     this.targetRoleId.set(roleId);
-    const now = Date.now();
-    const updateCache = (entry: {
-      isStudent: boolean;
-      isActive: boolean | null;
-      canLogin: boolean | null;
-    }) => {
-      this.cache.set(this.userId, {
-        role: roleName,
-        isStudent: entry.isStudent,
-        isActive: entry.isActive,
-        canLogin: entry.canLogin,
-        isBlocked,
-        blockedReason,
-        reasonUpdatedAt: now,
-        updatedAt: now,
-      });
-    };
-    const student = data?.student ?? data?.students ?? null;
-    if (student) {
-      this.isStudent.set(true);
-      const rawActive =
-        ('isActive' in student ? student.isActive : undefined) ??
-        student?.is_active;
-      const rawCanLogin =
-        ('canLogin' in student ? student.canLogin : undefined) ??
-        student?.can_login;
-      const nextIsActive = this.normalizeOptionalBool(
-        rawActive,
-        this.isActive(),
-      );
-      const nextCanLogin = this.normalizeOptionalBool(
-        rawCanLogin,
-        this.canLogin(),
-      );
-      this.isActive.set(nextIsActive);
-      this.canLogin.set(nextCanLogin);
-      updateCache({
-        isStudent: true,
-        isActive: nextIsActive,
-        canLogin: nextCanLogin,
-      });
-      return;
-    }
-    if (roleName === ROLE.TEACHER && data?.teacher) {
-      this.isStudent.set(false);
-      const rawActive =
-        data.teacher?.isActive ?? data.teacher?.is_active ?? data?.isActive;
-      const rawCanLogin =
-        data.teacher?.canLogin ?? data.teacher?.can_login ?? data?.canLogin;
-      const nextIsActive = this.normalizeOptionalBool(
-        rawActive,
-        this.isActive(),
-      );
-      const nextCanLogin = this.normalizeOptionalBool(
-        rawCanLogin,
-        this.canLogin(),
-      );
-      this.isActive.set(nextIsActive);
-      this.canLogin.set(nextCanLogin);
-      updateCache({
-        isStudent: false,
-        isActive: this.isActive(),
-        canLogin: this.canLogin(),
-      });
-      return;
-    }
-    if (roleName === ROLE.PRECEPTOR && data?.preceptor) {
-      this.isStudent.set(false);
-      const rawActive =
-        data.preceptor?.isActive ?? data.preceptor?.is_active ?? data?.isActive;
-      const rawCanLogin =
-        data.preceptor?.canLogin ??
-        data.preceptor?.can_login ??
-        data?.canLogin;
-      const nextIsActive = this.normalizeOptionalBool(
-        rawActive,
-        this.isActive(),
-      );
-      const nextCanLogin = this.normalizeOptionalBool(
-        rawCanLogin,
-        this.canLogin(),
-      );
-      this.isActive.set(nextIsActive);
-      this.canLogin.set(nextCanLogin);
-      updateCache({
-        isStudent: false,
-        isActive: this.isActive(),
-        canLogin: this.canLogin(),
-      });
-      return;
-    }
-    this.isStudent.set(false);
+    const isStudent =
+      roleName === ROLE.STUDENT ||
+      !!(data?.student ?? data?.students ?? null);
+    this.isStudent.set(isStudent);
     const rawActive = data?.isActive ?? (data as any)?.is_active;
-    const rawCanLogin = data?.canLogin ?? (data as any)?.can_login;
     const nextIsActive = this.normalizeOptionalBool(
       rawActive,
       this.isActive(),
     );
-    const nextCanLogin = this.normalizeOptionalBool(
-      rawCanLogin,
-      this.canLogin(),
-    );
     this.isActive.set(nextIsActive);
-    this.canLogin.set(nextCanLogin);
-    updateCache({
-      isStudent: false,
-      isActive: this.isActive(),
-      canLogin: this.canLogin(),
+    const now = Date.now();
+    this.cache.set(this.userId, {
+      role: roleName,
+      isStudent,
+      isActive: nextIsActive,
+      isBlocked,
+      blockedReason,
+      reasonUpdatedAt: now,
+      updatedAt: now,
     });
   }
   // Acceso efectivo (combina flags de rol y bloqueo global)
   accessEnabled(): boolean {
     const blocked = this.isBlocked();
-    const flag = this.canLogin();
-    if (blocked || flag === false) return false;
+    const active = this.isActive();
+    if (active === false) return false;
+    if (blocked) return false;
     return true;
   }
   // ---- acciones ----
@@ -324,18 +226,10 @@ export class UserDetailPage implements OnInit {
     }
   }
   private async enableAccess(): Promise<void> {
-    if (!this.canToggleCanLogin()) return;
-    const prefix = this.getUpdatePrefix();
-    if (!prefix) return;
     if (this.isActive() === false) return;
+    if (!this.canToggleCanLogin()) return;
     try {
       this.saving.set(true);
-      const updated = await firstValueFrom(
-        this.api.update('users', this.userId, {
-          [`${prefix}canLogin`]: true,
-        }),
-      );
-      this.applyUserPayload(updated);
       const unblocked = await firstValueFrom(
         this.api.request('PATCH', `users/${this.userId}/unblock`),
       );
@@ -348,18 +242,13 @@ export class UserDetailPage implements OnInit {
   }
   private async updateActiveState(next: boolean): Promise<void> {
     if (!this.canToggleIsActive()) return;
-    const prefix = this.getUpdatePrefix();
-    const payload: any = { isActive: !!next };
-    if (prefix) {
-      payload[`${prefix}isActive`] = !!next;
-      if (next === false) payload[`${prefix}canLogin`] = false;
-    }
     try {
       this.saving.set(true);
-      const data = await firstValueFrom(
-        this.api.update('users', this.userId, payload),
+      const url = next ? 'activate' : 'inactivate';
+      const updated = await firstValueFrom(
+        this.api.request('PATCH', `users/${this.userId}/${url}`),
       );
-      this.applyUserPayload(data);
+      this.applyUserPayload(updated);
     } catch (e) {
       console.error('[UserDetail] Error updating active state', e);
     } finally {
@@ -368,17 +257,9 @@ export class UserDetailPage implements OnInit {
   }
   // Confirmación de bloqueo con motivo (bloquea acceso y registra motivo)
   async confirmBlockAccessWithReason(): Promise<void> {
-    const prefix = this.getUpdatePrefix();
-    if (!prefix) return;
     const reason = (this.reasonDraft() || '').trim();
     try {
       this.saving.set(true);
-      const updated = await firstValueFrom(
-        this.api.update('users', this.userId, {
-          [`${prefix}canLogin`]: false,
-        }),
-      );
-      this.applyUserPayload(updated);
       const blocked = await firstValueFrom(
         this.api.request('PATCH', `users/${this.userId}/block`, { reason }),
       );

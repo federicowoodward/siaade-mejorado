@@ -158,5 +158,4 @@ export class UsersPage {
     this.dialogError.set(null);
     this.dialogData.set(null);
   }
-
 }
