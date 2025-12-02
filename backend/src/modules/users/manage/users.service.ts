@@ -485,11 +485,6 @@ export class UsersService {
       (user as any).teacher?.isActive ??
       (user as any).preceptor?.isActive ??
       null;
-    const roleCanLogin =
-      (user as any).student?.canLogin ??
-      (user as any).teacher?.canLogin ??
-      (user as any).preceptor?.canLogin ??
-      null;
     return {
       id: user.id,
       name: user.name,
@@ -506,7 +501,6 @@ export class UsersService {
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
       isActive: normalizeFlag(roleActive),
-      canLogin: normalizeFlag(roleCanLogin),
     };
   }
 

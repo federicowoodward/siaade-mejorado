@@ -67,12 +67,6 @@ export class UserProfileReaderService {
       (user as any).preceptor?.isActive ?? null,
     ]);
 
-    const rawCanLogin = coalesce<boolean | null>([
-      (user as any).student?.canLogin ?? null,
-      (user as any).teacher?.canLogin ?? null,
-      (user as any).preceptor?.canLogin ?? null,
-    ]);
-
     const result: UserProfileResult = {
       id: user.id,
       name: user.name ?? null,
@@ -89,7 +83,6 @@ export class UserProfileReaderService {
       isBlocked: (user as any).isBlocked ?? false,
       blockedReason: (user as any).blockedReason ?? null,
       isActive: normalizeFlag(rawIsActive, true),
-      canLogin: normalizeFlag(rawCanLogin, true),
     };
 
     const ui = user.userInfo
