@@ -11,6 +11,7 @@ export function createTypeOrmConfig(
   // Por defecto ejecutamos migraciones al arrancar; se puede desactivar con TYPEORM_MIGRATIONS_RUN=false
   const migrationsRun =
     config.get<string>("TYPEORM_MIGRATIONS_RUN") !== "false";
+  const loggingEnabled = config.get<string>("TYPEORM_LOGGING") !== "false";
 
   const migrationsGlob = path.join(
     __dirname,
@@ -29,7 +30,7 @@ export function createTypeOrmConfig(
     migrations: [migrationsGlob],
     migrationsRun,
     migrationsTableName: "migrations",
-    logging: true,
+    logging: loggingEnabled,
     ssl: useSsl ? ({ rejectUnauthorized: false } as any) : undefined,
   };
 
