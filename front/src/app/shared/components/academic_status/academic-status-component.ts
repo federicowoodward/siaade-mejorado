@@ -13,7 +13,6 @@ import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { forkJoin } from 'rxjs';
 import {
   SubjectStateSeverity,
   resolveSubjectStateSeverity,

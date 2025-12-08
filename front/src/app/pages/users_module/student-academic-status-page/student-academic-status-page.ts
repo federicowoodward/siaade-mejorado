@@ -1,30 +1,35 @@
-// #ASUMIENDO CODIGO: src/app/pages/students/student-academic-status-page/student-academic-status-page.ts
 import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   AcademicStatus,
   StudentMinimal,
 } from '../../../shared/components/academic_status/academic-status-component';
 import { ApiService } from '../../../core/services/api.service';
-import { Button } from 'primeng/button';
-import { GoBackService } from '../../../core/services/go_back.service';
 import { ROLE, ROLE_IDS } from '../../../core/auth/roles';
 import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-student-academic-status-page',
   standalone: true,
-  imports: [CommonModule, AppBreadcrumbComponent, AcademicStatus],
+  imports: [CommonModule, AppBreadcrumbComponent, AcademicStatus, Button],
   template: `
     <div class="m-w-custom flex flex-column gap-3">
       <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-      <div class="surface-card border-round p-4 mb-4">
+      <div
+        class="surface-card border-round p-4 mb-4 flex align-items-center justify-content-between"
+      >
         <h2>Situación Académica del Estudiante</h2>
-
+        <p-button
+          label="Descargar Situación Académica"
+          (onClick)="downloadCertificate()"
+        />
+      </div>
+      <div>
         @if (loading()) {
           <p>Cargando información del usuario...</p>
         } @else if (errorMessage()) {
@@ -42,7 +47,6 @@ import {
 export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
-  private goBack = inject(GoBackService);
 
   // this is a signal we *own* and can .set()
   student = signal<StudentMinimal | undefined>(undefined);
@@ -54,8 +58,6 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
     { label: 'Gestión de usuarios', routerLink: '/users' },
     { label: 'Situación académica del estudiante' },
   ];
-
-  constructor(private router: Router) {}
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -69,7 +71,9 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
 
     this.api.getById('users', id).subscribe({
       next: (u: any) => {
-        if (!u?.id) {
+        const data = u.data;
+
+        if (data.id === undefined) {
           this.errorMessage.set('Usuario no encontrado.');
           this.loading.set(false);
           return;
@@ -77,7 +81,8 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
 
         // Validar que el usuario sea estudiante
         const isStudent =
-          u.role?.name === ROLE.STUDENT || u.roleId === ROLE_IDS[ROLE.STUDENT];
+          data.role?.name === ROLE.STUDENT ||
+          data.roleId === ROLE_IDS[ROLE.STUDENT];
 
         if (!isStudent) {
           console.error(
@@ -85,19 +90,18 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
             u,
           );
           this.errorMessage.set(
-            `El usuario "${u.name} ${u.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`,
+            `El usuario "${data.name} ${data.lastName}" no es un estudiante. Solo se puede consultar la situación académica de estudiantes.`,
           );
           this.loading.set(false);
 
-          this.redirectTimer = window.setTimeout(() => this.back(), 3000);
           return;
         }
 
         this.student.set({
-          id: u.id,
-          name: u.name,
-          lastName: u.lastName,
-          cuil: u.cuil,
+          id: data.id,
+          name: data.name,
+          lastName: data.lastName,
+          cuil: data.cuil,
         });
         this.loading.set(false);
       },
@@ -110,18 +114,8 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
           this.errorMessage.set('Error al cargar la información del usuario.');
         }
         this.loading.set(false);
-
-        this.redirectTimer = window.setTimeout(() => this.back(), 3000);
       },
     });
-  }
-
-  back(): void {
-    if (this.redirectTimer) {
-      clearTimeout(this.redirectTimer);
-      this.redirectTimer = null;
-    }
-    this.router.navigate(['/users']);
   }
 
   ngOnDestroy(): void {
@@ -129,5 +123,41 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
       clearTimeout(this.redirectTimer);
       this.redirectTimer = null;
     }
+  }
+
+  downloadCertificate() {
+    const studentId = this.student()?.id;
+    if (!studentId) {
+      this.errorMessage.set('No se encontro al estudiante para descargar.');
+      return;
+    }
+
+    this.api
+      .request<Blob>(
+        'GET',
+        `generatePdf/student-certificate/${studentId}`,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        'blob',
+      )
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'certificado-estudiante.pdf';
+          link.click();
+          window.URL.revokeObjectURL(url);
+        },
+        error: (err) => {
+          console.error(
+            '[StudentAcademicStatus] Error al descargar certificado:',
+            err,
+          );
+          this.errorMessage.set('No se pudo descargar el certificado.');
+        },
+      });
   }
 }

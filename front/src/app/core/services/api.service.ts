@@ -50,6 +50,7 @@ export class ApiService {
      * el objeto completo tal como lo envía el backend.
      */
     unwrapData: boolean = true,
+    responseType: 'json' | 'blob' | 'text' = 'json',
   ): Observable<T> {
     const base = enviroment.apiBaseUrl;
     const fullUrl = `${base}/${url}`;
@@ -63,10 +64,12 @@ export class ApiService {
       params: HttpParams;
       body?: any;
       withCredentials: boolean;
+      responseType: 'json' | 'blob' | 'text';
     } = {
       headers: finalHeaders,
       params: new HttpParams({ fromObject: params ?? {} }),
       withCredentials: true,
+      responseType,
     };
     if (data !== undefined) options.body = data;
 
@@ -142,7 +145,7 @@ export class ApiService {
     */
 
     // --- Mutaciones: request normal + invalidación por prefijo ---
-    const req$ = this.http.request<MaybeWrapped<T>>(method, fullUrl, options);
+    const req$ = this.http.request(method, fullUrl, options as any);
 
     return req$.pipe(
       tap((resp) => {
@@ -184,6 +187,7 @@ export class ApiService {
         return throwError(() => err);
       }),
       map((resp: any) => {
+        if (responseType !== 'json') return resp as T;
         if (!unwrapData) return resp as T;
         return 'data' in resp ? (resp.data as T) : (resp as T);
       }),
