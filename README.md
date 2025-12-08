@@ -27,16 +27,6 @@ Sistema Integral de Administración Académica Educativa. Incluye backend (NestJ
 - Reset de volúmenes: `docker compose --profile local down -v`
 - Logs: `docker compose --profile local logs -f api` (cambiar `api` por `front` o `postgres-local` si aplica)
 
-## Entorno producción Docker (Traefik + DuckDNS)
-
-- Despliegue: `docker compose --profile prod up -d`
-- Solo Traefik publica puertos 80/443; API y front quedan en la red `siaade_net`.
-- Traefik gestiona certificados Let's Encrypt (HTTP challenge) y escribe `acme.json` en `traefik_letsencrypt`.
-- DuckDNS mantiene sincronizada la IP pública para `${DUCKDNS_DOMAIN}`.
-- Smoke tests: `https://<tu_dominio_duckdns>/` y `https://<tu_dominio_duckdns>/api/health`
-- Logs clave: `docker compose --profile prod logs -f traefik` y `docker compose --profile prod logs -f duckdns`
-- Notas: en local la API debe respetar `CORS_ORIGIN`; en producción el tráfico es same-origin detrás de Traefik. Configuración de Traefik en `traefik/traefik.yml` (estático) y `traefik/dynamic.yml` (middlewares). `deploy/nginx.conf` ya no se usa. Validar la pila con `docker compose --profile local config` o `docker compose --profile prod config`.
-
 ## Migraciones TypeORM
 
 - Ubicación: `backend/src/database/migrations`.
@@ -78,8 +68,6 @@ Sistema Integral de Administración Académica Educativa. Incluye backend (NestJ
 - `front/`: aplicación Angular 20 + PrimeNG.
 - `docs/`: documentación funcional y operativa (manuales, seeds, visibilidad por rol, lógica de negocio).
 - `docker-compose.yml`: orquestación de Postgres + API + front, con perfiles local/prod (Traefik + DuckDNS).
-- `traefik/`: configuración de Traefik (estática y dinámica), certificados en volumen `traefik_letsencrypt`.
-- `deploy/`: artefactos legados; `deploy/nginx.conf` ya no se usa.
 - `dist/`, `node_modules/`: build y dependencias (no editar).
 
 ## Variables de entorno adicionales (DBML)
