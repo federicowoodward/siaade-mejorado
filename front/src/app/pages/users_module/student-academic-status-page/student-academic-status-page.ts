@@ -67,7 +67,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
 
     this.loading.set(true);
 
-    this.api.getById('users/read', id).subscribe({
+    this.api.getById('users/', id).subscribe({
       next: (u: any) => {
         if (!u?.id) {
           this.errorMessage.set('Usuario no encontrado.');

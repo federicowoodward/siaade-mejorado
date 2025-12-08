@@ -36,7 +36,7 @@ import { RolesGuard } from "@/shared/rbac/guards/roles.guard";
 import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
 import { ROLE } from "@/shared/rbac/roles.constants";
 
-@ApiTags("Users Management")
+@ApiTags("Users")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @AllowRoles(
