@@ -27,6 +27,7 @@ import { Button } from 'primeng/button';
         <p-button
           label="Descargar Situación Académica"
           (onClick)="downloadCertificate()"
+          [loading]="loadingCertificate()"
         />
       </div>
       <div>
@@ -53,6 +54,8 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   loading = signal<boolean>(true);
   errorMessage = signal<string>('');
   private redirectTimer: number | null = null;
+
+  loadingCertificate = signal<boolean>(false);
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Gestión de usuarios', routerLink: '/users' },
@@ -126,6 +129,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
   }
 
   downloadCertificate() {
+    this.loadingCertificate.set(true);
     const studentId = this.student()?.id;
     if (!studentId) {
       this.errorMessage.set('No se encontro al estudiante para descargar.');
@@ -150,6 +154,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
           link.download = 'certificado-situacion-academica.pdf';
           link.click();
           window.URL.revokeObjectURL(url);
+          this.loadingCertificate.set(false);
         },
         error: (err) => {
           console.error(
@@ -157,6 +162,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
             err,
           );
           this.errorMessage.set('No se pudo descargar el certificado.');
+          this.loadingCertificate.set(false);
         },
       });
   }
