@@ -135,7 +135,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
     this.api
       .request<Blob>(
         'GET',
-        `generatePdf/student-certificate/${studentId}`,
+        `generatePdf/academic-performance/${studentId}`,
         undefined,
         undefined,
         undefined,
@@ -147,7 +147,7 @@ export class StudentAcademicStatusPage implements OnInit, OnDestroy {
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = 'certificado-estudiante.pdf';
+          link.download = 'certificado-situacion-academica.pdf';
           link.click();
           window.URL.revokeObjectURL(url);
         },
