@@ -43,7 +43,7 @@ type RefreshSuccessResponse = {
 const REFRESH_COOKIE_NAME = "rt";
 const REFRESH_COOKIE_PATH = "/api/auth/refresh";
 
-@ApiTags("Authentication")
+@ApiTags("Autenticación")
 @Controller("auth")
 export class AuthController {
   constructor(

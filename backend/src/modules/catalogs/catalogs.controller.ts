@@ -17,7 +17,7 @@ import {
 import { normalizePagination, buildPageMeta } from "@/shared/utils/pagination";
 import { CatalogsService } from "./catalogs.service";
 
-@ApiTags("Catalogs")
+@ApiTags("Catalogo")
 @ApiBearerAuth()
 @Controller("catalogs")
 export class CatalogsController {

@@ -34,7 +34,7 @@ import {
 import { UpdateSubjectPrereqsDto } from "./dto/update-subject-prereqs.dto";
 
 @Controller("prerequisites")
-@ApiTags("prerequisites")
+@ApiTags("Prerequisitos de inscripción")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PrerequisitesController {

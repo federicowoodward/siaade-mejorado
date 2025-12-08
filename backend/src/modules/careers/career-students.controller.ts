@@ -20,7 +20,7 @@ import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
 import { ROLE } from "@/shared/rbac/roles.constants";
 import { CareerStudentsService } from "./career-students.service";
 
-@ApiTags("careers/students")
+@ApiTags("Estudiantes de carrera")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @AllowRoles(ROLE.EXECUTIVE_SECRETARY, ROLE.SECRETARY)

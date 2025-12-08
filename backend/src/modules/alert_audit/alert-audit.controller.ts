@@ -19,7 +19,7 @@ import { CreateAlertAuditDto } from "./dto/create-alert-audit.dto";
 
 type RequestUser = { sub?: string; id?: string | null };
 
-@ApiTags("AlertAudit")
+@ApiTags("Auditoría de alertas")
 @Controller("audit/alerts")
 export class AlertAuditController {
   constructor(private readonly service: AlertAuditService) {}

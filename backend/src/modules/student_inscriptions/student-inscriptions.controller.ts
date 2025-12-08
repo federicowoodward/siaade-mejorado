@@ -36,7 +36,7 @@ import { StudentInscriptionAudit } from "@/entities/inscriptions/student-inscrip
 
 type WindowState = "open" | "upcoming" | "closed" | "past";
 
-@ApiTags("Student Inscriptions")
+@ApiTags("Inscripcion estudiantes")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @AllowRoles(

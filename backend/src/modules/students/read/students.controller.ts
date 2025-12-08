@@ -13,7 +13,7 @@ import { AllowRoles } from "@/shared/rbac/decorators/allow-roles.decorator";
 import { Action } from "@/shared/rbac/decorators/action.decorator";
 import { ROLE } from "@/shared/rbac/roles.constants";
 
-@ApiTags("students")
+@ApiTags("Estudiantes")
 @ApiBearerAuth()
 @Controller("students/read")
 export class StudentsReadController {

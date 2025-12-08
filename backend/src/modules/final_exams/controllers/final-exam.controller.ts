@@ -61,7 +61,7 @@ class DeletedResponseDto {
   deleted!: boolean;
 }
 
-@ApiTags("Finals / Exam")
+@ApiTags("Finales / Examen")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @AllowRoles(

@@ -47,7 +47,7 @@ type AuthenticatedUser = {
   role?: ROLE | null;
 };
 
-@ApiTags("subjects")
+@ApiTags("Materias y notas")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @AllowRoles(

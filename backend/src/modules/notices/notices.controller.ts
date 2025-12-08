@@ -28,7 +28,7 @@ import { CreateNoticeDto } from "./dto/create-notice.dto";
 import { UpdateNoticeDto } from "./dto/update-notice.dto";
 import { ROLE } from "@/shared/rbac/roles.constants";
 
-@ApiTags("Notices")
+@ApiTags("Avisos y posts")
 @ApiBearerAuth()
 @Controller("notices")
 export class NoticesController {

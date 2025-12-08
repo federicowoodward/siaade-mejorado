@@ -19,7 +19,7 @@ import { Action } from "@/shared/rbac/decorators/action.decorator";
 import { ROLE } from "@/shared/rbac/roles.constants";
 import { SubjectsReadService } from "./subjects.service";
 
-@ApiTags("subjects")
+@ApiTags("Materias y notas")
 @ApiBearerAuth()
 @Controller("subjects/read")
 export class SubjectsReadController {
