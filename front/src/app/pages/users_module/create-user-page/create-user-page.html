@@ -307,6 +307,9 @@
                                 appendTo="body"
                                 (onChange)="onProvinceChange($event.value)"
                                 blockedAction
+                                [filter]="true"
+                                filterBy="label"
+                                [showClear]="true"
                               ></p-select>
                               <label for="province">Provincia</label>
                             </p-iftalabel>
@@ -325,6 +328,9 @@
                                 appendTo="body"
                                 (onChange)="onDepartmentChange($event.value)"
                                 blockedAction
+                                [filter]="true"
+                                filterBy="label"
+                                [showClear]="true"
                               ></p-select>
                               <label for="department">Departamento</label>
                             </p-iftalabel>
@@ -335,7 +341,7 @@
                                 class="w-full"
                                 inputId="locality"
                                 [options]="localityOptions"
-                                [disabled]="!addressProvince"
+                                [disabled]="!addressNeighborhood"
                                 [(ngModel)]="addressLocality"
                                 name="locality"
                                 placeholder="Ej: Córdoba Capital"
@@ -343,6 +349,9 @@
                                 appendTo="body"
                                 (onChange)="onLocalityChange($event.value)"
                                 blockedAction
+                                [filter]="true"
+                                filterBy="label"
+                                [showClear]="true"
                               ></p-select>
                               <label for="locality">Localidad</label>
                             </p-iftalabel>
