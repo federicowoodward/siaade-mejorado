@@ -92,7 +92,6 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
           },
         });
       }
-      console.log(students);
     }
 
     return flattened;
