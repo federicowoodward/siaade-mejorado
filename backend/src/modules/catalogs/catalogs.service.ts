@@ -11,7 +11,7 @@ import { SubjectCommission } from "@/entities/subjects/subject-commission.entity
 import { FinalExamStatus } from "@/entities/finals/final-exam-status.entity";
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
-import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { SubjectGradesView } from "@/modules/subjects/views/subject-grades.view";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { SubjectPrerequisiteByOrder } from "@/entities/subjects/subject-prerequisite-by-order.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";

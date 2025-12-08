@@ -8,7 +8,7 @@ import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
 import { Exam } from "@/entities/subjects/exam.entity";
 import { ExamResult } from "@/entities/subjects/exam-result.entity";
-import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { SubjectGradesView } from "@/modules/subjects/views/subject-grades.view";
 import { SubjectGradeAudit } from "@/entities/subjects/subject-grade-audit.entity";
 import { SubjectsService } from "./subjects.service";
 import { Teacher } from "@/entities/users/teacher.entity";

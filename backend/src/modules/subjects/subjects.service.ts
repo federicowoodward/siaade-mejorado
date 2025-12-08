@@ -11,7 +11,7 @@ import { SubjectCommission } from "@/entities/subjects/subject-commission.entity
 import { SubjectStatusType } from "@/entities/catalogs/subject-status-type.entity";
 import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { Subject } from "@/entities/subjects/subject.entity";
-import { SubjectGradesView } from "@/subjects/views/subject-grades.view";
+import { SubjectGradesView } from "@/modules/subjects/views/subject-grades.view";
 import { User } from "@/entities/users/user.entity";
 import { SubjectGradeAudit } from "@/entities/subjects/subject-grade-audit.entity";
 import { UpsertGradeDto } from "./dto/upsert-grade.dto";

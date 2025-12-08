@@ -8,11 +8,11 @@ import { FiltersModule } from "./shared/filters/filters.module";
 import { InterceptorsModule } from "./shared/interceptors/interceptors.module";
 import { LoggingInterceptor } from "./shared/interceptors/logging.interceptor";
 import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
-import { SubjectsReadModule } from "./modules/subjects/read/subjects.module";
 import { FinalExamsModule } from "./modules/final_exams/final_exams.module";
 import { NoticesModule } from "./modules/notices/notices.module";
 import { CatalogsModule } from "./modules/catalogs/catalogs.module";
-import { SubjectsModule } from "./subjects/subjects.module";
+import { SubjectsModule } from "./modules/subjects/subjects.module";
+import { SubjectsReadModule } from "./modules/subjects/read/subjects.module";
 import { CareersModule } from "./modules/careers/careers.module";
 import { StudentInscriptionsModule } from "./modules/student_inscriptions/student-inscriptions.module";
 import { PrerequisitesModule } from "./modules/prerequisites/prerequisites.module";
@@ -37,7 +37,6 @@ import { MailerModule } from "./shared/services/mailer/mailer.module";
     AuthModule,
     UsersModule,
     RolesModule,
-    SubjectsReadModule,
     FiltersModule,
     InterceptorsModule,
     FinalExamsModule,
@@ -46,6 +45,7 @@ import { MailerModule } from "./shared/services/mailer/mailer.module";
     CareersModule,
     StudentInscriptionsModule,
     SubjectsModule,
+    SubjectsReadModule,
     PrerequisitesModule,
     StudentsReadModule,
     PdfGeneratorModule,
