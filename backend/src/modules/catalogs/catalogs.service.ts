@@ -317,7 +317,6 @@ export class CatalogsService {
           legajo: string;
           studentStartYear: number;
           isActive: boolean | null;
-          canLogin: boolean | null;
           commissionId: number | null;
           user: {
             name: string;
@@ -349,7 +348,6 @@ export class CatalogsService {
         legajo: student.legajo,
         studentStartYear: student.studentStartYear,
         isActive: student.isActive,
-        canLogin: student.canLogin,
         commissionId: student.commission?.id ?? student.commissionId ?? null,
         user: {
           name: student.user?.name ?? "",

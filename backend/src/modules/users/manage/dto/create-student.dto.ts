@@ -22,14 +22,9 @@ export class CreateStudentDto extends BaseUserDto {
   commissionId?: number;
 
   @ApiPropertyOptional({
-    description: "Permitir ingreso al sistema",
+    description: "Alumno activo",
     default: true,
   })
-  @IsOptional()
-  @IsBoolean()
-  canLogin?: boolean;
-
-  @ApiPropertyOptional({ description: "Alumno activo", default: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

@@ -622,7 +622,6 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
             userId: studentUser.id,
             legajo: seed.legajo,
             commissionId: targetCommissionId,
-            canLogin: true,
             isActive: true,
             studentStartYear: seed.studentStartYear,
           });
@@ -644,10 +643,6 @@ export class DummyDataMigration1761015167693 implements MigrationInterface {
           }
           if (studentRecord.isActive !== true) {
             studentRecord.isActive = true;
-            studentNeedsUpdate = true;
-          }
-          if (studentRecord.canLogin !== true) {
-            studentRecord.canLogin = true;
             studentNeedsUpdate = true;
           }
           if (studentNeedsUpdate) {

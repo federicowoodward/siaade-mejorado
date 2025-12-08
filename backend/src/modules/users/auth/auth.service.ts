@@ -395,7 +395,7 @@ export class AuthService {
       throw this.buildUserBlockedException(reason);
     }
 
-    // Gating adicional para alumnos: isActive=false bloquea siempre; si isActive=true pero canLogin=false, también bloquea login.
+    // Gating adicional para alumnos: isActive=false bloquea siempre.
     if (role === ROLE.STUDENT) {
       // Traer flags del alumno; como las columnas pueden ser null, sólo bloqueamos si son estrictamente false
       const student = await this.studentRepository.findOne({
@@ -406,11 +406,6 @@ export class AuthService {
       }
       if (student.isActive === false) {
         throw this.buildInvalidCredentialsException();
-      }
-      if (student.canLogin === false) {
-        throw this.buildUserBlockedException(
-          "El acceso está deshabilitado para este alumno",
-        );
       }
     }
 

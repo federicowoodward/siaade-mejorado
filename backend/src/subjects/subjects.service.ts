@@ -519,19 +519,15 @@ export class SubjectsService {
     }
 
     // Pre-cache de flags de estudiantes para minimizar awaits dentro del map
-    const studentFlagsMap = new Map<
-      string,
-      { canLogin: boolean | null; isActive: boolean | null }
-    >();
+    const studentFlagsMap = new Map<string, { isActive: boolean | null }>();
     if (studentIds.length) {
       // Batch query para performance
       const flagsRows = await this.subjectStudentRepo.query(
-        `SELECT user_id, can_login, is_active FROM students WHERE user_id = ANY($1)`,
+        `SELECT user_id, is_active FROM students WHERE user_id = ANY($1)`,
         [studentIds],
       );
       for (const r of flagsRows) {
         studentFlagsMap.set(r.user_id, {
-          canLogin: r.can_login ?? null,
           isActive: r.is_active ?? null,
         });
       }
@@ -574,7 +570,7 @@ export class SubjectsService {
       // Obtenemos flags de la entidad user (si estuvo eager en StudentSubjectProgress sería otra forma)
       // Aquí preferimos buscar el student directamente para evitar otra query masiva: cache simple en mapa.
       // Para eficiencia podríamos precargar todos los students, pero manteniendo simple de momento.
-      // Bloqueado si can_login = false OR is_active = false
+      // Bloqueado si is_active = false
       // Mostramos 'No inscripto'
       // Nota: si el status existente ya es distinto, lo reemplazamos visualmente.
       // Si en el futuro se requiere mantenerlo, quitar esta lógica.
@@ -583,10 +579,9 @@ export class SubjectsService {
       // Usamos el repo de estudiantes para revisar flags con un pequeño cache.
       // Cache local estático por ejecución de este método:
       const flags = studentFlagsMap.get(mapped.studentId) ?? {
-        canLogin: null,
         isActive: null,
       };
-      if (flags && (flags.canLogin === false || flags.isActive === false)) {
+      if (flags && flags.isActive === false) {
         conditionOverride = "No inscripto";
       }
 

@@ -41,9 +41,6 @@ export class Student {
   @JoinColumn({ name: "commission" })
   commission?: Commission | null;
 
-  @Column({ name: "can_login", type: "bool", nullable: true })
-  canLogin: boolean | null;
-
   @Column({ name: "is_active", type: "bool", nullable: true })
   isActive: boolean | null;
 

@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-ARG ANGULAR_CONFIGURATION=production
+ARG ANGULAR_CONFIGURATION=qa
 RUN npm run build -- --configuration ${ANGULAR_CONFIGURATION}
 
 FROM node:20-alpine

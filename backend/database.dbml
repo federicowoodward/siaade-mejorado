@@ -60,7 +60,6 @@ Table "commission" {
 
 Table "teachers" {
   "user_id" uuid [pk, not null]
-  "can_login" bool [default: true]
   "is_active" bool [default: true]
 }
 
@@ -160,14 +159,12 @@ Table "students" {
   "user_id" uuid [pk, not null]
   "legajo" text [unique, not null]
   "commission" int4
-  "can_login" bool [default: true]
   "is_active" bool [default: true]
   "student_start_year" int2
 }
 
 Table "preceptors" {
   "user_id" uuid [pk, not null]
-  "can_login" bool [default: true]
   "is_active" bool [default: true]
 }
 

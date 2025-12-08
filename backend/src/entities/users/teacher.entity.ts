@@ -21,9 +21,6 @@ export class Teacher {
   @OneToMany(() => SubjectCommission, (sc) => sc.teacher)
   subjectCommissions?: SubjectCommission[];
 
-  @Column({ name: "can_login", type: "bool", nullable: true, default: true })
-  canLogin: boolean | null;
-
   @Column({ name: "is_active", type: "bool", nullable: true, default: true })
   isActive: boolean | null;
 }

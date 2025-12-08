@@ -153,7 +153,6 @@ export class StudentsReadService {
         legajo: student.legajo,
         commissionId: student.commissionId,
         commissionLetter: student.commission?.commissionLetter ?? null,
-        canLogin: student.canLogin,
         isActive: student.isActive,
         studentStartYear: student.studentStartYear,
       },

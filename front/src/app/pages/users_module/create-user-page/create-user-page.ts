@@ -139,8 +139,6 @@ export class CreateUserPage implements OnInit {
   // extras de alumno
   studentLegajo = '';
   studentStartYear: number | null = null; // opcional
-  canLogin = true;
-  isActive = true;
 
   private addressObj() {
     return {
@@ -219,8 +217,6 @@ export class CreateUserPage implements OnInit {
           this.role === 'student' && this.studentStartYear
             ? this.studentStartYear
             : undefined,
-        canLogin: true,
-        isActive: true,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
@@ -261,8 +257,6 @@ export class CreateUserPage implements OnInit {
           ? {
               legajo: this.studentLegajo || this.cuil || this.documentValue,
               studentStartYear: this.studentStartYear || undefined,
-              canLogin: true,
-              isActive: true,
             }
           : this.role === 'secretary'
             ? { isDirective: true }

@@ -78,7 +78,7 @@ export class UsersPatchService {
         await this.applySecretaryFlag(qr, userId, !!changes.isDirective);
       }
 
-      // 6) STUDENT FLAGS (canLogin, isActive) via prefix "student."
+      // 6) STUDENT FLAGS (isActive) via prefix "student."
       if (this.hasAnyPrefix(changes, "student.")) {
         await this.applyStudentFlags(qr, userId, changes);
       }
@@ -333,15 +333,8 @@ export class UsersPatchService {
     if (!student) return; // ignorar si no es alumno
 
     const patch: Partial<Student> = {};
-    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
-      patch.canLogin = Boolean(fields.canLogin);
-    }
     if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
       patch.isActive = Boolean(fields.isActive);
-      // Regla: si isActive=false, forzar canLogin=false
-      if (patch.isActive === false) {
-        patch.canLogin = false;
-      }
     }
 
     if (Object.keys(patch).length) {
@@ -361,12 +354,8 @@ export class UsersPatchService {
     if (!teacher) return;
 
     const patch: Partial<Teacher> = {};
-    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
-      patch.canLogin = Boolean(fields.canLogin);
-    }
     if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
       patch.isActive = Boolean(fields.isActive);
-      if (patch.isActive === false) patch.canLogin = false;
     }
     if (Object.keys(patch).length) {
       await qr.manager.update(Teacher, { userId }, patch);
@@ -387,12 +376,8 @@ export class UsersPatchService {
     if (!preceptor) return;
 
     const patch: Partial<Preceptor> = {};
-    if (Object.prototype.hasOwnProperty.call(fields, "canLogin")) {
-      patch.canLogin = Boolean(fields.canLogin);
-    }
     if (Object.prototype.hasOwnProperty.call(fields, "isActive")) {
       patch.isActive = Boolean(fields.isActive);
-      if (patch.isActive === false) patch.canLogin = false;
     }
     if (Object.keys(patch).length) {
       await qr.manager.update(Preceptor, { userId }, patch);

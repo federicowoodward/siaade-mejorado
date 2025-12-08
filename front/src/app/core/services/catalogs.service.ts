@@ -9,7 +9,6 @@ export type CareerStudentAssignment = {
   legajo: string;
   studentStartYear: number;
   isActive: boolean | null;
-  canLogin: boolean | null;
   commissionId: number | null;
   user: {
     name: string;
@@ -39,7 +38,6 @@ export type CareerStudentItem = {
   legajo: string;
   studentStartYear: number;
   isActive: boolean | null;
-  canLogin: boolean | null;
   user: {
     fullName: string;
     dni: string;

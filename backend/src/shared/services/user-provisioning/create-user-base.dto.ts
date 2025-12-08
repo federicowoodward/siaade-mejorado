@@ -43,7 +43,6 @@ export class CreateStudentUserDto {
   studentData: {
     legajo: string;
     commissionId?: number | null;
-    canLogin?: boolean | null;
     isActive?: boolean | null;
     studentStartYear?: number | null;
   };

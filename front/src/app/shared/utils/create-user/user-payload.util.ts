@@ -39,7 +39,6 @@ export interface BuildPayloadArgs {
   studentLegajo?: string;
   studentStartYear?: number;
   commissionId?: number;
-  canLogin?: boolean;
   isActive?: boolean;
 }
 
@@ -130,7 +129,6 @@ export function buildPayload(args: BuildPayloadArgs) {
               base.cuil ||
               (userInfo?.documentValue ?? ''),
             commissionId: args.commissionId ?? undefined,
-            canLogin: args.canLogin ?? true,
             isActive: args.isActive ?? true,
             studentStartYear:
               args.studentStartYear && Number.isFinite(args.studentStartYear)

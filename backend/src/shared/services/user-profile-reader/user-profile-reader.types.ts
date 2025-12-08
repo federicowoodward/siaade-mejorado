@@ -43,7 +43,6 @@ export interface UserProfileResult {
     legajo: string | null;
     commissionId: number | null;
     isActive: boolean | null;
-    canLogin: boolean | null;
     studentStartYear: number | null;
   } | null;
 
@@ -51,13 +50,11 @@ export interface UserProfileResult {
   teacher?: {
     userId: string;
     isActive: boolean | null;
-    canLogin: boolean | null;
   } | null;
 
   // Datos específicos de preceptor (si el rol es PRECEPTOR)
   preceptor?: {
     userId: string;
     isActive: boolean | null;
-    canLogin: boolean | null;
   } | null;
 }

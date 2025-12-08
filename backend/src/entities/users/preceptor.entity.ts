@@ -10,9 +10,6 @@ export class Preceptor {
   @JoinColumn({ name: "user_id" })
   user: User;
 
-  @Column({ name: "can_login", type: "bool", nullable: true, default: true })
-  canLogin: boolean | null;
-
   @Column({ name: "is_active", type: "bool", nullable: true, default: true })
   isActive: boolean | null;
 }

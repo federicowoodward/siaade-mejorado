@@ -130,7 +130,6 @@ export class UserProfileReaderService {
             legajo: user.student.legajo ?? null,
             commissionId: user.student.commissionId ?? null,
             isActive: user.student.isActive ?? null,
-            canLogin: user.student.canLogin ?? null,
             studentStartYear: user.student.studentStartYear ?? null,
           } as any;
         }
@@ -141,7 +140,6 @@ export class UserProfileReaderService {
           (result as any).teacher = {
             userId: user.teacher.userId,
             isActive: (user.teacher as any).isActive ?? null,
-            canLogin: (user.teacher as any).canLogin ?? null,
           };
         }
         break;
@@ -150,7 +148,6 @@ export class UserProfileReaderService {
           (result as any).preceptor = {
             userId: user.preceptor.userId,
             isActive: (user.preceptor as any).isActive ?? null,
-            canLogin: (user.preceptor as any).canLogin ?? null,
           };
         }
         break;

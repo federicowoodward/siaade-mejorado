@@ -160,7 +160,6 @@ export class UsersService {
       studentData: {
         legajo: dto.legajo,
         commissionId: dto.commissionId ?? null,
-        canLogin: dto.canLogin ?? true,
         isActive: dto.isActive ?? true,
         studentStartYear: startYear,
       },
@@ -289,7 +288,6 @@ export class UsersService {
     // Propagar flags espec�ficos de rol
     if (user.student) {
       const studentPatch: Partial<Student> = { isActive: active };
-      if (!active) studentPatch.canLogin = false;
       await this.usersRepository.manager.update(
         Student,
         { userId },
@@ -298,7 +296,6 @@ export class UsersService {
     }
     if (user.teacher) {
       const teacherPatch: Partial<Teacher> = { isActive: active };
-      if (!active) teacherPatch.canLogin = false;
       await this.usersRepository.manager.update(
         Teacher,
         { userId },
@@ -307,7 +304,6 @@ export class UsersService {
     }
     if (user.preceptor) {
       const preceptorPatch: Partial<Preceptor> = { isActive: active };
-      if (!active) preceptorPatch.canLogin = false;
       await this.usersRepository.manager.update(
         Preceptor,
         { userId },

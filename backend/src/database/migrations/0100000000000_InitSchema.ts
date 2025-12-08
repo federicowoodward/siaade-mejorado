@@ -80,10 +80,7 @@ export class AutoMigration1761015167691 implements MigrationInterface {
       `CREATE UNIQUE INDEX "IDX_65608a94ff5905eb9bbcc3ce75" ON "final_exams_students" ("final_exam_id", "student_id") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "students" ("user_id" uuid NOT NULL, "legajo" text NOT NULL, "commission" integer, "can_login" boolean, "is_active" boolean, "student_start_year" smallint, CONSTRAINT "UQ_e8df771e580eb1c9f980d27becc" UNIQUE ("legajo"), CONSTRAINT "PK_fb3eff90b11bddf7285f9b4e281" PRIMARY KEY ("user_id"))`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "students" ALTER COLUMN "can_login" SET DEFAULT true`,
+      `CREATE TABLE "students" ("user_id" uuid NOT NULL, "legajo" text NOT NULL, "commission" integer, "is_active" boolean, "student_start_year" smallint, CONSTRAINT "UQ_e8df771e580eb1c9f980d27becc" UNIQUE ("legajo"), CONSTRAINT "PK_fb3eff90b11bddf7285f9b4e281" PRIMARY KEY ("user_id"))`,
     );
     await queryRunner.query(
       `ALTER TABLE "students" ALTER COLUMN "is_active" SET DEFAULT true`,
@@ -586,9 +583,6 @@ export class AutoMigration1761015167691 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "academic_period" DROP CONSTRAINT IF EXISTS "CHK_academic_period_partials"`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "students" ALTER COLUMN "can_login" DROP DEFAULT`,
     );
     await queryRunner.query(
       `ALTER TABLE "students" ALTER COLUMN "is_active" DROP DEFAULT`,

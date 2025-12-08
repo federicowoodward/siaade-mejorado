@@ -37,7 +37,6 @@ export class FieldLabelPipe implements PipeTransform {
 
     // roleExtras (para student / secretary)
     legajo: 'Legajo',
-    canLogin: 'Puede iniciar sesión',
     isActive: 'Activo',
     studentStartYear: 'Año de inicio',
     isDirective: 'Es directivo',

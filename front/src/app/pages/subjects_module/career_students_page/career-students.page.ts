@@ -84,7 +84,6 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
           legajo: student.legajo,
           studentStartYear: student.studentStartYear,
           isActive: student.isActive ?? null,
-          canLogin: student.canLogin ?? null,
           user: {
             fullName: fullName || firstName || lastName || 'Sin nombre',
             dni,

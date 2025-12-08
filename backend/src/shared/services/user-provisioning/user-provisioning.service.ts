@@ -127,7 +127,6 @@ export class UserProvisioningService {
         userId: user.id,
         legajo: dto.studentData.legajo,
         commissionId: dto.studentData.commissionId ?? null,
-        canLogin: dto.studentData.canLogin ?? true,
         isActive: dto.studentData.isActive ?? true,
         studentStartYear: startYear,
       } as DeepPartial<Student>);
