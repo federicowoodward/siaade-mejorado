@@ -140,6 +140,8 @@
                       id="birthDate"
                       type="date"
                       class="w-full p-inputtext p-component"
+                      [ngClass]="{ 'p-invalid': birthDateError }"
+                      [attr.aria-invalid]="birthDateError ? true : null"
                       [(ngModel)]="birthDate"
                       blockedAction
                     />
@@ -160,13 +162,8 @@
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="activateCallback(2)"
-                    [disabled]="
-                      role == null ||
-                      name === '' ||
-                      lastName === '' ||
-                      email === ''
-                    "
+                    (onClick)="onNextFromStep1(activateCallback)"
+                    [disabled]="step1Errors.length > 0"
                   />
                 </div>
               </div>
@@ -440,7 +437,8 @@
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="activateCallback(3)"
+                    (onClick)="onNextFromStep2(activateCallback)"
+                    [disabled]="step2Errors.length > 0"
                   />
                 </div>
               </div>

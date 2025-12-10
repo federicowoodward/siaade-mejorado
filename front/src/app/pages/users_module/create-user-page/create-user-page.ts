@@ -204,8 +204,60 @@ export class CreateUserPage implements OnInit {
     return null;
   }
 
+  get step1Errors(): string[] {
+    return this.validateStep1();
+  }
+
+  get step2Errors(): string[] {
+    return this.validateStep2();
+  }
+
+  private validateStep1(): string[] {
+    const errors: string[] = [];
+    if (!this.role) errors.push('Seleccioná un rol.');
+    if (!this.name.trim()) errors.push('Nombre es obligatorio.');
+    if (!this.lastName.trim()) errors.push('Apellido es obligatorio.');
+    if (!this.email.trim()) errors.push('Email es obligatorio.');
+    if (!this.sex) errors.push('Sexo es obligatorio.');
+    if (!this.birthDate) errors.push('Fecha de nacimiento es obligatoria.');
+    if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
+    return errors;
+  }
+
+  private validateStep2(): string[] {
+    const errors: string[] = [];
+    const req = this.req;
+    if (!this.role) {
+      errors.push('Seleccioná un rol antes de continuar.');
+      return errors;
+    }
+    if (req?.needsUserInfo) {
+      if (!this.documentType) errors.push('Tipo de documento es obligatorio.');
+      if (!this.documentValue.trim()) errors.push('Número de documento es obligatorio.');
+    }
+    if (req?.needsCommonData) {
+      if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
+      if (!this.sex) errors.push('Sexo es obligatorio.');
+    }
+    if (this.role === 'student') {
+      if (!this.studentLegajo.trim() && !this.cuil && !this.documentValue) {
+        errors.push('Legajo es obligatorio para alumnos.');
+      }
+      if (this.studentStartYearError) {
+        errors.push(`Año de inicio: ${this.studentStartYearError}`);
+      }
+    }
+    return errors;
+  }
+
+  private showValidationErrors(errors: string[], summary = 'Revisá los datos requeridos') {
+    if (!errors.length) return;
+    this.toastErr(`${summary}: ${errors.join(' | ')}`);
+  }
+
   canCreate(): boolean {
     if (this.birthDateError || this.studentStartYearError) return false;
+    if (this.step1Errors.length || this.step2Errors.length) return false;
     const baseOk = canCreateBase(this.role, this.email, this.cuil);
     if (!baseOk) return false;
     if (this.role === 'secretary') return true;
@@ -477,5 +529,23 @@ export class CreateUserPage implements OnInit {
 
   async onLocalityChange(value: string | null): Promise<void> {
     this.addressLocality = value ?? '';
+  }
+
+  onNextFromStep1(activateCallback: (value: number) => void): void {
+    const errors = this.validateStep1();
+    if (errors.length) {
+      this.showValidationErrors(errors, 'Completa los datos del Paso I');
+      return;
+    }
+    activateCallback(2);
+  }
+
+  onNextFromStep2(activateCallback: (value: number) => void): void {
+    const errors = this.validateStep2();
+    if (errors.length) {
+      this.showValidationErrors(errors, 'Completa los datos del Paso II');
+      return;
+    }
+    activateCallback(3);
   }
 }
