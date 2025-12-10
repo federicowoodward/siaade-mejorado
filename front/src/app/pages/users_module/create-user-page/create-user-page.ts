@@ -322,20 +322,13 @@ export class CreateUserPage implements OnInit {
   }
 
   onCuilChange(value: string): void {
-    const prevCuil = this.cuil;
-    const prevDerived = this.deriveDniFromCuil(prevCuil);
     this.cuil = value;
     this.clearDuplicateErrorFor('cuil');
     const derivedDni = this.deriveDniFromCuil(value);
-    const docTrim = String(this.documentValue || '').trim();
-    const docIsEmpty = !docTrim;
-    const docMatchesPrev = !!docTrim && docTrim === prevDerived;
-    const docEqualsCuil = docTrim === prevCuil;
-    const docTooShort = docTrim.length > 0 && docTrim.length < 8;
-    if (docIsEmpty || docMatchesPrev || docEqualsCuil || docTooShort) {
+    if (derivedDni) {
       this.documentValue = derivedDni;
+      this.clearDuplicateErrorFor('documentValue');
     }
-    this.clearDuplicateErrorFor('documentValue');
   }
 
   goToStep(step: number): void {
