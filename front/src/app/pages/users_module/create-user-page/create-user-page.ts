@@ -398,32 +398,17 @@ export class CreateUserPage implements OnInit {
       } else if ((err as any)?.status === 409) {
         detail = 'Datos duplicados. Revise email, CUIL o legajo.';
       }
-      const lowerDetail = String(detail || '').toLowerCase();
-      if (/email.*registrad/i.test(lowerDetail)) {
-        this.duplicateErrors.email = 'El email ya está registrado.';
+      this.setDuplicateErrorsFromDetail(detail, (err as any)?.status);
+      if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
+        this.goToStep(1);
+      } else if (this.duplicateErrors.documentValue) {
+        this.goToStep(2);
       }
-      if (/cuil.*registrad/i.test(lowerDetail)) {
-        this.duplicateErrors.cuil = 'El CUIL ya está registrado.';
-      }
-      if (
-        /(dni|documento).*registrad/i.test(lowerDetail) ||
-        lowerDetail.includes('número de documento ya existe')
-      ) {
-        this.duplicateErrors.documentValue =
-          'El número de documento ya está registrado.';
-      }
-    if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
-      this.goToStep(1);
-      this.documentValue = this.documentValue; // no-op to ensure change detection runs
-    } else if (this.duplicateErrors.documentValue) {
-      this.goToStep(2);
-    }
       this.toastErr(detail);
     } finally {
       this.isCreating = false;
     }
   }
-
   /** Build y Getter consumido por la tabla  de preview*/
 
   buildPreview() {
@@ -520,8 +505,36 @@ export class CreateUserPage implements OnInit {
     });
   }
 
-  // ---- MÉTODOS PARA p-autoComplete ----
+  private setDuplicateErrorsFromDetail(detail: string, status?: number): void {
+    const lower = (detail || '').toLowerCase();
+    const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> = {};
+
+    if (lower.includes('email') || lower.includes('correo')) {
+      errors.email = 'El email ya está registrado.';
+    }
+    if (lower.includes('cuil') || lower.includes('cuit')) {
+      errors.cuil = 'El CUIL ya está registrado.';
+    }
+    if (
+      lower.includes('dni') ||
+      lower.includes('documento') ||
+      lower.includes('número de documento') ||
+      lower.includes('numero de documento')
+    ) {
+      errors.documentValue = 'El número de documento ya está registrado.';
+    }
+
+    if (!Object.keys(errors).length && status === 409) {
+      errors.email = 'Revisá datos duplicados.';
+      errors.cuil = 'Revisá datos duplicados.';
+    }
+
+    this.duplicateErrors = errors;
+  }
+
+  // ---- METODOS PARA p-autoComplete ----
   searchRoles(e: { query: string }) {
+
     const q = (e?.query ?? '').toLowerCase().trim();
 
     if (!q) {
