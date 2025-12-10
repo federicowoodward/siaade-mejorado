@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { Navbar } from './shared/components/navbar/navbar/navbar';
 import { ToastModule } from 'primeng/toast';
+import { IdleKeepaliveService } from './core/services/idle-keepalive.service';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,8 @@ import { ToastModule } from 'primeng/toast';
 export class App {
   drawerVisibility = inject(DrawerVisibility);
   authService = inject(AuthService);
+  // mantiene viva la sesión mientras hay actividad real
+  private idleKeepalive = inject(IdleKeepaliveService);
   protected title = 'front';
 
   // Observable para estado de bloqueo
