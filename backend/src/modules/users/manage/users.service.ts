@@ -24,6 +24,11 @@ import { Career } from "@/entities/registration/career.entity";
 import { Student } from "@/entities/users/student.entity";
 import { Teacher } from "@/entities/users/teacher.entity";
 import { Preceptor } from "@/entities/users/preceptor.entity";
+import {
+  MIN_AGE_YEARS,
+  assertMinAge,
+  assertStudentStartYear,
+} from "@/shared/utils/age.utils";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -105,6 +110,7 @@ export class UsersService {
         "commonData.sex y birthDate son requeridos para teacher",
       );
     }
+    assertMinAge(dto.commonData.birthDate, MIN_AGE_YEARS);
     return this.provisioning.createTeacher({
       userData: {
         ...userData,
@@ -137,17 +143,12 @@ export class UsersService {
         ? dto.studentStartYear
         : new Date().getFullYear();
 
-    const startYear = Number(rawStartYear);
-
-    if (!Number.isInteger(startYear)) {
-      throw new BadRequestException("studentStartYear must be an integer year");
-    }
-
-    if (startYear < 1990 || startYear > 2100) {
-      throw new BadRequestException(
-        "studentStartYear must be between 1990 and 2100",
-      );
-    }
+    const birthDate = assertMinAge(dto.commonData.birthDate, MIN_AGE_YEARS);
+    const startYear = assertStudentStartYear(
+      rawStartYear,
+      birthDate,
+      { minYears: MIN_AGE_YEARS },
+    );
 
     return this.provisioning.createStudent({
       userData: {

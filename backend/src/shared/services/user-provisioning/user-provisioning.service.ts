@@ -23,6 +23,11 @@ import { Teacher } from "@/entities/users/teacher.entity";
 import { Preceptor } from "@/entities/users/preceptor.entity";
 import { Secretary } from "@/entities/users/secretary.entity";
 import { ROLE, ROLE_IDS } from "@/shared/rbac/roles.constants";
+import {
+  MIN_AGE_YEARS,
+  assertMinAge,
+  assertStudentStartYear,
+} from "@/shared/utils/age.utils";
 
 import {
   CreateStudentUserDto,
@@ -103,22 +108,17 @@ export class UserProvisioningService {
         throw new BadRequestException("studentData.legajo is required");
       }
 
-      const rawStartYear =
-        dto.studentData.studentStartYear ?? new Date().getFullYear();
-
-      const startYear = Number(rawStartYear);
-
-      if (!Number.isInteger(startYear)) {
+      if (!dto.commonData?.birthDate) {
         throw new BadRequestException(
-          "studentStartYear must be an integer year",
+          "commonData.birthDate es requerida para student",
         );
       }
-
-      if (startYear < 1990 || startYear > 2100) {
-        throw new BadRequestException(
-          "studentStartYear must be between 1990 and 2100",
-        );
-      }
+      assertMinAge(dto.commonData.birthDate, MIN_AGE_YEARS);
+      const startYear = assertStudentStartYear(
+        dto.studentData.studentStartYear ?? null,
+        dto.commonData.birthDate,
+        { minYears: MIN_AGE_YEARS },
+      );
 
       await this.maybeCreateUserInfo(qr, user.id, dto.userInfo);
       await this.maybeCreateCommonData(qr, user.id, dto.commonData);
@@ -302,6 +302,8 @@ export class UserProvisioningService {
   ): Promise<CommonData | void> {
     if (!dto) return;
 
+    const birthDate = assertMinAge(dto.birthDate!, MIN_AGE_YEARS);
+
     let address: AddressData | null = null;
     if (dto.address) {
       const addrPartial: DeepPartial<AddressData> = {
@@ -322,7 +324,7 @@ export class UserProvisioningService {
       userId,
       addressDataId: address ? address.id : null,
       sex: dto.sex!,
-      birthDate: new Date(dto.birthDate!),
+      birthDate,
     };
 
     const cdEntity = this.commonDataRepo.create(cdPartial);

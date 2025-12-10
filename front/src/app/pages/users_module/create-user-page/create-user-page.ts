@@ -31,6 +31,12 @@ import {
 import {
   canCreateBase,
   canCreateStep2,
+  hasMinAge,
+  isValidStudentStartYear,
+  MAX_START_YEAR,
+  MIN_AGE_YEARS,
+  MIN_START_YEAR,
+  parseDateOnly,
 } from '../../../shared/utils/create-user/user-validators.util';
 import {
   AppBreadcrumbComponent,
@@ -73,6 +79,7 @@ export class CreateUserPage implements OnInit {
   private geo = inject(ArgentinaGeoService);
   private messages = inject(MessageService);
   private uiAlertAudit = inject(UiAlertAuditService);
+  readonly minAgeYears = MIN_AGE_YEARS;
 
   isCreating = false;
 
@@ -158,7 +165,47 @@ export class CreateUserPage implements OnInit {
     return this.role ? ROLE_REQUIREMENTS[this.role] : null;
   }
 
+  private parsedBirthDate(): Date | null {
+    return parseDateOnly(this.birthDate);
+  }
+
+  get birthDateError(): string | null {
+    if (!this.birthDate) return null;
+    if (!this.parsedBirthDate()) return 'Fecha de nacimiento inválida';
+    if (!hasMinAge(this.birthDate, this.minAgeYears)) {
+      return `Debe tener al menos ${this.minAgeYears} años.`;
+    }
+    return null;
+  }
+
+  get studentStartYearError(): string | null {
+    if (this.role !== 'student') return null;
+    if (
+      this.studentStartYear === null ||
+      this.studentStartYear === undefined ||
+      (this.studentStartYear as any) === ''
+    )
+      return null;
+    if (!this.birthDate) {
+      return 'Completá la fecha de nacimiento para validar el año de inicio.';
+    }
+    if (!this.parsedBirthDate()) return 'Fecha de nacimiento inválida';
+
+    const startYear = Number(this.studentStartYear);
+    if (!Number.isInteger(startYear)) {
+      return 'Ingresá un año de inicio válido.';
+    }
+    if (startYear < MIN_START_YEAR || startYear > MAX_START_YEAR) {
+      return `El año de inicio debe estar entre ${MIN_START_YEAR} y ${MAX_START_YEAR}.`;
+    }
+    if (!isValidStudentStartYear(this.birthDate, startYear, this.minAgeYears)) {
+      return `El año de inicio debe ser al menos ${this.minAgeYears} años posterior a la fecha de nacimiento.`;
+    }
+    return null;
+  }
+
   canCreate(): boolean {
+    if (this.birthDateError || this.studentStartYearError) return false;
     const baseOk = canCreateBase(this.role, this.email, this.cuil);
     if (!baseOk) return false;
     if (this.role === 'secretary') return true;
@@ -169,15 +216,21 @@ export class CreateUserPage implements OnInit {
       documentValue: this.documentValue,
       sex: this.sex,
       birthDate: this.birthDate,
+      studentStartYear: this.role === 'student' ? this.studentStartYear : null,
       legajo:
         this.role === 'student'
           ? this.studentLegajo || this.cuil || this.documentValue
           : undefined,
+      minAgeYears: this.minAgeYears,
     });
   }
 
   async createUser(): Promise<void> {
     if (this.isCreating || !this.role) return;
+    if (!this.canCreate()) {
+      this.toastErr('Revisá los datos obligatorios antes de continuar.');
+      return;
+    }
     this.isCreating = true;
 
     try {

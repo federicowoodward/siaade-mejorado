@@ -145,6 +145,12 @@
                     />
                     <label for="birthDate">Fecha de nacimiento *</label>
                   </p-iftalabel>
+                  <small
+                    *ngIf="birthDateError"
+                    class="p-error block mt-1"
+                  >
+                    {{ birthDateError }}
+                  </small>
                 </div>
               </div>
 
@@ -406,6 +412,12 @@
                                 >Año de inicio</label
                               >
                             </p-iftalabel>
+                            <small
+                              *ngIf="studentStartYearError"
+                              class="p-error block mt-1"
+                            >
+                              {{ studentStartYearError }}
+                            </small>
                           </div>
                         </div>
                       </div>
@@ -495,3 +507,4 @@
     </p-stepper>
   </div>
 </div>
+

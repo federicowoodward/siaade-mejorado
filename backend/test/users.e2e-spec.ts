@@ -27,6 +27,7 @@ describe("Users (e2e)", () => {
   });
 
   const auth = () => ({ Authorization: `Bearer ${secretaryToken}` });
+  const formatDate = (d: Date) => d.toISOString().slice(0, 10);
 
   it("rechaza listado sin token", async () => {
     const res = await request(app.getHttpServer()).get("/api/users");
@@ -117,6 +118,37 @@ describe("Users (e2e)", () => {
     if (user?.id) createdUsers.teacher = user.id;
   });
 
+  it("rechaza un teacher menor de 16 años", async () => {
+    const email = `teacher-underage+${Date.now()}@test.local`;
+    const birthDate = new Date();
+    birthDate.setUTCFullYear(birthDate.getUTCFullYear() - 15);
+    const payload = {
+      name: "Teach",
+      lastName: "Young",
+      email,
+      password: "secret12",
+      cuil: `28${Date.now().toString().slice(-9)}`,
+      userInfo: {
+        documentValue: `41${Date.now().toString().slice(-6)}`,
+      },
+      commonData: {
+        sex: "X",
+        birthDate: formatDate(birthDate),
+      },
+    };
+
+    const res = await request(app.getHttpServer())
+      .post("/api/users/teacher")
+      .set(auth())
+      .send(payload);
+
+    expect(res.status).toBe(400);
+    const msg = Array.isArray(res.body?.message)
+      ? res.body.message.join(" ")
+      : res.body?.message;
+    expect(String(msg)).toContain("16");
+  });
+
   it("crea un student", async () => {
     const email = `student+${Date.now()}@test.local`;
     const payload = {
@@ -151,6 +183,40 @@ describe("Users (e2e)", () => {
     if (user?.id) {
       createdUsers.student = user.id;
     }
+  });
+
+  it("rechaza un student con año de inicio menor a 16 años desde el nacimiento", async () => {
+    const email = `student-underage-year+${Date.now()}@test.local`;
+    const birthDate = new Date();
+    birthDate.setUTCFullYear(birthDate.getUTCFullYear() - 18);
+    const invalidStartYear = birthDate.getUTCFullYear() + 10;
+    const payload = {
+      name: "Stu",
+      lastName: "Tester",
+      email,
+      password: "secret12",
+      cuil: `29${Date.now().toString().slice(-9)}`,
+      legajo: `LEG${Date.now().toString().slice(-5)}`,
+      userInfo: {
+        documentValue: `43${Date.now().toString().slice(-6)}`,
+      },
+      commonData: {
+        sex: "F",
+        birthDate: formatDate(birthDate),
+      },
+      studentStartYear: invalidStartYear,
+    };
+
+    const res = await request(app.getHttpServer())
+      .post("/api/users/student")
+      .set(auth())
+      .send(payload);
+
+    expect(res.status).toBe(400);
+    const msg = Array.isArray(res.body?.message)
+      ? res.body.message.join(" ")
+      : res.body?.message;
+    expect(String(msg)).toContain("16");
   });
 
   it("bloquea un usuario", async () => {
