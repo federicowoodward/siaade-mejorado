@@ -519,7 +519,7 @@ export class CreateUserPage implements OnInit {
     if (lower.includes('email') || lower.includes('correo') || lower.includes('mail')) {
       errors.email = 'El email ya está registrado.';
     }
-    if (lower.includes('cuil') || lower.includes('cuit')) {
+    if (/(cuil).*(registrad|ya|duplicad)/.test(lower)) {
       errors.cuil = 'El CUIL ya está registrado.';
     }
     if (
@@ -531,10 +531,8 @@ export class CreateUserPage implements OnInit {
       errors.documentValue = 'El número de documento ya está registrado.';
     }
 
-    if (!Object.keys(errors).length && (status === 409 || lower.includes('duplicad'))) {
-      errors.email = 'Revisá datos duplicados.';
-      errors.cuil = 'Revisá datos duplicados.';
-    }
+    // Si el backend no indica el campo exacto, no marcamos campos específicos para evitar falsos positivos.
+    // El toast mostrará el mensaje completo.
 
     this.duplicateErrors = errors;
   }
