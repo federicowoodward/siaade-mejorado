@@ -412,11 +412,12 @@ export class CreateUserPage implements OnInit {
         this.duplicateErrors.documentValue =
           'El número de documento ya está registrado.';
       }
-      if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
-        this.goToStep(1);
-      } else if (this.duplicateErrors.documentValue) {
-        this.goToStep(2);
-      }
+    if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
+      this.goToStep(1);
+      this.documentValue = this.documentValue; // no-op to ensure change detection runs
+    } else if (this.duplicateErrors.documentValue) {
+      this.goToStep(2);
+    }
       this.toastErr(detail);
     } finally {
       this.isCreating = false;
