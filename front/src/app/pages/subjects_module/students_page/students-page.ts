@@ -6,6 +6,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ROLE, ROLE_BY_ID } from '../../../core/auth/roles';
 import { RbacService } from '@/core/rbac/rbac.service';
+import { PermissionService } from '@/core/auth/permission.service';
 import { UserRow } from '../../../core/models/users-table.models';
 import { mapApiUserToRow } from '../../../shared/adapters/users.adapter';
 import { ButtonModule } from 'primeng/button';
@@ -31,6 +32,7 @@ export class StudentsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private goBack = inject(GoBackService);
   private rbac = inject(RbacService);
+  private permissions = inject(PermissionService);
 
   public ROLE = ROLE;
   subjectId!: string;
@@ -41,9 +43,14 @@ export class StudentsPage implements OnInit {
     { label: 'Estudiantes de la materia' },
   ];
 
-  get viewerRole(): ROLE | null {
+  get viewerRole(): ROLE {
+    const current = this.permissions.currentRole();
+    if (current) return current;
     const roles = this.rbac.getSnapshot();
-    return roles && roles.length ? (roles[0] ?? null) : null;
+    if (roles && roles.length) {
+      return (roles[0] as ROLE) ?? ROLE.SECRETARY;
+    }
+    return ROLE.SECRETARY;
   }
 
   ngOnInit() {
@@ -51,8 +58,9 @@ export class StudentsPage implements OnInit {
 
     this.api
       .getAll(`subjects/${this.subjectId}/students`)
-      .subscribe((list: any[]) => {
-        const mapped = list.map((u) =>
+      .subscribe((list: any) => {
+        const arr = Array.isArray(list) ? list : (list?.data ?? []);
+        const mapped = arr.map((u: any) =>
           mapApiUserToRow(u, (id: number) => ROLE_BY_ID[id] ?? null),
         );
         this.rows.set(mapped);

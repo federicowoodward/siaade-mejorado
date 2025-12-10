@@ -562,10 +562,15 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
 
           this.data.set({ ...payload, rows: rowsWithComputedFinal });
           const all = rowsWithComputedFinal;
-          this.allRows.set(all);
-          this.totalRecords.set(all.length);
+          const sorted = [...all].sort((a, b) => {
+            const nameA = (a.fullName || a.name || '').toLowerCase();
+            const nameB = (b.fullName || b.name || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+          });
+          this.allRows.set(sorted);
+          this.totalRecords.set(sorted.length);
           const placeholders = Array.from({
-            length: all.length,
+            length: sorted.length,
           }) as AcademicSituationRow[];
           this.virtualRows.set(placeholders);
           this.onLazyLoad({ first: 0, rows: this.pageSize });
