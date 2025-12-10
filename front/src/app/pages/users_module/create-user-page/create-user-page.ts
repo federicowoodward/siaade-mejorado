@@ -327,13 +327,15 @@ export class CreateUserPage implements OnInit {
     this.cuil = value;
     this.clearDuplicateErrorFor('cuil');
     const derivedDni = this.deriveDniFromCuil(value);
-    const docIsEmpty = !this.documentValue || !String(this.documentValue).trim();
-    const docMatchesPrev =
-      !!this.documentValue && this.documentValue.trim() === prevDerived;
-    const docEqualsCuil = String(this.documentValue || '').trim() === prevCuil;
-    if (docIsEmpty || docMatchesPrev || docEqualsCuil) {
+    const docTrim = String(this.documentValue || '').trim();
+    const docIsEmpty = !docTrim;
+    const docMatchesPrev = !!docTrim && docTrim === prevDerived;
+    const docEqualsCuil = docTrim === prevCuil;
+    const docTooShort = docTrim.length > 0 && docTrim.length < 8;
+    if (docIsEmpty || docMatchesPrev || docEqualsCuil || docTooShort) {
       this.documentValue = derivedDni;
     }
+    this.clearDuplicateErrorFor('documentValue');
   }
 
   goToStep(step: number): void {
@@ -416,6 +418,17 @@ export class CreateUserPage implements OnInit {
       ) {
         this.duplicateErrors.documentValue =
           'El número de documento ya está registrado.';
+      }
+      if (
+        (err as any)?.status === 409 &&
+        !this.duplicateErrors.email &&
+        !this.duplicateErrors.cuil &&
+        !this.duplicateErrors.documentValue
+      ) {
+        // Mensaje genérico: marcar campos principales para dar feedback visual
+        this.duplicateErrors.email = 'Dato duplicado.';
+        this.duplicateErrors.cuil = 'Dato duplicado.';
+        this.duplicateErrors.documentValue = 'Dato duplicado.';
       }
       if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
         this.goToStep(1);
