@@ -471,6 +471,15 @@ export class CreateUserPage implements OnInit {
     return buildPreviewRows(this.buildPreview());
   }
 
+  displayPreviewValue(row: PreviewRow): string {
+    if (!row) return '';
+    if (row.field.endsWith('role')) {
+      const match = this.roleOptions.find((o) => o.value === row.value);
+      return match?.label ?? String(row.value ?? '');
+    }
+    return String(row.value ?? '');
+  }
+
   // ---- SUGERENCIAS / LISTAS ----
   private readonly roleOptions: RoleOption[] = [
     { value: 'student', label: 'Alumno' },
