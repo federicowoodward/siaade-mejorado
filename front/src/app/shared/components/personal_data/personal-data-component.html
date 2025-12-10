@@ -377,6 +377,41 @@
         </div>
       </div>
     </section>
+
+    <!-- Datos académicos -->
+    <section
+      class="surface-card border-round shadow-1 p-3 flex flex-column gap-3"
+      *ngIf="(userData().role || '').toLowerCase() === 'student'"
+    >
+      <div class="flex flex-column gap-1">
+        <h3 class="m-0">Datos académicos</h3>
+        <p class="m-0 text-500">
+          Ajustá información clave del alumno.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="col-12 md:col-6">
+          <p-iftalabel class="w-full">
+            <input
+              [disabled]="!activateInputs()"
+              class="w-full p-inputtext p-component"
+              id="studentStartYear"
+              type="number"
+              min="1900"
+              max="2100"
+              placeholder="Ej: 2021"
+              [(ngModel)]="studentData().studentStartYear"
+              name="studentStartYear"
+            />
+            <label for="studentStartYear">Año de inicio</label>
+          </p-iftalabel>
+          <small class="text-color-secondary block mt-1">
+            Usado para calcular antigüedad académica.
+          </small>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- Acciones -->

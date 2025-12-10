@@ -71,6 +71,7 @@ export class PersonalDataComponent implements OnInit {
   userInfo = signal<any>({});
   commonData = signal<any>({});
   addressData = signal<any>({});
+  studentData = signal<any>({});
   activateInputs = signal(false);
   saving = signal(false);
   provinceOptions = signal<{ label: string; value: string }[]>([]);
@@ -155,11 +156,18 @@ export class PersonalDataComponent implements OnInit {
     const uInfo = profile.userInfo ?? {};
     const cData = profile.commonData ?? {};
     const aData = (profile.commonData?.address ?? {}) || {};
+    const sData =
+      profile.student ??
+      profile.studentData ??
+      profile.studentInfo ??
+      (profile.students && profile.students[0]) ??
+      {};
 
     this.userData.set(uData);
     this.userInfo.set(uInfo);
     this.commonData.set(cData);
     this.addressData.set(aData);
+    this.studentData.set(sData);
   }
 
   private snapshotOriginal() {
@@ -168,6 +176,7 @@ export class PersonalDataComponent implements OnInit {
       userInfo: cloneDeep(this.userInfo()),
       commonData: cloneDeep(this.commonData()),
       addressData: cloneDeep(this.addressData()),
+      studentData: cloneDeep(this.studentData()),
     });
   }
 
@@ -403,6 +412,14 @@ export class PersonalDataComponent implements OnInit {
       'commonData.address.postalCode',
       address.postalCode,
       origAddress.postalCode,
+    );
+
+    const student = this.studentData();
+    const origStudent = original.studentData ?? {};
+    assign(
+      'student.studentStartYear',
+      student.studentStartYear,
+      origStudent.studentStartYear,
     );
 
     return changes;
