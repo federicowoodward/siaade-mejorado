@@ -4,7 +4,7 @@
   <h2 class="my-3">Estudiantes de la materia</h2>
   <!-- accesible desde listado de materias -->
   <app-users-table
-    [viewerRole]="viewerRole ?? ROLE.TEACHER"
+    [viewerRole]="viewerRole"
     [context]="'subject-students'"
     [roleFilterEnabled]="false"
     [rows]="rows()"
