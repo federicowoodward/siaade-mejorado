@@ -336,7 +336,7 @@ export class CreateUserPage implements OnInit {
     }
   }
 
-  private goToStep(step: number): void {
+  goToStep(step: number): void {
     this.activeStep = step;
   }
 
