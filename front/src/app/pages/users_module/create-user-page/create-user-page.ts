@@ -82,6 +82,7 @@ export class CreateUserPage implements OnInit {
   readonly minAgeYears = MIN_AGE_YEARS;
 
   isCreating = false;
+  activeStep = 1;
   duplicateErrors: Partial<
     Record<'email' | 'cuil' | 'documentValue', string>
   > = {};
@@ -335,6 +336,10 @@ export class CreateUserPage implements OnInit {
     }
   }
 
+  private goToStep(step: number): void {
+    this.activeStep = step;
+  }
+
   async createUser(): Promise<void> {
     if (this.isCreating || !this.role) return;
     if (!this.canCreate()) {
@@ -411,6 +416,11 @@ export class CreateUserPage implements OnInit {
       ) {
         this.duplicateErrors.documentValue =
           'El número de documento ya está registrado.';
+      }
+      if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
+        this.goToStep(1);
+      } else if (this.duplicateErrors.documentValue) {
+        this.goToStep(2);
       }
       this.toastErr(detail);
     } finally {
@@ -604,21 +614,21 @@ export class CreateUserPage implements OnInit {
     this.addressLocality = value ?? '';
   }
 
-  onNextFromStep1(activateCallback: (value: number) => void): void {
+  onNextFromStep1(): void {
     const errors = this.validateStep1();
     if (errors.length) {
       this.showValidationErrors(errors, 'Completa los datos del Paso I');
       return;
     }
-    activateCallback(2);
+    this.goToStep(2);
   }
 
-  onNextFromStep2(activateCallback: (value: number) => void): void {
+  onNextFromStep2(): void {
     const errors = this.validateStep2();
     if (errors.length) {
       this.showValidationErrors(errors, 'Completa los datos del Paso II');
       return;
     }
-    activateCallback(3);
+    this.goToStep(3);
   }
 }

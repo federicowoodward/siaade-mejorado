@@ -2,7 +2,7 @@
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="card flex justify-content-center">
-    <p-stepper [value]="1" class="w-full" [linear]="true">
+    <p-stepper [(value)]="activeStep" class="w-full" [linear]="true">
       <!-- Encabezado + pasos -->
       <div
         class="flex flex-column md:flex-row md:align-items-center justify-content-between gap-3"
@@ -27,7 +27,7 @@
       <p-step-panels>
         <!-- PASO 1: rol + usuario básico -->
         <p-step-panel [value]="1">
-          <ng-template #content let-activateCallback="activateCallback">
+          <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
             >
@@ -171,7 +171,7 @@
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="onNextFromStep1(activateCallback)"
+                    (onClick)="onNextFromStep1()"
                     [disabled]="step1Errors.length > 0"
                   />
                 </div>
@@ -182,7 +182,7 @@
 
         <!-- PASO 2 -->
         <p-step-panel [value]="2">
-          <ng-template #content let-activateCallback="activateCallback">
+          <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
             >
@@ -442,7 +442,7 @@
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="activateCallback(1)"
+                    (onClick)="goToStep(1)"
                   />
                 </div>
                 <div>
@@ -450,7 +450,7 @@
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="onNextFromStep2(activateCallback)"
+                    (onClick)="onNextFromStep2()"
                     [disabled]="step2Errors.length > 0"
                   />
                 </div>
@@ -461,7 +461,7 @@
 
         <!-- PASO 3: resumen -->
         <p-step-panel [value]="3">
-          <ng-template #content let-activateCallback="activateCallback">
+          <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
             >
@@ -498,7 +498,7 @@
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="activateCallback(2)"
+                    (onClick)="goToStep(2)"
                   />
                 </div>
                 <div>
