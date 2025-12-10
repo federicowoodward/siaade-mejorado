@@ -333,6 +333,13 @@ export class CreateUserPage implements OnInit {
 
   goToStep(step: number): void {
     this.activeStep = step;
+    // aseguro refresco del stepper y subo al inicio para que se vea el error
+    setTimeout(() => {
+      this.activeStep = step;
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
   }
 
   async createUser(): Promise<void> {
@@ -509,7 +516,7 @@ export class CreateUserPage implements OnInit {
     const lower = (detail || '').toLowerCase();
     const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> = {};
 
-    if (lower.includes('email') || lower.includes('correo')) {
+    if (lower.includes('email') || lower.includes('correo') || lower.includes('mail')) {
       errors.email = 'El email ya está registrado.';
     }
     if (lower.includes('cuil') || lower.includes('cuit')) {
@@ -524,7 +531,7 @@ export class CreateUserPage implements OnInit {
       errors.documentValue = 'El número de documento ya está registrado.';
     }
 
-    if (!Object.keys(errors).length && status === 409) {
+    if (!Object.keys(errors).length && (status === 409 || lower.includes('duplicad'))) {
       errors.email = 'Revisá datos duplicados.';
       errors.cuil = 'Revisá datos duplicados.';
     }
