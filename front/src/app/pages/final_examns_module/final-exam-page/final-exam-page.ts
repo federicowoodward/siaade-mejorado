@@ -123,11 +123,17 @@ export class FinalExamPage implements OnInit {
 
   // Edición permitida solo para docentes
   canEditScores(): boolean {
-    return this.permissions.hasAnyRole([ROLE.TEACHER]);
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
   }
 
   canEditNotes(): boolean {
-    return this.permissions.hasAnyRole([ROLE.TEACHER]);
+    return this.permissions.hasAnyRole([
+      ROLE.SECRETARY,
+      ROLE.EXECUTIVE_SECRETARY,
+    ]);
   }
 
   ngOnInit(): void {

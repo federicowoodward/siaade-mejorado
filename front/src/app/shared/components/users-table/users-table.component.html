@@ -4,6 +4,8 @@
     [value]="getVisibleRows()"
     [paginator]="true"
     [rows]="10"
+    [sortField]="'lastName'"
+    [sortOrder]="1"
     responsiveLayout="scroll"
     styleClass="p-datatable-sm p-datatable-gridlines"
     [globalFilterFields]="['name', 'lastName', 'cuil', 'email', 'role']"
@@ -16,6 +18,12 @@
             [outlined]="true"
             icon="pi pi-filter-slash"
             (click)="clear(dt, filterInput)"
+          ></p-button>
+          <p-button
+            label="Exportar CSV"
+            icon="pi pi-download"
+            [outlined]="true"
+            (click)="dt.exportCSV({ selectionOnly: false })"
           ></p-button>
         </div>
 
@@ -54,9 +62,15 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th>Nombre</th>
-        <th>DNI/CUIL</th>
-        <th *ngIf="viewerRole !== 'teacher'">Rol</th>
+        <th pSortableColumn="lastName">
+          Nombre <p-sortIcon field="lastName" />
+        </th>
+        <th pSortableColumn="cuil">
+          DNI/CUIL <p-sortIcon field="cuil" />
+        </th>
+        <th *ngIf="viewerRole !== 'teacher'" pSortableColumn="role">
+          Rol <p-sortIcon field="role" />
+        </th>
         <th style="width: 80px" *ngIf="viewerRole !== 'teacher'">Estado</th>
         <!-- agregar width aca si se agregan acciones -->
         <th style="width: 100px">Acciones</th>

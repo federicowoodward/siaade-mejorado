@@ -32,7 +32,7 @@ export const ROLE_LABELS: Record<ROLE, string> = {
   [ROLE.TEACHER]: 'Docente',
   [ROLE.PRECEPTOR]: 'Preceptor',
   [ROLE.SECRETARY]: 'Secretario',
-  [ROLE.EXECUTIVE_SECRETARY]: 'Secretario directivo',
+  [ROLE.EXECUTIVE_SECRETARY]: 'Director',
 };
 
 export function isRole(value: unknown): value is ROLE {

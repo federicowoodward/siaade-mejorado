@@ -1,11 +1,16 @@
 <p-table
   [value]="basicSubjects()"
   responsiveLayout="scroll"
+  [sortField]="'name'"
+  [sortOrder]="1"
   styleClass="p-datatable-sm p-datatable-gridlines"
 >
   <ng-template pTemplate="header">
     <tr>
-      <th class="p-3">Asignatura</th>
+      <th class="p-3" pSortableColumn="name">
+        Asignatura
+        <p-sortIcon field="name" />
+      </th>
       <th class="p-3" style="width: 220px; text-align: center">Acciones</th>
     </tr>
   </ng-template>
@@ -14,23 +19,36 @@
     <tr>
       <td class="px-3">{{ subject.name }}</td>
       <td class="flex w-23rem justify-content-around">
-        <button
-          *ngIf="!isTeacher"
-          pButton
-          type="button"
-          outlined="true"
-          label="Comisiones"
-          (click)="viewComissions(subject.id)"
-          blockedAction
-        ></button>
-        <button
-          pButton
-          type="button"
-          class="p-ml-2"
-          label="Situacion academica"
-          (click)="viewStatus(subject.id)"
-          blockedAction
-        ></button>
+        <div class="flex gap-2 flex-wrap">
+          <button
+            pButton
+            type="button"
+            outlined="true"
+            label="Alumnos"
+            icon="pi pi-users"
+            (click)="viewStudents(subject.id)"
+            blockedAction
+          ></button>
+          <button
+            *ngIf="!isTeacher"
+            pButton
+            type="button"
+            outlined="true"
+            label="Comisiones"
+            icon="pi pi-briefcase"
+            (click)="viewComissions(subject.id)"
+            blockedAction
+          ></button>
+          <button
+            pButton
+            type="button"
+            class="p-ml-2"
+            label="Situaci\u00f3n acad\u00e9mica"
+            icon="pi pi-chart-line"
+            (click)="viewStatus(subject.id)"
+            blockedAction
+          ></button>
+        </div>
       </td>
     </tr>
   </ng-template>

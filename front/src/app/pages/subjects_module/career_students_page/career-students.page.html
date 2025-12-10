@@ -24,10 +24,13 @@
         [value]="filteredRows()"
         [paginator]="true"
         [rows]="15"
+        [sortField]="'user.fullName'"
+        [sortOrder]="1"
         dataKey="studentId"
         responsiveLayout="scroll"
         styleClass="p-datatable-sm p-datatable-gridlines"
         [rowTrackBy]="rowsTrackBy"
+        #studentsTable
       >
         <ng-template pTemplate="caption">
           <div class="flex justify-content-between align-items-center">
@@ -39,6 +42,12 @@
                 placeholder="Buscar por nombre, CUIL o email"
                 style="min-width: 18rem"
               />
+              <p-button
+                label="Exportar CSV"
+                icon="pi pi-download"
+                [outlined]="true"
+                (onClick)="studentsTable.exportCSV({ selectionOnly: false })"
+              ></p-button>
               <!-- hacer un select con dropdown aca -->
               <!-- <input
                 pInputText
@@ -60,9 +69,15 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th>Comision</th>
-            <th>Alumno</th>
-            <th>Email</th>
+            <th pSortableColumn="commissionLetter">
+              Comision <p-sortIcon field="commissionLetter" />
+            </th>
+            <th pSortableColumn="user.fullName">
+              Alumno <p-sortIcon field="user.fullName" />
+            </th>
+            <th pSortableColumn="user.email">
+              Email <p-sortIcon field="user.email" />
+            </th>
             <th style="width: 12rem">Acciones</th>
           </tr>
         </ng-template>

@@ -7,8 +7,8 @@
     iconPos="left"
     (onClick)="back()"
   ></p-button>
-  <h2 class="my-3">Estudiantes de la carrera</h2>
-  <!-- solamente accesible desde inforamcion de la carrera -->
+  <h2 class="my-3">Estudiantes de la materia</h2>
+  <!-- accesible desde listado de materias -->
   <app-users-table
     [viewerRole]="viewerRole ?? ROLE.TEACHER"
     [context]="'subject-students'"

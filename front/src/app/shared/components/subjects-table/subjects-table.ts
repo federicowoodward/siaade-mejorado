@@ -79,6 +79,10 @@ export class SubjectTableComponent implements OnInit {
     return this.permissions.currentRole() === ROLE.TEACHER;
   }
 
+  viewStudents(subjectId: number): void {
+    this.router.navigate(['/subjects', 'students', subjectId]);
+  }
+
   // Abre el diálogo y carga comisiones+docentes
   viewComissions(subjectId: number): void {
     this.dialogTeachers.set({ visible: true, subjectId });
