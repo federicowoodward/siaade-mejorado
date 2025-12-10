@@ -114,7 +114,7 @@
                       [attr.aria-invalid]="cuilError ? true : null"
                       [(ngModel)]="cuil"
                       placeholder="11 dígitos"
-                      (ngModelChange)="clearDuplicateErrorFor('cuil')"
+                      (ngModelChange)="onCuilChange($event)"
                       blockedAction
                     />
                     <label for="cuil">CUIL *</label>
@@ -397,29 +397,20 @@
                         <div class="grid">
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <input
-                                id="studentLegajo"
-                                pInputText
-                                class="w-full"
-                                [ngClass]="{ 'p-invalid': studentLegajoError }"
-                                [attr.aria-invalid]="studentLegajoError ? true : null"
-                                [(ngModel)]="studentLegajo"
-                                placeholder="Identificador de legajo"
-                                (ngModelChange)="clearDuplicateErrorFor('studentLegajo')"
-                              />
-                              <label for="studentLegajo">Legajo *</label>
-                            </p-iftalabel>
-                            <small
-                              *ngIf="studentLegajoError"
-                              class="p-error block mt-1"
-                            >
-                              {{ studentLegajoError }}
-                            </small>
-                            <small class="text-color-secondary block mt-1">
-                              Si lo dejás vacío, se usará el CUIL o el
-                              documento.
-                            </small>
-                          </div>
+                          <input
+                            id="studentLegajo"
+                            pInputText
+                            class="w-full"
+                            [(ngModel)]="studentLegajo"
+                            placeholder="Identificador de legajo"
+                          />
+                          <label for="studentLegajo">Legajo *</label>
+                        </p-iftalabel>
+                        <small class="text-color-secondary block mt-1">
+                          Si lo dejás vacío, se usará el CUIL o el
+                          documento.
+                        </small>
+                      </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
                               <input

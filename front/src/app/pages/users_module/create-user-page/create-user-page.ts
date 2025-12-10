@@ -83,7 +83,7 @@ export class CreateUserPage implements OnInit {
 
   isCreating = false;
   duplicateErrors: Partial<
-    Record<'email' | 'cuil' | 'documentValue' | 'studentLegajo', string>
+    Record<'email' | 'cuil' | 'documentValue', string>
   > = {};
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
@@ -172,14 +172,23 @@ export class CreateUserPage implements OnInit {
     return parseDateOnly(this.birthDate);
   }
 
-  clearDuplicateErrorFor(
-    field: 'email' | 'cuil' | 'documentValue' | 'studentLegajo',
-  ): void {
+  clearDuplicateErrorFor(field: 'email' | 'cuil' | 'documentValue'): void {
     if (this.duplicateErrors[field]) {
       const next = { ...this.duplicateErrors };
       delete next[field];
       this.duplicateErrors = next;
     }
+  }
+
+  private deriveDniFromCuil(raw: string): string {
+    const digits = (raw || '').replace(/\D/g, '');
+    if (digits.length >= 10) {
+      return digits.substring(2, 10);
+    }
+    if (digits.length >= 8) {
+      return digits.slice(-8);
+    }
+    return digits;
   }
 
   get emailError(): string | null {
@@ -192,10 +201,6 @@ export class CreateUserPage implements OnInit {
 
   get documentValueError(): string | null {
     return this.duplicateErrors.documentValue ?? null;
-  }
-
-  get studentLegajoError(): string | null {
-    return this.duplicateErrors.studentLegajo ?? null;
   }
 
   get birthDateError(): string | null {
@@ -280,8 +285,6 @@ export class CreateUserPage implements OnInit {
     if (this.role === 'student') {
       if (!this.studentLegajo.trim() && !this.cuil && !this.documentValue) {
         errors.push('Legajo es obligatorio para alumnos.');
-      } else if (this.studentLegajoError) {
-        errors.push(`Legajo: ${this.studentLegajoError}`);
       }
       if (this.studentStartYearError) {
         errors.push(`Año de inicio: ${this.studentStartYearError}`);
@@ -315,6 +318,21 @@ export class CreateUserPage implements OnInit {
           : undefined,
       minAgeYears: this.minAgeYears,
     });
+  }
+
+  onCuilChange(value: string): void {
+    const prevCuil = this.cuil;
+    const prevDerived = this.deriveDniFromCuil(prevCuil);
+    this.cuil = value;
+    this.clearDuplicateErrorFor('cuil');
+    const derivedDni = this.deriveDniFromCuil(value);
+    const docIsEmpty = !this.documentValue || !String(this.documentValue).trim();
+    const docMatchesPrev =
+      !!this.documentValue && this.documentValue.trim() === prevDerived;
+    const docEqualsCuil = String(this.documentValue || '').trim() === prevCuil;
+    if (docIsEmpty || docMatchesPrev || docEqualsCuil) {
+      this.documentValue = derivedDni;
+    }
   }
 
   async createUser(): Promise<void> {
@@ -381,18 +399,18 @@ export class CreateUserPage implements OnInit {
         detail = 'Datos duplicados. Revise email, CUIL o legajo.';
       }
       const lowerDetail = String(detail || '').toLowerCase();
-      if (lowerDetail.includes('email')) {
+      if (/email.*registrad/i.test(lowerDetail)) {
         this.duplicateErrors.email = 'El email ya está registrado.';
       }
-      if (lowerDetail.includes('cuil')) {
+      if (/cuil.*registrad/i.test(lowerDetail)) {
         this.duplicateErrors.cuil = 'El CUIL ya está registrado.';
       }
-      if (lowerDetail.includes('dni') || lowerDetail.includes('documento')) {
+      if (
+        /(dni|documento).*registrad/i.test(lowerDetail) ||
+        lowerDetail.includes('número de documento ya existe')
+      ) {
         this.duplicateErrors.documentValue =
           'El número de documento ya está registrado.';
-      }
-      if (lowerDetail.includes('legajo')) {
-        this.duplicateErrors.studentLegajo = 'El legajo ya está registrado.';
       }
       this.toastErr(detail);
     } finally {
