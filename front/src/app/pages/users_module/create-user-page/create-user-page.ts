@@ -412,17 +412,6 @@ export class CreateUserPage implements OnInit {
         this.duplicateErrors.documentValue =
           'El número de documento ya está registrado.';
       }
-      if (
-        (err as any)?.status === 409 &&
-        !this.duplicateErrors.email &&
-        !this.duplicateErrors.cuil &&
-        !this.duplicateErrors.documentValue
-      ) {
-        // Mensaje genérico: marcar campos principales para dar feedback visual
-        this.duplicateErrors.email = 'Dato duplicado.';
-        this.duplicateErrors.cuil = 'Dato duplicado.';
-        this.duplicateErrors.documentValue = 'Dato duplicado.';
-      }
       if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
         this.goToStep(1);
       } else if (this.duplicateErrors.documentValue) {
