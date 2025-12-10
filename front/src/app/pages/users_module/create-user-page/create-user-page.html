@@ -90,12 +90,18 @@
                       id="email"
                       pInputText
                       class="w-full"
+                      [ngClass]="{ 'p-invalid': emailError }"
+                      [attr.aria-invalid]="emailError ? true : null"
                       [(ngModel)]="email"
                       placeholder="mail@dominio.com"
+                      (ngModelChange)="clearDuplicateErrorFor('email')"
                       blockedAction
                     />
                     <label for="email">Email *</label>
                   </p-iftalabel>
+                  <small *ngIf="emailError" class="p-error block mt-1">
+                    {{ emailError }}
+                  </small>
                 </div>
 
                 <div class="col-12 md:col-6">
@@ -104,12 +110,18 @@
                       id="cuil"
                       pInputText
                       class="w-full"
+                      [ngClass]="{ 'p-invalid': cuilError }"
+                      [attr.aria-invalid]="cuilError ? true : null"
                       [(ngModel)]="cuil"
                       placeholder="11 dígitos"
+                      (ngModelChange)="clearDuplicateErrorFor('cuil')"
                       blockedAction
                     />
                     <label for="cuil">CUIL *</label>
                   </p-iftalabel>
+                  <small *ngIf="cuilError" class="p-error block mt-1">
+                    {{ cuilError }}
+                  </small>
                   <small class="text-color-secondary block mt-1">
                     La contraseña inicial será el CUIL:
                     <b>{{ passwordPreview }}</b>
@@ -147,10 +159,7 @@
                     />
                     <label for="birthDate">Fecha de nacimiento *</label>
                   </p-iftalabel>
-                  <small
-                    *ngIf="birthDateError"
-                    class="p-error block mt-1"
-                  >
+                  <small *ngIf="birthDateError" class="p-error block mt-1">
                     {{ birthDateError }}
                   </small>
                 </div>
@@ -217,11 +226,20 @@
                             id="documentValue"
                             pInputText
                             class="w-full"
+                            [ngClass]="{ 'p-invalid': documentValueError }"
+                            [attr.aria-invalid]="documentValueError ? true : null"
                             [(ngModel)]="documentValue"
+                            (ngModelChange)="clearDuplicateErrorFor('documentValue')"
                             blockedAction
                           />
-                          <label for="documentValue">Nº documento *</label>
+                          <label for="documentValue">N° documento *</label>
                         </p-iftalabel>
+                        <small
+                          *ngIf="documentValueError"
+                          class="p-error block mt-1"
+                        >
+                          {{ documentValueError }}
+                        </small>
                       </div>
                       <div class="col-12 md:col-6">
                         <p-iftalabel class="w-full">
@@ -312,7 +330,6 @@
                                 blockedAction
                                 [filter]="true"
                                 filterBy="label"
-                                [showClear]="true"
                               ></p-select>
                               <label for="province">Provincia</label>
                             </p-iftalabel>
@@ -333,7 +350,6 @@
                                 blockedAction
                                 [filter]="true"
                                 filterBy="label"
-                                [showClear]="true"
                               ></p-select>
                               <label for="department">Departamento</label>
                             </p-iftalabel>
@@ -354,7 +370,6 @@
                                 blockedAction
                                 [filter]="true"
                                 filterBy="label"
-                                [showClear]="true"
                               ></p-select>
                               <label for="locality">Localidad</label>
                             </p-iftalabel>
@@ -386,11 +401,20 @@
                                 id="studentLegajo"
                                 pInputText
                                 class="w-full"
+                                [ngClass]="{ 'p-invalid': studentLegajoError }"
+                                [attr.aria-invalid]="studentLegajoError ? true : null"
                                 [(ngModel)]="studentLegajo"
                                 placeholder="Identificador de legajo"
+                                (ngModelChange)="clearDuplicateErrorFor('studentLegajo')"
                               />
                               <label for="studentLegajo">Legajo *</label>
                             </p-iftalabel>
+                            <small
+                              *ngIf="studentLegajoError"
+                              class="p-error block mt-1"
+                            >
+                              {{ studentLegajoError }}
+                            </small>
                             <small class="text-color-secondary block mt-1">
                               Si lo dejás vacío, se usará el CUIL o el
                               documento.
@@ -405,9 +429,7 @@
                                 [(ngModel)]="studentStartYear"
                                 placeholder="YYYY"
                               />
-                              <label for="studentStartYear"
-                                >Año de inicio</label
-                              >
+                              <label for="studentStartYear">Año de inicio</label>
                             </p-iftalabel>
                             <small
                               *ngIf="studentStartYearError"
@@ -505,4 +527,3 @@
     </p-stepper>
   </div>
 </div>
-

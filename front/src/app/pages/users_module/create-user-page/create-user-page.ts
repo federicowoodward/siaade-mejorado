@@ -82,6 +82,9 @@ export class CreateUserPage implements OnInit {
   readonly minAgeYears = MIN_AGE_YEARS;
 
   isCreating = false;
+  duplicateErrors: Partial<
+    Record<'email' | 'cuil' | 'documentValue' | 'studentLegajo', string>
+  > = {};
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Inicio', routerLink: '/welcome' },
@@ -169,6 +172,32 @@ export class CreateUserPage implements OnInit {
     return parseDateOnly(this.birthDate);
   }
 
+  clearDuplicateErrorFor(
+    field: 'email' | 'cuil' | 'documentValue' | 'studentLegajo',
+  ): void {
+    if (this.duplicateErrors[field]) {
+      const next = { ...this.duplicateErrors };
+      delete next[field];
+      this.duplicateErrors = next;
+    }
+  }
+
+  get emailError(): string | null {
+    return this.duplicateErrors.email ?? null;
+  }
+
+  get cuilError(): string | null {
+    return this.duplicateErrors.cuil ?? null;
+  }
+
+  get documentValueError(): string | null {
+    return this.duplicateErrors.documentValue ?? null;
+  }
+
+  get studentLegajoError(): string | null {
+    return this.duplicateErrors.studentLegajo ?? null;
+  }
+
   get birthDateError(): string | null {
     if (!this.birthDate) return null;
     if (!this.parsedBirthDate()) return 'Fecha de nacimiento inválida';
@@ -217,7 +246,12 @@ export class CreateUserPage implements OnInit {
     if (!this.role) errors.push('Seleccioná un rol.');
     if (!this.name.trim()) errors.push('Nombre es obligatorio.');
     if (!this.lastName.trim()) errors.push('Apellido es obligatorio.');
-    if (!this.email.trim()) errors.push('Email es obligatorio.');
+    if (!this.email.trim()) {
+      errors.push('Email es obligatorio.');
+    } else if (this.emailError) {
+      errors.push(`Email: ${this.emailError}`);
+    }
+    if (this.cuilError) errors.push(`CUIL: ${this.cuilError}`);
     if (!this.sex) errors.push('Sexo es obligatorio.');
     if (!this.birthDate) errors.push('Fecha de nacimiento es obligatoria.');
     if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
@@ -233,7 +267,11 @@ export class CreateUserPage implements OnInit {
     }
     if (req?.needsUserInfo) {
       if (!this.documentType) errors.push('Tipo de documento es obligatorio.');
-      if (!this.documentValue.trim()) errors.push('Número de documento es obligatorio.');
+      if (!this.documentValue.trim()) {
+        errors.push('Número de documento es obligatorio.');
+      } else if (this.documentValueError) {
+        errors.push(`Número de documento: ${this.documentValueError}`);
+      }
     }
     if (req?.needsCommonData) {
       if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
@@ -242,6 +280,8 @@ export class CreateUserPage implements OnInit {
     if (this.role === 'student') {
       if (!this.studentLegajo.trim() && !this.cuil && !this.documentValue) {
         errors.push('Legajo es obligatorio para alumnos.');
+      } else if (this.studentLegajoError) {
+        errors.push(`Legajo: ${this.studentLegajoError}`);
       }
       if (this.studentStartYearError) {
         errors.push(`Año de inicio: ${this.studentStartYearError}`);
@@ -332,12 +372,27 @@ export class CreateUserPage implements OnInit {
       console.error('Error al crear usuario', err);
       const backendMsg = (err as any)?.error?.message;
       let detail = 'No se pudo crear el usuario. Verifique los datos.';
+      this.duplicateErrors = {};
       if (backendMsg) {
         detail = Array.isArray(backendMsg)
           ? backendMsg.join(' | ')
           : backendMsg;
       } else if ((err as any)?.status === 409) {
         detail = 'Datos duplicados. Revise email, CUIL o legajo.';
+      }
+      const lowerDetail = String(detail || '').toLowerCase();
+      if (lowerDetail.includes('email')) {
+        this.duplicateErrors.email = 'El email ya está registrado.';
+      }
+      if (lowerDetail.includes('cuil')) {
+        this.duplicateErrors.cuil = 'El CUIL ya está registrado.';
+      }
+      if (lowerDetail.includes('dni') || lowerDetail.includes('documento')) {
+        this.duplicateErrors.documentValue =
+          'El número de documento ya está registrado.';
+      }
+      if (lowerDetail.includes('legajo')) {
+        this.duplicateErrors.studentLegajo = 'El legajo ya está registrado.';
       }
       this.toastErr(detail);
     } finally {
