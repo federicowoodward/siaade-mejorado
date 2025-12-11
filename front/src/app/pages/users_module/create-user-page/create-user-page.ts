@@ -16,7 +16,6 @@ import { ApiService } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
-import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 import { buildPreviewRows } from '../../../shared/utils/create-user/user-preview-table';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 
@@ -65,7 +64,6 @@ type RoleOption = { label: string; value: UserRole };
     ToastModule,
     TableModule,
     FieldLabelPipe,
-    RoleLabelPipe,
     BlockedActionDirective,
     IftaLabelModule,
   ],
