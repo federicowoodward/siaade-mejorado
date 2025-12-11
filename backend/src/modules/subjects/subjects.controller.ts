@@ -205,6 +205,40 @@ export class SubjectGradesController {
     });
   }
 
+  @Get(":subjectId/students")
+  @Action("subjects.getSubjectStudents")
+  @ApiOperation({
+    summary: "Listar estudiantes inscriptos en una materia",
+  })
+  @ApiParam({ name: "subjectId" })
+  @ApiOkResponse({
+    schema: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          name: { type: "string" },
+          lastName: { type: "string" },
+          cuil: { type: "string" },
+          email: { type: "string" },
+          roleId: { type: "number" },
+          isActive: { type: "boolean" },
+          isBlocked: { type: "boolean" },
+          blockedReason: { type: "string", nullable: true },
+        },
+      },
+    } as any,
+  })
+  async listSubjectStudents(
+    @Param("subjectId", ParseIntPipe) subjectId: number,
+    @Req() req: Request
+  ) {
+    return this.subjectsService.listSubjectStudents(subjectId, {
+      user: req?.user as AuthenticatedUser,
+    });
+  }
+
   @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @Patch("commissions/:id/grade-window")
   @Action("subjects.updateGradeWindow")

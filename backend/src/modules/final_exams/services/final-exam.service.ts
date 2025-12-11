@@ -270,7 +270,9 @@ export class FinalExamService {
     link.score = (dto.score ?? null) as any;
     link.notes = dto.notes ?? link.notes;
     (link as any).statusId = status.id;
-    (link as any).recordedById = actorId;
+    // recorded_by est  definido con FK a teachers; como la carga es exclusiva de secretarios/directores,
+    // evitamos fallar la FK guardando null.
+    (link as any).recordedById = null;
     (link as any).recordedAt = new Date();
     await this.linkRepo.save(link);
     return { ok: true };

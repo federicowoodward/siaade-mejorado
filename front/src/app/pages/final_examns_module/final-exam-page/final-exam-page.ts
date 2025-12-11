@@ -436,12 +436,6 @@ export class FinalExamPage implements OnInit {
             this.toastErr('No se pudieron guardar los cambios. Intenta nuevamente.');
           }
           this.restoreRowFromClone(row);
-          this.uiAlertAudit.add(this.messages, {
-            severity: 'error',
-            summary: 'Error al guardar',
-            detail:
-              'No se pudieron guardar los cambios de este alumno. Intenta nuevamente.',
-          });
           finalize();
         },
       });

@@ -368,6 +368,86 @@ export class SubjectsService {
     };
   }
 
+  async listSubjectStudents(
+    subjectId: number,
+    opts?: { user?: AuthenticatedUser },
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      lastName: string | null;
+      cuil: string | null;
+      email: string | null;
+      roleId: number | null;
+      isActive: boolean;
+      isBlocked: boolean;
+      blockedReason: string | null;
+    }>
+  > {
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId },
+    });
+    if (!subject) {
+      throw new NotFoundException(`Subject ${subjectId} was not found`);
+    }
+
+    const user = opts?.user;
+    if (user?.role === ROLE.TEACHER && user.id) {
+      const assigned = await this.subjectCommissionRepo.exists({
+        where: { subjectId, teacherId: user.id },
+      });
+      if (!assigned) {
+        throw new ForbiddenException("You are not assigned to this subject");
+      }
+    }
+
+    const qb = this.userRepo
+      .createQueryBuilder("u")
+      .innerJoin("subject_students", "ss", "ss.student_id = u.id")
+      .leftJoin("students", "st", "st.user_id = u.id")
+      .select([
+        "u.id AS id",
+        "u.name AS name",
+        "u.last_name AS lastName",
+        "u.cuil AS cuil",
+        "u.email AS email",
+        "u.role_id AS roleId",
+        "COALESCE(u.is_active, TRUE) AS isActive",
+        "COALESCE(u.is_blocked, FALSE) AS isBlocked",
+        "u.blocked_reason AS blockedReason",
+      ])
+      .where("ss.subject_id = :subjectId", { subjectId });
+
+    if (user?.role === ROLE.TEACHER && user.id) {
+      qb.innerJoin(
+        "subject_commissions",
+        "sc",
+        "sc.id = ss.commission_id AND sc.teacher_id = :teacherId",
+        { teacherId: user.id },
+      );
+    }
+
+    const rows = await qb
+      .orderBy("u.name", "ASC")
+      .addOrderBy("u.last_name", "ASC")
+      .getRawMany();
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      lastName: r.lastname ?? r.lastName ?? null,
+      cuil: r.cuil ?? null,
+      email: r.email ?? null,
+      roleId:
+        r.roleid ??
+        r.roleId ??
+        (typeof r.role_id === "number" ? r.role_id : null),
+      isActive: Boolean(r.isactive ?? r.isActive),
+      isBlocked: Boolean(r.isblocked ?? r.isBlocked),
+      blockedReason: r.blockedreason ?? r.blockedReason ?? null,
+    }));
+  }
+
   async getSubjectAcademicSituation(
     subjectId: number,
     filters?: { q?: string; commissionId?: number; user?: AuthenticatedUser },
