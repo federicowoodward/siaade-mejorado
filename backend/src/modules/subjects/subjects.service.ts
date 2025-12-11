@@ -419,10 +419,14 @@ export class SubjectsService {
       .where("ss.subject_id = :subjectId", { subjectId });
 
     if (user?.role === ROLE.TEACHER && user.id) {
-      qb.innerJoin(
-        "subject_commissions",
-        "sc",
-        "sc.id = ss.commission_id AND sc.teacher_id = :teacherId",
+      // Permitir que el docente vea a los alumnos siempre que est‚ asignado a alguna comisi¢n de la materia.
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1
+          FROM subject_commissions sc
+          WHERE sc.subject_id = ss.subject_id
+          AND sc.teacher_id = :teacherId
+        )`,
         { teacherId: user.id },
       );
     }
