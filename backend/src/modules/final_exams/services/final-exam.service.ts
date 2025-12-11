@@ -246,16 +246,22 @@ export class FinalExamService {
       where: { id: dto.final_exams_student_id },
     });
     if (!link) throw new NotFoundException("Final exam student not found");
-    const teacher = await this.teacherRepo.findOne({
-      where: { userId: dto.recorded_by },
-    });
-    if (!teacher) throw new NotFoundException("Teacher not found");
+    const actorRole = _user?.role ?? null;
+    const actorId = _user?.id ?? dto.recorded_by;
 
-    await this.ensureTeacherOwnsLink(
-      teacher.userId,
-      link.finalExamId,
-      link.studentId,
-    );
+    if (
+      actorRole !== ROLE.SECRETARY &&
+      actorRole !== ROLE.EXECUTIVE_SECRETARY
+    ) {
+      throw new ForbiddenException("Solo secretario/director pueden registrar finales");
+    }
+
+    // Secretary / Executive Secretary: validar existencia
+    const sec = await this.secretaryRepo.findOne({
+      where: { userId: actorId },
+    });
+    if (!sec) throw new NotFoundException("Secretary not found");
+
     const status = await this.statusRepo.findOne({
       where: { name: "registrado" },
     });
@@ -264,7 +270,7 @@ export class FinalExamService {
     link.score = (dto.score ?? null) as any;
     link.notes = dto.notes ?? link.notes;
     (link as any).statusId = status.id;
-    (link as any).recordedById = teacher.userId;
+    (link as any).recordedById = actorId;
     (link as any).recordedAt = new Date();
     await this.linkRepo.save(link);
     return { ok: true };
