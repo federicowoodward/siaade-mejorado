@@ -419,7 +419,7 @@ export class SubjectsService {
       .where("ss.subject_id = :subjectId", { subjectId });
 
     if (user?.role === ROLE.TEACHER && user.id) {
-      // Permitir que el docente vea a los alumnos siempre que est‚ asignado a alguna comisi¢n de la materia.
+      // Permitir que el docente vea a los alumnos siempre que este asignado a alguna comisión de la materia.
       qb.andWhere(
         `EXISTS (
           SELECT 1
