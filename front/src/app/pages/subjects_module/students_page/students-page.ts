@@ -14,6 +14,7 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-students-page',
@@ -33,6 +34,7 @@ export class StudentsPage implements OnInit {
   private goBack = inject(GoBackService);
   private rbac = inject(RbacService);
   private permissions = inject(PermissionService);
+  private router = inject(Router);
 
   public ROLE = ROLE;
   subjectId!: string;
@@ -77,5 +79,18 @@ export class StudentsPage implements OnInit {
     this.goBack.back();
   }
 
-  onRowAction(_e: { actionId: string; row: UserRow }) {}
+  onRowAction(e: { actionId: string; row: UserRow }) {
+    const { actionId, row } = e;
+    if (!row?.id) return;
+
+    if (actionId === 'view') {
+      this.router.navigate(['/users/user_detail', row.id]);
+      return;
+    }
+
+    if (actionId === 'academic') {
+      this.router.navigate(['/users/student_academic_status', row.id]);
+      return;
+    }
+  }
 }
