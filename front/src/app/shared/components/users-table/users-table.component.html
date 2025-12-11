@@ -2,6 +2,7 @@
   <p-table
     #dt
     [value]="getVisibleRows()"
+    [columns]="exportColumns"
     [paginator]="true"
     [rows]="10"
     [sortField]="'lastName'"
@@ -23,7 +24,12 @@
             label="Exportar CSV"
             icon="pi pi-download"
             [outlined]="true"
-            (click)="dt.exportCSV({ selectionOnly: false })"
+            (click)="
+              exportPrimengCsv(dt, {
+                fileName: 'usuarios',
+                exportOptions: { selectionOnly: false }
+              })
+            "
           ></p-button>
         </div>
 

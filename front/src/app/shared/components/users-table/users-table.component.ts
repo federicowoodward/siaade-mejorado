@@ -24,6 +24,7 @@ import {
   UsersTableContext,
 } from '../../../core/models/users-table.models';
 import { actionsFor, canSee } from '../../../core/policy/users.policy';
+import { exportPrimengCsv } from '../../utils/primeng-export.utils';
 
 @Component({
   selector: 'app-users-table',
@@ -54,6 +55,14 @@ export class UsersTableComponent implements OnChanges {
 
   // Filtros UI locales
   selectedRole: Role | null = null;
+  readonly exportColumns: Array<{ field: string; header: string }> = [
+    { field: 'name', header: 'Nombre' },
+    { field: 'lastName', header: 'Apellido' },
+    { field: 'cuil', header: 'DNI/CUIL' },
+    { field: 'email', header: 'Email' },
+    { field: 'role', header: 'Rol' },
+  ];
+  readonly exportPrimengCsv = exportPrimengCsv;
 
   @ViewChild('dt') dt!: Table;
 

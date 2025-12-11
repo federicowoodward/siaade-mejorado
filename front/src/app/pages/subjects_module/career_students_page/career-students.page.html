@@ -29,6 +29,7 @@
         dataKey="studentId"
         responsiveLayout="scroll"
         styleClass="p-datatable-sm p-datatable-gridlines"
+        [columns]="exportColumns"
         [rowTrackBy]="rowsTrackBy"
         #studentsTable
       >
@@ -46,7 +47,7 @@
                 label="Exportar CSV"
                 icon="pi pi-download"
                 [outlined]="true"
-                (onClick)="studentsTable.exportCSV({ selectionOnly: false })"
+                (onClick)="onExportCsv(studentsTable)"
               ></p-button>
               <!-- hacer un select con dropdown aca -->
               <!-- <input

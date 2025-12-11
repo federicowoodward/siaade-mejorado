@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -24,6 +24,7 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { exportPrimengCsv } from '@/shared/utils/primeng-export.utils';
 
 @Component({
   selector: 'app-career-students-page',
@@ -124,6 +125,13 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     });
   });
 
+  readonly exportColumns: Array<{ field: string; header: string }> = [
+    { field: 'commissionLetter', header: 'Comision' },
+    { field: 'user.fullName', header: 'Alumno' },
+    { field: 'user.email', header: 'Email' },
+    { field: 'user.cuil', header: 'CUIL' },
+  ];
+
   ngOnInit(): void {
     this.fetch();
   }
@@ -160,6 +168,13 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
 
   onSearchChange(value: string): void {
     this.search.set(value ?? '');
+  }
+
+  onExportCsv(table: Table | null | undefined): void {
+    exportPrimengCsv(table, {
+      fileName: 'alumnos-carrera',
+      exportOptions: { selectionOnly: false },
+    });
   }
 
   onApplyYearFilter(): void {

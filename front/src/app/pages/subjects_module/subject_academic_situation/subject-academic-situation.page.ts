@@ -54,6 +54,7 @@ import {
   resolveSubjectStateSeverity,
 } from '@/shared/utils/subject-state.utils';
 import { PermissionService } from '@/core/auth/permission.service';
+import { exportPrimengCsv } from '@/shared/utils/primeng-export.utils';
 
 @Component({
   selector: 'app-subject-academic-situation-page',
@@ -351,6 +352,31 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     }),
   );
 
+  readonly exportColumns = computed(() => {
+    const cols: Array<{ field: string; header: string }> = [
+      { field: 'fullName', header: 'Alumno' },
+      { field: 'commissionLetter', header: 'Comision' },
+      { field: 'note1', header: 'Nota 1' },
+      { field: 'note2', header: 'Nota 2' },
+    ];
+
+    if (this.partials() === 4) {
+      cols.push(
+        { field: 'note3', header: 'Nota 3' },
+        { field: 'note4', header: 'Nota 4' },
+      );
+    }
+
+    cols.push(
+      { field: 'final', header: 'Nota final' },
+      { field: 'attendancePercentage', header: 'Asistencia (%)' },
+      { field: 'condition', header: 'Condicion' },
+      { field: 'enrolled', header: 'Inscripto' },
+    );
+
+    return cols;
+  });
+
   private readonly filtersEffect = effect(() => {
     const q = this.searchTerm();
     const commissionId = this.selectedCommission();
@@ -405,6 +431,17 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     table?.reset();
     this.searchTerm.set('');
     this.selectedCommission.set(0);
+  }
+
+  onExportCsv(table: Table | null | undefined): void {
+    if (!table) return;
+    const originalValue = table.value;
+    table.value = this.allRows();
+    exportPrimengCsv(table, {
+      fileName: 'situacion-academica',
+      exportOptions: { selectionOnly: false },
+    });
+    table.value = originalValue;
   }
 
   onReload(): void {

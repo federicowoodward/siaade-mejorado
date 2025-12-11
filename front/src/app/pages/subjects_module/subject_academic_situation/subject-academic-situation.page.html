@@ -47,6 +47,7 @@
       <p-table
         #dt
         [value]="virtualRows()"
+        [columns]="exportColumns()"
         dataKey="studentId"
         editMode="row"
         responsiveLayout="scroll"
@@ -75,16 +76,10 @@
                 (onClick)="clearFilters(dt)"
               ></p-button>
               <p-button
-                label="Sincronizar"
-                icon="pi pi-refresh"
-                [disabled]="loading()"
-                (onClick)="onReload()"
-              ></p-button>
-              <p-button
                 label="Exportar CSV"
                 icon="pi pi-download"
                 [outlined]="true"
-                (onClick)="dt.exportCSV({ selectionOnly: false })"
+                (onClick)="onExportCsv(dt)"
               ></p-button>
             </div>
 
