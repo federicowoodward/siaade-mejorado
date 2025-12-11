@@ -46,7 +46,7 @@
           </th>
           <th style="width: 7rem">Nota</th>
           <th>Observaciones</th>
-          <th style="width: 6rem" *appCanAnyRole="['SECRETARY','EXECUTIVE_SECRETARY']">Acciones</th>
+          <th style="width: 6rem" *appCanAnyRole="['TEACHER']">Acciones</th>
         </tr>
       </ng-template>
 
@@ -154,7 +154,7 @@
             </ng-template>
           </td>
 
-          <td *appCanAnyRole="['SECRETARY','EXECUTIVE_SECRETARY']">
+          <td *appCanAnyRole="['TEACHER']">
             <div class="flex items-center justify-center">
               <button
                 *ngIf="!editing"
