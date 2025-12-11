@@ -379,10 +379,13 @@
     </section>
 
     <!-- Datos académicos -->
-    <section
-      class="surface-card border-round shadow-1 p-3 flex flex-column gap-3"
-      *ngIf="(userData().role || '').toLowerCase() === 'student'"
-    >
+      <section
+        class="surface-card border-round shadow-1 p-3 flex flex-column gap-3"
+        *ngIf="
+          shouldShowAcademic() &&
+          (userData().role || '').toLowerCase() === 'student'
+        "
+      >
       <div class="flex flex-column gap-1">
         <h3 class="m-0">Datos académicos</h3>
         <p class="m-0 text-500">

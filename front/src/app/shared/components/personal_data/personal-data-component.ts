@@ -463,4 +463,15 @@ export class PersonalDataComponent implements OnInit {
 
     return !isStudent;
   }
+
+  shouldShowAcademic(): boolean {
+    const isTeacherViewer = this.permissions.hasAnyRole([ROLE.TEACHER]);
+    if (!isTeacherViewer) {
+      return true;
+    }
+    const viewerId = this.auth.getUserId();
+    const targetId = this.userId || null;
+    const isSelf = !!viewerId && !!targetId && viewerId === targetId;
+    return isSelf;
+  }
 }
