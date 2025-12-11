@@ -59,7 +59,13 @@ export class StudentsPage implements OnInit {
     this.api
       .getAll(`subjects/${this.subjectId}/students`)
       .subscribe((list: any) => {
-        const arr = Array.isArray(list) ? list : (list?.data ?? []);
+        const arr = Array.isArray(list)
+          ? list
+          : list?.students
+            ? list.students
+            : Array.isArray(list?.data)
+              ? list.data
+              : [];
         const mapped = arr.map((u: any) =>
           mapApiUserToRow(u, (id: number) => ROLE_BY_ID[id] ?? null),
         );

@@ -50,6 +50,8 @@
         dataKey="studentId"
         editMode="row"
         responsiveLayout="scroll"
+        [sortField]="'fullName'"
+        [sortOrder]="1"
         styleClass="p-datatable-sm p-datatable-gridlines"
         [rowTrackBy]="rowsTrackBy"
         [stateStorage]="'local'"
@@ -430,3 +432,4 @@
     </div>
   </p-dialog>
 </div>
+
