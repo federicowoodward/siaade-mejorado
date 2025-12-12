@@ -1,16 +1,19 @@
 <div class="m-w-custom">
-  <app-breadcrumb [items]="breadcrumbItems">
-    <p-button
-      label="Administrar inscripciones"
-      (onClick)="openInscripciones()"
-    ></p-button>
-  </app-breadcrumb>
+  <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="surface-card border-round p-4 mb-4">
-    <h2 class="m-0">Alumnos de la carrera</h2>
-    <p class="m-0 text-color-secondary">
-      Administra el acceso y estado de los estudiantes inscriptos en la carrera.
-    </p>
+    <div class="flex justify-content-between align-items-start gap-3 flex-wrap">
+      <div>
+        <h2 class="m-0">Alumnos de la carrera</h2>
+        <p class="m-0 text-color-secondary">
+          Administra el acceso y estado de los estudiantes inscriptos en la carrera.
+        </p>
+      </div>
+      <p-button
+        label="Administrar inscripciones"
+        (onClick)="openInscripciones()"
+      ></p-button>
+    </div>
   </div>
 
   <ng-container *ngIf="loading(); else loadedTpl">
