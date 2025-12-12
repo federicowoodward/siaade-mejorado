@@ -68,6 +68,18 @@ export const routes: Routes = [
     children: STUDENTS_ROUTES,
   },
   {
+    path: 'student-careers',
+    canActivate: [
+      AuthGuard,
+      forcePasswordChangeGuard,
+      roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]),
+    ],
+    loadComponent: () =>
+      import('./pages/student-careers/student-careers-page').then(
+        (m) => m.StudentCareersPage,
+      ),
+  },
+  {
     path: 'final_examns',
     canActivate: [
       AuthGuard,

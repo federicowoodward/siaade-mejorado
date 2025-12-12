@@ -9,6 +9,7 @@ import { AuthModule } from "../auth/auth.module";
 import { UserProvisioningModule } from "../../../shared/services/user-provisioning/user-provisioning.module";
 import { UserProfileReaderModule } from "../../../shared/services/user-profile-reader/user-profile-reader.module";
 import { UsersPatchModule } from "@/shared/services/users-patch/users-path.module";
+import { StudentCareersModule } from "@/modules/student-careers/student-careers.module";
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Role, Subject]),
@@ -16,6 +17,7 @@ import { UsersPatchModule } from "@/shared/services/users-patch/users-path.modul
     UserProvisioningModule,
     UserProfileReaderModule,
     UsersPatchModule,
+    StudentCareersModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

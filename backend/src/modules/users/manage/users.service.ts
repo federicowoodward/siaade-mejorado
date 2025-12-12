@@ -29,6 +29,7 @@ import {
   assertMinAge,
   assertStudentStartYear,
 } from "@/shared/utils/age.utils";
+import { StudentCareersService } from "@/modules/student-careers/student-careers.service";
 
 export type CreationMode = "d" | "sc" | "p" | "t" | "st";
 
@@ -41,6 +42,7 @@ export class UsersService {
     private rolesRepository: Repository<Role>,
     private readonly provisioning: UserProvisioningService,
     private readonly userReader: UserProfileReaderService,
+    private readonly studentCareers: StudentCareersService,
   ) {}
 
   private async buildUserData(input: {
@@ -150,7 +152,7 @@ export class UsersService {
       { minYears: MIN_AGE_YEARS },
     );
 
-    return this.provisioning.createStudent({
+    const created = await this.provisioning.createStudent({
       userData: {
         ...userData,
         roleName: ROLE.STUDENT,
@@ -165,6 +167,22 @@ export class UsersService {
         studentStartYear: startYear,
       },
     });
+
+    if (dto.careerId !== undefined && dto.careerId !== null) {
+      const enrollment = await this.studentCareers.assignStudentToCareer(
+        created.student.userId,
+        dto.careerId,
+      );
+      return {
+        ...created,
+        careerEnrollment: {
+          careerId: enrollment.careerId,
+        },
+        enrolledSubjectsCount: enrollment.enrolledSubjectsCount,
+      };
+    }
+
+    return created;
   }
 
   /**
