@@ -30,7 +30,10 @@ async function ensureDatabaseExists(dbName: string) {
       user: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_ADMIN_DATABASE || "postgres",
-      ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+      ssl:
+        process.env.DB_SSL === "true"
+          ? { rejectUnauthorized: false }
+          : undefined,
     };
   }
 
@@ -60,15 +63,12 @@ async function globalSetup() {
   process.env.DB_DATABASE = process.env.DB_DATABASE || "siaade_test"; // #ASUMIENDO ENTORNO: nombre de BD de test
   process.env.TYPEORM_MIGRATIONS_RUN =
     process.env.TYPEORM_MIGRATIONS_RUN ?? "true";
-  process.env.ENSURE_ROLES_ON_BOOT =
-    process.env.ENSURE_ROLES_ON_BOOT ?? "true";
+  process.env.ENSURE_ROLES_ON_BOOT = process.env.ENSURE_ROLES_ON_BOOT ?? "true";
   process.env.TYPEORM_LOGGING = process.env.TYPEORM_LOGGING ?? "false";
 
   await ensureDatabaseExists(process.env.DB_DATABASE!);
 
-  const { default: AppDataSource } = await import(
-    "../src/database/datasource"
-  );
+  const { default: AppDataSource } = await import("../src/database/datasource");
 
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize();

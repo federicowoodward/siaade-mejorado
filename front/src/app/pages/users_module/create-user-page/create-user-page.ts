@@ -16,7 +16,6 @@ import { ApiService } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
-import { RoleLabelPipe } from '../../../shared/pipes/role-label.pipe';
 import { buildPreviewRows } from '../../../shared/utils/create-user/user-preview-table';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
 
@@ -65,7 +64,6 @@ type RoleOption = { label: string; value: UserRole };
     ToastModule,
     TableModule,
     FieldLabelPipe,
-    RoleLabelPipe,
     BlockedActionDirective,
     IftaLabelModule,
   ],
@@ -83,9 +81,8 @@ export class CreateUserPage implements OnInit {
 
   isCreating = false;
   activeStep = 1;
-  duplicateErrors: Partial<
-    Record<'email' | 'cuil' | 'documentValue', string>
-  > = {};
+  duplicateErrors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> =
+    {};
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Inicio', routerLink: '/welcome' },
@@ -150,6 +147,10 @@ export class CreateUserPage implements OnInit {
   // extras de alumno
   studentLegajo = '';
   studentStartYear: number | null = null; // opcional
+  careerId: number | null = null;
+  careerOptions: { label: string; value: number }[] = [];
+  careerLoading = false;
+  careerLoadError: string | null = null;
 
   private addressObj() {
     return {
@@ -239,12 +240,25 @@ export class CreateUserPage implements OnInit {
     return null;
   }
 
+  get careerError(): string | null {
+    if (this.role !== 'student') return null;
+    if (this.careerLoadError) return this.careerLoadError;
+    if (!this.careerId)
+      return 'Seleccioná una carrera para inscribir al alumno.';
+    return null;
+  }
+
   get step1Errors(): string[] {
     return this.validateStep1();
   }
 
   get step2Errors(): string[] {
     return this.validateStep2();
+  }
+
+  get step3Errors(): string[] {
+    if (this.role !== 'student') return [];
+    return this.careerError ? [this.careerError] : [];
   }
 
   private validateStep1(): string[] {
@@ -260,7 +274,8 @@ export class CreateUserPage implements OnInit {
     if (this.cuilError) errors.push(`CUIL: ${this.cuilError}`);
     if (!this.sex) errors.push('Sexo es obligatorio.');
     if (!this.birthDate) errors.push('Fecha de nacimiento es obligatoria.');
-    if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
+    if (this.birthDateError)
+      errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
     return errors;
   }
 
@@ -280,7 +295,8 @@ export class CreateUserPage implements OnInit {
       }
     }
     if (req?.needsCommonData) {
-      if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
+      if (this.birthDateError)
+        errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
       if (!this.sex) errors.push('Sexo es obligatorio.');
     }
     if (this.role === 'student') {
@@ -294,7 +310,10 @@ export class CreateUserPage implements OnInit {
     return errors;
   }
 
-  private showValidationErrors(errors: string[], summary = 'Revisá los datos requeridos') {
+  private showValidationErrors(
+    errors: string[],
+    summary = 'Revisá los datos requeridos',
+  ) {
     if (!errors.length) return;
     this.toastErr(`${summary}: ${errors.join(' | ')}`);
   }
@@ -302,6 +321,7 @@ export class CreateUserPage implements OnInit {
   canCreate(): boolean {
     if (this.birthDateError || this.studentStartYearError) return false;
     if (this.step1Errors.length || this.step2Errors.length) return false;
+    if (this.role === 'student' && this.step3Errors.length) return false;
     const baseOk = canCreateBase(this.role, this.email, this.cuil);
     if (!baseOk) return false;
     if (this.role === 'secretary') return true;
@@ -387,6 +407,8 @@ export class CreateUserPage implements OnInit {
           this.role === 'student' && this.studentStartYear
             ? this.studentStartYear
             : undefined,
+        careerId:
+          this.role === 'student' && this.careerId ? this.careerId : undefined,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
@@ -433,6 +455,7 @@ export class CreateUserPage implements OnInit {
           ? {
               legajo: this.studentLegajo || this.cuil || this.documentValue,
               studentStartYear: this.studentStartYear || undefined,
+              career: this.selectedCareerLabel() || this.careerId || undefined,
             }
           : this.role === 'secretary'
             ? { isDirective: true }
@@ -469,7 +492,15 @@ export class CreateUserPage implements OnInit {
       const match = this.roleOptions.find((o) => o.value === row.value);
       return match?.label ?? String(row.value ?? '');
     }
+    if (row.field.includes('career') && this.role === 'student') {
+      return this.selectedCareerLabel() ?? String(row.value ?? '');
+    }
     return String(row.value ?? '');
+  }
+
+  private selectedCareerLabel(): string | null {
+    const match = this.careerOptions.find((opt) => opt.value === this.careerId);
+    return match?.label ?? null;
   }
 
   // ---- SUGERENCIAS / LISTAS ----
@@ -514,9 +545,14 @@ export class CreateUserPage implements OnInit {
 
   private setDuplicateErrorsFromDetail(detail: string, status?: number): void {
     const lower = (detail || '').toLowerCase();
-    const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> = {};
+    const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> =
+      {};
 
-    if (lower.includes('email') || lower.includes('correo') || lower.includes('mail')) {
+    if (
+      lower.includes('email') ||
+      lower.includes('correo') ||
+      lower.includes('mail')
+    ) {
       errors.email = 'El email ya está registrado.';
     }
     if (/(cuil).*(registrad|ya|duplicad)/.test(lower)) {
@@ -538,8 +574,16 @@ export class CreateUserPage implements OnInit {
   }
 
   // ---- METODOS PARA p-autoComplete ----
-  searchRoles(e: { query: string }) {
+  onRoleChange(role: UserRole | null): void {
+    this.role = role;
+    if (role !== 'student') {
+      this.careerId = null;
+      this.careerOptions = [];
+      this.careerLoadError = null;
+    }
+  }
 
+  searchRoles(e: { query: string }) {
     const q = (e?.query ?? '').toLowerCase().trim();
 
     if (!q) {
@@ -613,6 +657,35 @@ export class CreateUserPage implements OnInit {
     }
   }
 
+  private async ensureCareerOptions(): Promise<void> {
+    if (this.role !== 'student' || this.careerOptions.length) return;
+    this.careerLoading = true;
+    this.careerLoadError = null;
+    try {
+      const resp = await firstValueFrom(
+        this.api.request<{ data: any[] }>(
+          'GET',
+          'catalogs/careers',
+          undefined,
+          { limit: 200 },
+          undefined,
+          false,
+        ),
+      );
+      const rows = (resp as any)?.data ?? resp ?? [];
+      this.careerOptions = (rows as any[]).map((c) => ({
+        label: c.careerName || c.name || `Carrera ${c.id}`,
+        value: c.id,
+      }));
+    } catch (error) {
+      console.error('No se pudieron cargar carreras', error);
+      this.careerLoadError =
+        'No se pudieron cargar las carreras disponibles. Intenta nuevamente.';
+    } finally {
+      this.careerLoading = false;
+    }
+  }
+
   async onProvinceChange(value: string | null): Promise<void> {
     this.addressProvince = value ?? '';
     this.addressNeighborhood = '';
@@ -646,12 +719,30 @@ export class CreateUserPage implements OnInit {
     this.goToStep(2);
   }
 
-  onNextFromStep2(): void {
+  async onNextFromStep2(): Promise<void> {
     const errors = this.validateStep2();
     if (errors.length) {
       this.showValidationErrors(errors, 'Completa los datos del Paso II');
       return;
     }
-    this.goToStep(3);
+    if (this.role === 'student') {
+      await this.ensureCareerOptions();
+      this.goToStep(3);
+    } else {
+      this.goToStep(4);
+    }
+  }
+
+  onNextFromStep3(): void {
+    if (this.role !== 'student') {
+      this.goToStep(4);
+      return;
+    }
+    const errors = this.step3Errors;
+    if (errors.length) {
+      this.showValidationErrors(errors, 'Seleccioná la carrera');
+      return;
+    }
+    this.goToStep(4);
   }
 }

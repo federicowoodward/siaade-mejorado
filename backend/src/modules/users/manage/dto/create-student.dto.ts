@@ -34,6 +34,16 @@ export class CreateStudentDto extends BaseUserDto {
   @IsInt()
   studentStartYear?: number;
 
+  @ApiPropertyOptional({
+    description: "ID de la carrera a asignar",
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  careerId?: number;
+
   @ApiProperty()
   @ValidateNested()
   @Type(() => UserInfoDto)

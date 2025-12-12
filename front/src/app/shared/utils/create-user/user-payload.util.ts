@@ -40,6 +40,7 @@ export interface BuildPayloadArgs {
   studentStartYear?: number;
   commissionId?: number;
   isActive?: boolean;
+  careerId?: number;
 }
 
 export function hasAnyAddress(a?: AddressForm): boolean {
@@ -133,6 +134,10 @@ export function buildPayload(args: BuildPayloadArgs) {
             studentStartYear:
               args.studentStartYear && Number.isFinite(args.studentStartYear)
                 ? Number(args.studentStartYear)
+                : undefined,
+            careerId:
+              args.careerId && Number.isFinite(args.careerId)
+                ? Number(args.careerId)
                 : undefined,
           }
         : {}),

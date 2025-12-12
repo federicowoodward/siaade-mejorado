@@ -197,7 +197,11 @@ export class FinalExamController {
   @AllowRoles(ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
   @Post("record")
   record(@Body() dto: RecordFinalDto, @Req() req: Request) {
-    const user = (req as any).user as { id?: string; sub?: string; role?: ROLE | null };
+    const user = (req as any).user as {
+      id?: string;
+      sub?: string;
+      role?: ROLE | null;
+    };
     const userId = (user?.id as string) ?? (user?.sub as string);
     return this.svc.record(
       { ...dto, recorded_by: userId },

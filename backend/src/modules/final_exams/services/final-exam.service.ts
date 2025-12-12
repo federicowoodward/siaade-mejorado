@@ -253,7 +253,9 @@ export class FinalExamService {
       actorRole !== ROLE.SECRETARY &&
       actorRole !== ROLE.EXECUTIVE_SECRETARY
     ) {
-      throw new ForbiddenException("Solo secretario/director pueden registrar finales");
+      throw new ForbiddenException(
+        "Solo secretario/director pueden registrar finales",
+      );
     }
 
     // Secretary / Executive Secretary: validar existencia

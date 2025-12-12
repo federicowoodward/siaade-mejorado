@@ -26,6 +26,8 @@ import {
 import { actionsFor, canSee } from '../../../core/policy/users.policy';
 import { exportPrimengCsv } from '../../utils/primeng-export.utils';
 
+type UserRowWithFullName = UserRow & { fullName: string };
+
 @Component({
   selector: 'app-users-table',
   standalone: true,
@@ -67,9 +69,14 @@ export class UsersTableComponent implements OnChanges {
   @ViewChild('dt') dt!: Table;
 
   // Derivados de permisos (cacheados simples)
-  getVisibleRows(): UserRow[] {
+  getVisibleRows(): UserRowWithFullName[] {
     if (!this.viewerRole) return [];
-    return this.rows.filter((r) => canSee(this.viewerRole, r.role));
+    return this.rows
+      .filter((r) => canSee(this.viewerRole, r.role))
+      .map((r) => ({
+        ...r,
+        fullName: `${r.name ?? ''} ${r.lastName ?? ''}`.trim(),
+      }));
   }
 
   getRowActions(row: UserRow): RowAction[] {

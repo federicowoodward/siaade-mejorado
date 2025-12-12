@@ -3,11 +3,7 @@ import { DataSource } from "typeorm";
 import request from "supertest";
 import { createTestApp, closeTestApp } from "./utils/test-app.factory";
 import { ensureTestSeed } from "./utils/test-seed";
-import {
-  login,
-  loginAsSecretary,
-  loginAsTeacher,
-} from "./utils/auth-helpers";
+import { login, loginAsSecretary, loginAsTeacher } from "./utils/auth-helpers";
 import { findSubjectTeacherStudent } from "./utils/test-data";
 import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
 import { User } from "@/entities/users/user.entity";
@@ -28,8 +24,7 @@ describe("Final exams (e2e)", () => {
 
     secretaryToken = (await loginAsSecretary(app)).token || "";
 
-    const mapping =
-      (await findSubjectTeacherStudent(dataSource)) ??
+    const mapping = (await findSubjectTeacherStudent(dataSource)) ??
       // #ASUMIENDO NEGOCIO: fallback simple
       { subjectId: 1, studentId: "", teacherId: "" };
 
@@ -50,7 +45,9 @@ describe("Final exams (e2e)", () => {
         end_date: "2025-03-10",
       });
     examTableId =
-      tableRes.body?.id ?? tableRes.body?.data?.id ?? tableRes.body?.data?.examTableId;
+      tableRes.body?.id ??
+      tableRes.body?.data?.id ??
+      tableRes.body?.data?.examTableId;
 
     const examRes = await request(app.getHttpServer())
       .post("/api/finals/exam/create")

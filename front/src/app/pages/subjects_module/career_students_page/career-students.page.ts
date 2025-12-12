@@ -138,6 +138,10 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {}
 
+  openInscripciones(): void {
+    this.router.navigate(['/inscripciones-materias']);
+  }
+
   private fetch(): void {
     this.loading.set(true);
     this.error.set(null);

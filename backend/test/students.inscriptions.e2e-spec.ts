@@ -24,7 +24,9 @@ describe("Students inscriptions (e2e)", () => {
 
     const mapping = await findSubjectTeacherStudent(dataSource);
     if (!mapping) {
-      throw new Error("No hay datos de materia/alumno para pruebas de inscripciones");
+      throw new Error(
+        "No hay datos de materia/alumno para pruebas de inscripciones",
+      );
     }
 
     const studentEmail =
@@ -44,7 +46,9 @@ describe("Students inscriptions (e2e)", () => {
         end_date: "2025-04-05",
       });
     examTableId =
-      tableRes.body?.id ?? tableRes.body?.data?.id ?? tableRes.body?.data?.examTableId;
+      tableRes.body?.id ??
+      tableRes.body?.data?.id ??
+      tableRes.body?.data?.examTableId;
 
     const examRes = await request(app.getHttpServer())
       .post("/api/finals/exam/create")

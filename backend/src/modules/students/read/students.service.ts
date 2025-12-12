@@ -277,8 +277,7 @@ export class StudentsReadService {
       result.push({ year: yearNumber, subjects });
     }
 
-    result.sort((a, b) => a.year - b.year);
-    return result;
+    return result.sort((a, b) => a.year - b.year).filter((x) => x.year === 1);
   }
 
   private resolveYearNumber(label: string, rows: AcademicStatusRow[]): number {

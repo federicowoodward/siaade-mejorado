@@ -41,7 +41,8 @@ describe("Final exam tables (e2e)", () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    createdId = res.body?.id ?? res.body?.data?.id ?? res.body?.data?.examTableId;
+    createdId =
+      res.body?.id ?? res.body?.data?.id ?? res.body?.data?.examTableId;
     expect(createdId).toBeDefined();
   });
 

@@ -13,7 +13,12 @@ export class IdleKeepaliveService implements OnDestroy {
   private checkSub: Subscription | null = null;
   private refreshInFlight = false;
 
-  private readonly activityEvents = ['click', 'keydown', 'mousemove', 'touchstart'];
+  private readonly activityEvents = [
+    'click',
+    'keydown',
+    'mousemove',
+    'touchstart',
+  ];
 
   constructor() {
     this.bindActivityListeners();
@@ -87,7 +92,9 @@ export class IdleKeepaliveService implements OnDestroy {
     const parts = token.split('.');
     if (parts.length < 2) return null;
     try {
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const payload = JSON.parse(
+        atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')),
+      );
       const exp = Number(payload?.exp);
       return Number.isFinite(exp) ? exp : null;
     } catch {

@@ -17,9 +17,10 @@
             </p>
           </div>
           <p-step-list class="w-full">
-            <p-step [value]="1">Paso I</p-step>
-            <p-step [value]="2">Paso II</p-step>
-            <p-step [value]="3">Paso III</p-step>
+            <p-step [value]="1">Datos básicos</p-step>
+            <p-step [value]="2">Información de contacto</p-step>
+            <p-step [value]="3">Asignar carrera</p-step>
+            <p-step [value]="4">Resumen</p-step>
           </p-step-list>
         </div>
       </div>
@@ -50,6 +51,7 @@
                       [dropdown]="true"
                       [minLength]="0"
                       [(ngModel)]="role"
+                      (ngModelChange)="onRoleChange($event)"
                       [forceSelection]="true"
                       placeholder="Seleccione rol del nuevo usuario"
                       optionLabel="label"
@@ -397,20 +399,20 @@
                         <div class="grid">
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                          <input
-                            id="studentLegajo"
-                            pInputText
-                            class="w-full"
-                            [(ngModel)]="studentLegajo"
-                            placeholder="Identificador de legajo"
-                          />
-                          <label for="studentLegajo">Legajo *</label>
-                        </p-iftalabel>
-                        <small class="text-color-secondary block mt-1">
-                          Si lo dejás vacío, se usará el CUIL o el
-                          documento.
-                        </small>
-                      </div>
+                              <input
+                                id="studentLegajo"
+                                pInputText
+                                class="w-full"
+                                [(ngModel)]="studentLegajo"
+                                placeholder="Identificador de legajo"
+                              />
+                              <label for="studentLegajo">Legajo *</label>
+                            </p-iftalabel>
+                            <small class="text-color-secondary block mt-1">
+                              Si lo dejás vacío, se usará el CUIL o el
+                              documento.
+                            </small>
+                          </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
                               <input
@@ -420,7 +422,9 @@
                                 [(ngModel)]="studentStartYear"
                                 placeholder="YYYY"
                               />
-                              <label for="studentStartYear">Año de inicio</label>
+                              <label for="studentStartYear"
+                                >Año de inicio</label
+                              >
                             </p-iftalabel>
                             <small
                               *ngIf="studentStartYearError"
@@ -459,8 +463,76 @@
           </ng-template>
         </p-step-panel>
 
-        <!-- PASO 3: resumen -->
+        <!-- PASO 3: asignacion de carrera a alumno -->
         <p-step-panel [value]="3">
+          <ng-template #content>
+            <section
+              class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-20rem"
+            >
+              <div class="flex flex-column gap-1">
+                <h3 class="m-0">Asignar carrera</h3>
+                <p class="m-0 text-500">
+                  Seleccioná la carrera para inscribir automáticamente al alumno
+                  en todas sus materias.
+                </p>
+              </div>
+
+              <ng-container *ngIf="role === 'student'; else skipCareer">
+                <div class="grid form-grid">
+                  <div class="col-12 md:col-6">
+                    <p-iftalabel class="w-full">
+                      <p-select
+                        class="w-full"
+                        inputId="careerId"
+                        [options]="careerOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccioná una carrera"
+                        appendTo="body"
+                        [showClear]="true"
+                        [(ngModel)]="careerId"
+                        blockedAction
+                      ></p-select>
+                      <label for="careerId">Carrera *</label>
+                    </p-iftalabel>
+                    <small *ngIf="careerError" class="p-error block mt-1">
+                      {{ careerError }}
+                    </small>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #skipCareer>
+                <p class="text-color-secondary">
+                  Este paso solo aplica a usuarios con rol Alumno. Avanzá al
+                  resumen.
+                </p>
+              </ng-template>
+
+              <div class="flex pt-4 justify-content-between">
+                <div class="flex gap-2">
+                  <p-button
+                    label="Paso anterior"
+                    severity="secondary"
+                    icon="pi pi-arrow-left"
+                    (onClick)="goToStep(role === 'student' ? 3 : 2)"
+                  />
+                </div>
+                <div>
+                  <p-button
+                    label="Siguiente paso"
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    (onClick)="onNextFromStep3()"
+                    [disabled]="role === 'student' && step3Errors.length > 0"
+                  />
+                </div>
+              </div>
+            </section>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- PASO 4: resumen -->
+        <p-step-panel [value]="4">
           <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"

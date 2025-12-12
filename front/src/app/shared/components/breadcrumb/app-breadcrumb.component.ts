@@ -26,13 +26,16 @@ export interface SimpleBreadcrumbItem {
         [model]="model"
         styleClass="w-full"
       ></p-breadcrumb>
-      <p-button
-        label="Volver"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        outlined="true"
-        (onClick)="back()"
-      ></p-button>
+      <div class="flex align-items-center gap-2">
+        <ng-content></ng-content>
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          outlined="true"
+          (onClick)="back()"
+        ></p-button>
+      </div>
     </div>
   `,
   styles: [
