@@ -25,6 +25,7 @@ import {
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
 import { exportPrimengCsv } from '@/shared/utils/primeng-export.utils';
+import { StudentCareersPage } from '@/pages/student-careers/student-careers-page';
 
 @Component({
   selector: 'app-career-students-page',
@@ -37,6 +38,7 @@ import { exportPrimengCsv } from '@/shared/utils/primeng-export.utils';
     ButtonModule,
     InputTextModule,
     ProgressSpinnerModule,
+    StudentCareersPage,
   ],
   templateUrl: './career-students.page.html',
   styleUrl: './career-students.page.scss',
@@ -53,6 +55,8 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
     },
     { label: 'Alumnos de la carrera' },
   ];
+
+  showInscripciones = false;
 
   loading = signal(true);
   error = signal<string | null>(null);
@@ -137,6 +141,10 @@ export class CareerStudentsPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {}
+
+  openInscripciones(): void {
+    this.showInscripciones = true;
+  }
 
   private fetch(): void {
     this.loading.set(true);

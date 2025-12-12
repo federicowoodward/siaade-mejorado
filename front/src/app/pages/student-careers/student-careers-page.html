@@ -1,22 +1,14 @@
 <div class="m-w-custom flex flex-column gap-3 pt-4">
-  <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-
   <div class="card flex flex-column gap-3 p-4">
     <div
       class="flex align-items-center justify-content-between gap-2 flex-wrap"
     >
       <div>
         <h2 class="m-0">Inscripciones a materias</h2>
-        <p class="m-0 text-color-secondary">
+        <p *ngIf="false" class="m-0 text-color-secondary">
           Administración / Inscripciones a materias
         </p>
       </div>
-      <p-button
-        label="Volver"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        (onClick)="goBackClick()"
-      ></p-button>
     </div>
 
     <div class="flex flex-column md:flex-row gap-3 align-items-center">

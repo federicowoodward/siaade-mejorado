@@ -1,5 +1,10 @@
 <div class="m-w-custom">
-  <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+  <app-breadcrumb [items]="breadcrumbItems">
+    <p-button
+      label="Administrar inscripciones"
+      (onClick)="openInscripciones()"
+    ></p-button>
+  </app-breadcrumb>
 
   <div class="surface-card border-round p-4 mb-4">
     <h2 class="m-0">Alumnos de la carrera</h2>
@@ -112,4 +117,8 @@
       </p-table>
     </div>
   </ng-template>
+
+  <app-inscripciones-materias
+    *ngIf="showInscripciones"
+  ></app-inscripciones-materias>
 </div>

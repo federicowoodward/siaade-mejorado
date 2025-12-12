@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -9,11 +8,6 @@ import { Button } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '@/core/services/api.service';
-import { GoBackService } from '@/core/services/go_back.service';
-import {
-  AppBreadcrumbComponent,
-  SimpleBreadcrumbItem,
-} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 import { FormsModule } from '@angular/forms';
 
 type CareerOption = { label: string; value: number };
@@ -28,11 +22,10 @@ interface UiStudentCareerRow {
 }
 
 @Component({
-  selector: 'app-student-careers-page',
+  selector: 'app-inscripciones-materias',
   standalone: true,
   imports: [
     CommonModule,
-    AppBreadcrumbComponent,
     TableModule,
     SelectModule,
     ToggleSwitchModule,
@@ -45,14 +38,12 @@ interface UiStudentCareerRow {
 })
 export class StudentCareersPage implements OnInit {
   private readonly api = inject(ApiService);
-  private readonly router = inject(Router);
-  private readonly goBack = inject(GoBackService);
   private readonly messages = inject(MessageService);
 
-  breadcrumbItems: SimpleBreadcrumbItem[] = [
+  /* breadcrumbItems: any[] = [
     { label: 'Administración', routerLink: '/welcome' },
     { label: 'Inscripciones a materias' },
-  ];
+  ]; */
 
   students = signal<UiStudentCareerRow[]>([]);
   careers = signal<CareerOption[]>([]);
@@ -66,23 +57,19 @@ export class StudentCareersPage implements OnInit {
     const careerId = this.selectedCareerId();
 
     if (!show) {
-      return list.filter((s) => s.careerId === null);
+      return list.filter((s: UiStudentCareerRow) => s.careerId === null);
     }
 
     if (careerId === null) {
-      return list.filter((s) => s.careerId !== null);
+      return list.filter((s: UiStudentCareerRow) => s.careerId !== null);
     }
 
-    return list.filter((s) => s.careerId === careerId);
+    return list.filter((s: UiStudentCareerRow) => s.careerId === careerId);
   });
 
   ngOnInit(): void {
     this.loadCareers();
     this.loadStudentCareers();
-  }
-
-  goBackClick(): void {
-    this.goBack.back();
   }
 
   onToggleAssigned(value: boolean): void {

@@ -69,15 +69,8 @@ export const routes: Routes = [
   },
   {
     path: 'inscripciones-materias',
-    canActivate: [
-      AuthGuard,
-      forcePasswordChangeGuard,
-      roleCanActivate([ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY]),
-    ],
-    loadComponent: () =>
-      import('./pages/student-careers/student-careers-page').then(
-        (m) => m.StudentCareersPage,
-      ),
+    redirectTo: 'subjects/career-students',
+    pathMatch: 'full',
   },
   {
     path: 'final_examns',
