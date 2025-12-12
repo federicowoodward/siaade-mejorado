@@ -8,6 +8,11 @@ import { Button } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '@/core/services/api.service';
+import { GoBackService } from '@/core/services/go_back.service';
+import {
+  AppBreadcrumbComponent,
+  SimpleBreadcrumbItem,
+} from '@/shared/components/breadcrumb/app-breadcrumb.component';
 import { FormsModule } from '@angular/forms';
 
 type CareerOption = { label: string; value: number };
@@ -26,6 +31,7 @@ interface UiStudentCareerRow {
   standalone: true,
   imports: [
     CommonModule,
+    AppBreadcrumbComponent,
     TableModule,
     SelectModule,
     ToggleSwitchModule,
@@ -38,12 +44,18 @@ interface UiStudentCareerRow {
 })
 export class StudentCareersPage implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly goBack = inject(GoBackService);
   private readonly messages = inject(MessageService);
 
   /* breadcrumbItems: any[] = [
     { label: 'Administración', routerLink: '/welcome' },
     { label: 'Inscripciones a materias' },
   ]; */
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Administración', routerLink: '/welcome' },
+    { label: 'Inscripciones a materias' },
+  ];
 
   students = signal<UiStudentCareerRow[]>([]);
   careers = signal<CareerOption[]>([]);
@@ -70,6 +82,10 @@ export class StudentCareersPage implements OnInit {
   ngOnInit(): void {
     this.loadCareers();
     this.loadStudentCareers();
+  }
+
+  goBackClick(): void {
+    this.goBack.back();
   }
 
   onToggleAssigned(value: boolean): void {
