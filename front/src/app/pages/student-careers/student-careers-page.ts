@@ -1,15 +1,9 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputSwitchModule } from 'primeng/inputswitch';
+import { SelectModule } from 'primeng/select';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TagModule } from 'primeng/tag';
 import { Button } from 'primeng/button';
 import { MessageService } from 'primeng/api';
@@ -20,6 +14,7 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
+import { FormsModule } from '@angular/forms';
 
 type CareerOption = { label: string; value: number };
 
@@ -39,10 +34,11 @@ interface UiStudentCareerRow {
     CommonModule,
     AppBreadcrumbComponent,
     TableModule,
-    DropdownModule,
-    InputSwitchModule,
+    SelectModule,
+    ToggleSwitchModule,
     TagModule,
     Button,
+    FormsModule,
   ],
   templateUrl: './student-careers-page.html',
   providers: [MessageService],
@@ -61,7 +57,7 @@ export class StudentCareersPage implements OnInit {
   students = signal<UiStudentCareerRow[]>([]);
   careers = signal<CareerOption[]>([]);
   loading = signal<boolean>(false);
-  showAssigned = signal<boolean>(true); // true = ver alumnos con carrera asignada
+  showAssigned = signal<boolean>(true);
   selectedCareerId = signal<number | null>(null);
 
   filteredStudents = computed(() => {

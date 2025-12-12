@@ -2,7 +2,9 @@
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="card flex flex-column gap-3 p-4">
-    <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
+    <div
+      class="flex align-items-center justify-content-between gap-2 flex-wrap"
+    >
       <div>
         <h2 class="m-0">Inscripciones a materias</h2>
         <p class="m-0 text-color-secondary">
@@ -18,18 +20,21 @@
     </div>
 
     <div class="flex flex-column md:flex-row gap-3 align-items-center">
+      <!-- ToggleSwitch -->
       <div class="flex align-items-center gap-2">
-        <p-inputSwitch
+        <p-toggleswitch
           [ngModel]="showAssigned()"
           (ngModelChange)="onToggleAssigned($event)"
-        ></p-inputSwitch>
+        ></p-toggleswitch>
         <span class="text-color-secondary">
-          {{ showAssigned() ? 'Ver alumnos con carrera asignada' : 'Ver alumnos sin carrera asignada' }}
+          {{ showAssigned() ? 'Ver alumnos con carrera asignada' : 'Ver alumnos
+          sin carrera asignada' }}
         </span>
       </div>
 
+      <!-- Select de carreras -->
       <div class="flex align-items-center gap-2 w-full md:w-20rem">
-        <p-dropdown
+        <p-select
           class="w-full"
           [options]="careers()"
           optionLabel="label"
@@ -37,10 +42,9 @@
           placeholder="Seleccionar carrera"
           [disabled]="!showAssigned()"
           [ngModel]="selectedCareerId()"
-          (onChange)="onCareerChange($event.value)"
-          appendTo="body"
+          (ngModelChange)="onCareerChange($event)"
           [showClear]="true"
-        ></p-dropdown>
+        ></p-select>
       </div>
     </div>
 
