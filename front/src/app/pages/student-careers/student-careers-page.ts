@@ -40,17 +40,12 @@ interface UiStudentCareerRow {
     FormsModule,
   ],
   templateUrl: './student-careers-page.html',
-  providers: [MessageService],
 })
 export class StudentCareersPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly goBack = inject(GoBackService);
   private readonly messages = inject(MessageService);
 
-  /* breadcrumbItems: any[] = [
-    { label: 'Administración', routerLink: '/welcome' },
-    { label: 'Inscripciones a materias' },
-  ]; */
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Administración', routerLink: '/welcome' },
@@ -90,8 +85,8 @@ export class StudentCareersPage implements OnInit {
 
   onToggleAssigned(value: boolean): void {
     this.showAssigned.set(value);
-    if (!value) {
-      this.selectedCareerId.set(null);
+    if (value) {
+      this.ensureDefaultCareerSelection();
     }
   }
 
@@ -154,6 +149,7 @@ export class StudentCareersPage implements OnInit {
         value: c.id,
       }));
       this.careers.set(opts);
+      this.ensureDefaultCareerSelection();
     } catch (err) {
       console.error(err);
       this.toastError('No se pudieron cargar las carreras.');
@@ -174,7 +170,7 @@ export class StudentCareersPage implements OnInit {
           careerId,
         }),
       );
-      this.toastOk('Alumno inscrito a la carrera.');
+      this.toastOk('Alumno inscripto a la carrera.');
       await this.loadStudentCareers();
     } catch (err) {
       console.error(err);
@@ -193,7 +189,7 @@ export class StudentCareersPage implements OnInit {
           careerId: null,
         }),
       );
-      this.toastOk('Alumno desinscrito de la carrera.');
+      this.toastOk('Alumno desinscripto de la carrera.');
       await this.loadStudentCareers();
     } catch (err) {
       console.error(err);
@@ -209,5 +205,12 @@ export class StudentCareersPage implements OnInit {
 
   private toastError(detail: string): void {
     this.messages.add({ severity: 'error', summary: 'Error', detail });
+  }
+
+  private ensureDefaultCareerSelection(): void {
+    const opts = this.careers();
+    if (opts.length === 1 && this.selectedCareerId() === null) {
+      this.selectedCareerId.set(opts[0].value);
+    }
   }
 }

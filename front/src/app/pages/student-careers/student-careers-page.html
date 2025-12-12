@@ -33,7 +33,6 @@
           optionLabel="label"
           optionValue="value"
           placeholder="Seleccionar carrera"
-          [disabled]="!showAssigned()"
           [ngModel]="selectedCareerId()"
           (ngModelChange)="onCareerChange($event)"
           [showClear]="true"
@@ -52,7 +51,9 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>Alumno</th>
+          <th pSortableColumn="fullName">
+            Alumno <p-sortIcon field="fullName" />
+          </th>
           <th>Carrera</th>
           <th>Estado</th>
           <th class="w-8rem">Acción</th>
@@ -66,14 +67,14 @@
           <td>
             <p-tag
               [value]="row.careerId ? 'Asignado' : 'Sin asignar'"
-              [severity]="row.careerId ? 'success' : 'danger'"
+              [severity]="row.careerId ? 'success' : 'secondary'"
             ></p-tag>
           </td>
           <td>
             <ng-container *ngIf="row.careerId; else assignBtn">
               <p-button
                 label="Desinscribir"
-                severity="success"
+                severity="danger"
                 size="small"
                 (onClick)="onUnassign(row)"
               ></p-button>
@@ -81,7 +82,7 @@
             <ng-template #assignBtn>
               <p-button
                 label="Inscribir"
-                severity="danger"
+                severity="success"
                 size="small"
                 (onClick)="onAssign(row)"
               ></p-button>
@@ -111,6 +112,8 @@
       [tableStyle]="{ 'min-width': '50rem' }"
       responsiveLayout="scroll"
       styleClass="p-datatable-sm p-datatable-gridlines"
+      [sortField]="'fullName'"
+      [sortOrder]="1"
     >
       <ng-template pTemplate="header">
         <tr>
@@ -128,14 +131,14 @@
           <td>
             <p-tag
               [value]="row.careerId ? 'Asignado' : 'Sin asignar'"
-              [severity]="row.careerId ? 'success' : 'danger'"
+              [severity]="row.careerId ? 'success' : 'secondary'"
             ></p-tag>
           </td>
           <td>
             <ng-container *ngIf="row.careerId; else assignBtn">
               <p-button
                 label="Desinscribir"
-                severity="success"
+                severity="danger"
                 size="small"
                 (onClick)="onUnassign(row)"
               ></p-button>
@@ -143,7 +146,7 @@
             <ng-template #assignBtn>
               <p-button
                 label="Inscribir"
-                severity="danger"
+                severity="success"
                 size="small"
                 (onClick)="onAssign(row)"
               ></p-button>
