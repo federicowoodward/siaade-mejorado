@@ -5,11 +5,11 @@
     [columns]="exportColumns"
     [paginator]="true"
     [rows]="10"
-    [sortField]="'lastName'"
+    [sortField]="'fullName'"
     [sortOrder]="1"
     responsiveLayout="scroll"
     styleClass="p-datatable-sm p-datatable-gridlines"
-    [globalFilterFields]="['name', 'lastName', 'cuil', 'email', 'role']"
+    [globalFilterFields]="['fullName', 'name', 'lastName', 'cuil', 'email', 'role']"
   >
     <ng-template pTemplate="caption">
       <div class="flex justify-content-between align-items-center">
@@ -68,8 +68,8 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="lastName">
-          Nombre <p-sortIcon field="lastName" />
+        <th pSortableColumn="fullName">
+          Nombre <p-sortIcon field="fullName" />
         </th>
         <th pSortableColumn="cuil">DNI/CUIL <p-sortIcon field="cuil" /></th>
         <th *ngIf="viewerRole !== 'teacher'" pSortableColumn="role">
