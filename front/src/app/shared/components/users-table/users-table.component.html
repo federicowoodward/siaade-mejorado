@@ -18,13 +18,13 @@
             label="Limpiar filtros"
             [outlined]="true"
             icon="pi pi-filter-slash"
-            (click)="clear(dt, filterInput)"
+            (onClick)="clear(dt, filterInput)"
           ></p-button>
           <p-button
             label="Exportar CSV"
             icon="pi pi-download"
             [outlined]="true"
-            (click)="
+            (onClick)="
               exportPrimengCsv(dt, {
                 fileName: 'usuarios',
                 exportOptions: { selectionOnly: false },
@@ -114,7 +114,7 @@
           <ng-container *ngFor="let action of getRowActions(user)">
             <p-button
               [icon]="action.icon"
-              (click)="onActionClick(action, user); $event.stopPropagation()"
+              (onClick)="onActionClick(action, user); $event.stopPropagation()"
               [pTooltip]="action.hint || action.label"
               tooltipPosition="bottom"
               [disabled]="action.disabled"

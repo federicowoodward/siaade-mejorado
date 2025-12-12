@@ -138,14 +138,14 @@
       label="Cancelar"
       icon="pi pi-times"
       severity="secondary"
-      (click)="goBack()"
+      (onClick)="goBack()"
     ></p-button>
     <p-button
       label="Crear"
       icon="pi pi-check"
       [disabled]="creating"
       [loading]="creating"
-      (click)="createSubject()"
+      (onClick)="createSubject()"
       blockedAction
     ></p-button>
   </div>
