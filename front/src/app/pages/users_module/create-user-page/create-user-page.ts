@@ -81,8 +81,7 @@ export class CreateUserPage implements OnInit {
 
   isCreating = false;
   activeStep = 1;
-  duplicateErrors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> =
-    {};
+  duplicateErrors: Partial<Record<'email' | 'cuil', string>> = {};
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Inicio', routerLink: '/welcome' },
@@ -107,8 +106,6 @@ export class CreateUserPage implements OnInit {
 
   // Paso 2 — user_info / common_data (según rol)
   // user_info
-  documentType = '';
-  documentValue = '';
   phone = '';
   emergencyName = '';
   emergencyPhone = '';
@@ -124,15 +121,6 @@ export class CreateUserPage implements OnInit {
   addressProvince = '';
   addressPostalCode = '';
   addressNeighborhood = '';
-
-  // opciones de selects (alineadas con PersonalDataComponent)
-  readonly docTypeOptions = [
-    { label: 'DNI', value: 'DNI' },
-    { label: 'Pasaporte', value: 'Pasaporte' },
-    { label: 'CUIT', value: 'CUIT' },
-    { label: 'Libreta Civica', value: 'Libreta Civica' },
-    { label: 'Libreta de Enrolamiento', value: 'Libreta de Enrolamiento' },
-  ];
 
   readonly sexOptions = [
     { label: 'Femenino', value: 'Femenino' },
@@ -174,23 +162,12 @@ export class CreateUserPage implements OnInit {
     return parseDateOnly(this.birthDate);
   }
 
-  clearDuplicateErrorFor(field: 'email' | 'cuil' | 'documentValue'): void {
+  clearDuplicateErrorFor(field: 'email' | 'cuil'): void {
     if (this.duplicateErrors[field]) {
       const next = { ...this.duplicateErrors };
       delete next[field];
       this.duplicateErrors = next;
     }
-  }
-
-  private deriveDniFromCuil(raw: string): string {
-    const digits = (raw || '').replace(/\D/g, '');
-    if (digits.length >= 10) {
-      return digits.substring(2, 10);
-    }
-    if (digits.length >= 8) {
-      return digits.slice(-8);
-    }
-    return digits;
   }
 
   get emailError(): string | null {
@@ -199,10 +176,6 @@ export class CreateUserPage implements OnInit {
 
   get cuilError(): string | null {
     return this.duplicateErrors.cuil ?? null;
-  }
-
-  get documentValueError(): string | null {
-    return this.duplicateErrors.documentValue ?? null;
   }
 
   get birthDateError(): string | null {
@@ -286,21 +259,21 @@ export class CreateUserPage implements OnInit {
       errors.push('Seleccioná un rol antes de continuar.');
       return errors;
     }
-    if (req?.needsUserInfo) {
+    /* if (req?.needsUserInfo) {
       if (!this.documentType) errors.push('Tipo de documento es obligatorio.');
       if (!this.documentValue.trim()) {
         errors.push('Número de documento es obligatorio.');
       } else if (this.documentValueError) {
         errors.push(`Número de documento: ${this.documentValueError}`);
       }
-    }
+    } */
     if (req?.needsCommonData) {
       if (this.birthDateError)
         errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
       if (!this.sex) errors.push('Sexo es obligatorio.');
     }
     if (this.role === 'student') {
-      if (!this.studentLegajo.trim() && !this.cuil && !this.documentValue) {
+      if (!this.studentLegajo.trim() && !this.cuil) {
         errors.push('Legajo es obligatorio para alumnos.');
       }
       if (this.studentStartYearError) {
@@ -328,14 +301,12 @@ export class CreateUserPage implements OnInit {
 
     return canCreateStep2({
       role: this.role,
-      documentType: this.documentType,
-      documentValue: this.documentValue,
       sex: this.sex,
       birthDate: this.birthDate,
       studentStartYear: this.role === 'student' ? this.studentStartYear : null,
       legajo:
         this.role === 'student'
-          ? this.studentLegajo || this.cuil || this.documentValue
+          ? this.studentLegajo || this.cuil
           : undefined,
       minAgeYears: this.minAgeYears,
     });
@@ -344,11 +315,6 @@ export class CreateUserPage implements OnInit {
   onCuilChange(value: string): void {
     this.cuil = value;
     this.clearDuplicateErrorFor('cuil');
-    const derivedDni = this.deriveDniFromCuil(value);
-    if (derivedDni) {
-      this.documentValue = derivedDni;
-      this.clearDuplicateErrorFor('documentValue');
-    }
   }
 
   goToStep(step: number): void {
@@ -381,8 +347,6 @@ export class CreateUserPage implements OnInit {
         },
         userInfo: this.req?.needsUserInfo
           ? {
-              documentType: this.documentType,
-              documentValue: this.documentValue,
               phone: this.phone || undefined,
               emergencyName: this.emergencyName || undefined,
               emergencyPhone: this.emergencyPhone || undefined,
@@ -401,7 +365,7 @@ export class CreateUserPage implements OnInit {
         // extras para student
         studentLegajo:
           this.role === 'student'
-            ? this.studentLegajo || this.cuil || this.documentValue
+            ? this.studentLegajo || this.cuil
             : undefined,
         studentStartYear:
           this.role === 'student' && this.studentStartYear
@@ -430,8 +394,6 @@ export class CreateUserPage implements OnInit {
       this.setDuplicateErrorsFromDetail(detail, (err as any)?.status);
       if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
         this.goToStep(1);
-      } else if (this.duplicateErrors.documentValue) {
-        this.goToStep(2);
       }
       this.toastErr(detail);
     } finally {
@@ -453,7 +415,7 @@ export class CreateUserPage implements OnInit {
       roleExtras:
         this.role === 'student'
           ? {
-              legajo: this.studentLegajo || this.cuil || this.documentValue,
+              legajo: this.studentLegajo || this.cuil,
               studentStartYear: this.studentStartYear || undefined,
               career: this.selectedCareerLabel() || this.careerId || undefined,
             }
@@ -462,8 +424,6 @@ export class CreateUserPage implements OnInit {
             : undefined,
       user_info: this.req?.needsUserInfo
         ? {
-            documentType: this.documentType || undefined,
-            documentValue: this.documentValue || undefined,
             phone: this.phone || undefined,
             emergencyName: this.emergencyName || undefined,
             emergencyPhone: this.emergencyPhone || undefined,
@@ -511,15 +471,6 @@ export class CreateUserPage implements OnInit {
     { value: 'secretary', label: 'Secretaría' },
   ];
   roleSuggestions: RoleOption[] = [];
-
-  private docTypesAll: string[] = [
-    'DNI',
-    'Pasaporte',
-    'CUIT',
-    'Libreta Civica',
-    'Libreta de Enrolamiento',
-  ];
-  docTypeSuggestions: string[] = [];
 
   private sexesAll: string[] = ['Femenino', 'Masculino', 'Prefiero no decirlo'];
   sexSuggestions: string[] = [];
@@ -596,10 +547,6 @@ export class CreateUserPage implements OnInit {
         opt.label.toLowerCase().includes(q) ||
         opt.value.toLowerCase().includes(q),
     );
-  }
-
-  searchDocTypes(e: { query: string }) {
-    this.docTypeSuggestions = this.filterContains(this.docTypesAll, e?.query);
   }
 
   searchSex(e: { query: string }) {

@@ -41,9 +41,10 @@ export class UserInfoDto {
   @IsString()
   documentType?: string; // por defecto 'DNI' si no se envía
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  documentValue!: string; // requerido
+  documentValue?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() emergencyName?: string;

@@ -80,12 +80,6 @@ export class UsersService {
   async createPreceptor(dto: CreatePreceptorDto) {
     const userData = await this.buildUserData(dto);
     // Validación mínima de user_info: sólo documentValue requerido; documentType por defecto 'DNI'
-    if (!dto.userInfo?.documentValue) {
-      throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para preceptor",
-      );
-    }
-    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     return this.provisioning.createPreceptor({
       userData: {
         ...userData,
@@ -101,12 +95,6 @@ export class UsersService {
   async createTeacher(dto: CreateTeacherDto) {
     const userData = await this.buildUserData(dto);
     // Validaciones mínimas: sólo documentValue requerido; documentType por defecto 'DNI'
-    if (!dto.userInfo?.documentValue) {
-      throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para teacher",
-      );
-    }
-    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     if (!dto.commonData?.sex || !dto.commonData?.birthDate) {
       throw new BadRequestException(
         "commonData.sex y birthDate son requeridos para teacher",
@@ -128,12 +116,6 @@ export class UsersService {
   async createStudent(dto: CreateStudentDto) {
     const userData = await this.buildUserData(dto);
 
-    if (!dto.userInfo?.documentValue) {
-      throw new BadRequestException(
-        "userInfo.documentValue (DNI) es requerido para student",
-      );
-    }
-    dto.userInfo.documentType = dto.userInfo.documentType || "DNI";
     if (!dto.commonData?.sex || !dto.commonData?.birthDate) {
       throw new BadRequestException(
         "commonData.sex y birthDate son requeridos para student",

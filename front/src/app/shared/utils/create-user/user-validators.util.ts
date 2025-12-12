@@ -73,8 +73,6 @@ export function canCreateBase(
 
 export function canCreateStep2(params: {
   role: UserRole | null;
-  documentType: string;
-  documentValue: string;
   sex: string;
   birthDate: string;
   legajo?: string;
@@ -84,8 +82,6 @@ export function canCreateStep2(params: {
 }): boolean {
   const {
     role,
-    documentType,
-    documentValue,
     sex,
     birthDate,
     legajo,
@@ -96,9 +92,6 @@ export function canCreateStep2(params: {
   if (!role) return false;
   const req = ROLE_REQUIREMENTS[role];
 
-  if (req.needsUserInfo) {
-    if (!documentType || !documentValue) return false;
-  }
   if (req.needsCommonData) {
     if (!sex || !birthDate) return false;
     if (!hasMinAge(birthDate, minAgeYears, referenceDate)) return false;

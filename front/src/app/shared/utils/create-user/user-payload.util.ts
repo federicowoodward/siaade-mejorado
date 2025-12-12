@@ -10,8 +10,6 @@ export interface BaseUserForm {
 }
 
 export interface UserInfoForm {
-  documentType: string;
-  documentValue: string;
   phone?: string;
   emergencyName?: string;
   emergencyPhone?: string;
@@ -87,8 +85,6 @@ export function buildPayload(args: BuildPayloadArgs) {
   const userInfoPayload = req.needsUserInfo
     ? {
         userInfo: {
-          documentType: userInfo?.documentType,
-          documentValue: userInfo?.documentValue,
           phone: userInfo?.phone || undefined,
           emergencyName: userInfo?.emergencyName || undefined,
           emergencyPhone: userInfo?.emergencyPhone || undefined,
@@ -125,10 +121,7 @@ export function buildPayload(args: BuildPayloadArgs) {
       ...(base.role === 'student'
         ? {
             // Requeridos para student
-            legajo:
-              args.studentLegajo ||
-              base.cuil ||
-              (userInfo?.documentValue ?? ''),
+            legajo: args.studentLegajo || base.cuil || '',
             commissionId: args.commissionId ?? undefined,
             isActive: args.isActive ?? true,
             studentStartYear:

@@ -2,7 +2,7 @@
 export type UserRole = 'student' | 'teacher' | 'preceptor' | 'secretary';
 
 export interface RoleRequirements {
-  needsUserInfo: boolean; // documentType + documentValue (+ phones opcionales)
+  needsUserInfo: boolean; // datos de contacto (teléfonos/emergencia)
   needsCommonData: boolean; // sex, birthDate
   allowsAddress: boolean; // address opcional (dentro de commonData)
 }

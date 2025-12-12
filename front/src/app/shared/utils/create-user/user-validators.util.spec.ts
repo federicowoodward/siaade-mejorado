@@ -22,8 +22,6 @@ describe('user-validators.util', () => {
   it('blocks creation when birth date does not meet minimum age', () => {
     const params = {
       role: 'student' as UserRole,
-      documentType: 'DNI',
-      documentValue: '12345678',
       sex: 'F',
       birthDate: '2010-01-10',
       legajo: 'LEG1',
@@ -37,8 +35,6 @@ describe('user-validators.util', () => {
   it('allows creation when all date validations pass', () => {
     const params = {
       role: 'student' as UserRole,
-      documentType: 'DNI',
-      documentValue: '12345678',
       sex: 'F',
       birthDate: '2000-01-10',
       legajo: 'LEG1',
