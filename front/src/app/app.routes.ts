@@ -68,7 +68,7 @@ export const routes: Routes = [
     children: STUDENTS_ROUTES,
   },
   {
-    path: 'student-careers',
+    path: 'inscripciones-materias',
     canActivate: [
       AuthGuard,
       forcePasswordChangeGuard,

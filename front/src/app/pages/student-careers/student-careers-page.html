@@ -2,37 +2,100 @@
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="card flex flex-column gap-3 p-4">
-    <div>
-      <h2 class="m-0">Inscripciones de alumnos a carreras</h2>
-      <p class="m-0 text-color-secondary">
-        Vista base para gestionar los vínculos alumno-carrera y sus materias.
-      </p>
+    <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h2 class="m-0">Inscripciones a materias</h2>
+        <p class="m-0 text-color-secondary">
+          Administración / Inscripciones a materias
+        </p>
+      </div>
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        (onClick)="goBackClick()"
+      ></p-button>
+    </div>
+
+    <div class="flex flex-column md:flex-row gap-3 align-items-center">
+      <div class="flex align-items-center gap-2">
+        <p-inputSwitch
+          [ngModel]="showAssigned()"
+          (ngModelChange)="onToggleAssigned($event)"
+        ></p-inputSwitch>
+        <span class="text-color-secondary">
+          {{ showAssigned() ? 'Ver alumnos con carrera asignada' : 'Ver alumnos sin carrera asignada' }}
+        </span>
+      </div>
+
+      <div class="flex align-items-center gap-2 w-full md:w-20rem">
+        <p-dropdown
+          class="w-full"
+          [options]="careers()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Seleccionar carrera"
+          [disabled]="!showAssigned()"
+          [ngModel]="selectedCareerId()"
+          (onChange)="onCareerChange($event.value)"
+          appendTo="body"
+          [showClear]="true"
+        ></p-dropdown>
+      </div>
     </div>
 
     <p-table
-      [value]="rows"
-      [loading]="loading"
+      [value]="filteredStudents()"
+      [loading]="loading()"
       showGridlines
-      [tableStyle]="{ 'min-width': '40rem' }"
+      [paginator]="true"
+      [rows]="10"
+      [tableStyle]="{ 'min-width': '50rem' }"
     >
       <ng-template pTemplate="header">
         <tr>
           <th>Alumno</th>
           <th>Carrera</th>
-          <th>Legajo</th>
+          <th>Estado</th>
+          <th class="w-8rem">Acción</th>
         </tr>
       </ng-template>
+
       <ng-template pTemplate="body" let-row>
         <tr>
-          <td>{{ row.studentLastName || '' }} {{ row.studentName || '' }}</td>
+          <td>{{ row.fullName }}</td>
           <td>{{ row.careerName || 'Sin carrera' }}</td>
-          <td>{{ row.legajo || '-' }}</td>
+          <td>
+            <p-tag
+              [value]="row.careerId ? 'Asignado' : 'Sin asignar'"
+              [severity]="row.careerId ? 'success' : 'danger'"
+            ></p-tag>
+          </td>
+          <td>
+            <ng-container *ngIf="row.careerId; else assignBtn">
+              <p-button
+                label="Desinscribir"
+                severity="success"
+                size="small"
+                (onClick)="onUnassign(row)"
+              ></p-button>
+            </ng-container>
+            <ng-template #assignBtn>
+              <p-button
+                label="Inscribir"
+                severity="danger"
+                size="small"
+                (onClick)="onAssign(row)"
+              ></p-button>
+            </ng-template>
+          </td>
         </tr>
       </ng-template>
+
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="3" class="text-center text-color-secondary">
-            Aún no hay datos para mostrar. TODO: consumir GET /student-careers.
+          <td colspan="4" class="text-center text-color-secondary">
+            No hay alumnos para mostrar con el filtro seleccionado.
           </td>
         </tr>
       </ng-template>
