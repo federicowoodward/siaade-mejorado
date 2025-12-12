@@ -7,6 +7,8 @@ const defaultOrigins = [
   "http://localhost:4000",
   "http://127.0.0.1:4000",
   "https://siaade-frontend-production.up.railway.app",
+  "https://siaade-mejorado-copy-production.up.railway.app",
+  "https://dns-test-copy-production.up.railway.app",
 ];
 
 export function buildCorsOptions(): CorsOptions {
