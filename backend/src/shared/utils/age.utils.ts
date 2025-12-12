@@ -8,11 +8,7 @@ export function parseDateOnly(input: string | Date): Date | null {
   if (input instanceof Date) {
     if (Number.isNaN(input.getTime())) return null;
     return new Date(
-      Date.UTC(
-        input.getUTCFullYear(),
-        input.getUTCMonth(),
-        input.getUTCDate(),
-      ),
+      Date.UTC(input.getUTCFullYear(), input.getUTCMonth(), input.getUTCDate()),
     );
   }
 
@@ -79,8 +75,7 @@ export function assertStudentStartYear(
     );
   }
 
-  const normalizedYear =
-    startYearInput ?? new Date().getUTCFullYear();
+  const normalizedYear = startYearInput ?? new Date().getUTCFullYear();
   const startYear = Number(normalizedYear);
   if (!Number.isInteger(startYear)) {
     throw new BadRequestException("studentStartYear must be an integer year");

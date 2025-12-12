@@ -24,9 +24,7 @@
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
-          <td>
-            {{ row.studentLastName || '' }} {{ row.studentName || '' }}
-          </td>
+          <td>{{ row.studentLastName || '' }} {{ row.studentName || '' }}</td>
           <td>{{ row.careerName || 'Sin carrera' }}</td>
           <td>{{ row.legajo || '-' }}</td>
         </tr>

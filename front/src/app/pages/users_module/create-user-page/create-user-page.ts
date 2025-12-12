@@ -81,9 +81,8 @@ export class CreateUserPage implements OnInit {
 
   isCreating = false;
   activeStep = 1;
-  duplicateErrors: Partial<
-    Record<'email' | 'cuil' | 'documentValue', string>
-  > = {};
+  duplicateErrors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> =
+    {};
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Inicio', routerLink: '/welcome' },
@@ -244,7 +243,8 @@ export class CreateUserPage implements OnInit {
   get careerError(): string | null {
     if (this.role !== 'student') return null;
     if (this.careerLoadError) return this.careerLoadError;
-    if (!this.careerId) return 'Seleccioná una carrera para inscribir al alumno.';
+    if (!this.careerId)
+      return 'Seleccioná una carrera para inscribir al alumno.';
     return null;
   }
 
@@ -274,7 +274,8 @@ export class CreateUserPage implements OnInit {
     if (this.cuilError) errors.push(`CUIL: ${this.cuilError}`);
     if (!this.sex) errors.push('Sexo es obligatorio.');
     if (!this.birthDate) errors.push('Fecha de nacimiento es obligatoria.');
-    if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
+    if (this.birthDateError)
+      errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
     return errors;
   }
 
@@ -294,7 +295,8 @@ export class CreateUserPage implements OnInit {
       }
     }
     if (req?.needsCommonData) {
-      if (this.birthDateError) errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
+      if (this.birthDateError)
+        errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
       if (!this.sex) errors.push('Sexo es obligatorio.');
     }
     if (this.role === 'student') {
@@ -308,7 +310,10 @@ export class CreateUserPage implements OnInit {
     return errors;
   }
 
-  private showValidationErrors(errors: string[], summary = 'Revisá los datos requeridos') {
+  private showValidationErrors(
+    errors: string[],
+    summary = 'Revisá los datos requeridos',
+  ) {
     if (!errors.length) return;
     this.toastErr(`${summary}: ${errors.join(' | ')}`);
   }
@@ -540,9 +545,14 @@ export class CreateUserPage implements OnInit {
 
   private setDuplicateErrorsFromDetail(detail: string, status?: number): void {
     const lower = (detail || '').toLowerCase();
-    const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> = {};
+    const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> =
+      {};
 
-    if (lower.includes('email') || lower.includes('correo') || lower.includes('mail')) {
+    if (
+      lower.includes('email') ||
+      lower.includes('correo') ||
+      lower.includes('mail')
+    ) {
       errors.email = 'El email ya está registrado.';
     }
     if (/(cuil).*(registrad|ya|duplicad)/.test(lower)) {
@@ -574,7 +584,6 @@ export class CreateUserPage implements OnInit {
   }
 
   searchRoles(e: { query: string }) {
-
     const q = (e?.query ?? '').toLowerCase().trim();
 
     if (!q) {

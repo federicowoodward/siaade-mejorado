@@ -27,7 +27,7 @@
             (click)="
               exportPrimengCsv(dt, {
                 fileName: 'usuarios',
-                exportOptions: { selectionOnly: false }
+                exportOptions: { selectionOnly: false },
               })
             "
           ></p-button>
@@ -71,9 +71,7 @@
         <th pSortableColumn="lastName">
           Nombre <p-sortIcon field="lastName" />
         </th>
-        <th pSortableColumn="cuil">
-          DNI/CUIL <p-sortIcon field="cuil" />
-        </th>
+        <th pSortableColumn="cuil">DNI/CUIL <p-sortIcon field="cuil" /></th>
         <th *ngIf="viewerRole !== 'teacher'" pSortableColumn="role">
           Rol <p-sortIcon field="role" />
         </th>

@@ -146,11 +146,9 @@ export class UsersService {
         : new Date().getFullYear();
 
     const birthDate = assertMinAge(dto.commonData.birthDate, MIN_AGE_YEARS);
-    const startYear = assertStudentStartYear(
-      rawStartYear,
-      birthDate,
-      { minYears: MIN_AGE_YEARS },
-    );
+    const startYear = assertStudentStartYear(rawStartYear, birthDate, {
+      minYears: MIN_AGE_YEARS,
+    });
 
     const created = await this.provisioning.createStudent({
       userData: {

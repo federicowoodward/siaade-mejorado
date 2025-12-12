@@ -45,6 +45,9 @@ export class StudentCareersController {
       "Actualiza la carrera de un alumno (null para desasignar sin tocar materias)",
   })
   async update(@Body() dto: UpdateStudentCareerDto) {
-    return this.service.updateStudentCareer(dto.studentId, dto.careerId ?? null);
+    return this.service.updateStudentCareer(
+      dto.studentId,
+      dto.careerId ?? null,
+    );
   }
 }

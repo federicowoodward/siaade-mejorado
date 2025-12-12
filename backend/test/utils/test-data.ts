@@ -34,7 +34,9 @@ export async function getAnySubjectCommission(
     .findOne({ where: {}, relations: ["teacher"] });
 }
 
-export async function findSubjectTeacherStudent(dataSource: DataSource): Promise<{
+export async function findSubjectTeacherStudent(
+  dataSource: DataSource,
+): Promise<{
   subjectId: number;
   studentId: string;
   teacherId: string;

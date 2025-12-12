@@ -21,7 +21,9 @@ describe("Subject status and grades (e2e)", () => {
 
     const mapping = await findSubjectTeacherStudent(app.get(DataSource));
     if (!mapping) {
-      throw new Error("No hay datos de materia/comisión para pruebas de status");
+      throw new Error(
+        "No hay datos de materia/comisión para pruebas de status",
+      );
     }
     subjectId = mapping.subjectId;
     commissionId = mapping.commissionId || mapping.subjectId;
@@ -46,7 +48,9 @@ describe("Subject status and grades (e2e)", () => {
     const res = await request(app.getHttpServer())
       .patch(`/api/subjects/commissions/${commissionId}/grade-window`)
       .set("Authorization", `Bearer ${token}`)
-      .send({ deadline: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString() });
+      .send({
+        deadline: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+      });
 
     expect(res.status).toBe(200);
   });

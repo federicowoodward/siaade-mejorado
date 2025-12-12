@@ -431,9 +431,13 @@ export class FinalExamPage implements OnInit {
         error: (err: unknown) => {
           console.error('Error recording final exam score', err);
           if ((err as any)?.status === 403) {
-            this.toastErr('No tenés permisos para cargar la nota de este examen.');
+            this.toastErr(
+              'No tenés permisos para cargar la nota de este examen.',
+            );
           } else {
-            this.toastErr('No se pudieron guardar los cambios. Intenta nuevamente.');
+            this.toastErr(
+              'No se pudieron guardar los cambios. Intenta nuevamente.',
+            );
           }
           this.restoreRowFromClone(row);
           finalize();

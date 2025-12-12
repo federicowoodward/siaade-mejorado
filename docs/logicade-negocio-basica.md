@@ -5,6 +5,7 @@
 SIAD/SIAADE es un sistema integral de administración académica. Centraliza la gestión de usuarios, materias, cursadas y exámenes para acompañar el ciclo académico completo. Su propósito es asegurar que las inscripciones, calificaciones, asistencias y certificaciones se manejen de forma consistente y auditada.
 
 Actores principales del dominio académico:
+
 - **Alumno**: cursa materias, rinde parciales y finales, consulta su situación académica y genera certificados.
 - **Docente**: dicta materias, carga notas y asistencia de cursada, participa en mesas de examen final.
 - **Preceptor**: colabora en el control de asistencia y notas de cursada, ayuda a validar inscripciones.

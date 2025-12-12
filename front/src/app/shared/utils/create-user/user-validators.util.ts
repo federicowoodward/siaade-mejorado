@@ -105,9 +105,7 @@ export function canCreateStep2(params: {
   }
   if (role === 'student') {
     if (!legajo || !String(legajo).trim()) return false;
-    if (
-      !isValidStudentStartYear(birthDate, studentStartYear, minAgeYears)
-    ) {
+    if (!isValidStudentStartYear(birthDate, studentStartYear, minAgeYears)) {
       return false;
     }
   }

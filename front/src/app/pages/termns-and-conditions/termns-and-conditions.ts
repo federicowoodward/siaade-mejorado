@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AppBreadcrumbComponent } from "@/shared/components/breadcrumb/app-breadcrumb.component";
+import { AppBreadcrumbComponent } from '@/shared/components/breadcrumb/app-breadcrumb.component';
 
 @Component({
   selector: 'app-termns-and-conditions',

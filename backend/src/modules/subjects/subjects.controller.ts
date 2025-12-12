@@ -60,7 +60,7 @@ type AuthenticatedUser = {
   ROLE.EXECUTIVE_SECRETARY,
   ROLE.SECRETARY,
   ROLE.PRECEPTOR,
-  ROLE.TEACHER
+  ROLE.TEACHER,
 )
 @Controller("subject-commissions")
 export class SubjectsController {
@@ -72,7 +72,7 @@ export class SubjectsController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER
+    ROLE.TEACHER,
   )
   @ApiOperation({
     summary: "Actualizar notas y asistencia de multiples alumnos",
@@ -82,7 +82,7 @@ export class SubjectsController {
   async upsertGrades(
     @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
     @Body() dto: UpsertGradeDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<{ updated: number }> {
     if (!dto?.rows?.length) {
       throw new BadRequestException("rows payload is required");
@@ -91,7 +91,7 @@ export class SubjectsController {
     return this.subjectsService.upsertGrades(
       subjectCommissionId,
       dto,
-      req.user as AuthenticatedUser
+      req.user as AuthenticatedUser,
     );
   }
 
@@ -106,12 +106,12 @@ export class SubjectsController {
   async updateTeacher(
     @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
     @Body() dto: UpdateSubjectCommissionTeacherDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     return this.subjectsService.updateSubjectCommissionTeacher(
       subjectCommissionId,
       dto.teacherId,
-      req.user as AuthenticatedUser
+      req.user as AuthenticatedUser,
     );
   }
 }
@@ -123,7 +123,7 @@ export class SubjectsController {
   ROLE.EXECUTIVE_SECRETARY,
   ROLE.SECRETARY,
   ROLE.PRECEPTOR,
-  ROLE.TEACHER
+  ROLE.TEACHER,
 )
 @Controller("subjects")
 export class SubjectGradesController {
@@ -196,7 +196,7 @@ export class SubjectGradesController {
     @Query("q") q?: string,
     @Query("commissionId", new ParseIntPipe({ optional: true }))
     commissionId?: number,
-    @Req() req?: Request
+    @Req() req?: Request,
   ) {
     return this.subjectsService.getSubjectAcademicSituation(subjectId, {
       q: q?.trim() || undefined,
@@ -232,7 +232,7 @@ export class SubjectGradesController {
   })
   async listSubjectStudents(
     @Param("subjectId", ParseIntPipe) subjectId: number,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     return this.subjectsService.listSubjectStudents(subjectId, {
       user: req?.user as AuthenticatedUser,
@@ -249,7 +249,7 @@ export class SubjectGradesController {
   @ApiBody({ type: UpdateGradeWindowDto })
   async updateGradeWindow(
     @Param("id", ParseIntPipe) id: number,
-    @Body() dto: UpdateGradeWindowDto
+    @Body() dto: UpdateGradeWindowDto,
   ) {
     return this.subjectsService.updateGradeWindow(id, dto.deadline);
   }
@@ -267,13 +267,13 @@ export class SubjectGradesController {
     @Param("subjectId", ParseIntPipe) subjectId: number,
     @Param("studentId", ParseObjectIdPipe) studentId: string,
     @Body() dto: UpdateSubjectGradeDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<GradeRowDto> {
     return this.subjectsService.patchSubjectGrade(
       subjectId,
       studentId,
       dto,
-      req.user as AuthenticatedUser
+      req.user as AuthenticatedUser,
     );
   }
 
@@ -288,12 +288,12 @@ export class SubjectGradesController {
   async updateSubjectTeachers(
     @Param("subjectId", ParseIntPipe) subjectId: number,
     @Body() dto: UpdateSubjectCommissionTeacherDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     return this.subjectsService.updateAllSubjectCommissionsTeacher(
       subjectId,
       dto.teacherId,
-      req.user as AuthenticatedUser
+      req.user as AuthenticatedUser,
     );
   }
 
@@ -312,13 +312,13 @@ export class SubjectGradesController {
     @Param("subjectId", ParseIntPipe) subjectId: number,
     @Param("studentId", ParseObjectIdPipe) studentId: string,
     @Body() dto: MoveStudentCommissionDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<GradeRowDto> {
     return this.subjectsService.moveStudentToCommission(
       subjectId,
       studentId,
       dto.toCommissionId,
-      req.user as AuthenticatedUser
+      req.user as AuthenticatedUser,
     );
   }
 }
@@ -331,7 +331,7 @@ export class SubjectGradesController {
   ROLE.SECRETARY,
   ROLE.PRECEPTOR,
   ROLE.TEACHER,
-  ROLE.STUDENT
+  ROLE.STUDENT,
 )
 @Controller("subject-status")
 export class SubjectStatusController {
@@ -343,7 +343,7 @@ export class SubjectStatusController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER
+    ROLE.TEACHER,
   )
   @ApiOperation({
     summary: "Actualizar una celda de notas y asistencia para un alumno",
@@ -356,13 +356,13 @@ export class SubjectStatusController {
     @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
     @Param("studentId", ParseObjectIdPipe) studentId: string,
     @Body() dto: PatchCellDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<GradeRowDto> {
     return this.subjectsService.patchCell(
       subjectCommissionId,
       studentId,
       dto,
-      req.user as AuthenticatedUser
+      req.user as AuthenticatedUser,
     );
   }
 
@@ -391,7 +391,7 @@ export class SubjectStatusController {
   @ApiParam({ name: "subjectCommissionId" })
   @ApiOkResponse({ type: GradeRowDto, isArray: true })
   async getGrades(
-    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number
+    @Param("subjectCommissionId", ParseIntPipe) subjectCommissionId: number,
   ): Promise<GradeRowDto[]> {
     return this.subjectsService.getGrades(subjectCommissionId);
   }
@@ -455,7 +455,7 @@ export class SubjectStatusController {
     } as any,
   })
   async getSubjectGrades(
-    @Param("subjectId", ParseIntPipe) subjectId: number
+    @Param("subjectId", ParseIntPipe) subjectId: number,
   ): ReturnType<SubjectsService["getSubjectGradesBySubject"]> {
     return this.subjectsService.getSubjectGradesBySubject(subjectId);
   }
@@ -468,7 +468,7 @@ export class SubjectStatusController {
   ROLE.EXECUTIVE_SECRETARY,
   ROLE.SECRETARY,
   ROLE.PRECEPTOR,
-  ROLE.STUDENT
+  ROLE.STUDENT,
 )
 @Controller("subjects/enrollments")
 export class SubjectEnrollmentController {
@@ -482,7 +482,7 @@ export class SubjectEnrollmentController {
   @ApiOkResponse({ type: ToggleEnrollmentResponseDto })
   async toggleSubjectEnrollment(
     @Body() dto: ToggleEnrollmentDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<ToggleEnrollmentResponseDto> {
     const user = req.user as { role?: ROLE | null };
     const actor =
@@ -498,7 +498,7 @@ export class SubjectEnrollmentController {
       dto.subjectCommissionId,
       dto.studentId,
       dto.action,
-      actor
+      actor,
     );
   }
 }
