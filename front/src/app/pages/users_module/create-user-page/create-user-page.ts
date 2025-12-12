@@ -194,7 +194,7 @@ export class CreateUserPage implements OnInit {
       this.studentStartYear === undefined ||
       (this.studentStartYear as any) === ''
     )
-      return null;
+      return 'Año de inicio es obligatorio.';
     if (!this.birthDate) {
       return 'Completá la fecha de nacimiento para validar el año de inicio.';
     }
