@@ -92,7 +92,9 @@
           >
             <ng-template pTemplate="header">
               <tr>
-                <th>Materia</th>
+                <th pSortableColumn="name">
+                  Materia <p-sortIcon field="name" />
+                </th>
                 <th>Curso</th>
                 <th>Cond. Final</th>
                 <th class="text-center">Acción</th>

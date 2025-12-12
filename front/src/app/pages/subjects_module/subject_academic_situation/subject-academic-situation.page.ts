@@ -459,16 +459,35 @@ export class SubjectAcademicSituationPage implements OnInit, OnDestroy {
     if (!all.length) {
       return;
     }
+
+    const sortField = (event.sortField as string) || 'fullName';
+    const sortOrder = event.sortOrder === -1 ? -1 : 1;
+
+    let orderedRows: AcademicSituationRow[] = all;
+
+    if (sortField === 'fullName') {
+      orderedRows = [...all].sort((a, b) => {
+        const aName = a.fullName || '';
+        const bName = b.fullName || '';
+        return aName.localeCompare(bName, 'es', { sensitivity: 'base' }) * sortOrder;
+      });
+    } else {
+      orderedRows = [...all];
+    }
+
     const first = event.first ?? 0;
     const rows = event.rows ?? this.pageSize;
-    const end = Math.min(first + rows, all.length);
+    const end = Math.min(first + rows, orderedRows.length);
     const virtual = [...this.virtualRows()];
-    if (virtual.length < all.length) {
-      virtual.length = all.length;
+
+    if (virtual.length < orderedRows.length) {
+      virtual.length = orderedRows.length;
     }
+
     for (let index = first; index < end; index += 1) {
-      virtual[index] = all[index];
+      virtual[index] = orderedRows[index];
     }
+
     this.virtualRows.set(virtual as AcademicSituationRow[]);
   }
 

@@ -38,7 +38,9 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>Materia</th>
+          <th pSortableColumn="subject_name">
+            Materia <p-sortIcon field="subject_name" />
+          </th>
           <th>Fecha</th>
           <th>Hora</th>
           <th>Aula</th>

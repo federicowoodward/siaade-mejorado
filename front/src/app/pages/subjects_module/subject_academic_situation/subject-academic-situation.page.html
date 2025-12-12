@@ -104,7 +104,9 @@
         <ng-template pTemplate="header">
           <!-- prettier-ignore -->
           <tr>
-            <th >Alumno</th>
+            <th pSortableColumn="fullName">
+              Alumno <p-sortIcon field="fullName" />
+            </th>
             <th pTooltip="Comisión" tooltipPosition="top" appendTo="body">Com.</th>
             <th pTooltip="Nota 1" tooltipPosition="top" appendTo="body">N° 1</th>
             <th pTooltip="Nota 2" tooltipPosition="top" appendTo="body">N° 2</th>
@@ -427,4 +429,3 @@
     </div>
   </p-dialog>
 </div>
-

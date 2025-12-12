@@ -34,7 +34,9 @@
       >
         <ng-template pTemplate="header">
           <tr>
-            <th>Unidad Curricular</th>
+            <th pSortableColumn="subjectName">
+              Unidad Curricular <p-sortIcon field="subjectName" />
+            </th>
             <th>Correlativa</th>
             <th>Examen</th>
             <th class="text-center">Acción</th>

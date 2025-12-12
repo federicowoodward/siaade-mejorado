@@ -30,13 +30,17 @@
       responsiveLayout="scroll"
       [paginator]="true"
       [rows]="10"
+      [sortField]="'name'"
+      [sortOrder]="1"
       [loading]="loading()"
       styleClass="p-datatable-sm p-datatable-gridlines"
       [tableStyle]="{ 'min-width': '60rem' }"
     >
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 8rem">Alumno</th>
+          <th style="width: 8rem" pSortableColumn="name">
+            Alumno <p-sortIcon field="name" />
+          </th>
           <th style="width: 14rem">Estado</th>
           <th
             style="width: 8rem"

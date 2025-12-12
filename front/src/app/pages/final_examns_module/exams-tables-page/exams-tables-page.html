@@ -24,13 +24,17 @@
       [value]="tables()"
       [paginator]="true"
       [rows]="10"
+      [sortField]="'name'"
+      [sortOrder]="1"
       styleClass="p-datatable-sm p-datatable-gridlines"
       responsiveLayout="scroll"
       [loading]="loading()"
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>Nombre</th>
+          <th pSortableColumn="name">
+            Nombre <p-sortIcon field="name" />
+          </th>
           <th>Rango</th>
           <th>Creada por</th>
           <th style="width: 260px">Acciones</th>
