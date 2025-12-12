@@ -33,6 +33,7 @@
           optionLabel="label"
           optionValue="value"
           placeholder="Seleccionar carrera"
+          [disabled]="!showAssigned()"
           [ngModel]="selectedCareerId()"
           (ngModelChange)="onCareerChange($event)"
           [showClear]="true"
