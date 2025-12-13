@@ -44,4 +44,17 @@ describe('user-validators.util', () => {
     };
     expect(canCreateStep2(params)).toBeTrue();
   });
+
+  it('blocks creation when start year is missing', () => {
+    const params = {
+      role: 'student' as UserRole,
+      sex: 'F',
+      birthDate: '2000-01-10',
+      legajo: 'LEG1',
+      studentStartYear: null,
+      minAgeYears: MIN_AGE_YEARS,
+      referenceDate,
+    };
+    expect(canCreateStep2(params)).toBeFalse();
+  });
 });
