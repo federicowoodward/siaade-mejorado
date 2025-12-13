@@ -3,7 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { Table } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { Button } from 'primeng/button';
 import { MessageService } from 'primeng/api';
@@ -17,6 +17,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 type CareerOption = { label: string; value: number };
+type EnrollmentState = 'ALL' | 'UNASSIGNED' | 'ASSIGNED';
 
 interface UiStudentCareerRow {
   studentId: string;
@@ -35,7 +36,7 @@ interface UiStudentCareerRow {
     AppBreadcrumbComponent,
     TableModule,
     SelectModule,
-    ToggleSwitchModule,
+    SelectButtonModule,
     TagModule,
     Button,
     FormsModule,
@@ -48,7 +49,6 @@ export class StudentCareersPage implements OnInit {
   private readonly messages = inject(MessageService);
   dt?: Table;
 
-
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Administración', routerLink: '/welcome' },
     { label: 'Inscripciones a materias' },
@@ -57,23 +57,29 @@ export class StudentCareersPage implements OnInit {
   students = signal<UiStudentCareerRow[]>([]);
   careers = signal<CareerOption[]>([]);
   loading = signal<boolean>(false);
-  showAssigned = signal<boolean>(true);
+  enrollmentState = signal<EnrollmentState>('ALL');
   selectedCareerId = signal<number | null>(null);
+  enrollmentOptions: { label: string; value: EnrollmentState }[] = [
+    { label: 'Todos', value: 'ALL' },
+    { label: 'No inscriptos', value: 'UNASSIGNED' },
+    { label: 'Inscriptos', value: 'ASSIGNED' },
+  ];
 
   filteredStudents = computed(() => {
     const list = this.students();
-    const show = this.showAssigned();
+    const state = this.enrollmentState();
     const careerId = this.selectedCareerId();
 
-    if (!show) {
+    if (state === 'UNASSIGNED') {
       return list.filter((s: UiStudentCareerRow) => s.careerId === null);
     }
 
-    if (careerId === null) {
-      return list.filter((s: UiStudentCareerRow) => s.careerId !== null);
+    if (state === 'ASSIGNED') {
+      if (careerId === null) return [];
+      return list.filter((s: UiStudentCareerRow) => s.careerId === careerId);
     }
 
-    return list.filter((s: UiStudentCareerRow) => s.careerId === careerId);
+    return list;
   });
 
   ngOnInit(): void {
@@ -85,9 +91,11 @@ export class StudentCareersPage implements OnInit {
     this.goBack.back();
   }
 
-  onToggleAssigned(value: boolean): void {
-    this.showAssigned.set(value);
-    if (value) {
+  onEnrollmentStateChange(state: EnrollmentState): void {
+    this.enrollmentState.set(state);
+    if (state !== 'ASSIGNED') {
+      this.selectedCareerId.set(null);
+    } else {
       this.ensureDefaultCareerSelection();
     }
     this.resetPaging();
@@ -161,6 +169,10 @@ export class StudentCareersPage implements OnInit {
   }
 
   async onAssign(row: UiStudentCareerRow): Promise<void> {
+    if (this.enrollmentState() === 'ASSIGNED' && this.selectedCareerId() === null) {
+      this.toastError('Seleccioná una carrera para inscribir.');
+      return;
+    }
     const careerId = this.selectedCareerId();
     if (!careerId) {
       this.toastError('Seleccioná una carrera para inscribir.');
