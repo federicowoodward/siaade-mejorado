@@ -19,10 +19,11 @@
           [ngModel]="showAssigned()"
           (ngModelChange)="onToggleAssigned($event)"
         ></p-toggleswitch>
+        <!-- prettier-ignore -->
         <span class="text-color-secondary">
-          {{ showAssigned() ? 'Ver alumnos con carrera asignada' : 'Ver alumnos
-          sin carrera asignada' }}
+          {{ showAssigned() ? 'Ver alumnos con carrera asignada' : 'Ver alumnos sin carrera asignada' }}
         </span>
+        <!-- prettier-ignore-end -->
       </div>
 
       <!-- Select de carreras -->
@@ -43,6 +44,7 @@
 
     <!--
     <p-table
+      #dt
       [value]="filteredStudents()"
       [loading]="loading()"
       showGridlines

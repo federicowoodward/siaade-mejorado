@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { TableModule } from 'primeng/table';
+import { Table } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TagModule } from 'primeng/tag';
@@ -45,6 +46,7 @@ export class StudentCareersPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly goBack = inject(GoBackService);
   private readonly messages = inject(MessageService);
+  dt?: Table;
 
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
@@ -88,10 +90,12 @@ export class StudentCareersPage implements OnInit {
     if (value) {
       this.ensureDefaultCareerSelection();
     }
+    this.resetPaging();
   }
 
   onCareerChange(value: number | null): void {
     this.selectedCareerId.set(value);
+    this.resetPaging();
   }
 
   async loadStudentCareers(): Promise<void> {
@@ -211,6 +215,12 @@ export class StudentCareersPage implements OnInit {
     const opts = this.careers();
     if (opts.length === 1 && this.selectedCareerId() === null) {
       this.selectedCareerId.set(opts[0].value);
+    }
+  }
+
+  private resetPaging(): void {
+    if (this.dt) {
+      this.dt.first = 0;
     }
   }
 }
