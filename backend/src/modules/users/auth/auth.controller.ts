@@ -65,7 +65,7 @@ export class AuthController {
     examples: {
       default: {
         summary: "Example payload",
-        value: { email: "executive_secretary@test.com", password: "changeme" },
+        value: { identity: "sec.auto4@example.com", password: "changeme" },
       },
     },
   })
