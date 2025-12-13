@@ -1,15 +1,23 @@
 <div class="m-w-custom">
   <p-table
     #dt
-    [value]="getVisibleRows()"
+    [value]="visibleRows"
     [columns]="exportColumns"
     [paginator]="true"
     [rows]="10"
     [sortField]="'fullName'"
     [sortOrder]="1"
+    [dataKey]="'id'"
     responsiveLayout="scroll"
     styleClass="p-datatable-sm p-datatable-gridlines"
-    [globalFilterFields]="['fullName', 'name', 'lastName', 'cuil', 'email', 'role']"
+    [globalFilterFields]="[
+      'fullName',
+      'name',
+      'lastName',
+      'cuil',
+      'email',
+      'role',
+    ]"
   >
     <ng-template pTemplate="caption">
       <div class="flex justify-content-between align-items-center">
@@ -99,6 +107,7 @@
                 : 'Activo'
           "
           tooltipPosition="top"
+          appendTo="body"
         >
           <span
             class="status-dot"
@@ -111,14 +120,21 @@
         </td>
 
         <td class="flex gap-2 justify-content-start align-items-center">
-          <ng-container *ngFor="let action of getRowActions(user)">
-            <p-button
-              [icon]="action.icon"
-              (click)="onActionClick(action, user); $event.stopPropagation()"
-              [pTooltip]="action.hint || action.label"
-              tooltipPosition="bottom"
-              [disabled]="action.disabled"
-            />
+          <ng-container *ngIf="getRowActions(user) as actions">
+            <ng-container *ngFor="let action of actions; trackBy: trackAction">
+              <button
+                pButton
+                type="button"
+                [icon]="action.icon"
+                [disabled]="action.disabled"
+                (click)="onActionClick(action, user); $event.stopPropagation()"
+                [pTooltip]="action.hint || action.label"
+                tooltipPosition="bottom"
+                appendTo="body"
+                [showDelay]="75"
+                [hideDelay]="75"
+              ></button>
+            </ng-container>
           </ng-container>
         </td>
       </tr>

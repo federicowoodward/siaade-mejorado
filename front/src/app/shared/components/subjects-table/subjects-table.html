@@ -11,44 +11,42 @@
         Asignatura
         <p-sortIcon field="name" />
       </th>
-      <th class="p-3" style="width: 220px; text-align: center">Acciones</th>
+      <th class="p-3" style="width: 420px; text-align: center">Acciones</th>
     </tr>
   </ng-template>
 
   <ng-template pTemplate="body" let-subject>
     <tr>
       <td class="px-3">{{ subject.name }}</td>
-      <td class="flex w-23rem justify-content-around">
-        <div class="flex gap-2 flex-wrap">
-          <button
-            pButton
-            type="button"
-            outlined="true"
-            label="Alumnos"
-            icon="pi pi-users"
-            (click)="viewStudents(subject.id)"
-            blockedAction
-          ></button>
-          <button
-            *ngIf="!isTeacher"
-            pButton
-            type="button"
-            outlined="true"
-            label="Comisiones"
-            icon="pi pi-briefcase"
-            (click)="viewComissions(subject.id)"
-            blockedAction
-          ></button>
-          <button
-            pButton
-            type="button"
-            class="p-ml-2"
-            label="Situación académica"
-            icon="pi pi-chart-line"
-            (click)="viewStatus(subject.id)"
-            blockedAction
-          ></button>
-        </div>
+      <td class="flex gap-2 w-30rem">
+        <button
+          pButton
+          type="button"
+          outlined="true"
+          label="Alumnos"
+          icon="pi pi-users"
+          (click)="viewStudents(subject.id)"
+          blockedAction
+        ></button>
+        <button
+          *ngIf="!isTeacher"
+          pButton
+          type="button"
+          outlined="true"
+          label="Comisiones"
+          icon="pi pi-briefcase"
+          (click)="viewComissions(subject.id)"
+          blockedAction
+        ></button>
+        <button
+          pButton
+          type="button"
+          class="p-ml-2"
+          label="Situación académica"
+          icon="pi pi-chart-line"
+          (click)="viewStatus(subject.id)"
+          blockedAction
+        ></button>
       </td>
     </tr>
   </ng-template>

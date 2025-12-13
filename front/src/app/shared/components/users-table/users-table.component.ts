@@ -65,30 +65,51 @@ export class UsersTableComponent implements OnChanges {
     { field: 'role', header: 'Rol' },
   ];
   readonly exportPrimengCsv = exportPrimengCsv;
+  visibleRows: UserRowWithFullName[] = [];
 
   @ViewChild('dt') dt!: Table;
+  private actionsCache = new Map<
+    string,
+    { cacheKey: string; actions: RowAction[] }
+  >();
 
-  // Derivados de permisos (cacheados simples)
-  getVisibleRows(): UserRowWithFullName[] {
-    if (!this.viewerRole) return [];
-    return this.rows
-      .filter((r) => canSee(this.viewerRole, r.role))
-      .map((r) => ({
-        ...r,
-        fullName: `${r.name ?? ''} ${r.lastName ?? ''}`.trim(),
-      }));
+  ngOnChanges(changes: SimpleChanges) {
+    const roleChanged = !!changes['viewerRole'];
+    const rowsChanged = !!changes['rows'];
+    const contextChanged = !!changes['context'];
+
+    if (roleChanged || rowsChanged) {
+      this.visibleRows = this.computeVisibleRows();
+    }
+
+    if (roleChanged || contextChanged) {
+      this.actionsCache.clear();
+    } else if (rowsChanged) {
+      const ids = new Set(this.rows.map((r) => r.id));
+      for (const id of Array.from(this.actionsCache.keys())) {
+        if (!ids.has(id)) this.actionsCache.delete(id);
+      }
+    }
   }
 
   getRowActions(row: UserRow): RowAction[] {
-    return actionsFor(this.viewerRole, row.role, this.context);
-  }
+    if (!this.viewerRole) return [];
 
-  ngOnChanges(_: SimpleChanges) {
-    // Si cambia context/rol/rows, PrimeTable ya re-renderiza
+    const cacheKey = `${this.viewerRole}-${row.role}-${this.context}`;
+    const cached = this.actionsCache.get(row.id);
+    if (cached?.cacheKey === cacheKey) return cached.actions;
+
+    const actions = actionsFor(this.viewerRole, row.role, this.context);
+    this.actionsCache.set(row.id, { cacheKey, actions });
+    return actions;
   }
 
   onActionClick(action: RowAction, row: UserRow) {
     this.rowAction.emit({ actionId: action.id, row });
+  }
+
+  trackAction(_: number, action: RowAction) {
+    return action.id;
   }
 
   clear(table: Table, filterInput: HTMLInputElement) {
@@ -96,5 +117,15 @@ export class UsersTableComponent implements OnChanges {
     this.dt?.filterGlobal('', 'contains');
     this.selectedRole = null;
     table.clear();
+  }
+
+  private computeVisibleRows(): UserRowWithFullName[] {
+    if (!this.viewerRole) return [];
+    return this.rows
+      .filter((r) => canSee(this.viewerRole, r.role))
+      .map((r) => ({
+        ...r,
+        fullName: `${r.name ?? ''} ${r.lastName ?? ''}`.trim(),
+      }));
   }
 }
