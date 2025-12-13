@@ -1,4 +1,4 @@
-<div class="m-w-custom flex flex-column gap-3 pt-4">
+<form [formGroup]="form()" class="m-w-custom flex flex-column gap-3 pt-4">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="card flex justify-content-center">
@@ -19,8 +19,10 @@
           <p-step-list class="w-full">
             <p-step [value]="1">Datos básicos</p-step>
             <p-step [value]="2">Información de contacto</p-step>
-            <p-step [value]="3">Asignar carrera</p-step>
-            <p-step [value]="4">Resumen</p-step>
+            <p-step *ngIf="isStudentRole" [value]="stepCareerValue">
+              Asignar carrera
+            </p-step>
+            <p-step [value]="stepSummaryValue">Resumen</p-step>
           </p-step-list>
         </div>
       </div>
@@ -50,8 +52,7 @@
                       (completeMethod)="searchRoles($event)"
                       [dropdown]="true"
                       [minLength]="0"
-                      [(ngModel)]="role"
-                      (ngModelChange)="onRoleChange($event)"
+                      formControlName="role"
                       [forceSelection]="true"
                       placeholder="Seleccione rol del nuevo usuario"
                       optionLabel="label"
@@ -68,7 +69,7 @@
                       id="name"
                       pInputText
                       class="w-full"
-                      [(ngModel)]="name"
+                      formControlName="name"
                     />
                     <label for="name">Nombre *</label>
                   </p-iftalabel>
@@ -80,7 +81,7 @@
                       id="lastName"
                       pInputText
                       class="w-full"
-                      [(ngModel)]="lastName"
+                      formControlName="lastName"
                     />
                     <label for="lastName">Apellido *</label>
                   </p-iftalabel>
@@ -92,17 +93,24 @@
                       id="email"
                       pInputText
                       class="w-full"
-                      [ngClass]="{ 'p-invalid': emailError }"
-                      [attr.aria-invalid]="emailError ? true : null"
-                      [(ngModel)]="email"
+                      [ngClass]="{
+                        'p-invalid':
+                          control('email').invalid &&
+                          (control('email').dirty || control('email').touched)
+                      }"
+                      [attr.aria-invalid]="controlError('email') ? true : null"
+                      formControlName="email"
                       placeholder="mail@dominio.com"
-                      (ngModelChange)="clearDuplicateErrorFor('email')"
+                      (input)="clearDuplicateErrorFor('email')"
                       blockedAction
                     />
                     <label for="email">Email *</label>
                   </p-iftalabel>
-                  <small *ngIf="emailError" class="p-error block mt-1">
-                    {{ emailError }}
+                  <small
+                    *ngIf="controlError('email') as emailErr"
+                    class="p-error block mt-1"
+                  >
+                    {{ emailErr }}
                   </small>
                 </div>
 
@@ -112,17 +120,24 @@
                       id="cuil"
                       pInputText
                       class="w-full"
-                      [ngClass]="{ 'p-invalid': cuilError }"
-                      [attr.aria-invalid]="cuilError ? true : null"
-                      [(ngModel)]="cuil"
+                      [ngClass]="{
+                        'p-invalid':
+                          control('cuil').invalid &&
+                          (control('cuil').dirty || control('cuil').touched)
+                      }"
+                      [attr.aria-invalid]="controlError('cuil') ? true : null"
+                      formControlName="cuil"
                       placeholder="11 dígitos"
-                      (ngModelChange)="onCuilChange($event)"
+                      (input)="onCuilChange()"
                       blockedAction
                     />
                     <label for="cuil">CUIL *</label>
                   </p-iftalabel>
-                  <small *ngIf="cuilError" class="p-error block mt-1">
-                    {{ cuilError }}
+                  <small
+                    *ngIf="controlError('cuil') as cuilErr"
+                    class="p-error block mt-1"
+                  >
+                    {{ cuilErr }}
                   </small>
                   <small class="text-color-secondary block mt-1">
                     La contraseña inicial será el CUIL:
@@ -139,7 +154,7 @@
                       optionLabel="label"
                       optionValue="value"
                       placeholder="Seleccioná una opción"
-                      [(ngModel)]="sex"
+                      formControlName="sex"
                       name="sex"
                       [showClear]="true"
                       appendTo="body"
@@ -154,15 +169,23 @@
                       id="birthDate"
                       type="date"
                       class="w-full p-inputtext p-component"
-                      [ngClass]="{ 'p-invalid': birthDateError }"
-                      [attr.aria-invalid]="birthDateError ? true : null"
-                      [(ngModel)]="birthDate"
+                      [ngClass]="{
+                        'p-invalid':
+                          control('birthDate').invalid &&
+                          (control('birthDate').dirty ||
+                            control('birthDate').touched)
+                      }"
+                      [attr.aria-invalid]="controlError('birthDate') ? true : null"
+                      formControlName="birthDate"
                       blockedAction
                     />
                     <label for="birthDate">Fecha de nacimiento *</label>
                   </p-iftalabel>
-                  <small *ngIf="birthDateError" class="p-error block mt-1">
-                    {{ birthDateError }}
+                  <small
+                    *ngIf="controlError('birthDate') as birthErr"
+                    class="p-error block mt-1"
+                  >
+                    {{ birthErr }}
                   </small>
                 </div>
               </div>
@@ -174,7 +197,7 @@
                     icon="pi pi-arrow-right"
                     iconPos="right"
                     (onClick)="onNextFromStep1()"
-                    [disabled]="step1Errors.length > 0"
+                    [disabled]="isStep1Invalid"
                   />
                 </div>
               </div>
@@ -190,7 +213,7 @@
             >
               <div class="grid form-grid col-12">
                 <!-- SECRETARY -->
-                <ng-container *ngIf="role === 'secretary'">
+                <ng-container *ngIf="roleValue === 'secretary'">
                   <div class="col-12 w-full">
                     <p class="text-color-secondary w-full">
                       Este rol no requiere datos adicionales. Puede continuar al
@@ -204,55 +227,13 @@
                   <div class="col-12">
                     <h3 class="mb-2">Información de contacto</h3>
                     <div class="grid">
-                      <!-- Campo DNI removido: no se solicita documento en alta -->
-                      <!--
-                      <div class="col-12 md:col-2">
-                        <p-iftalabel class="w-full">
-                          <p-select
-                            class="w-full"
-                            inputId="documentType"
-                            [options]="docTypeOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="Seleccioná una opción"
-                            [(ngModel)]="documentType"
-                            name="documentType"
-                            [showClear]="true"
-                            appendTo="body"
-                            blockedAction
-                          ></p-select>
-                          <label for="documentType">Tipo</label>
-                        </p-iftalabel>
-                      </div>
-                      <div class="col-12 md:col-4">
-                        <p-iftalabel class="w-full">
-                          <input
-                            id="documentValue"
-                            pInputText
-                            class="w-full"
-                            [ngClass]="{ 'p-invalid': documentValueError }"
-                            [attr.aria-invalid]="documentValueError ? true : null"
-                            [(ngModel)]="documentValue"
-                            (ngModelChange)="clearDuplicateErrorFor('documentValue')"
-                            blockedAction
-                          />
-                          <label for="documentValue">N° documento *</label>
-                        </p-iftalabel>
-                        <small
-                          *ngIf="documentValueError"
-                          class="p-error block mt-1"
-                        >
-                          {{ documentValueError }}
-                        </small>
-                      </div>
-                      -->
                       <div class="col-12 md:col-6">
                         <p-iftalabel class="w-full">
                           <input
                             id="phone"
                             pInputText
                             class="w-full"
-                            [(ngModel)]="phone"
+                            formControlName="phone"
                           />
                           <label for="phone">Teléfono</label>
                         </p-iftalabel>
@@ -263,13 +244,13 @@
                             id="emergencyPhone"
                             pInputText
                             class="w-full"
-                            [(ngModel)]="emergencyPhone"
+                            formControlName="emergencyPhone"
                             blockedAction
                           />
                           <label for="emergencyPhone">Emergencia - Tel.</label>
                         </p-iftalabel>
                         <small class="block mt-1"
-                          >Contacto: {{ emergencyName || '-' }}</small
+                          >Contacto: {{ control('emergencyName').value || '-' }}</small
                         >
                       </div>
                       <div class="col-12 md:col-6">
@@ -278,7 +259,7 @@
                             id="emergencyName"
                             pInputText
                             class="w-full"
-                            [(ngModel)]="emergencyName"
+                            formControlName="emergencyName"
                             blockedAction
                           />
                           <label for="emergencyName">Emergencia - Nombre</label>
@@ -302,7 +283,7 @@
                                 id="addressStreet"
                                 pInputText
                                 class="w-full"
-                                [(ngModel)]="addressStreet"
+                                formControlName="addressStreet"
                                 blockedAction
                               />
                               <label for="addressStreet">Calle</label>
@@ -314,7 +295,7 @@
                                 id="addressNumber"
                                 pInputText
                                 class="w-full"
-                                [(ngModel)]="addressNumber"
+                                formControlName="addressNumber"
                                 blockedAction
                               />
                               <label for="addressNumber">Número</label>
@@ -326,7 +307,7 @@
                                 class="w-full"
                                 inputId="province"
                                 [options]="provinceOptions"
-                                [(ngModel)]="addressProvince"
+                                formControlName="addressProvince"
                                 name="province"
                                 placeholder="Seleccioná provincia"
                                 [showClear]="true"
@@ -345,8 +326,7 @@
                                 class="w-full"
                                 inputId="department"
                                 [options]="departmentOptions"
-                                [disabled]="!addressProvince"
-                                [(ngModel)]="addressNeighborhood"
+                                formControlName="addressNeighborhood"
                                 name="department"
                                 placeholder="Ej: Capital"
                                 [showClear]="true"
@@ -365,8 +345,7 @@
                                 class="w-full"
                                 inputId="locality"
                                 [options]="localityOptions"
-                                [disabled]="!addressNeighborhood"
-                                [(ngModel)]="addressLocality"
+                                formControlName="addressLocality"
                                 name="locality"
                                 placeholder="Ej: Córdoba Capital"
                                 [showClear]="true"
@@ -385,7 +364,7 @@
                                 id="addressPostalCode"
                                 pInputText
                                 class="w-full"
-                                [(ngModel)]="addressPostalCode"
+                                formControlName="addressPostalCode"
                                 blockedAction
                               />
                               <label for="addressPostalCode"
@@ -397,7 +376,7 @@
                       </div>
 
                       <!-- EXTRAS ALUMNO -->
-                      <div class="col-12" *ngIf="role === 'student'">
+                      <div class="col-12" *ngIf="roleValue === 'student'">
                         <h4 class="mt-3 mb-2">Datos de alumno</h4>
                         <div class="grid">
                           <div class="col-12 md:col-6">
@@ -406,7 +385,7 @@
                                 id="studentLegajo"
                                 pInputText
                                 class="w-full"
-                                [(ngModel)]="studentLegajo"
+                                formControlName="studentLegajo"
                                 placeholder="Identificador de legajo"
                               />
                               <label for="studentLegajo">Legajo *</label>
@@ -422,7 +401,7 @@
                                 id="studentStartYear"
                                 type="number"
                                 class="w-full p-inputtext p-component"
-                                [(ngModel)]="studentStartYear"
+                                formControlName="studentStartYear"
                                 placeholder="YYYY"
                               />
                               <label for="studentStartYear"
@@ -430,10 +409,10 @@
                               >
                             </p-iftalabel>
                             <small
-                              *ngIf="studentStartYearError"
+                              *ngIf="controlError('studentStartYear') as startYearErr"
                               class="p-error block mt-1"
                             >
-                              {{ studentStartYearError }}
+                              {{ startYearErr }}
                             </small>
                           </div>
                         </div>
@@ -458,7 +437,7 @@
                     icon="pi pi-arrow-right"
                     iconPos="right"
                     (onClick)="onNextFromStep2()"
-                    [disabled]="step2Errors.length > 0"
+                    [disabled]="isStep2Invalid"
                   />
                 </div>
               </div>
@@ -467,7 +446,7 @@
         </p-step-panel>
 
         <!-- PASO 3: asignacion de carrera a alumno -->
-        <p-step-panel [value]="3">
+        <p-step-panel *ngIf="isStudentRole" [value]="stepCareerValue">
           <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-20rem"
@@ -480,36 +459,31 @@
                 </p>
               </div>
 
-              <ng-container *ngIf="role === 'student'; else skipCareer">
-                <div class="grid form-grid">
-                  <div class="col-12 md:col-6">
-                    <p-iftalabel class="w-full">
-                      <p-select
-                        class="w-full"
-                        inputId="careerId"
-                        [options]="careerOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        placeholder="Seleccioná una carrera"
-                        appendTo="body"
-                        [showClear]="true"
-                        [(ngModel)]="careerId"
-                        blockedAction
-                      ></p-select>
-                      <label for="careerId">Carrera *</label>
-                    </p-iftalabel>
-                    <small *ngIf="careerError" class="p-error block mt-1">
-                      {{ careerError }}
-                    </small>
-                  </div>
+              <div class="grid form-grid">
+                <div class="col-12 md:col-6">
+                  <p-iftalabel class="w-full">
+                    <p-select
+                      class="w-full"
+                      inputId="careerId"
+                      [options]="careerOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Seleccioná una carrera"
+                      appendTo="body"
+                      [showClear]="true"
+                      formControlName="careerId"
+                      blockedAction
+                    ></p-select>
+                    <label for="careerId">Carrera *</label>
+                  </p-iftalabel>
+                  <small
+                    *ngIf="controlError('careerId') as careerErr"
+                    class="p-error block mt-1"
+                  >
+                    {{ careerErr }}
+                  </small>
                 </div>
-              </ng-container>
-              <ng-template #skipCareer>
-                <p class="text-color-secondary">
-                  Este paso solo aplica a usuarios con rol Alumno. Avanzá al
-                  resumen.
-                </p>
-              </ng-template>
+              </div>
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
@@ -517,7 +491,7 @@
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="goToStep(2)"
+                    (onClick)="goToStep(isStudentRole ? stepCareerValue! : 2)"
                   />
                 </div>
                 <div>
@@ -526,7 +500,7 @@
                     icon="pi pi-arrow-right"
                     iconPos="right"
                     (onClick)="onNextFromStep3()"
-                    [disabled]="role === 'student' && step3Errors.length > 0"
+                    [disabled]="isStep3Invalid"
                   />
                 </div>
               </div>
@@ -534,8 +508,8 @@
           </ng-template>
         </p-step-panel>
 
-        <!-- PASO 4: resumen -->
-        <p-step-panel [value]="4">
+        <!-- PASO resumen -->
+        <p-step-panel [value]="stepSummaryValue">
           <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
@@ -580,7 +554,7 @@
                   <p-button
                     label="Crear"
                     icon="pi pi-check"
-                    [disabled]="!canCreate()"
+                    [disabled]="form().invalid || isCreating"
                     (onClick)="createUser()"
                     blockedAction
                   />
@@ -592,4 +566,4 @@
       </p-step-panels>
     </p-stepper>
   </div>
-</div>
+</form>

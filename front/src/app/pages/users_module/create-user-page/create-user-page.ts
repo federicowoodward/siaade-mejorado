@@ -1,6 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { StepperModule } from 'primeng/stepper';
 import { ButtonModule } from 'primeng/button';
@@ -10,15 +18,14 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { TableModule } from 'primeng/table';
+import { IftaLabelModule } from 'primeng/iftalabel';
 
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ApiService } from '../../../core/services/api.service';
-import { Router } from '@angular/router';
-import { TableModule } from 'primeng/table';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
 import { buildPreviewRows } from '../../../shared/utils/create-user/user-preview-table';
 import { BlockedActionDirective } from '../../../shared/directives/blocked-action.directive';
-
 import {
   ROLE_REQUIREMENTS,
   UserRole,
@@ -28,8 +35,6 @@ import {
   hasAnyAddress,
 } from '../../../shared/utils/create-user/user-payload.util';
 import {
-  canCreateBase,
-  canCreateStep2,
   hasMinAge,
   isValidStudentStartYear,
   MAX_START_YEAR,
@@ -41,20 +46,40 @@ import {
   AppBreadcrumbComponent,
   SimpleBreadcrumbItem,
 } from '@/shared/components/breadcrumb/app-breadcrumb.component';
-import { IftaLabelModule } from 'primeng/iftalabel';
 import { ArgentinaGeoService } from '../../../shared/services/argentina-geo.service';
-import { firstValueFrom } from 'rxjs';
 import { UiAlertAuditService } from '../../../core/services/ui-alert-audit.service';
 
 type PreviewRow = { field: string; value: string };
 type RoleOption = { label: string; value: UserRole };
+type CreateUserFormModel = {
+  role: UserRole | null;
+  name: string;
+  lastName: string;
+  email: string;
+  cuil: string;
+  sex: string;
+  birthDate: string;
+  phone: string;
+  emergencyName: string;
+  emergencyPhone: string;
+  addressStreet: string;
+  addressNumber: string;
+  addressProvince: string;
+  addressNeighborhood: string;
+  addressLocality: string;
+  addressPostalCode: string;
+  studentLegajo: string;
+  studentStartYear: number | null;
+  careerId: number | null;
+};
+
 @Component({
   selector: 'app-create-user-page',
   standalone: true,
   imports: [
     CommonModule,
     AppBreadcrumbComponent,
-    FormsModule,
+    ReactiveFormsModule,
     StepperModule,
     ButtonModule,
     InputTextModule,
@@ -77,50 +102,129 @@ export class CreateUserPage implements OnInit {
   private geo = inject(ArgentinaGeoService);
   private messages = inject(MessageService);
   private uiAlertAudit = inject(UiAlertAuditService);
+  private fb: FormBuilder = inject(FormBuilder);
+
   readonly minAgeYears = MIN_AGE_YEARS;
 
   isCreating = false;
   activeStep = 1;
-  duplicateErrors: Partial<Record<'email' | 'cuil', string>> = {};
+
+  private readonly fieldLabels: Record<keyof CreateUserFormModel, string> = {
+    role: 'Rol',
+    name: 'Nombre',
+    lastName: 'Apellido',
+    email: 'Email',
+    cuil: 'CUIL',
+    sex: 'Sexo',
+    birthDate: 'Fecha de nacimiento',
+    phone: 'Teléfono',
+    emergencyName: 'Nombre de emergencia',
+    emergencyPhone: 'Teléfono de emergencia',
+    addressStreet: 'Calle',
+    addressNumber: 'Número',
+    addressProvince: 'Provincia',
+    addressNeighborhood: 'Departamento',
+    addressLocality: 'Localidad',
+    addressPostalCode: 'Código postal',
+    studentLegajo: 'Legajo',
+    studentStartYear: 'Año de inicio',
+    careerId: 'Carrera',
+  };
+
+  private birthDateValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const value = control.value as string;
+    if (!value) return null;
+    if (!parseDateOnly(value))
+      return { birthDate: 'Fecha de nacimiento inválida' };
+    if (!hasMinAge(value, this.minAgeYears)) {
+      return { birthDate: `Debe tener al menos ${this.minAgeYears} años.` };
+    }
+    return null;
+  };
+
+  private studentStartYearValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'student') return null;
+    const raw = control.value;
+    const birthDate = control.parent?.get('birthDate')?.value as string | null;
+
+    if (raw === null || raw === undefined || raw === '') {
+      return { startYear: 'Año de inicio es obligatorio.' };
+    }
+    const startYear = Number(raw);
+    if (!birthDate) {
+      return {
+        startYear:
+          'Completá la fecha de nacimiento para validar el año de inicio.',
+      };
+    }
+    if (!parseDateOnly(birthDate))
+      return { startYear: 'Fecha de nacimiento inválida' };
+    if (!Number.isInteger(startYear)) {
+      return { startYear: 'Ingresá un año de inicio válido.' };
+    }
+    if (startYear < MIN_START_YEAR || startYear > MAX_START_YEAR) {
+      return {
+        startYear: `El año de inicio debe estar entre ${MIN_START_YEAR} y ${MAX_START_YEAR}.`,
+      };
+    }
+    if (!isValidStudentStartYear(birthDate, startYear, this.minAgeYears)) {
+      return {
+        startYear: `El año de inicio debe ser al menos ${this.minAgeYears} años posterior a la fecha de nacimiento.`,
+      };
+    }
+    return null;
+  };
+
+  private careerValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'student') return null;
+    if (this.careerLoadError) {
+      return { careerLoad: this.careerLoadError };
+    }
+    if (!control.value) {
+      return {
+        career: 'Seleccioná una carrera para inscribir al alumno.',
+      };
+    }
+    return null;
+  };
+
+  form = signal(
+    this.fb.group({
+      role: [null as UserRole | null, Validators.required],
+      name: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      cuil: ['', Validators.required],
+      sex: ['', Validators.required],
+      birthDate: ['', [Validators.required, this.birthDateValidator]],
+      phone: [''],
+      emergencyName: [''],
+      emergencyPhone: [''],
+      addressStreet: [''],
+      addressNumber: [''],
+      addressProvince: [''],
+      addressNeighborhood: [''],
+      addressLocality: [''],
+      addressPostalCode: [''],
+      studentLegajo: [''],
+      studentStartYear: [null as number | null, this.studentStartYearValidator],
+      careerId: [null as number | null, this.careerValidator],
+    }),
+  );
 
   breadcrumbItems: SimpleBreadcrumbItem[] = [
     { label: 'Inicio', routerLink: '/welcome' },
     { label: 'Usuarios', routerLink: '/users' },
     { label: 'Nuevo usuario' },
   ];
-
-  back(): void {
-    this.goBackSvc.back();
-  }
-  // Paso 1 — Usuario básico
-  role: UserRole | null = null;
-  name = '';
-  lastName = '';
-  email = '';
-  cuil = '';
-
-  // Password inicial = CUIL (vista previa)
-  get passwordPreview() {
-    return this.cuil || 'pass1234';
-  }
-
-  // Paso 2 — user_info / common_data (según rol)
-  // user_info
-  phone = '';
-  emergencyName = '';
-  emergencyPhone = '';
-
-  // common_data
-  sex = '';
-  birthDate = ''; // yyyy-MM-dd
-
-  // address (opcional)
-  addressStreet = '';
-  addressNumber = '';
-  addressLocality = '';
-  addressProvince = '';
-  addressPostalCode = '';
-  addressNeighborhood = '';
 
   readonly sexOptions = [
     { label: 'Femenino', value: 'Femenino' },
@@ -132,194 +236,154 @@ export class CreateUserPage implements OnInit {
   departmentOptions: { label: string; value: string }[] = [];
   localityOptions: { label: string; value: string }[] = [];
 
-  // extras de alumno
-  studentLegajo = '';
-  studentStartYear: number | null = null; // opcional
-  careerId: number | null = null;
   careerOptions: { label: string; value: number }[] = [];
   careerLoading = false;
   careerLoadError: string | null = null;
 
-  private addressObj() {
-    return {
-      street: this.addressStreet || undefined,
-      number: this.addressNumber || undefined,
-      locality: this.addressLocality || undefined,
-      province: this.addressProvince || undefined,
-      postalCode: this.addressPostalCode || undefined,
-    };
+  private readonly roleOptions: RoleOption[] = [
+    { value: 'student', label: 'Alumno' },
+    { value: 'teacher', label: 'Docente' },
+    { value: 'preceptor', label: 'Preceptor' },
+    { value: 'secretary', label: 'Secretaría' },
+  ];
+  roleSuggestions: RoleOption[] = [];
+
+  get passwordPreview() {
+    return this.control('cuil').value || 'pass1234';
+  }
+
+  get req() {
+    const role = this.roleValue;
+    return role ? ROLE_REQUIREMENTS[role] : null;
+  }
+
+  get isStudentRole(): boolean {
+    return this.roleValue === 'student';
+  }
+
+  get stepCareerValue(): number {
+    return 3;
+  }
+
+  get stepSummaryValue(): number {
+    return this.isStudentRole ? 4 : 3;
+  }
+
+  get isStep1Invalid(): boolean {
+    return this.anyInvalid([
+      'role',
+      'name',
+      'lastName',
+      'email',
+      'cuil',
+      'sex',
+      'birthDate',
+    ]);
+  }
+
+  get isStep2Invalid(): boolean {
+    const names: (keyof CreateUserFormModel)[] = [];
+    if (this.req?.needsCommonData) {
+      names.push('birthDate', 'sex');
+    }
+    if (this.roleValue === 'student') {
+      names.push('studentStartYear');
+    }
+    return this.anyInvalid(names);
+  }
+
+  get isStep3Invalid(): boolean {
+    if (this.roleValue !== 'student') return false;
+    return this.control('careerId').invalid;
+  }
+
+  get previewRows(): PreviewRow[] {
+    return buildPreviewRows(this.buildPreview());
+  }
+
+  back(): void {
+    this.goBackSvc.back();
+  }
+
+  control<K extends keyof CreateUserFormModel>(name: K) {
+    return this.form().controls[name];
+  }
+
+  controlError(
+    name: keyof CreateUserFormModel,
+    requireTouched = true,
+  ): string | null {
+    const ctrl = this.control(name);
+    if (!ctrl) return null;
+    if (requireTouched && !(ctrl.touched || ctrl.dirty)) return null;
+    const errors = ctrl.errors;
+    if (!errors) return null;
+    if (errors['duplicate']) return errors['duplicate'] as string;
+    if (errors['birthDate']) return errors['birthDate'] as string;
+    if (errors['startYear']) return errors['startYear'] as string;
+    if (errors['career']) return errors['career'] as string;
+    if (errors['careerLoad']) return errors['careerLoad'] as string;
+    if (errors['email']) return 'Email inválido.';
+    if (errors['required']) {
+      const label = this.fieldLabels[name] ?? 'Campo';
+      return `${label} es obligatorio.`;
+    }
+    return null;
+  }
+
+  clearDuplicateErrorFor(field: 'email' | 'cuil'): void {
+    const ctrl = this.control(field);
+    if (!ctrl) return;
+    const errors = { ...(ctrl.errors ?? {}) };
+    if (errors['duplicate']) {
+      delete errors['duplicate'];
+      ctrl.setErrors(Object.keys(errors).length ? errors : null);
+    }
+  }
+
+  onCuilChange(): void {
+    this.clearDuplicateErrorFor('cuil');
+  }
+
+  onRoleChange(role: UserRole | null): void {
+    if (role !== 'student') {
+      this.careerIdReset();
+      this.careerOptions = [];
+      this.careerLoadError = null;
+      this.control('careerId').setErrors(null);
+    }
+    this.control('studentStartYear').updateValueAndValidity({ onlySelf: true });
+    this.control('careerId').updateValueAndValidity({ onlySelf: true });
+
+    const summaryVal = this.stepSummaryValue;
+    if (!this.isStudentRole) {
+      if (this.activeStep > summaryVal) {
+        this.activeStep = summaryVal;
+      } else if (this.activeStep === 3) {
+        this.activeStep = 2;
+      }
+    }
+  }
+
+  searchRoles(e: { query: string }) {
+    const q = (e?.query ?? '').toLowerCase().trim();
+    if (!q) {
+      this.roleSuggestions = [...this.roleOptions];
+      return;
+    }
+    this.roleSuggestions = this.roleOptions.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        opt.value.toLowerCase().includes(q),
+    );
   }
 
   hasAddress() {
     return hasAnyAddress(this.addressObj());
   }
 
-  get req() {
-    return this.role ? ROLE_REQUIREMENTS[this.role] : null;
-  }
-
-  private parsedBirthDate(): Date | null {
-    return parseDateOnly(this.birthDate);
-  }
-
-  clearDuplicateErrorFor(field: 'email' | 'cuil'): void {
-    if (this.duplicateErrors[field]) {
-      const next = { ...this.duplicateErrors };
-      delete next[field];
-      this.duplicateErrors = next;
-    }
-  }
-
-  get emailError(): string | null {
-    return this.duplicateErrors.email ?? null;
-  }
-
-  get cuilError(): string | null {
-    return this.duplicateErrors.cuil ?? null;
-  }
-
-  get birthDateError(): string | null {
-    if (!this.birthDate) return null;
-    if (!this.parsedBirthDate()) return 'Fecha de nacimiento inválida';
-    if (!hasMinAge(this.birthDate, this.minAgeYears)) {
-      return `Debe tener al menos ${this.minAgeYears} años.`;
-    }
-    return null;
-  }
-
-  get studentStartYearError(): string | null {
-    if (this.role !== 'student') return null;
-    if (
-      this.studentStartYear === null ||
-      this.studentStartYear === undefined ||
-      (this.studentStartYear as any) === ''
-    )
-      return 'Año de inicio es obligatorio.';
-    if (!this.birthDate) {
-      return 'Completá la fecha de nacimiento para validar el año de inicio.';
-    }
-    if (!this.parsedBirthDate()) return 'Fecha de nacimiento inválida';
-
-    const startYear = Number(this.studentStartYear);
-    if (!Number.isInteger(startYear)) {
-      return 'Ingresá un año de inicio válido.';
-    }
-    if (startYear < MIN_START_YEAR || startYear > MAX_START_YEAR) {
-      return `El año de inicio debe estar entre ${MIN_START_YEAR} y ${MAX_START_YEAR}.`;
-    }
-    if (!isValidStudentStartYear(this.birthDate, startYear, this.minAgeYears)) {
-      return `El año de inicio debe ser al menos ${this.minAgeYears} años posterior a la fecha de nacimiento.`;
-    }
-    return null;
-  }
-
-  get careerError(): string | null {
-    if (this.role !== 'student') return null;
-    if (this.careerLoadError) return this.careerLoadError;
-    if (!this.careerId)
-      return 'Seleccioná una carrera para inscribir al alumno.';
-    return null;
-  }
-
-  get step1Errors(): string[] {
-    return this.validateStep1();
-  }
-
-  get step2Errors(): string[] {
-    return this.validateStep2();
-  }
-
-  get step3Errors(): string[] {
-    if (this.role !== 'student') return [];
-    return this.careerError ? [this.careerError] : [];
-  }
-
-  private validateStep1(): string[] {
-    const errors: string[] = [];
-    if (!this.role) errors.push('Seleccioná un rol.');
-    if (!this.name.trim()) errors.push('Nombre es obligatorio.');
-    if (!this.lastName.trim()) errors.push('Apellido es obligatorio.');
-    if (!this.email.trim()) {
-      errors.push('Email es obligatorio.');
-    } else if (this.emailError) {
-      errors.push(`Email: ${this.emailError}`);
-    }
-    if (this.cuilError) errors.push(`CUIL: ${this.cuilError}`);
-    if (!this.sex) errors.push('Sexo es obligatorio.');
-    if (!this.birthDate) errors.push('Fecha de nacimiento es obligatoria.');
-    if (this.birthDateError)
-      errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
-    return errors;
-  }
-
-  private validateStep2(): string[] {
-    const errors: string[] = [];
-    const req = this.req;
-    if (!this.role) {
-      errors.push('Seleccioná un rol antes de continuar.');
-      return errors;
-    }
-    /* if (req?.needsUserInfo) {
-      if (!this.documentType) errors.push('Tipo de documento es obligatorio.');
-      if (!this.documentValue.trim()) {
-        errors.push('Número de documento es obligatorio.');
-      } else if (this.documentValueError) {
-        errors.push(`Número de documento: ${this.documentValueError}`);
-      }
-    } */
-    if (req?.needsCommonData) {
-      if (this.birthDateError)
-        errors.push(`Fecha de nacimiento: ${this.birthDateError}`);
-      if (!this.sex) errors.push('Sexo es obligatorio.');
-    }
-    if (this.role === 'student') {
-      if (!this.studentLegajo.trim() && !this.cuil) {
-        errors.push('Legajo es obligatorio para alumnos.');
-      }
-      if (this.studentStartYearError) {
-        errors.push(`Año de inicio: ${this.studentStartYearError}`);
-      }
-    }
-    return errors;
-  }
-
-  private showValidationErrors(
-    errors: string[],
-    summary = 'Revisá los datos requeridos',
-  ) {
-    if (!errors.length) return;
-    this.toastErr(`${summary}: ${errors.join(' | ')}`);
-  }
-
-  canCreate(): boolean {
-    if (this.birthDateError || this.studentStartYearError) return false;
-    if (this.step1Errors.length || this.step2Errors.length) return false;
-    if (this.role === 'student' && this.step3Errors.length) return false;
-    const baseOk = canCreateBase(this.role, this.email, this.cuil);
-    if (!baseOk) return false;
-    if (this.role === 'secretary') return true;
-
-    return canCreateStep2({
-      role: this.role,
-      sex: this.sex,
-      birthDate: this.birthDate,
-      studentStartYear: this.role === 'student' ? this.studentStartYear : null,
-      legajo:
-        this.role === 'student'
-          ? this.studentLegajo || this.cuil
-          : undefined,
-      minAgeYears: this.minAgeYears,
-    });
-  }
-
-  onCuilChange(value: string): void {
-    this.cuil = value;
-    this.clearDuplicateErrorFor('cuil');
-  }
-
   goToStep(step: number): void {
     this.activeStep = step;
-    // aseguro refresco del stepper y subo al inicio para que se vea el error
     setTimeout(() => {
       this.activeStep = step;
       if (typeof window !== 'undefined') {
@@ -328,51 +392,104 @@ export class CreateUserPage implements OnInit {
     });
   }
 
-  async createUser(): Promise<void> {
-    if (this.isCreating || !this.role) return;
-    if (!this.canCreate()) {
-      this.toastErr('Revisá los datos obligatorios antes de continuar.');
+  onNextFromStep1(): void {
+    if (this.isStep1Invalid) {
+      this.markControlsTouched([
+        'role',
+        'name',
+        'lastName',
+        'email',
+        'cuil',
+        'sex',
+        'birthDate',
+      ]);
+      this.toastErr('Completa los datos del Paso I.');
       return;
     }
+    this.goToStep(2);
+  }
+
+  async onNextFromStep2(): Promise<void> {
+    const controlsToTouch: (keyof CreateUserFormModel)[] = ['birthDate', 'sex'];
+    if (this.roleValue === 'student') {
+      controlsToTouch.push('studentStartYear');
+    }
+    if (controlsToTouch.length) this.markControlsTouched(controlsToTouch);
+    if (this.isStep2Invalid) {
+      this.toastErr('Completa los datos del Paso II.');
+      return;
+    }
+    if (this.isStudentRole) {
+      await this.ensureCareerOptions();
+      this.goToStep(this.stepCareerValue!);
+    } else {
+      this.goToStep(this.stepSummaryValue);
+    }
+  }
+
+  onNextFromStep3(): void {
+    if (this.roleValue !== 'student') {
+      this.goToStep(this.stepSummaryValue);
+      return;
+    }
+    this.control('careerId').markAsTouched();
+    if (this.isStep3Invalid) {
+      this.toastErr('Selecciona la carrera antes de continuar.');
+      return;
+    }
+    this.goToStep(this.stepSummaryValue);
+  }
+
+  async createUser(): Promise<void> {
+    if (this.isCreating) return;
+    if (this.form().invalid) {
+      this.form().markAllAsTouched();
+      this.toastErr('Revisa los datos obligatorios antes de continuar.');
+      return;
+    }
+    const value = this.form().getRawValue();
+    const role = value.role;
+    const studentStartYear = this.normalizeStartYear(value.studentStartYear);
+    if (!role) return;
+
     this.isCreating = true;
 
     try {
       const { endpoint, payload } = buildPayload({
         base: {
-          role: this.role,
-          name: this.name,
-          lastName: this.lastName,
-          email: this.email,
-          cuil: this.cuil,
+          role,
+          name: value.name ?? '',
+          lastName: value.lastName ?? '',
+          email: value.email ?? '',
+          cuil: value.cuil ?? '',
         },
         userInfo: this.req?.needsUserInfo
           ? {
-              phone: this.phone || undefined,
-              emergencyName: this.emergencyName || undefined,
-              emergencyPhone: this.emergencyPhone || undefined,
+              phone: value.phone || undefined,
+              emergencyName: value.emergencyName || undefined,
+              emergencyPhone: value.emergencyPhone || undefined,
             }
           : undefined,
         commonData: this.req?.needsCommonData
           ? {
-              sex: this.sex,
-              birthDate: this.birthDate,
+              sex: value.sex ?? '',
+              birthDate: value.birthDate ?? '',
             }
           : undefined,
         address:
           this.req?.allowsAddress && this.hasAddress()
             ? this.addressObj()
             : undefined,
-        // extras para student
         studentLegajo:
-          this.role === 'student'
-            ? this.studentLegajo || this.cuil
+          role === 'student'
+            ? (value.studentLegajo || value.cuil || '').toString()
             : undefined,
         studentStartYear:
-          this.role === 'student' && this.studentStartYear
-            ? this.studentStartYear
+          role === 'student' && studentStartYear !== null
+            ? studentStartYear
             : undefined,
         careerId:
-          this.role === 'student' && this.careerId ? this.careerId : undefined,
+          role === 'student' && value.careerId ? value.careerId : undefined,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
@@ -383,7 +500,6 @@ export class CreateUserPage implements OnInit {
       console.error('Error al crear usuario', err);
       const backendMsg = (err as any)?.error?.message;
       let detail = 'No se pudo crear el usuario. Verifique los datos.';
-      this.duplicateErrors = {};
       if (backendMsg) {
         detail = Array.isArray(backendMsg)
           ? backendMsg.join(' | ')
@@ -392,7 +508,12 @@ export class CreateUserPage implements OnInit {
         detail = 'Datos duplicados. Revise email, CUIL o legajo.';
       }
       this.setDuplicateErrorsFromDetail(detail, (err as any)?.status);
-      if (this.duplicateErrors.email || this.duplicateErrors.cuil) {
+      if (this.control('email').hasError('duplicate')) {
+        this.control('email').markAsTouched();
+        this.goToStep(1);
+      }
+      if (this.control('cuil').hasError('duplicate')) {
+        this.control('cuil').markAsTouched();
         this.goToStep(1);
       }
       this.toastErr(detail);
@@ -400,39 +521,41 @@ export class CreateUserPage implements OnInit {
       this.isCreating = false;
     }
   }
-  /** Build y Getter consumido por la tabla  de preview*/
 
   buildPreview() {
+    const value = this.form().getRawValue();
+    const role = value.role;
+    const studentStartYear = this.normalizeStartYear(value.studentStartYear);
     return {
       user: {
-        role: this.role,
-        name: this.name,
-        lastName: this.lastName,
-        email: this.email,
-        cuil: this.cuil,
+        role,
+        name: value.name ?? '',
+        lastName: value.lastName ?? '',
+        email: value.email ?? '',
+        cuil: value.cuil ?? '',
         password: this.passwordPreview,
       },
       roleExtras:
-        this.role === 'student'
+        role === 'student'
           ? {
-              legajo: this.studentLegajo || this.cuil,
-              studentStartYear: this.studentStartYear || undefined,
-              career: this.selectedCareerLabel() || this.careerId || undefined,
+              legajo: (value.studentLegajo || value.cuil || '').toString(),
+              studentStartYear: studentStartYear ?? undefined,
+              career: this.selectedCareerLabel() || value.careerId || undefined,
             }
-          : this.role === 'secretary'
+          : role === 'secretary'
             ? { isDirective: true }
             : undefined,
       user_info: this.req?.needsUserInfo
         ? {
-            phone: this.phone || undefined,
-            emergencyName: this.emergencyName || undefined,
-            emergencyPhone: this.emergencyPhone || undefined,
+            phone: value.phone || undefined,
+            emergencyName: value.emergencyName || undefined,
+            emergencyPhone: value.emergencyPhone || undefined,
           }
         : undefined,
       common_data: this.req?.needsCommonData
         ? {
-            sex: this.sex || undefined,
-            birthDate: this.birthDate || undefined,
+            sex: value.sex || undefined,
+            birthDate: value.birthDate || undefined,
             address:
               this.req?.allowsAddress && this.hasAddress()
                 ? this.addressObj()
@@ -442,44 +565,126 @@ export class CreateUserPage implements OnInit {
     };
   }
 
-  get previewRows(): PreviewRow[] {
-    return buildPreviewRows(this.buildPreview());
-  }
-
   displayPreviewValue(row: PreviewRow): string {
     if (!row) return '';
     if (row.field.endsWith('role')) {
       const match = this.roleOptions.find((o) => o.value === row.value);
       return match?.label ?? String(row.value ?? '');
     }
-    if (row.field.includes('career') && this.role === 'student') {
+    if (row.field.includes('career') && this.roleValue === 'student') {
       return this.selectedCareerLabel() ?? String(row.value ?? '');
     }
     return String(row.value ?? '');
   }
 
-  private selectedCareerLabel(): string | null {
-    const match = this.careerOptions.find((opt) => opt.value === this.careerId);
-    return match?.label ?? null;
+  onProvinceChange(value: string | null): Promise<void> {
+    this.form().patchValue(
+      {
+        addressProvince: value ?? '',
+        addressNeighborhood: '',
+        addressLocality: '',
+      },
+      { emitEvent: false },
+    );
+    this.departmentOptions = [];
+    this.localityOptions = [];
+    if (value) {
+      return this.loadDepartments(value);
+    }
+    return Promise.resolve();
   }
 
-  // ---- SUGERENCIAS / LISTAS ----
-  private readonly roleOptions: RoleOption[] = [
-    { value: 'student', label: 'Alumno' },
-    { value: 'teacher', label: 'Docente' },
-    { value: 'preceptor', label: 'Preceptor' },
-    { value: 'secretary', label: 'Secretaría' },
-  ];
-  roleSuggestions: RoleOption[] = [];
+  async onDepartmentChange(value: string | null): Promise<void> {
+    this.form().patchValue(
+      {
+        addressNeighborhood: value ?? '',
+        addressLocality: '',
+      },
+      { emitEvent: false },
+    );
+    this.localityOptions = [];
+    if (value || this.control('addressProvince').value) {
+      await this.loadLocalities(
+        this.control('addressProvince').value ?? '',
+        value ?? undefined,
+      );
+    }
+  }
 
-  private sexesAll: string[] = ['Femenino', 'Masculino', 'Prefiero no decirlo'];
-  sexSuggestions: string[] = [];
+  onLocalityChange(value: string | null): void {
+    this.control('addressLocality').setValue(value ?? '');
+  }
 
-  // ---- HELPERS ----
-  private filterContains<T extends string>(src: T[], q: string): T[] {
-    const needle = (q ?? '').toLowerCase().trim();
-    if (!needle) return [...src];
-    return src.filter((v) => v.toLowerCase().includes(needle));
+  async ngOnInit(): Promise<void> {
+    this.control('birthDate').valueChanges.subscribe(() =>
+      this.control('studentStartYear').updateValueAndValidity({
+        onlySelf: true,
+      }),
+    );
+    this.control('role').valueChanges.subscribe((role) => {
+      this.onRoleChange(role as UserRole | null);
+    });
+
+    const provinceCtrl = this.control('addressProvince');
+    const departmentCtrl = this.control('addressNeighborhood');
+    const localityCtrl = this.control('addressLocality');
+
+    departmentCtrl.disable({ emitEvent: false });
+    localityCtrl.disable({ emitEvent: false });
+
+    provinceCtrl.valueChanges.subscribe((province) => {
+      const hasProvince = !!province;
+      if (hasProvince) {
+        departmentCtrl.enable({ emitEvent: false });
+      } else {
+        departmentCtrl.disable({ emitEvent: false });
+        localityCtrl.disable({ emitEvent: false });
+      }
+    });
+
+    departmentCtrl.valueChanges.subscribe((dept) => {
+      const hasDept = !!dept;
+      if (hasDept) {
+        localityCtrl.enable({ emitEvent: false });
+      } else {
+        localityCtrl.disable({ emitEvent: false });
+      }
+    });
+
+    if (provinceCtrl.value) {
+      departmentCtrl.enable({ emitEvent: false });
+    }
+    if (departmentCtrl.value) {
+      localityCtrl.enable({ emitEvent: false });
+    }
+
+    await this.initializeGeoSelectors();
+  }
+
+  private addressObj() {
+    const value = this.form().getRawValue();
+    return {
+      street: value.addressStreet || undefined,
+      number: value.addressNumber || undefined,
+      locality: value.addressLocality || undefined,
+      province: value.addressProvince || undefined,
+      postalCode: value.addressPostalCode || undefined,
+    };
+  }
+
+  get roleValue(): UserRole | null {
+    return this.control('role').value;
+  }
+
+  private markControlsTouched(names: (keyof CreateUserFormModel)[]) {
+    names.forEach((name) => {
+      this.control(name).markAsTouched();
+    });
+  }
+
+  private anyInvalid(names: (keyof CreateUserFormModel)[]): boolean {
+    if (!names.length) return false;
+    return names.some((n) => this.control(n).invalid);
   }
 
   private toastOk(summary: string) {
@@ -496,74 +701,47 @@ export class CreateUserPage implements OnInit {
 
   private setDuplicateErrorsFromDetail(detail: string, status?: number): void {
     const lower = (detail || '').toLowerCase();
-    const errors: Partial<Record<'email' | 'cuil' | 'documentValue', string>> =
-      {};
 
     if (
       lower.includes('email') ||
       lower.includes('correo') ||
       lower.includes('mail')
     ) {
-      errors.email = 'El email ya está registrado.';
+      this.setServerError(
+        this.control('email'),
+        'El email ya está registrado.',
+      );
     }
     if (/(cuil).*(registrad|ya|duplicad)/.test(lower)) {
-      errors.cuil = 'El CUIL ya está registrado.';
+      this.setServerError(this.control('cuil'), 'El CUIL ya está registrado.');
     }
-    if (
-      lower.includes('dni') ||
-      lower.includes('documento') ||
-      lower.includes('número de documento') ||
-      lower.includes('numero de documento')
-    ) {
-      errors.documentValue = 'El número de documento ya está registrado.';
-    }
-
-    // Si el backend no indica el campo exacto, no marcamos campos específicos para evitar falsos positivos.
-    // El toast mostrará el mensaje completo.
-
-    this.duplicateErrors = errors;
-  }
-
-  // ---- METODOS PARA p-autoComplete ----
-  onRoleChange(role: UserRole | null): void {
-    this.role = role;
-    if (role !== 'student') {
-      this.careerId = null;
-      this.careerOptions = [];
-      this.careerLoadError = null;
+    if (status === 409 && !lower) {
+      this.setServerError(
+        this.control('email'),
+        'El email ya está registrado.',
+      );
+      this.setServerError(this.control('cuil'), 'El CUIL ya está registrado.');
     }
   }
 
-  searchRoles(e: { query: string }) {
-    const q = (e?.query ?? '').toLowerCase().trim();
-
-    if (!q) {
-      this.roleSuggestions = [...this.roleOptions];
-      return;
-    }
-
-    this.roleSuggestions = this.roleOptions.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(q) ||
-        opt.value.toLowerCase().includes(q),
-    );
+  private setServerError(ctrl: AbstractControl, message: string) {
+    const errors = { ...(ctrl.errors ?? {}) };
+    errors['duplicate'] = message;
+    ctrl.setErrors(errors);
   }
 
-  searchSex(e: { query: string }) {
-    this.sexSuggestions = this.filterContains(this.sexesAll, e?.query);
-  }
-
-  // ---- Ciclo de vida / geo-selectores ----
-  async ngOnInit(): Promise<void> {
-    await this.initializeGeoSelectors();
+  private selectedCareerLabel(): string | null {
+    const careerId = this.control('careerId').value;
+    const match = this.careerOptions.find((opt) => opt.value === careerId);
+    return match?.label ?? null;
   }
 
   private async initializeGeoSelectors(): Promise<void> {
     await this.loadProvinces();
-    const province = this.addressProvince;
+    const province = this.control('addressProvince').value;
     if (province) {
       await this.loadDepartments(province);
-      const department = this.addressNeighborhood || undefined;
+      const department = this.control('addressNeighborhood').value || undefined;
       await this.loadLocalities(province, department);
     }
   }
@@ -605,9 +783,10 @@ export class CreateUserPage implements OnInit {
   }
 
   private async ensureCareerOptions(): Promise<void> {
-    if (this.role !== 'student' || this.careerOptions.length) return;
+    if (this.roleValue !== 'student' || this.careerOptions.length) return;
     this.careerLoading = true;
     this.careerLoadError = null;
+    this.control('careerId').setErrors(null);
     try {
       const resp = await firstValueFrom(
         this.api.request<{ data: any[] }>(
@@ -624,72 +803,28 @@ export class CreateUserPage implements OnInit {
         label: c.careerName || c.name || `Carrera ${c.id}`,
         value: c.id,
       }));
+      this.control('careerId').setErrors(null);
+      this.control('careerId').updateValueAndValidity({ onlySelf: true });
     } catch (error) {
       console.error('No se pudieron cargar carreras', error);
       this.careerLoadError =
         'No se pudieron cargar las carreras disponibles. Intenta nuevamente.';
+      this.control('careerId').setErrors({
+        ...(this.control('careerId').errors ?? {}),
+        careerLoad: this.careerLoadError,
+      });
     } finally {
       this.careerLoading = false;
     }
   }
 
-  async onProvinceChange(value: string | null): Promise<void> {
-    this.addressProvince = value ?? '';
-    this.addressNeighborhood = '';
-    this.addressLocality = '';
-    this.departmentOptions = [];
-    this.localityOptions = [];
-    if (value) {
-      await this.loadDepartments(value);
-    }
+  private normalizeStartYear(raw: any): number | null {
+    if (raw === null || raw === undefined || raw === '') return null;
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 
-  async onDepartmentChange(value: string | null): Promise<void> {
-    this.addressNeighborhood = value ?? '';
-    this.addressLocality = '';
-    this.localityOptions = [];
-    if (value || this.addressProvince) {
-      await this.loadLocalities(this.addressProvince, value ?? undefined);
-    }
-  }
-
-  async onLocalityChange(value: string | null): Promise<void> {
-    this.addressLocality = value ?? '';
-  }
-
-  onNextFromStep1(): void {
-    const errors = this.validateStep1();
-    if (errors.length) {
-      this.showValidationErrors(errors, 'Completa los datos del Paso I');
-      return;
-    }
-    this.goToStep(2);
-  }
-
-  async onNextFromStep2(): Promise<void> {
-    const errors = this.validateStep2();
-    if (errors.length) {
-      this.showValidationErrors(errors, 'Completa los datos del Paso II');
-      return;
-    }
-    if (this.role === 'student') {
-      await this.ensureCareerOptions();
-      this.goToStep(3);
-    } else {
-      this.goToStep(4);
-    }
-  }
-
-  onNextFromStep3(): void {
-    if (this.role !== 'student') {
-      this.goToStep(4);
-      return;
-    }
-    const errors = this.step3Errors;
-    if (errors.length) {
-      this.showValidationErrors(errors, 'Seleccioná la carrera');
-      return;
-    }
-    this.goToStep(4);
+  private careerIdReset() {
+    this.control('careerId').setValue(null);
   }
 }
