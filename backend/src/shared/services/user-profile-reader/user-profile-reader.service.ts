@@ -30,7 +30,7 @@ export class UserProfileReaderService {
         role: true,
         userInfo: true,
         commonData: { address: true },
-        student: true,
+        student: { careerStudents: { career: true } },
         teacher: true,
         preceptor: true,
       },
@@ -125,13 +125,21 @@ export class UserProfileReaderService {
       case ROLE.STUDENT:
         result.commonData = cd;
         if (user.student) {
+          const careerStudents =
+            user.student.careerStudents?.map((cs) => ({
+              careerId: cs.careerId,
+              careerName: cs.career?.careerName ?? null,
+              enrolledAt: cs.enrolledAt ?? null,
+            })) ?? [];
+
           result.student = {
             userId: user.student.userId,
             legajo: user.student.legajo ?? null,
             commissionId: user.student.commissionId ?? null,
             isActive: user.student.isActive ?? null,
             studentStartYear: user.student.studentStartYear ?? null,
-          } as any;
+            careerStudents,
+          };
         }
         break;
       case ROLE.TEACHER:

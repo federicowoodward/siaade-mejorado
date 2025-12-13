@@ -77,6 +77,16 @@ export class PersonalDataComponent implements OnInit {
   provinceOptions = signal<{ label: string; value: string }[]>([]);
   departmentOptions = signal<{ label: string; value: string }[]>([]);
   localityOptions = signal<{ label: string; value: string }[]>([]);
+  studentCareerList = computed(() => {
+    const data = this.studentData() ?? {};
+    const raw = data.careerStudents ?? data.careerStudent ?? [];
+    const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    return list.map((c: any) => ({
+      careerId: c?.careerId ?? null,
+      careerName: c?.careerName ?? null,
+      enrolledAt: c?.enrolledAt ?? null,
+    }));
+  });
   private readonly roleLabels: Record<string, string> = {
     student: 'Alumno',
     teacher: 'Docente',
@@ -156,12 +166,20 @@ export class PersonalDataComponent implements OnInit {
     const uInfo = profile.userInfo ?? {};
     const cData = profile.commonData ?? {};
     const aData = (profile.commonData?.address ?? {}) || {};
-    const sData =
+    const baseStudent =
       profile.student ??
       profile.studentData ??
       profile.studentInfo ??
       (profile.students && profile.students[0]) ??
       {};
+    const sData = {
+      ...baseStudent,
+      careerStudents:
+        profile.student?.careerStudents ??
+        profile.careerStudents ??
+        baseStudent.careerStudents ??
+        [],
+    };
 
     this.userData.set(uData);
     this.userInfo.set(uInfo);

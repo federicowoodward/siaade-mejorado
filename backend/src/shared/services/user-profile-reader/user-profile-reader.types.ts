@@ -44,6 +44,11 @@ export interface UserProfileResult {
     commissionId: number | null;
     isActive: boolean | null;
     studentStartYear: number | null;
+    careerStudents?: Array<{
+      careerId: number;
+      careerName: string | null;
+      enrolledAt: string | Date | null;
+    }>;
   } | null;
 
   // Datos específicos de docente (si el rol es TEACHER)

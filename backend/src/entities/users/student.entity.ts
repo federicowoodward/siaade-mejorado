@@ -12,6 +12,7 @@ import { SubjectStudent } from "@/entities/subjects/subject-student.entity";
 import { ExamResult } from "@/entities/subjects/exam-result.entity";
 import { FinalExamsStudent } from "@/entities/finals/final-exams-student.entity";
 import { Commission } from "@/entities/catalogs/commission.entity";
+import { CareerStudent } from "@/entities/registration/career-student.entity";
 
 @Entity("students")
 export class Student {
@@ -30,6 +31,9 @@ export class Student {
 
   @OneToMany(() => FinalExamsStudent, (fes) => fes.student)
   finals: FinalExamsStudent[];
+
+  @OneToMany(() => CareerStudent, (cs) => cs.student)
+  careerStudents: CareerStudent[];
 
   @Column({ name: "legajo", type: "text", unique: true })
   legajo: string;

@@ -411,6 +411,31 @@
             Usado para calcular antigüedad académica.
           </small>
         </div>
+        <div class="col-12 md:col-6">
+          <div class="flex flex-column gap-2">
+            <ng-container *ngIf="studentCareerList().length; else noCareer">
+              <div
+                class="flex flex-column align-items-start gap-2"
+                *ngFor="let career of studentCareerList()"
+              >
+                <div class="flex align-items-center gap-2">
+                  <span class="text-500 text-sm">Carrera asignada:</span>
+                  <p-tag
+                    [value]="career.careerName || (career.careerId ? 'Carrera ' + career.careerId : 'Carrera')"
+                    severity="secondary"
+                  ></p-tag>
+                </div>
+
+                <span class="text-500 text-sm" *ngIf="career.enrolledAt">
+                  Desde {{ career.enrolledAt | date: 'yyyy-MM-dd' }}
+                </span>
+              </div>
+            </ng-container>
+            <ng-template #noCareer>
+              <span class="text-500 text-sm">Sin carrera asignada.</span>
+            </ng-template>
+          </div>
+        </div>
       </div>
     </section>
   </div>
