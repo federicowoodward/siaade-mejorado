@@ -503,13 +503,13 @@
                         [options]="commissionOptions"
                         optionLabel="label"
                         optionValue="value"
-                        placeholder="Seleccion  una comisi¢n"
+                        placeholder="Seleccioná una comisión"
                         appendTo="body"
                         [showClear]="true"
                         formControlName="commissionId"
                         blockedAction
                       ></p-select>
-                      <label for="commissionId">Comisi¢n *</label>
+                      <label for="commissionId">Comisión *</label>
                     </p-iftalabel>
                     <small
                       *ngIf="controlError('commissionId') as commissionErr"
@@ -531,7 +531,7 @@
                         optionLabel="label"
                         optionValue="value"
                         formControlName="teacherCommissionIds"
-                        defaultLabel="Seleccion  comisiones"
+                        defaultLabel="Seleccioná comisiones"
                         display="chip"
                         appendTo="body"
                         blockedAction
@@ -555,7 +555,7 @@
                         optionLabel="label"
                         optionValue="value"
                         formControlName="teacherSubjectIds"
-                        defaultLabel="Seleccion  materias"
+                        defaultLabel="Seleccioná materias"
                         display="chip"
                         appendTo="body"
                         [filter]="true"
@@ -638,12 +638,14 @@
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="goToStep(2)"
-                  />
+                    (click)="goToStep(2)"
+                  ></button>
                 </div>
                 <div>
                   <p-button

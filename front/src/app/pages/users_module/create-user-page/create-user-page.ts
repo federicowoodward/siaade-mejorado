@@ -333,7 +333,7 @@ export class CreateUserPage implements OnInit {
   }
 
   get assignmentStepLabel(): string {
-    if (this.isTeacherRole) return 'Asignar carrera y materias';
+    return 'Asignaciones';
     return 'Asignar carrera y comisión';
   }
 
