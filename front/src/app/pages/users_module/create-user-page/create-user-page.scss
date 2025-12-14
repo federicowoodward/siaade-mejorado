@@ -1,0 +1,74 @@
+/* Resumen */
+.summary-sections {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .summary-sections {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+.summary-card {
+  padding: 1.25rem;
+}
+
+.summary-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.summary-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.summary-card__subtitle {
+  font-size: 0.9rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.summary-item {
+  padding: 0.25rem 0 0.75rem;
+  border-bottom: 1px dashed var(--surface-border);
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+}
+
+.summary-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 600;
+  color: var(--text-color);
+  word-break: break-word;
+}
+
+.summary-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

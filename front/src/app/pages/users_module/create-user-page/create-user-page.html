@@ -256,7 +256,8 @@
                           <label for="emergencyPhone">Emergencia - Tel.</label>
                         </p-iftalabel>
                         <small class="block mt-1"
-                          >Contacto: {{ control('emergencyName').value || '-' }}</small
+                          >Contacto: {{ control('emergencyName').value || '-'
+                          }}</small
                         >
                       </div>
                       <div class="col-12 md:col-6">
@@ -626,25 +627,195 @@
                 </p>
               </div>
 
-              <p-table
-                [value]="previewRows"
-                showGridlines
-                [tableStyle]="{ 'min-width': '50rem' }"
-              >
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th>Campo</th>
-                    <th>Valor</th>
-                  </tr>
-                </ng-template>
+              <div class="summary-sections">
+                <ng-container
+                  *ngIf="rowsForSection('identity') as identityRows"
+                >
+                  <div
+                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="identityRows.length"
+                  >
+                    <div class="summary-card__header">
+                      <p class="summary-card__title m-0">Rol y credenciales</p>
+                      <p class="summary-card__subtitle m-0 text-500">
+                        Datos de acceso y rol asignado.
+                      </p>
+                    </div>
+                    <div class="summary-grid">
+                      <div
+                        class="summary-item"
+                        *ngFor="let row of identityRows"
+                      >
+                        <span class="summary-label">
+                          {{ row.field | fieldLabel }}
+                        </span>
+                        <div class="summary-value">
+                          <ng-container [ngSwitch]="true">
+                            <span *ngSwitchCase="isPasswordField(row)"
+                              >••••••••</span
+                            >
+                            <span *ngSwitchCase="isCuilField(row)">
+                              {{ maskCuil(displayPreviewValue(row)) }}
+                            </span>
+                            <p-tag
+                              *ngSwitchCase="fieldKey(row) === 'role'"
+                              [value]="displayPreviewValue(row)"
+                              severity="secondary"
+                            ></p-tag>
+                            <ng-container *ngSwitchDefault>
+                              <span>{{ displayPreviewValue(row) || '-' }}</span>
+                            </ng-container>
+                          </ng-container>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
 
-                <ng-template pTemplate="body" let-row>
-                  <tr>
-                    <td>{{ row.field | fieldLabel }}</td>
-                    <td>{{ displayPreviewValue(row) }}</td>
-                  </tr>
-                </ng-template>
-              </p-table>
+                <ng-container
+                  *ngIf="rowsForSection('personal') as personalRows"
+                >
+                  <div
+                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="personalRows.length"
+                  >
+                    <div class="summary-card__header">
+                      <p class="summary-card__title m-0">Datos personales</p>
+                      <p class="summary-card__subtitle m-0 text-500">
+                        Identidad y datos basicos.
+                      </p>
+                    </div>
+                    <div class="summary-grid">
+                      <div
+                        class="summary-item"
+                        *ngFor="let row of personalRows"
+                      >
+                        <span class="summary-label">
+                          {{ row.field | fieldLabel }}
+                        </span>
+                        <div class="summary-value">
+                          <ng-container [ngSwitch]="fieldKey(row)">
+                            <p-tag
+                              *ngSwitchCase="'sex'"
+                              [value]="displayPreviewValue(row)"
+                              severity="secondary"
+                            ></p-tag>
+                            <ng-container *ngSwitchDefault>
+                              <span>{{ displayPreviewValue(row) || '-' }}</span>
+                            </ng-container>
+                          </ng-container>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container
+                  *ngIf="rowsForSection('academic') as academicRows"
+                >
+                  <div
+                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="academicRows.length"
+                  >
+                    <div class="summary-card__header">
+                      <p class="summary-card__title m-0">Datos academicos</p>
+                      <p class="summary-card__subtitle m-0 text-500">
+                        Carrera, comisiones y materia según el rol.
+                      </p>
+                    </div>
+                    <div class="summary-grid">
+                      <div
+                        class="summary-item"
+                        *ngFor="let row of academicRows"
+                      >
+                        <span class="summary-label">
+                          {{ row.field | fieldLabel }}
+                        </span>
+                        <div class="summary-value">
+                          <ng-container [ngSwitch]="fieldKey(row)">
+                            <div
+                              *ngSwitchCase="'commissions'"
+                              class="summary-chip-list"
+                            >
+                              <p-tag
+                                *ngFor="let item of asList(displayPreviewValue(row))"
+                                [value]="item"
+                                severity="secondary"
+                              ></p-tag>
+                            </div>
+                            <div
+                              *ngSwitchCase="'subjects'"
+                              class="summary-chip-list"
+                            >
+                              <p-tag
+                                *ngFor="let item of asList(displayPreviewValue(row))"
+                                [value]="item"
+                                severity="info"
+                              ></p-tag>
+                            </div>
+                            <p-tag
+                              *ngSwitchCase="'commission'"
+                              [value]="displayPreviewValue(row)"
+                              severity="secondary"
+                            ></p-tag>
+                            <ng-container *ngSwitchDefault>
+                              <span>{{ displayPreviewValue(row) || '-' }}</span>
+                            </ng-container>
+                          </ng-container>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="rowsForSection('contact') as contactRows">
+                  <div
+                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="contactRows.length"
+                  >
+                    <div class="summary-card__header">
+                      <p class="summary-card__title m-0">Contacto</p>
+                      <p class="summary-card__subtitle m-0 text-500">
+                        Teléfonos y contacto de emergencia.
+                      </p>
+                    </div>
+                    <div class="summary-grid">
+                      <div class="summary-item" *ngFor="let row of contactRows">
+                        <span class="summary-label">
+                          {{ row.field | fieldLabel }}
+                        </span>
+                        <div class="summary-value">
+                          <span>{{ displayPreviewValue(row) || '-' }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="rowsForSection('address') as addressRows">
+                  <div
+                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="addressRows.length"
+                  >
+                    <div class="summary-card__header">
+                      <p class="summary-card__title m-0">Direccion</p>
+                      <p class="summary-card__subtitle m-0 text-500">
+                        Ubicación y datos postales.
+                      </p>
+                    </div>
+                    <div class="summary-grid">
+                      <div class="summary-item" *ngFor="let row of addressRows">
+                        <span class="summary-label">
+                          {{ row.field | fieldLabel }}
+                        </span>
+                        <div class="summary-value">
+                          <span>{{ displayPreviewValue(row) || '-' }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">

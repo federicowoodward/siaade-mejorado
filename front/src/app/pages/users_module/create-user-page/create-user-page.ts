@@ -19,8 +19,8 @@ import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { TableModule } from 'primeng/table';
 import { IftaLabelModule } from 'primeng/iftalabel';
+import { TagModule } from 'primeng/tag';
 
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -92,10 +92,10 @@ type CreateUserFormModel = {
     SelectModule,
     MultiSelectModule,
     ToastModule,
-    TableModule,
     FieldLabelPipe,
     BlockedActionDirective,
     IftaLabelModule,
+    TagModule,
   ],
   templateUrl: './create-user-page.html',
   styleUrl: './create-user-page.scss',
@@ -545,7 +545,9 @@ export class CreateUserPage implements OnInit {
       this.control('teacherCommissionIds').markAsTouched();
       this.control('teacherSubjectIds').markAsTouched();
       if (this.isStep3Invalid) {
-        this.toastErr('Completa carrera, comisiones y materias antes de seguir.');
+        this.toastErr(
+          'Completa carrera, comisiones y materias antes de seguir.',
+        );
         return;
       }
     } else {
@@ -604,7 +606,9 @@ export class CreateUserPage implements OnInit {
             ? studentStartYear
             : undefined,
         commissionId:
-          role === 'student' && value.commissionId ? value.commissionId : undefined,
+          role === 'student' && value.commissionId
+            ? value.commissionId
+            : undefined,
         careerId:
           role === 'student' && value.careerId ? value.careerId : undefined,
       });
@@ -614,7 +618,9 @@ export class CreateUserPage implements OnInit {
 
       if (role === 'teacher') {
         const teacherId: string | null =
-          (created as any)?.teacher?.userId ?? (created as any)?.user?.id ?? null;
+          (created as any)?.teacher?.userId ??
+          (created as any)?.user?.id ??
+          null;
         const commissionIds = Array.isArray(value.teacherCommissionIds)
           ? value.teacherCommissionIds
           : [];
@@ -704,9 +710,9 @@ export class CreateUserPage implements OnInit {
                   value.teacherSubjectIds,
                 ),
               }
-          : role === 'secretary'
-            ? { isDirective: true }
-            : undefined,
+            : role === 'secretary'
+              ? { isDirective: true }
+              : undefined,
       user_info: this.req?.needsUserInfo
         ? {
             phone: value.phone || undefined,
@@ -740,6 +746,86 @@ export class CreateUserPage implements OnInit {
       return this.selectedCareerLabel() ?? String(row.value ?? '');
     }
     return String(row.value ?? '');
+  }
+
+  fieldKey(row: PreviewRow): string {
+    if (!row?.field) return '';
+    const parts = row.field.split('.');
+    return parts.length ? parts[parts.length - 1] : row.field;
+  }
+
+  isPasswordField(row: PreviewRow): boolean {
+    return this.fieldKey(row).toLowerCase().includes('password');
+  }
+
+  isCuilField(row: PreviewRow): boolean {
+    return this.fieldKey(row).toLowerCase() === 'cuil';
+  }
+
+  maskCuil(value: string): string {
+    if (!value) return '';
+    const raw = String(value);
+    if (raw.length <= 4) return '••••';
+    const prefix = raw.slice(0, 4);
+    const suffix = raw.slice(-2);
+    const maskedLength = Math.max(3, raw.length - (prefix.length + suffix.length));
+    return `${prefix}${'•'.repeat(maskedLength)}${suffix}`;
+  }
+
+  rowsForSection(
+    section: 'identity' | 'personal' | 'academic' | 'contact' | 'address',
+  ): PreviewRow[] {
+    const sectionMap: Record<
+      'identity' | 'personal' | 'academic' | 'contact' | 'address',
+      string[]
+    > = {
+      identity: ['role', 'email', 'cuil', 'password', 'isDirective'],
+      personal: ['name', 'lastName', 'sex', 'birthDate'],
+      academic: [
+        'legajo',
+        'studentStartYear',
+        'career',
+        'commission',
+        'commissions',
+        'subjects',
+      ],
+      contact: ['phone', 'emergencyName', 'emergencyPhone'],
+      address: ['street', 'number', 'province', 'locality', 'postalCode'],
+    };
+
+    return this.previewRows.filter((row) => {
+      const key = this.fieldKey(row);
+      if (sectionMap[section].includes(key)) return true;
+
+      if (section === 'address') {
+        return row.field.includes('address.');
+      }
+      if (section === 'contact') {
+        return row.field.startsWith('user_info.');
+      }
+      if (section === 'academic') {
+        return row.field.startsWith('roleExtras.');
+      }
+      if (section === 'personal') {
+        const isCommonData =
+          row.field.startsWith('common_data.') && !row.field.includes('address.');
+        return isCommonData || ['name', 'lastName'].includes(key);
+      }
+      if (section === 'identity') {
+        const isUserField = row.field.startsWith('user.');
+        const isPersonalKey = sectionMap.personal.includes(key);
+        return isUserField && !isPersonalKey;
+      }
+      return false;
+    });
+  }
+
+  asList(value: string | null | undefined): string[] {
+    if (!value) return [];
+    return value
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => !!v);
   }
 
   onProvinceChange(value: string | null): Promise<void> {
@@ -917,7 +1003,9 @@ export class CreateUserPage implements OnInit {
 
   private selectedCommissionLabel(commissionId: number | null): string | null {
     if (!commissionId) return null;
-    const match = this.commissionOptions.find((opt) => opt.value === commissionId);
+    const match = this.commissionOptions.find(
+      (opt) => opt.value === commissionId,
+    );
     return match?.label ?? null;
   }
 
@@ -1178,11 +1266,9 @@ export class CreateUserPage implements OnInit {
       await Promise.all(
         batch.map((id) =>
           firstValueFrom(
-            this.api.request(
-              'PATCH',
-              `subject-commissions/${id}/teacher`,
-              { teacherId },
-            ),
+            this.api.request('PATCH', `subject-commissions/${id}/teacher`, {
+              teacherId,
+            }),
           ),
         ),
       );
