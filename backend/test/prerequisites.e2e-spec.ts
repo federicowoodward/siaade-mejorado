@@ -44,7 +44,7 @@ describe("Prerequisites (e2e)", () => {
         await dataSource
           .getRepository(User)
           .findOne({ where: { id: studentId } })
-      )?.email || "carla.suarez@siaade.local";
+      )?.email || "carla.suarez@siad.local";
     studentToken = (await login(app, studentEmail)).token ?? "";
   });
 

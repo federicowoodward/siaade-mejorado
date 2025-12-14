@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile
     environment:
       NODE_ENV: production
-    container_name: siaade-api
+    container_name: siaade-api # TODO branding: renombrar a SIAD cuando se actualicen despliegues
     restart: unless-stopped
     depends_on:
       postgres:
@@ -54,7 +54,7 @@ services:
       dockerfile: Dockerfile
       args:
         ANGULAR_CONFIGURATION: qa
-    container_name: siaade-front
+    container_name: siaade-front # TODO branding: renombrar a SIAD cuando se actualicen despliegues
     restart: unless-stopped
     ports:
       - "4000:4000"

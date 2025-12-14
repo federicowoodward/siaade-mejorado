@@ -34,7 +34,7 @@ describe("Students inscriptions (e2e)", () => {
         await dataSource
           .getRepository(User)
           .findOne({ where: { id: mapping.studentId } })
-      )?.email || "carla.suarez@siaade.local";
+      )?.email || "carla.suarez@siad.local";
     studentToken = (await login(app, studentEmail)).token ?? "";
 
     const tableRes = await request(app.getHttpServer())

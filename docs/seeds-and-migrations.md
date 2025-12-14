@@ -34,7 +34,7 @@ Es la migración que crea todo el esquema base. Define la extensión `uuid-ossp`
 
 ### 0200000000000_ProdReadyAdjustmentsAndSeeds.ts
 
-Corresponde a los ajustes productivos y seeds productivos. Refuerza la consistencia de los roles, crea el preceptor por defecto (`preceptor@siaade.local`), registra los periodos académicos 2026‑2028, genera la cohorte oficial de materias (incluyendo campo, formato, carga horaria y orden dentro del plan) y las relaciona con la carrera “Tecnicatura de desarrollo en software”. Además, inserta los estados válidos de cursada en `subject_status_type` (“No inscripto”, “Libre”, “Aprobado”) y normaliza los `career_subjects.order_no` para soportar correlatividades posteriores.
+Corresponde a los ajustes productivos y seeds productivos. Refuerza la consistencia de los roles, crea el preceptor por defecto (`preceptor@siad.local`), registra los periodos académicos 2026‑2028, genera la cohorte oficial de materias (incluyendo campo, formato, carga horaria y orden dentro del plan) y las relaciona con la carrera “Tecnicatura de desarrollo en software”. Además, inserta los estados válidos de cursada en `subject_status_type` (“No inscripto”, “Libre”, “Aprobado”) y normaliza los `career_subjects.order_no` para soportar correlatividades posteriores.
 
 ### 0200000000000_ProdSeed_Correlatives.ts
 

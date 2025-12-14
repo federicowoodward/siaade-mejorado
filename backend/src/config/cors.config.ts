@@ -1,5 +1,6 @@
 import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 
+// TODO branding: los dominios siaade-* se mantienen por compatibilidad de infraestructura.
 const defaultOrigins = [
   "http://localhost:4200",
   "https://siaade2.marbrus.com.ar",

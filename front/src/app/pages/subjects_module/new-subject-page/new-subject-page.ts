@@ -106,7 +106,7 @@ export class NewSubjectPage implements OnInit {
 
     try {
       const success = await this.authService.loginFlexible({
-        username: 'admin@siaade.com',
+        username: 'admin@siad.com',
         password: '123456',
       });
 

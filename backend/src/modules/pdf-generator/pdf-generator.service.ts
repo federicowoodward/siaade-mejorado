@@ -8,7 +8,7 @@ import { PdfEngineService } from "@/modules/pdf-generator/pdf-engine.service";
 import { CatalogsService } from "@/modules/catalogs/catalogs.service";
 
 const CAREER_NAME = "TECNICATURA SUPERIOR EN DESARROLLO DE SOFTWARE";
-const SCHOOL_NAME = "Instituto Superior en Actividades Deportivas";
+const SCHOOL_NAME = "Instituto Superior Cura Gabriel Brochero";
 
 @Injectable()
 export class PdfGeneratorService {

@@ -33,7 +33,7 @@ describe("Final exams (e2e)", () => {
         await dataSource
           .getRepository(User)
           .findOne({ where: { id: mapping.teacherId } })
-      )?.email || "ana.martinez@siaade.local"; // #ASUMIENDO NEGOCIO
+      )?.email || "ana.martinez@siad.local"; // #ASUMIENDO NEGOCIO
     teacherToken = (await login(app, teacherEmail)).token ?? "";
 
     const tableRes = await request(app.getHttpServer())

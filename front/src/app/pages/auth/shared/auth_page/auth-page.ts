@@ -10,6 +10,11 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { AuthService } from '../../../../core/services/auth.service';
+import {
+  INSTITUTION_NAME,
+  SYSTEM_ACRONYM,
+  SYSTEM_NAME,
+} from '@/shared/constants/branding';
 
 @Component({
   selector: 'app-auth-page',
@@ -28,6 +33,10 @@ import { AuthService } from '../../../../core/services/auth.service';
   ],
 })
 export class AuthPage {
+  readonly institutionName = INSTITUTION_NAME;
+  readonly systemName = SYSTEM_NAME;
+  readonly systemAcronym = SYSTEM_ACRONYM;
+  readonly systemFullName = `${SYSTEM_NAME} (${SYSTEM_ACRONYM})`;
   // Estado: true = login, false = recover
   loginMode = signal(true);
   modeTitle = computed(() =>

@@ -35,7 +35,7 @@ describe("Subject enrollments toggle (e2e)", () => {
             .get(DataSource)
             .getRepository(User)
             .findOne({ where: { id: studentId } })
-        )?.email || "carla.suarez@siaade.local";
+        )?.email || "carla.suarez@siad.local";
       token = (await login(app, email)).token || "";
     }
   });

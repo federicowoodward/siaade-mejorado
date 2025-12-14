@@ -8,6 +8,11 @@ import { QuickAccessComponent } from './quick-access-component/quick-access-comp
 import { ImportantNoticesComponent } from './important-notices/important-notices';
 import { FirstPasswordChangeModalComponent } from '../../shared/components/first-password-change-modal/first-password-change-modal';
 import { RoleLabelPipe } from '../../shared/pipes/role-label.pipe';
+import {
+  INSTITUTION_NAME,
+  SYSTEM_ACRONYM,
+  SYSTEM_NAME,
+} from '@/shared/constants/branding';
 @Component({
   selector: 'app-welcome-page',
   standalone: true,
@@ -22,6 +27,9 @@ import { RoleLabelPipe } from '../../shared/pipes/role-label.pipe';
   styleUrls: ['./welcome-page.scss'],
 })
 export class WelcomePage implements OnInit {
+  readonly institutionName = INSTITUTION_NAME;
+  readonly systemFullName = `${SYSTEM_NAME} (${SYSTEM_ACRONYM})`;
+  readonly systemAcronym = SYSTEM_ACRONYM;
   authService = inject(AuthService); // public para template
   private permissions = inject(PermissionService);
 

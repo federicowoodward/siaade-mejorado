@@ -25,7 +25,7 @@ const DEFAULT_PASSWORD = process.env.TEST_USER_PASSWORD || "changeme";
 // #ASUMIENDO NEGOCIO: usuarios base para autenticarse en tests
 const SEED_USERS: SeedUser[] = [
   {
-    email: process.env.TEST_ADMIN_EMAIL || "executive@siaade.local",
+    email: process.env.TEST_ADMIN_EMAIL || "executive@siad.local",
     role: ROLE.EXECUTIVE_SECRETARY,
     name: "Exec",
     lastName: "Test",
@@ -43,7 +43,7 @@ const SEED_USERS: SeedUser[] = [
     kind: "secretary",
   },
   {
-    email: process.env.TEST_PRECEPTOR_EMAIL || "preceptor@siaade.local",
+    email: process.env.TEST_PRECEPTOR_EMAIL || "preceptor@siad.local",
     role: ROLE.PRECEPTOR,
     name: "Preceptor",
     lastName: "Test",
@@ -52,7 +52,7 @@ const SEED_USERS: SeedUser[] = [
     kind: "preceptor",
   },
   {
-    email: process.env.TEST_TEACHER_EMAIL || "ana.martinez@siaade.local",
+    email: process.env.TEST_TEACHER_EMAIL || "ana.martinez@siad.local",
     role: ROLE.TEACHER,
     name: "Ana",
     lastName: "Martinez",
@@ -61,7 +61,7 @@ const SEED_USERS: SeedUser[] = [
     kind: "teacher",
   },
   {
-    email: process.env.TEST_STUDENT_EMAIL || "carla.suarez@siaade.local",
+    email: process.env.TEST_STUDENT_EMAIL || "carla.suarez@siad.local",
     role: ROLE.STUDENT,
     name: "Carla",
     lastName: "Suarez",

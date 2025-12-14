@@ -45,10 +45,12 @@
         <div class="cover-text">
           <img
             src="assets/images/logo.png"
-            alt="SIAD Logo"
+            [attr.alt]="systemAcronym + ' Logo'"
             class="w-10rem h-auto mb-3"
           />
-          <h2 class="cover-title">Bienvenido al SIAD</h2>
+          <h2 class="cover-title">
+            Bienvenido al {{ systemFullName }}
+          </h2>
           <p class="cover-desc">Iniciá sesión para continuar.</p>
           <!-- <button
           pButton
@@ -123,7 +125,9 @@
             novalidate
             class="form-block center-form"
           >
-            <h3 class="text-xl mb-3 font-semibold">Iniciá sesión en SIAD</h3>
+            <h3 class="text-xl mb-3 font-semibold">
+              Iniciá sesión en {{ systemAcronym }}
+            </h3>
             <label for="login_identity" class="block mb-1 label-inline text-sm"
               >Email o CUIL</label
             >
