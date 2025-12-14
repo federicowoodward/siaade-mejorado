@@ -2,19 +2,35 @@ import { definePreset } from '@primeuix/themes';
 import Lara from '@primeuix/themes/lara';
 
 const MyPreset = definePreset(Lara, {
+  primitive: {
+    'mineral-green': {
+      50:  '#f5f8f6',
+      100: '#dee9e5',
+      200: '#bcd3c9',
+      300: '#93b5a8',
+      400: '#6d9487',
+      500: '#527a6d',
+      600: '#46695f',
+      700: '#364f48',
+      800: '#2e413b',
+      900: '#293834',
+      950: '#141f1c',
+    },
+  },
+
   semantic: {
     primary: {
-      50: '{sky.50}',
-      100: '{sky.100}',
-      200: '{sky.200}',
-      300: '{sky.300}',
-      400: '{sky.400}',
-      500: '{sky.500}',
-      600: '{sky.600}',
-      700: '{sky.700}',
-      800: '{sky.800}',
-      900: '{sky.900}',
-      950: '{sky.950}',
+      50:  '{mineral-green.50}',
+      100: '{mineral-green.100}',
+      200: '{mineral-green.200}',
+      300: '{mineral-green.300}',
+      400: '{mineral-green.400}',
+      500: '{mineral-green.500}',
+      600: '{mineral-green.600}',
+      700: '{mineral-green.700}',
+      800: '{mineral-green.800}',
+      900: '{mineral-green.900}',
+      950: '{mineral-green.950}',
     },
   },
 });

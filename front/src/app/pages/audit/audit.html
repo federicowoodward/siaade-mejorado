@@ -58,10 +58,7 @@
                 </div>
               </td>
               <td>
-                <p-tag
-                  [value]="row.severity"
-                  [severity]="row.severityTag"
-                ></p-tag>
+                <p-tag [value]="row.severity" [severity]="'secondary'"></p-tag>
               </td>
               <td>
                 <span class="text-sm">{{ row.message }}</span>
@@ -125,10 +122,8 @@
             </div>
             <div>
               <b>Severidad:</b>
-              <p-tag
-                [value]="row.severity"
-                [severity]="row.severityTag"
-              ></p-tag>
+              <!-- [severity]="row.severityTag" -->
+              <p-tag [value]="row.severity" [severity]="'secondary'"></p-tag>
             </div>
             <div>
               <b>Mensaje:</b>

@@ -1,19 +1,11 @@
 .banner {
-  background: #0ea5e9;
-  background: -webkit-linear-gradient(
+  /* Fallback sólido */
+  background-color: var(--p-primary-500);
+
+  /* Gradiente principal alineado al theme */
+  background-image: linear-gradient(
     307deg,
-    rgba(55, 180, 238, 0.46) 0%,
-    rgb(150, 159, 187) 93%
+    color-mix(in srgb, var(--p-primary-600) 46%, transparent) 0%,
+    var(--p-primary-100) 93%
   );
-  background: -moz-linear-gradient(
-    307deg,
-    rgba(124, 194, 226, 0.46) 0%,
-    rgb(144, 159, 209) 93%
-  );
-  background: linear-gradient(
-    307deg,
-    rgba(14, 165, 233, 0.46) 0%,
-    rgb(214, 220, 240) 93%
-  );
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#0EA5E9", endColorstr="#EEF2FF", GradientType=0);
 }
