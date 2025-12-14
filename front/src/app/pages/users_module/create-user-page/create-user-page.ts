@@ -334,7 +334,6 @@ export class CreateUserPage implements OnInit {
 
   get assignmentStepLabel(): string {
     return 'Asignaciones';
-    return 'Asignar carrera y comisión';
   }
 
   get stepSummaryValue(): number {

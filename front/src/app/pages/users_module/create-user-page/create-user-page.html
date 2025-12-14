@@ -196,13 +196,15 @@
 
               <div class="flex pt-4 justify-content-end">
                 <div>
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="onNextFromStep1()"
+                    (click)="onNextFromStep1()"
                     [disabled]="isStep1Invalid"
-                  />
+                  ></button>
                 </div>
               </div>
             </section>
@@ -428,21 +430,25 @@
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="goToStep(1)"
-                  />
+                    (click)="goToStep(1)"
+                  ></button>
                 </div>
                 <div>
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="onNextFromStep2()"
+                    (click)="onNextFromStep2()"
                     [disabled]="isStep2Invalid"
-                  />
+                  ></button>
                 </div>
               </div>
             </section>
@@ -582,21 +588,25 @@
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="goToStep(hasAssignmentStep ? 3 : 2)"
-                  />
+                    (click)="goToStep(hasAssignmentStep ? 3 : 2)"
+                  ></button>
                 </div>
                 <div>
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Siguiente paso"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    (onClick)="onNextFromStep3()"
+                    (click)="onNextFromStep3()"
                     [disabled]="isStep3Invalid"
-                  />
+                  ></button>
                 </div>
               </div>
             </section>
@@ -648,13 +658,15 @@
                   ></button>
                 </div>
                 <div>
-                  <p-button
+                  <button
+                    pButton
+                    type="button"
                     label="Crear"
                     icon="pi pi-check"
                     [disabled]="form().invalid || isCreating"
-                    (onClick)="createUser()"
+                    (click)="createUser()"
                     blockedAction
-                  />
+                  ></button>
                 </div>
               </div>
             </section>
