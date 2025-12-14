@@ -19,8 +19,8 @@
           <p-step-list class="w-full">
             <p-step [value]="1">Datos básicos</p-step>
             <p-step [value]="2">Información de contacto</p-step>
-            <p-step *ngIf="isStudentRole" [value]="stepCareerValue">
-              Asignar carrera
+            <p-step *ngIf="hasAssignmentStep" [value]="3">
+              {{ assignmentStepLabel }}
             </p-step>
             <p-step [value]="stepSummaryValue">Resumen</p-step>
           </p-step-list>
@@ -38,6 +38,10 @@
                 <h3 class="m-0">Datos básicos del usuario</h3>
                 <p class="m-0 text-500">
                   Definí el rol y los datos principales del nuevo usuario.
+                </p>
+                <p class="m-0 text-500" *ngIf="false">
+                  Seleccion  la carrera para cargar materias, las comisiones y
+                  las materias que tendr  el docente.
                 </p>
               </div>
 
@@ -445,15 +449,20 @@
           </ng-template>
         </p-step-panel>
 
-        <!-- PASO 3: asignacion de carrera a alumno -->
-        <p-step-panel *ngIf="isStudentRole" [value]="stepCareerValue">
+        <!-- PASO 3: asignaciones (alumno/docente) -->
+        <p-step-panel *ngIf="hasAssignmentStep" [value]="3">
           <ng-template #content>
             <section
               class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-20rem"
             >
               <div class="flex flex-column gap-1">
-                <h3 class="m-0">Asignar carrera</h3>
-                <p class="m-0 text-500">
+                <h3 class="m-0" *ngIf="roleValue === 'student'">
+                  Asignar carrera y comisión
+                </h3>
+                <h3 class="m-0" *ngIf="roleValue === 'teacher'">
+                  Asignar carrera, comisiones y materias
+                </h3>
+                <p class="m-0 text-500" *ngIf="roleValue === 'student'">
                   Seleccioná la carrera para inscribir automáticamente al alumno
                   en todas sus materias.
                 </p>
@@ -483,6 +492,92 @@
                     {{ careerErr }}
                   </small>
                 </div>
+
+                <!-- ALUMNO: comision -->
+                <ng-container *ngIf="roleValue === 'student'">
+                  <div class="col-12 md:col-6">
+                    <p-iftalabel class="w-full">
+                      <p-select
+                        class="w-full"
+                        inputId="commissionId"
+                        [options]="commissionOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccion  una comisi¢n"
+                        appendTo="body"
+                        [showClear]="true"
+                        formControlName="commissionId"
+                        blockedAction
+                      ></p-select>
+                      <label for="commissionId">Comisi¢n *</label>
+                    </p-iftalabel>
+                    <small
+                      *ngIf="controlError('commissionId') as commissionErr"
+                      class="p-error block mt-1"
+                    >
+                      {{ commissionErr }}
+                    </small>
+                  </div>
+                </ng-container>
+
+                <!-- DOCENTE: comisiones + materias -->
+                <ng-container *ngIf="roleValue === 'teacher'">
+                  <div class="col-12 md:col-6">
+                    <p-iftalabel class="w-full">
+                      <p-multiSelect
+                        class="w-full"
+                        inputId="teacherCommissionIds"
+                        [options]="commissionOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        formControlName="teacherCommissionIds"
+                        defaultLabel="Seleccion  comisiones"
+                        display="chip"
+                        appendTo="body"
+                        blockedAction
+                      ></p-multiSelect>
+                      <label for="teacherCommissionIds">Comisiones *</label>
+                    </p-iftalabel>
+                    <small
+                      *ngIf="controlError('teacherCommissionIds') as teacherCommissionErr"
+                      class="p-error block mt-1"
+                    >
+                      {{ teacherCommissionErr }}
+                    </small>
+                  </div>
+
+                  <div class="col-12 md:col-6">
+                    <p-iftalabel class="w-full">
+                      <p-multiSelect
+                        class="w-full"
+                        inputId="teacherSubjectIds"
+                        [options]="teacherSubjectOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        formControlName="teacherSubjectIds"
+                        defaultLabel="Seleccion  materias"
+                        display="chip"
+                        appendTo="body"
+                        [filter]="true"
+                        filterBy="label"
+                        blockedAction
+                      ></p-multiSelect>
+                      <label for="teacherSubjectIds">Materias *</label>
+                    </p-iftalabel>
+                    <small
+                      *ngIf="controlError('teacherSubjectIds') as teacherSubjectsErr"
+                      class="p-error block mt-1"
+                    >
+                      {{ teacherSubjectsErr }}
+                    </small>
+                    <small
+                      *ngIf="teacherSubjectsLoading"
+                      class="text-color-secondary block mt-1"
+                    >
+                      Cargando materias...
+                    </small>
+                  </div>
+                </ng-container>
               </div>
 
               <div class="flex pt-4 justify-content-between">
@@ -491,7 +586,7 @@
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (onClick)="goToStep(isStudentRole ? stepCareerValue! : 2)"
+                    (onClick)="goToStep(hasAssignmentStep ? 3 : 2)"
                   />
                 </div>
                 <div>

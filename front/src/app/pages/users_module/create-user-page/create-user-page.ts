@@ -16,6 +16,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -71,6 +72,9 @@ type CreateUserFormModel = {
   studentLegajo: string;
   studentStartYear: number | null;
   careerId: number | null;
+  commissionId: number | null;
+  teacherCommissionIds: number[];
+  teacherSubjectIds: number[];
 };
 
 @Component({
@@ -86,6 +90,7 @@ type CreateUserFormModel = {
     AutoCompleteModule,
     TooltipModule,
     SelectModule,
+    MultiSelectModule,
     ToastModule,
     TableModule,
     FieldLabelPipe,
@@ -129,6 +134,9 @@ export class CreateUserPage implements OnInit {
     studentLegajo: 'Legajo',
     studentStartYear: 'Año de inicio',
     careerId: 'Carrera',
+    commissionId: 'Comision',
+    teacherCommissionIds: 'Comisiones',
+    teacherSubjectIds: 'Materias',
   };
 
   private birthDateValidator = (
@@ -148,7 +156,7 @@ export class CreateUserPage implements OnInit {
     control: AbstractControl,
   ): ValidationErrors | null => {
     const role = control.parent?.get('role')?.value as UserRole | null;
-    if (role !== 'student') return null;
+    if (role !== 'student' && role !== 'teacher') return null;
     const raw = control.value;
     const birthDate = control.parent?.get('birthDate')?.value as string | null;
 
@@ -184,7 +192,7 @@ export class CreateUserPage implements OnInit {
     control: AbstractControl,
   ): ValidationErrors | null => {
     const role = control.parent?.get('role')?.value as UserRole | null;
-    if (role !== 'student') return null;
+    if (role !== 'student' && role !== 'teacher') return null;
     if (this.careerLoadError) {
       return { careerLoad: this.careerLoadError };
     }
@@ -192,6 +200,50 @@ export class CreateUserPage implements OnInit {
       return {
         career: 'Seleccioná una carrera para inscribir al alumno.',
       };
+    }
+    return null;
+  };
+
+  private studentCommissionValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'student') return null;
+    if (this.commissionLoadError) {
+      return { commissionLoad: this.commissionLoadError };
+    }
+    if (!control.value) {
+      return { commission: 'Seleccion  una comisi¢n para el alumno.' };
+    }
+    return null;
+  };
+
+  private teacherCommissionsValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'teacher') return null;
+    if (this.commissionLoadError) {
+      return { commissionLoad: this.commissionLoadError };
+    }
+    const value = control.value as number[] | null | undefined;
+    if (!Array.isArray(value) || value.length === 0) {
+      return { teacherCommissions: 'Seleccion  una o m s comisiones.' };
+    }
+    return null;
+  };
+
+  private teacherSubjectsValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'teacher') return null;
+    if (this.teacherSubjectsLoadError) {
+      return { teacherSubjectsLoad: this.teacherSubjectsLoadError };
+    }
+    const value = control.value as number[] | null | undefined;
+    if (!Array.isArray(value) || value.length === 0) {
+      return { teacherSubjects: 'Seleccion  una o m s materias.' };
     }
     return null;
   };
@@ -217,6 +269,9 @@ export class CreateUserPage implements OnInit {
       studentLegajo: [''],
       studentStartYear: [null as number | null, this.studentStartYearValidator],
       careerId: [null as number | null, this.careerValidator],
+      commissionId: [null as number | null, this.studentCommissionValidator],
+      teacherCommissionIds: [[] as number[], this.teacherCommissionsValidator],
+      teacherSubjectIds: [[] as number[], this.teacherSubjectsValidator],
     }),
   );
 
@@ -240,6 +295,14 @@ export class CreateUserPage implements OnInit {
   careerLoading = false;
   careerLoadError: string | null = null;
 
+  commissionOptions: { label: string; value: number }[] = [];
+  commissionLoading = false;
+  commissionLoadError: string | null = null;
+
+  teacherSubjectOptions: { label: string; value: number }[] = [];
+  teacherSubjectsLoading = false;
+  teacherSubjectsLoadError: string | null = null;
+
   private readonly roleOptions: RoleOption[] = [
     { value: 'student', label: 'Alumno' },
     { value: 'teacher', label: 'Docente' },
@@ -261,12 +324,21 @@ export class CreateUserPage implements OnInit {
     return this.roleValue === 'student';
   }
 
-  get stepCareerValue(): number {
-    return 3;
+  get isTeacherRole(): boolean {
+    return this.roleValue === 'teacher';
+  }
+
+  get hasAssignmentStep(): boolean {
+    return this.isStudentRole || this.isTeacherRole;
+  }
+
+  get assignmentStepLabel(): string {
+    if (this.isTeacherRole) return 'Asignar carrera y materias';
+    return 'Asignar carrera y comisi¢n';
   }
 
   get stepSummaryValue(): number {
-    return this.isStudentRole ? 4 : 3;
+    return this.hasAssignmentStep ? 4 : 3;
   }
 
   get isStep1Invalid(): boolean {
@@ -293,8 +365,19 @@ export class CreateUserPage implements OnInit {
   }
 
   get isStep3Invalid(): boolean {
-    if (this.roleValue !== 'student') return false;
-    return this.control('careerId').invalid;
+    if (this.roleValue === 'student') {
+      return (
+        this.control('careerId').invalid || this.control('commissionId').invalid
+      );
+    }
+    if (this.roleValue === 'teacher') {
+      return (
+        this.control('careerId').invalid ||
+        this.control('teacherCommissionIds').invalid ||
+        this.control('teacherSubjectIds').invalid
+      );
+    }
+    return false;
   }
 
   get previewRows(): PreviewRow[] {
@@ -323,6 +406,13 @@ export class CreateUserPage implements OnInit {
     if (errors['startYear']) return errors['startYear'] as string;
     if (errors['career']) return errors['career'] as string;
     if (errors['careerLoad']) return errors['careerLoad'] as string;
+    if (errors['commission']) return errors['commission'] as string;
+    if (errors['commissionLoad']) return errors['commissionLoad'] as string;
+    if (errors['teacherCommissions'])
+      return errors['teacherCommissions'] as string;
+    if (errors['teacherSubjects']) return errors['teacherSubjects'] as string;
+    if (errors['teacherSubjectsLoad'])
+      return errors['teacherSubjectsLoad'] as string;
     if (errors['email']) return 'Email inválido.';
     if (errors['required']) {
       const label = this.fieldLabels[name] ?? 'Campo';
@@ -346,23 +436,34 @@ export class CreateUserPage implements OnInit {
   }
 
   onRoleChange(role: UserRole | null): void {
+    // Evita estados inconsistentes: al cambiar de rol, volvemos al paso 1/2.
+    this.activeStep = Math.min(this.activeStep, 2);
+
+    // Reset de selecciones del paso 3 (asignaciones)
+    this.careerIdReset();
+    this.control('commissionId').setValue(null);
+    this.control('teacherCommissionIds').setValue([]);
+    this.control('teacherSubjectIds').setValue([]);
+    this.teacherSubjectOptions = [];
+    this.teacherSubjectsLoadError = null;
+
     if (role !== 'student') {
-      this.careerIdReset();
-      this.careerOptions = [];
-      this.careerLoadError = null;
-      this.control('careerId').setErrors(null);
+      this.control('commissionId').setErrors(null);
     }
+    if (role !== 'teacher') {
+      this.control('teacherCommissionIds').setErrors(null);
+      this.control('teacherSubjectIds').setErrors(null);
+    }
+
     this.control('studentStartYear').updateValueAndValidity({ onlySelf: true });
     this.control('careerId').updateValueAndValidity({ onlySelf: true });
-
-    const summaryVal = this.stepSummaryValue;
-    if (!this.isStudentRole) {
-      if (this.activeStep > summaryVal) {
-        this.activeStep = summaryVal;
-      } else if (this.activeStep === 3) {
-        this.activeStep = 2;
-      }
-    }
+    this.control('commissionId').updateValueAndValidity({ onlySelf: true });
+    this.control('teacherCommissionIds').updateValueAndValidity({
+      onlySelf: true,
+    });
+    this.control('teacherSubjectIds').updateValueAndValidity({
+      onlySelf: true,
+    });
   }
 
   searchRoles(e: { query: string }) {
@@ -419,22 +520,33 @@ export class CreateUserPage implements OnInit {
       this.toastErr('Completa los datos del Paso II.');
       return;
     }
-    if (this.isStudentRole) {
+    if (this.hasAssignmentStep) {
       await this.ensureCareerOptions();
-      this.goToStep(this.stepCareerValue!);
+      await this.ensureCommissionOptions();
+      this.goToStep(3);
     } else {
       this.goToStep(this.stepSummaryValue);
     }
   }
 
   onNextFromStep3(): void {
-    if (this.roleValue !== 'student') {
+    if (this.roleValue === 'student') {
+      this.control('careerId').markAsTouched();
+      this.control('commissionId').markAsTouched();
+      if (this.isStep3Invalid) {
+        this.toastErr('Selecciona carrera y comisi¢n antes de continuar.');
+        return;
+      }
+    } else if (this.roleValue === 'teacher') {
+      this.control('careerId').markAsTouched();
+      this.control('teacherCommissionIds').markAsTouched();
+      this.control('teacherSubjectIds').markAsTouched();
+      if (this.isStep3Invalid) {
+        this.toastErr('Completa carrera, comisiones y materias antes de seguir.');
+        return;
+      }
+    } else {
       this.goToStep(this.stepSummaryValue);
-      return;
-    }
-    this.control('careerId').markAsTouched();
-    if (this.isStep3Invalid) {
-      this.toastErr('Selecciona la carrera antes de continuar.');
       return;
     }
     this.goToStep(this.stepSummaryValue);
@@ -488,12 +600,44 @@ export class CreateUserPage implements OnInit {
           role === 'student' && studentStartYear !== null
             ? studentStartYear
             : undefined,
+        commissionId:
+          role === 'student' && value.commissionId ? value.commissionId : undefined,
         careerId:
           role === 'student' && value.careerId ? value.careerId : undefined,
       });
 
       const created = await this.api.create(endpoint, payload).toPromise();
       console.log('Usuario creado:', created);
+
+      if (role === 'teacher') {
+        const teacherId: string | null =
+          (created as any)?.teacher?.userId ?? (created as any)?.user?.id ?? null;
+        const commissionIds = Array.isArray(value.teacherCommissionIds)
+          ? value.teacherCommissionIds
+          : [];
+        const subjectIds = Array.isArray(value.teacherSubjectIds)
+          ? value.teacherSubjectIds
+          : [];
+
+        if (teacherId && commissionIds.length && subjectIds.length) {
+          try {
+            await this.assignTeacherToSubjectsAndCommissions({
+              teacherId,
+              commissionIds,
+              subjectIds,
+            });
+          } catch (assignErr) {
+            console.error(
+              'Docente creado, pero fall¢ la asignaci¢n de materias/comisiones',
+              assignErr,
+            );
+            this.toastErr(
+              'El docente fue creado, pero no se pudo asignar materias/comisiones.',
+            );
+          }
+        }
+      }
+
       this.toastOk('Usuario creado correctamente');
       setTimeout(() => this.router.navigate(['/users']), 700);
     } catch (err) {
@@ -541,7 +685,22 @@ export class CreateUserPage implements OnInit {
               legajo: (value.studentLegajo || value.cuil || '').toString(),
               studentStartYear: studentStartYear ?? undefined,
               career: this.selectedCareerLabel() || value.careerId || undefined,
+              commission:
+                this.selectedCommissionLabel(value.commissionId) ||
+                value.commissionId ||
+                undefined,
             }
+          : role === 'teacher'
+            ? {
+                career:
+                  this.selectedCareerLabel() || value.careerId || undefined,
+                commissions: this.selectedCommissionLabels(
+                  value.teacherCommissionIds,
+                ),
+                subjects: this.selectedTeacherSubjectLabels(
+                  value.teacherSubjectIds,
+                ),
+              }
           : role === 'secretary'
             ? { isDirective: true }
             : undefined,
@@ -571,7 +730,10 @@ export class CreateUserPage implements OnInit {
       const match = this.roleOptions.find((o) => o.value === row.value);
       return match?.label ?? String(row.value ?? '');
     }
-    if (row.field.includes('career') && this.roleValue === 'student') {
+    if (
+      row.field.includes('career') &&
+      (this.roleValue === 'student' || this.roleValue === 'teacher')
+    ) {
       return this.selectedCareerLabel() ?? String(row.value ?? '');
     }
     return String(row.value ?? '');
@@ -623,6 +785,20 @@ export class CreateUserPage implements OnInit {
     );
     this.control('role').valueChanges.subscribe((role) => {
       this.onRoleChange(role as UserRole | null);
+    });
+
+    this.control('careerId').valueChanges.subscribe((careerId) => {
+      if (this.roleValue !== 'teacher') return;
+      this.teacherSubjectOptions = [];
+      this.teacherSubjectsLoadError = null;
+      this.control('teacherSubjectIds').setValue([]);
+      this.control('teacherSubjectIds').updateValueAndValidity({
+        onlySelf: true,
+      });
+      const id = Number(careerId);
+      if (Number.isFinite(id) && id > 0) {
+        void this.loadTeacherSubjects(id);
+      }
     });
 
     const provinceCtrl = this.control('addressProvince');
@@ -736,6 +912,31 @@ export class CreateUserPage implements OnInit {
     return match?.label ?? null;
   }
 
+  private selectedCommissionLabel(commissionId: number | null): string | null {
+    if (!commissionId) return null;
+    const match = this.commissionOptions.find((opt) => opt.value === commissionId);
+    return match?.label ?? null;
+  }
+
+  private selectedCommissionLabels(ids: unknown): string[] | undefined {
+    const list = Array.isArray(ids) ? (ids as number[]) : [];
+    const labels = list
+      .map((id) => this.selectedCommissionLabel(id) ?? String(id))
+      .filter((v) => !!v);
+    return labels.length ? labels : undefined;
+  }
+
+  private selectedTeacherSubjectLabels(ids: unknown): string[] | undefined {
+    const list = Array.isArray(ids) ? (ids as number[]) : [];
+    const labels = list
+      .map((id) => {
+        const match = this.teacherSubjectOptions.find((o) => o.value === id);
+        return match?.label ?? String(id);
+      })
+      .filter((v) => !!v);
+    return labels.length ? labels : undefined;
+  }
+
   private async initializeGeoSelectors(): Promise<void> {
     await this.loadProvinces();
     const province = this.control('addressProvince').value;
@@ -783,7 +984,7 @@ export class CreateUserPage implements OnInit {
   }
 
   private async ensureCareerOptions(): Promise<void> {
-    if (this.roleValue !== 'student' || this.careerOptions.length) return;
+    if (!this.hasAssignmentStep || this.careerOptions.length) return;
     this.careerLoading = true;
     this.careerLoadError = null;
     this.control('careerId').setErrors(null);
@@ -815,6 +1016,173 @@ export class CreateUserPage implements OnInit {
       });
     } finally {
       this.careerLoading = false;
+    }
+  }
+
+  private async ensureCommissionOptions(): Promise<void> {
+    if (!this.hasAssignmentStep || this.commissionOptions.length) return;
+    this.commissionLoading = true;
+    this.commissionLoadError = null;
+
+    this.control('commissionId').setErrors(null);
+    this.control('teacherCommissionIds').setErrors(null);
+
+    try {
+      const resp = await firstValueFrom(
+        this.api.request<{ data: any[] }>(
+          'GET',
+          'catalogs/commissions',
+          undefined,
+          { limit: 200 },
+          undefined,
+          false,
+        ),
+      );
+
+      const rows = (resp as any)?.data ?? resp ?? [];
+      this.commissionOptions = (rows as any[]).map((c) => {
+        const letter = (c?.commissionLetter ?? '').toString();
+        const label = letter ? `Comision ${letter}` : `Comision ${c?.id}`;
+        return { label, value: Number(c.id) };
+      });
+
+      this.control('commissionId').setErrors(null);
+      this.control('teacherCommissionIds').setErrors(null);
+      this.control('commissionId').updateValueAndValidity({ onlySelf: true });
+      this.control('teacherCommissionIds').updateValueAndValidity({
+        onlySelf: true,
+      });
+    } catch (error) {
+      console.error('No se pudieron cargar comisiones', error);
+      this.commissionLoadError =
+        'No se pudieron cargar las comisiones disponibles. Intenta nuevamente.';
+
+      for (const ctrl of [
+        this.control('commissionId'),
+        this.control('teacherCommissionIds'),
+      ]) {
+        ctrl.setErrors({
+          ...(ctrl.errors ?? {}),
+          commissionLoad: this.commissionLoadError,
+        });
+      }
+    } finally {
+      this.commissionLoading = false;
+    }
+  }
+
+  private async loadTeacherSubjects(careerId: number): Promise<void> {
+    if (!careerId || this.roleValue !== 'teacher') return;
+    this.teacherSubjectsLoading = true;
+    this.teacherSubjectsLoadError = null;
+    this.control('teacherSubjectIds').setErrors(null);
+
+    try {
+      const resp = await firstValueFrom(
+        this.api.request<any>(
+          'GET',
+          `catalogs/career-full-data/${careerId}`,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        ),
+      );
+
+      const periods = (resp as any)?.academicPeriods ?? [];
+      const options: { label: string; value: number }[] = [];
+      for (const p of periods) {
+        const subjects = p?.subjects ?? [];
+        for (const s of subjects) {
+          const yearNo = s?.careerOrdering?.yearNo;
+          const yearLabel =
+            yearNo !== null && yearNo !== undefined ? `Ano ${yearNo} - ` : '';
+          const name = s?.subjectName ?? `Materia ${s?.id}`;
+          options.push({ label: `${yearLabel}${name}`, value: Number(s.id) });
+        }
+      }
+
+      const seen = new Set<number>();
+      this.teacherSubjectOptions = options.filter((o) => {
+        if (seen.has(o.value)) return false;
+        seen.add(o.value);
+        return true;
+      });
+
+      this.control('teacherSubjectIds').setErrors(null);
+      this.control('teacherSubjectIds').updateValueAndValidity({
+        onlySelf: true,
+      });
+    } catch (error) {
+      console.error('No se pudieron cargar materias para la carrera', error);
+      this.teacherSubjectsLoadError =
+        'No se pudieron cargar las materias para la carrera seleccionada.';
+      this.control('teacherSubjectIds').setErrors({
+        ...(this.control('teacherSubjectIds').errors ?? {}),
+        teacherSubjectsLoad: this.teacherSubjectsLoadError,
+      });
+    } finally {
+      this.teacherSubjectsLoading = false;
+    }
+  }
+
+  private async assignTeacherToSubjectsAndCommissions(args: {
+    teacherId: string;
+    commissionIds: number[];
+    subjectIds: number[];
+  }): Promise<void> {
+    const { teacherId, commissionIds, subjectIds } = args;
+    if (!teacherId || !commissionIds?.length || !subjectIds?.length) return;
+
+    const commissionResponses = await Promise.all(
+      commissionIds.map((commissionId) =>
+        firstValueFrom(
+          this.api.request<any>(
+            'GET',
+            `catalogs/subject-commissions/${commissionId}`,
+            undefined,
+            undefined,
+            undefined,
+            true,
+          ),
+        ),
+      ),
+    );
+
+    const subjectCommissionIds: number[] = [];
+    for (const resp of commissionResponses) {
+      const subjects = (resp as any)?.subjects ?? [];
+      const map = new Map<number, number>();
+      for (const row of subjects) {
+        const sid = Number(row?.subject?.id);
+        const scid = Number(row?.subjectCommissionId);
+        if (Number.isFinite(sid) && Number.isFinite(scid)) {
+          map.set(sid, scid);
+        }
+      }
+      for (const subjectId of subjectIds) {
+        const scid = map.get(Number(subjectId));
+        if (scid) subjectCommissionIds.push(scid);
+      }
+    }
+
+    const unique = Array.from(new Set(subjectCommissionIds));
+    if (!unique.length) return;
+
+    const batchSize = 6;
+    for (let i = 0; i < unique.length; i += batchSize) {
+      const batch = unique.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map((id) =>
+          firstValueFrom(
+            this.api.request(
+              'PATCH',
+              `subject-commissions/${id}/teacher`,
+              { teacherId },
+            ),
+          ),
+        ),
+      );
     }
   }
 

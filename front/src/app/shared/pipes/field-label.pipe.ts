@@ -39,6 +39,10 @@ export class FieldLabelPipe implements PipeTransform {
     legajo: 'Legajo',
     isActive: 'Activo',
     studentStartYear: 'Año de inicio',
+    career: 'Carrera',
+    commission: 'Comision',
+    commissions: 'Comisiones',
+    subjects: 'Materias',
     isDirective: 'Es directivo',
   };
 
