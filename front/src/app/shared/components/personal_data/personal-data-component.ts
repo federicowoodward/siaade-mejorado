@@ -63,7 +63,6 @@ export class PersonalDataComponent implements OnInit {
   readonly sexOptions = [
     { label: 'Femenino', value: 'Femenino' },
     { label: 'Masculino', value: 'Masculino' },
-    { label: 'Prefiero no decirlo', value: 'Prefiero no decirlo' },
   ];
 
   // Modelo editable

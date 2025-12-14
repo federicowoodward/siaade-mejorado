@@ -286,7 +286,6 @@ export class CreateUserPage implements OnInit {
   readonly sexOptions = [
     { label: 'Femenino', value: 'Femenino' },
     { label: 'Masculino', value: 'Masculino' },
-    { label: 'Prefiero no decirlo', value: 'Prefiero no decirlo' },
   ];
 
   provinceOptions: { label: string; value: string }[] = [];
