@@ -1096,7 +1096,7 @@ export class CreateUserPage implements OnInit {
         for (const s of subjects) {
           const yearNo = s?.careerOrdering?.yearNo;
           const yearLabel =
-            yearNo !== null && yearNo !== undefined ? `Ano ${yearNo} - ` : '';
+            yearNo !== null && yearNo !== undefined ? `Año ${yearNo} - ` : '';
           const name = s?.subjectName ?? `Materia ${s?.id}`;
           options.push({ label: `${yearLabel}${name}`, value: Number(s.id) });
         }
