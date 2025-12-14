@@ -1,8 +1,8 @@
-# Lógica de negocio básica de SIAD/SIAADE
+# Lógica de negocio básica del Sistema de Información Académica y Administrativa (SIAD)
 
 ## Introducción general
 
-SIAD/SIAADE es un sistema integral de administración académica. Centraliza la gestión de usuarios, materias, cursadas y exámenes para acompañar el ciclo académico completo. Su propósito es asegurar que las inscripciones, calificaciones, asistencias y certificaciones se manejen de forma consistente y auditada.
+El Sistema de Información Académica y Administrativa (SIAD) centraliza la gestión de usuarios, materias, cursadas y exámenes para acompañar el ciclo académico completo. Su propósito es asegurar que las inscripciones, calificaciones, asistencias y certificaciones se manejen de forma consistente y auditada.
 
 Actores principales del dominio académico:
 

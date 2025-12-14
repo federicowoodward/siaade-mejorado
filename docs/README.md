@@ -1,8 +1,8 @@
-# SIAADE Docs
+# SIAD Docs
 
 ## Descripcion breve
 
-Repositorio con backend NestJS 11 + TypeORM/PostgreSQL 15 y frontend Angular 20 + PrimeNG. El objetivo es centralizar la administracion academica (usuarios, materias, correlativas, mesas finales, avisos y portal del alumno) y documentar los flujos de despliegue e instalacion.
+Repositorio con backend NestJS 11 + TypeORM/PostgreSQL 15 y frontend Angular 20 + PrimeNG. El objetivo es centralizar la administración académica (usuarios, materias, correlativas, mesas finales, avisos y portal del alumno) y documentar los flujos de despliegue e instalación.
 
 ## Estructura general
 

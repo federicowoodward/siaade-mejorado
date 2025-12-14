@@ -32,8 +32,8 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
 
   const config = new DocumentBuilder()
-    .setTitle("SIAADE API")
-    .setDescription("Sistema Integral de Administracion Academica Educativa")
+    .setTitle("SIAD API")
+    .setDescription("Sistema de Información Académica y Administrativa (SIAD)")
     .setVersion("1.0")
     .addBearerAuth()
     .addSecurity("cookieAuth", {
@@ -47,7 +47,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`SIAADE Backend running on: http://localhost:${port}`);
+  console.log(`SIAD Backend running on: http://localhost:${port}`);
   console.log(`API Documentation: http://localhost:${port}/api/docs`);
 
   if (module.hot) {

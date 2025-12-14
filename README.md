@@ -1,6 +1,6 @@
-# SIAADE
+# SIAD
 
-Sistema Integral de Administración Académica Educativa. Incluye backend (NestJS 11 + TypeORM + PostgreSQL, JWT, Swagger) y frontend (Angular + PrimeNG) orientado a la gestión académica completa. Para más contexto funcional y de negocio consulta `docs/` (manuales, seeds, roles, lógica de negocio).
+Sistema de Información Académica y Administrativa (SIAD). Incluye backend (NestJS 11 + TypeORM + PostgreSQL, JWT, Swagger) y frontend (Angular + PrimeNG) orientado a la gestión académica completa. Para más contexto funcional y de negocio consulta `docs/` (manuales, seeds, roles, lógica de negocio).
 
 ## Requisitos previos
 

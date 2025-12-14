@@ -18,7 +18,7 @@ import { Preceptor } from "../../entities/users/preceptor.entity";
 import { UserInfo } from "../../entities/users/user-info.entity";
 
 /**
- * DUMMY DEV SEED - SIAADE
+ * DUMMY DEV SEED - SIAD
  * Objetivo: simular procesos reales de inicializacion sin construirlos hoy.
  * Orden: commissions -> teachers/students -> career_students -> subject_commissions -> subject_students -> student_subject_progress -> final_exams_students (opcional).
  * Idempotente, transaccional, con logs.

@@ -1,6 +1,6 @@
 # Seeds y scripts de migraciones
 
-El backend usa TypeORM y los scripts definidos en `backend/package.json` para versionar tanto la estructura como los distintos seeds que necesita SIAADE. Esta guía explica qué comando usar en cada contexto y documenta las migraciones actualmente mantenidas en `src/database/migrations`.
+El backend usa TypeORM y los scripts definidos en `backend/package.json` para versionar tanto la estructura como los distintos seeds que necesita SIAD. Esta guía explica qué comando usar en cada contexto y documenta las migraciones actualmente mantenidas en `src/database/migrations`.
 
 ## Scripts de migraciones
 
@@ -30,7 +30,7 @@ Los scripts `seed:prod`, `seed:dummy` y `unseed:dummy` son atajos que llaman a l
 
 ### 0100000000000_InitSchema.ts
 
-Es la migración que crea todo el esquema base. Define la extensión `uuid-ossp`, tablas principales (`roles`, `users`, `teachers`, `students`, `careers`, `subjects`, `subject_commissions`, `subject_students`, `exam_results`, `final_exams`, auditorías, etc.), índices, triggers y claves foráneas que sostienen la operación diaria de SIAADE. La parte final normaliza los `roles`, fija los IDs oficiales (`student`, `teacher`, `preceptor`, `secretary`, `executive_secretary`) y crea un usuario secretario (`sec.auto4@example.com`) con su registro en `secretaries`. Todo ambiente debe tener estas tablas antes de ejecutar cualquier seed adicional.
+Es la migración que crea todo el esquema base. Define la extensión `uuid-ossp`, tablas principales (`roles`, `users`, `teachers`, `students`, `careers`, `subjects`, `subject_commissions`, `subject_students`, `exam_results`, `final_exams`, auditorías, etc.), índices, triggers y claves foráneas que sostienen la operación diaria de SIAD. La parte final normaliza los `roles`, fija los IDs oficiales (`student`, `teacher`, `preceptor`, `secretary`, `executive_secretary`) y crea un usuario secretario (`sec.auto4@example.com`) con su registro en `secretaries`. Todo ambiente debe tener estas tablas antes de ejecutar cualquier seed adicional.
 
 ### 0200000000000_ProdReadyAdjustmentsAndSeeds.ts
 
@@ -46,7 +46,7 @@ Provee correlatividades reducidas para entornos de desarrollo. Inserta tres comb
 
 ### 9900000000000_DummyData.ts
 
-Es el seed dummy principal. Dentro de una transacción crea comisiones A/B/C, docentes de ejemplo, al menos 20 estudiantes (generando correos `@siaade.local`, legajos `A0001+` y CUILs dummy), inscribe a todos en la Tecnicatura, crea `subject_commissions` para cada materia, matricula alumnos en todas las cursadas, completa `student_subject_progress`, y opcionalmente genera finales y registros en `final_exams_students`. La lógica borra cuidadosamente sólo los datos dummy en el `down()`. Este script chequea `process.env.NODE_ENV` y la bandera interna `ALLOW_DUMMY_SEED`: en producción debe dejarse en `'false'` para que la migración marque su estado como aplicado sin alterar la base; en desarrollo puede estar en `'true'` para poblar datos rápidamente.
+Es el seed dummy principal. Dentro de una transacción crea comisiones A/B/C, docentes de ejemplo, al menos 20 estudiantes (generando correos `@siad.local`, legajos `A0001+` y CUILs dummy), inscribe a todos en la Tecnicatura, crea `subject_commissions` para cada materia, matricula alumnos en todas las cursadas, completa `student_subject_progress`, y opcionalmente genera finales y registros en `final_exams_students`. La lógica borra cuidadosamente sólo los datos dummy en el `down()`. Este script chequea `process.env.NODE_ENV` y la bandera interna `ALLOW_DUMMY_SEED`: en producción debe dejarse en `'false'` para que la migración marque su estado como aplicado sin alterar la base; en desarrollo puede estar en `'true'` para poblar datos rápidamente.
 
 ### 9950000000000_DummyData_ProdOptIn.ts
 
