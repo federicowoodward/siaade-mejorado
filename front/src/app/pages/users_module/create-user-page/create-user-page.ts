@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
@@ -10,7 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { StepperModule } from 'primeng/stepper';
+import { Stepper, StepperModule } from 'primeng/stepper';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -101,6 +101,8 @@ type CreateUserFormModel = {
   styleUrl: './create-user-page.scss',
 })
 export class CreateUserPage implements OnInit {
+  @ViewChild('stepper') stepper?: Stepper;
+
   private goBackSvc = inject(GoBackService);
   private api = inject(ApiService);
   private router = inject(Router);
@@ -484,8 +486,11 @@ export class CreateUserPage implements OnInit {
 
   goToStep(step: number): void {
     this.activeStep = step;
+    // PrimeNG Stepper (v20) usa signals; updateValue() asegura la navegaci¢n incluso en modo linear.
+    this.stepper?.updateValue?.(step);
     setTimeout(() => {
       this.activeStep = step;
+      this.stepper?.updateValue?.(step);
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }

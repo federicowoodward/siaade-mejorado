@@ -2,7 +2,7 @@
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
 
   <div class="card flex justify-content-center">
-    <p-stepper [(value)]="activeStep" class="w-full" [linear]="true">
+    <p-stepper #stepper [(value)]="activeStep" class="w-full" [linear]="true">
       <!-- Encabezado + pasos -->
       <div
         class="flex flex-column md:flex-row md:align-items-center justify-content-between gap-3"
