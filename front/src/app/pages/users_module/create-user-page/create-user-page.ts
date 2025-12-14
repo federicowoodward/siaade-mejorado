@@ -213,7 +213,7 @@ export class CreateUserPage implements OnInit {
       return { commissionLoad: this.commissionLoadError };
     }
     if (!control.value) {
-      return { commission: 'Seleccion  una comisi¢n para el alumno.' };
+      return { commission: 'Seleccioná una comisión para el alumno.' };
     }
     return null;
   };
@@ -228,7 +228,7 @@ export class CreateUserPage implements OnInit {
     }
     const value = control.value as number[] | null | undefined;
     if (!Array.isArray(value) || value.length === 0) {
-      return { teacherCommissions: 'Seleccion  una o m s comisiones.' };
+      return { teacherCommissions: 'Seleccioná una o más comisiones.' };
     }
     return null;
   };
@@ -243,7 +243,7 @@ export class CreateUserPage implements OnInit {
     }
     const value = control.value as number[] | null | undefined;
     if (!Array.isArray(value) || value.length === 0) {
-      return { teacherSubjects: 'Seleccion  una o m s materias.' };
+      return { teacherSubjects: 'Seleccioná una o más materias.' };
     }
     return null;
   };
@@ -334,7 +334,7 @@ export class CreateUserPage implements OnInit {
 
   get assignmentStepLabel(): string {
     if (this.isTeacherRole) return 'Asignar carrera y materias';
-    return 'Asignar carrera y comisi¢n';
+    return 'Asignar carrera y comisión';
   }
 
   get stepSummaryValue(): number {
