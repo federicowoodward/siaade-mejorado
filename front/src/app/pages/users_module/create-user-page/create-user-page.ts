@@ -21,7 +21,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { IftaLabelModule } from 'primeng/iftalabel';
 import { TagModule } from 'primeng/tag';
-
+import { PermissionService } from '../../../core/auth/permission.service';
+import { ROLE } from '../../../core/auth/roles';
 import { GoBackService } from '../../../core/services/go_back.service';
 import { ApiService } from '../../../core/services/api.service';
 import { FieldLabelPipe } from '../../../shared/pipes/field-label.pipe';
@@ -110,6 +111,7 @@ export class CreateUserPage implements OnInit {
   private messages = inject(MessageService);
   private uiAlertAudit = inject(UiAlertAuditService);
   private fb: FormBuilder = inject(FormBuilder);
+  private permissions = inject(PermissionService);
 
   readonly minAgeYears = MIN_AGE_YEARS;
 
@@ -312,6 +314,12 @@ export class CreateUserPage implements OnInit {
   ];
   roleSuggestions: RoleOption[] = [];
 
+  get availableRoleOptions(): RoleOption[] {
+    const current = this.permissions.currentRole();
+    if (current === ROLE.EXECUTIVE_SECRETARY) return this.roleOptions;
+    return this.roleOptions.filter((opt) => opt.value !== 'secretary');
+  }
+
   get passwordPreview() {
     return this.control('cuil').value || 'pass1234';
   }
@@ -468,11 +476,12 @@ export class CreateUserPage implements OnInit {
 
   searchRoles(e: { query: string }) {
     const q = (e?.query ?? '').toLowerCase().trim();
+    const source = this.availableRoleOptions;
     if (!q) {
-      this.roleSuggestions = [...this.roleOptions];
+      this.roleSuggestions = [...source];
       return;
     }
-    this.roleSuggestions = this.roleOptions.filter(
+    this.roleSuggestions = source.filter(
       (opt) =>
         opt.label.toLowerCase().includes(q) ||
         opt.value.toLowerCase().includes(q),
@@ -768,7 +777,10 @@ export class CreateUserPage implements OnInit {
     if (raw.length <= 4) return '••••';
     const prefix = raw.slice(0, 4);
     const suffix = raw.slice(-2);
-    const maskedLength = Math.max(3, raw.length - (prefix.length + suffix.length));
+    const maskedLength = Math.max(
+      3,
+      raw.length - (prefix.length + suffix.length),
+    );
     return `${prefix}${'•'.repeat(maskedLength)}${suffix}`;
   }
 
@@ -808,7 +820,8 @@ export class CreateUserPage implements OnInit {
       }
       if (section === 'personal') {
         const isCommonData =
-          row.field.startsWith('common_data.') && !row.field.includes('address.');
+          row.field.startsWith('common_data.') &&
+          !row.field.includes('address.');
         return isCommonData || ['name', 'lastName'].includes(key);
       }
       if (section === 'identity') {
