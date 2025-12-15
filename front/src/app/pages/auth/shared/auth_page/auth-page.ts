@@ -36,7 +36,7 @@ export class AuthPage {
   readonly institutionName = INSTITUTION_NAME;
   readonly systemName = SYSTEM_NAME;
   readonly systemAcronym = SYSTEM_ACRONYM;
-  readonly systemFullName = `${SYSTEM_NAME} (${SYSTEM_ACRONYM})`;
+  readonly systemFullName = `${SYSTEM_ACRONYM}`;
   // Estado: true = login, false = recover
   loginMode = signal(true);
   modeTitle = computed(() =>
