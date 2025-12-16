@@ -1050,16 +1050,19 @@ export class CreateUserPage implements OnInit {
     }
 
     // Legajo
-    if (lower.includes('legajo') && (lower.includes('ya') || lower.includes('registrad') || lower.includes('duplicad'))) {
-      this.setServerError(this.control('studentLegajo'), 'El legajo ya está registrado.');
+    // Legajo
+    if (this.roleValue === 'student') {
+      if (lower.includes('legajo') && (lower.includes('ya') || lower.includes('registrad') || lower.includes('duplicad'))) {
+        this.setServerError(this.control('studentLegajo'), 'El legajo ya está registrado.');
+      }
     }
 
     // Generic 409 fallback
-    if (status === 409 && !this.control('email').hasError('duplicate') && !this.control('cuil').hasError('duplicate') && !this.control('studentLegajo').hasError('duplicate')) {
+    if (status === 409 && !this.control('email').hasError('duplicate') && !this.control('cuil').hasError('duplicate') && (!this.control('studentLegajo').hasError('duplicate') || this.roleValue !== 'student')) {
       // Si es 409 y no pudimos parsear nada especifico, flagamos campos comunes
       if (lower.includes('email') || !lower) this.setServerError(this.control('email'), 'El email podría estar duplicado.');
       if (lower.includes('cuil') || !lower) this.setServerError(this.control('cuil'), 'El CUIL podría estar duplicado.');
-      if (lower.includes('legajo')) this.setServerError(this.control('studentLegajo'), 'El legajo podría estar duplicado.');
+      if (this.roleValue === 'student' && lower.includes('legajo')) this.setServerError(this.control('studentLegajo'), 'El legajo podría estar duplicado.');
     }
   }
 
