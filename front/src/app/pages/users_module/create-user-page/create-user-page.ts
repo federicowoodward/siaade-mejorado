@@ -363,11 +363,24 @@ export class CreateUserPage implements OnInit {
 
   get isStep2Invalid(): boolean {
     const names: (keyof CreateUserFormModel)[] = [];
+    if (this.req?.needsUserInfo) {
+      names.push('phone', 'emergencyName', 'emergencyPhone');
+    }
     if (this.req?.needsCommonData) {
       names.push('birthDate', 'sex');
+      if (this.req.allowsAddress) {
+        names.push(
+          'addressStreet',
+          'addressNumber',
+          'addressProvince',
+          'addressNeighborhood',
+          'addressLocality',
+          'addressPostalCode',
+        );
+      }
     }
     if (this.roleValue === 'student') {
-      names.push('studentStartYear');
+      names.push('studentStartYear', 'studentLegajo');
     }
     return this.anyInvalid(names);
   }
@@ -695,6 +708,11 @@ export class CreateUserPage implements OnInit {
         this.control('cuil').markAsTouched();
         this.goToStep(1);
       }
+      if (this.control('studentLegajo').hasError('duplicate')) {
+        this.control('studentLegajo').markAsTouched();
+        this.goToStep(2);
+      }
+
       this.toastErr(detail);
     } finally {
       this.isCreating = false;
@@ -997,6 +1015,7 @@ export class CreateUserPage implements OnInit {
   private setDuplicateErrorsFromDetail(detail: string, status?: number): void {
     const lower = (detail || '').toLowerCase();
 
+    // Email
     if (
       lower.includes('email') ||
       lower.includes('correo') ||
@@ -1007,15 +1026,23 @@ export class CreateUserPage implements OnInit {
         'El email ya está registrado.',
       );
     }
-    if (/(cuil).*(registrad|ya|duplicad)/.test(lower)) {
+
+    // CUIL
+    if (lower.includes('cuil') && (lower.includes('ya') || lower.includes('registrad') || lower.includes('duplicad'))) {
       this.setServerError(this.control('cuil'), 'El CUIL ya está registrado.');
     }
-    if (status === 409 && !lower) {
-      this.setServerError(
-        this.control('email'),
-        'El email ya está registrado.',
-      );
-      this.setServerError(this.control('cuil'), 'El CUIL ya está registrado.');
+
+    // Legajo
+    if (lower.includes('legajo') && (lower.includes('ya') || lower.includes('registrad') || lower.includes('duplicad'))) {
+      this.setServerError(this.control('studentLegajo'), 'El legajo ya está registrado.');
+    }
+
+    // Generic 409 fallback
+    if (status === 409 && !this.control('email').hasError('duplicate') && !this.control('cuil').hasError('duplicate') && !this.control('studentLegajo').hasError('duplicate')) {
+       // Si es 409 y no pudimos parsear nada especifico, flagamos campos comunes
+        if (lower.includes('email') || !lower) this.setServerError(this.control('email'), 'El email podría estar duplicado.');
+        if (lower.includes('cuil') || !lower) this.setServerError(this.control('cuil'), 'El CUIL podría estar duplicado.');
+        if (lower.includes('legajo')) this.setServerError(this.control('studentLegajo'), 'El legajo podría estar duplicado.');
     }
   }
 
