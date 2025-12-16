@@ -1,8 +1,6 @@
 <div class="m-w-custom flex flex-column gap-3 pt-4">
   <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-  <div
-    class="surface-card border-round p-4 mb-4 flex flex-column gap-3 align-items-start"
-  >
+  <div class="surface-card border-round p-4 mb-4 flex flex-column gap-3 align-items-start">
     <div class="flex align-items-center gap-2 flex-wrap">
       <div>
         <h2 class="m-0">Inscripciones a materias</h2>
@@ -15,53 +13,28 @@
     <div class="flex gap-3 justify-content-between align-items-between w-full">
       <div class="w-full flex flex-column gap-2 pb-6">
         <p>Mostrar estudiantes:</p>
-        <p-selectButton
-          class="w-full md:w-23rem"
-          [options]="enrollmentOptions"
-          [ngModel]="enrollmentState()"
-          (ngModelChange)="onEnrollmentStateChange($event)"
-          optionLabel="label"
-          optionValue="value"
-        ></p-selectButton>
+        <p-selectButton class="w-full md:w-23rem" [options]="enrollmentOptions" [ngModel]="enrollmentState()"
+          (ngModelChange)="onEnrollmentStateChange($event)" optionLabel="label" optionValue="value"></p-selectButton>
       </div>
 
-      <div
-        class="flex flex-column gap-2 w-full md:w-23rem"
-        [style.visibility]="enrollmentState() === 'ASSIGNED' ? 'visible' : 'hidden'"
-      >
+      <div class="flex flex-column gap-2 w-full md:w-23rem">
         <p>Carrera:</p>
 
-        <p-select
-          class="w-full"
-          [options]="careers()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Seleccioná una carrera"
-          [ngModel]="selectedCareerId()"
-          (ngModelChange)="onCareerChange($event)"
-          [showClear]="true"
-        ></p-select>
+        <p-select class="w-full" [options]="careers()" optionLabel="label" optionValue="value"
+          placeholder="Seleccioná una carrera" [ngModel]="selectedCareerId()" (ngModelChange)="onCareerChange($event)"
+          [showClear]="true"></p-select>
 
         <small class="text-color-secondary">
-          Seleccioná una carrera para ver los alumnos inscriptos.
+          Seleccioná una carrera para filtrar o inscribir.
         </small>
       </div>
     </div>
   </div>
 
   <div class="table-container surface-card border-round p-1">
-    <p-table
-      [value]="filteredStudents()"
-      [loading]="loading()"
-      showGridlines
-      [paginator]="true"
-      [rows]="10"
-      [tableStyle]="{ 'min-width': '50rem' }"
-      responsiveLayout="scroll"
-      styleClass="p-datatable-sm p-datatable-gridlines"
-      [sortField]="'fullName'"
-      [sortOrder]="1"
-    >
+    <p-table [value]="filteredStudents()" [loading]="loading()" showGridlines [paginator]="true" [rows]="10"
+      [tableStyle]="{ 'min-width': '50rem' }" responsiveLayout="scroll"
+      styleClass="p-datatable-sm p-datatable-gridlines" [sortField]="'fullName'" [sortOrder]="1">
       <ng-template pTemplate="header">
         <tr>
           <th>Alumno</th>
@@ -76,29 +49,16 @@
           <td>{{ row.fullName }}</td>
           <td>{{ row.careerName || 'Sin carrera' }}</td>
           <td>
-            <p-tag
-              [value]="row.careerId ? 'Incripto' : 'No inscripto'"
-              [severity]="'secondary'"
-            ></p-tag>
+            <p-tag [value]="row.careerId ? 'Incripto' : 'No inscripto'" [severity]="'secondary'"></p-tag>
           </td>
           <td>
             <ng-container *ngIf="row.careerId; else assignBtn">
-              <p-button
-                label="Desinscribir"
-                severity="danger"
-                icon="pi pi-user-minus"
-                size="small"
-                (onClick)="onUnassign(row)"
-              ></p-button>
+              <p-button label="Desinscribir" severity="danger" icon="pi pi-user-minus" size="small"
+                (onClick)="onUnassign(row)"></p-button>
             </ng-container>
             <ng-template #assignBtn>
-              <p-button
-                label="Inscribir"
-                severity="success"
-                icon="pi pi-user-plus"
-                size="small"
-                (onClick)="onAssign(row)"
-              ></p-button>
+              <p-button label="Inscribir" severity="success" icon="pi pi-user-plus" size="small"
+                (onClick)="onAssign(row)"></p-button>
             </ng-template>
           </td>
         </tr>

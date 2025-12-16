@@ -93,11 +93,8 @@ export class StudentCareersPage implements OnInit {
 
   onEnrollmentStateChange(state: EnrollmentState): void {
     this.enrollmentState.set(state);
-    if (state !== 'ASSIGNED') {
-      this.selectedCareerId.set(null);
-    } else {
-      this.ensureDefaultCareerSelection();
-    }
+
+    this.ensureDefaultCareerSelection();
     this.resetPaging();
   }
 

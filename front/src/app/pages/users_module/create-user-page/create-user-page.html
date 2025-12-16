@@ -595,7 +595,7 @@
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (click)="goToStep(hasAssignmentStep ? 3 : 2)"
+                    (click)="goToStep(2)"
                   ></button>
                 </div>
                 <div>
@@ -825,7 +825,7 @@
                     label="Paso anterior"
                     severity="secondary"
                     icon="pi pi-arrow-left"
-                    (click)="goToStep(2)"
+                    (click)="goToStep(hasAssignmentStep ? 3 : 2)"
                   ></button>
                 </div>
                 <div>
@@ -834,7 +834,7 @@
                     type="button"
                     label="Crear"
                     icon="pi pi-check"
-                    [disabled]="form().invalid || isCreating"
+                    [disabled]="isCreating"
                     (click)="createUser()"
                     blockedAction
                   ></button>

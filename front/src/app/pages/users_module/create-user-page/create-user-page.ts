@@ -570,6 +570,23 @@ export class CreateUserPage implements OnInit {
     if (this.isCreating) return;
     if (this.form().invalid) {
       this.form().markAllAsTouched();
+
+      if (this.isStep1Invalid) {
+        this.goToStep(1);
+        this.toastErr('Verificá los errores en el paso 1.');
+        return;
+      }
+      if (this.isStep2Invalid) {
+        this.goToStep(2);
+        this.toastErr('Verificá los errores en el paso 2.');
+        return;
+      }
+      if (this.hasAssignmentStep && this.isStep3Invalid) {
+        this.goToStep(3);
+        this.toastErr('Verificá los errores en el paso 3.');
+        return;
+      }
+
       this.toastErr('Revisa los datos obligatorios antes de continuar.');
       return;
     }
