@@ -167,7 +167,6 @@ export class CreateUserPage implements OnInit {
     if (raw === null || raw === undefined || raw === '') {
       return { startYear: 'Año de inicio es obligatorio.' };
     }
-    // ... rest of validator logic ...
     const startYear = Number(raw);
     if (!birthDate) {
       return {
@@ -193,7 +192,391 @@ export class CreateUserPage implements OnInit {
     return null;
   };
 
-  // ... (keep intervening code) ...
+  private careerValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'student' && role !== 'teacher') return null;
+    if (this.careerLoadError) {
+      return { careerLoad: this.careerLoadError };
+    }
+    if (!control.value) {
+      return {
+        career: 'Seleccioná una carrera para inscribir al alumno.',
+      };
+    }
+    return null;
+  };
+
+  private studentCommissionValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'student') return null;
+    if (this.commissionLoadError) {
+      return { commissionLoad: this.commissionLoadError };
+    }
+    if (!control.value) {
+      return { commission: 'Seleccioná una comisión para el alumno.' };
+    }
+    return null;
+  };
+
+  private teacherCommissionsValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'teacher') return null;
+    if (this.commissionLoadError) {
+      return { commissionLoad: this.commissionLoadError };
+    }
+    const value = control.value as number[] | null | undefined;
+    if (!Array.isArray(value) || value.length === 0) {
+      return { teacherCommissions: 'Seleccioná una o más comisiones.' };
+    }
+    return null;
+  };
+
+  private teacherSubjectsValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const role = control.parent?.get('role')?.value as UserRole | null;
+    if (role !== 'teacher') return null;
+    if (this.teacherSubjectsLoadError) {
+      return { teacherSubjectsLoad: this.teacherSubjectsLoadError };
+    }
+    const value = control.value as number[] | null | undefined;
+    if (!Array.isArray(value) || value.length === 0) {
+      return { teacherSubjects: 'Seleccioná una o más materias.' };
+    }
+    return null;
+  };
+
+  form = signal(
+    this.fb.group({
+      role: [null as UserRole | null, Validators.required],
+      name: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      cuil: ['', Validators.required],
+      sex: ['', Validators.required],
+      birthDate: ['', [Validators.required, this.birthDateValidator]],
+      phone: [''],
+      emergencyName: [''],
+      emergencyPhone: [''],
+      addressStreet: [''],
+      addressNumber: [''],
+      addressProvince: [''],
+      addressNeighborhood: [''],
+      addressLocality: [''],
+      addressPostalCode: [''],
+      studentLegajo: [''],
+      studentStartYear: [null as number | null, this.studentStartYearValidator],
+      careerId: [null as number | null, this.careerValidator],
+      commissionId: [null as number | null, this.studentCommissionValidator],
+      teacherCommissionIds: [[] as number[], this.teacherCommissionsValidator],
+      teacherSubjectIds: [[] as number[], this.teacherSubjectsValidator],
+    }),
+  );
+
+  breadcrumbItems: SimpleBreadcrumbItem[] = [
+    { label: 'Inicio', routerLink: '/welcome' },
+    { label: 'Usuarios', routerLink: '/users' },
+    { label: 'Nuevo usuario' },
+  ];
+
+  readonly sexOptions = [
+    { label: 'Femenino', value: 'Femenino' },
+    { label: 'Masculino', value: 'Masculino' },
+  ];
+
+  provinceOptions: { label: string; value: string }[] = [];
+  departmentOptions: { label: string; value: string }[] = [];
+  localityOptions: { label: string; value: string }[] = [];
+
+  careerOptions: { label: string; value: number }[] = [];
+  careerLoading = false;
+  careerLoadError: string | null = null;
+
+  commissionOptions: { label: string; value: number }[] = [];
+  commissionLoading = false;
+  commissionLoadError: string | null = null;
+
+  teacherSubjectOptions: { label: string; value: number }[] = [];
+  teacherSubjectsLoading = false;
+  teacherSubjectsLoadError: string | null = null;
+
+  private readonly roleOptions: RoleOption[] = [
+    { value: 'student', label: 'Alumno' },
+    { value: 'teacher', label: 'Docente' },
+    { value: 'preceptor', label: 'Preceptor' },
+    { value: 'secretary', label: 'Secretaría' },
+  ];
+  roleSuggestions: RoleOption[] = [];
+
+  get availableRoleOptions(): RoleOption[] {
+    const current = this.permissions.currentRole();
+    if (current === ROLE.EXECUTIVE_SECRETARY) return this.roleOptions;
+    return this.roleOptions.filter((opt) => opt.value !== 'secretary');
+  }
+
+  get passwordPreview() {
+    return this.control('cuil').value || 'pass1234';
+  }
+
+  get req() {
+    const role = this.roleValue;
+    return role ? ROLE_REQUIREMENTS[role] : null;
+  }
+
+  get isStudentRole(): boolean {
+    return this.roleValue === 'student';
+  }
+
+  get isTeacherRole(): boolean {
+    return this.roleValue === 'teacher';
+  }
+
+  get hasAssignmentStep(): boolean {
+    return this.isStudentRole || this.isTeacherRole;
+  }
+
+  get assignmentStepLabel(): string {
+    return 'Asignaciones';
+  }
+
+  get stepSummaryValue(): number {
+    return this.hasAssignmentStep ? 4 : 3;
+  }
+
+  get isStep1Invalid(): boolean {
+    return this.anyInvalid([
+      'role',
+      'name',
+      'lastName',
+      'email',
+      'cuil',
+      'sex',
+      'birthDate',
+    ]);
+  }
+
+  get isStep2Invalid(): boolean {
+    const names: (keyof CreateUserFormModel)[] = [];
+    if (this.req?.needsUserInfo) {
+      names.push('phone', 'emergencyName', 'emergencyPhone');
+    }
+    if (this.req?.needsCommonData) {
+      names.push('birthDate', 'sex');
+      if (this.req.allowsAddress) {
+        names.push(
+          'addressStreet',
+          'addressNumber',
+          'addressProvince',
+          'addressNeighborhood',
+          'addressLocality',
+          'addressPostalCode',
+        );
+      }
+    }
+    if (this.roleValue === 'student') {
+      names.push('studentStartYear', 'studentLegajo');
+    }
+    return this.anyInvalid(names);
+  }
+
+  get isStep3Invalid(): boolean {
+    if (this.roleValue === 'student') {
+      return (
+        this.control('careerId').invalid || this.control('commissionId').invalid
+      );
+    }
+    if (this.roleValue === 'teacher') {
+      return (
+        this.control('careerId').invalid ||
+        this.control('teacherCommissionIds').invalid ||
+        this.control('teacherSubjectIds').invalid
+      );
+    }
+    return false;
+  }
+
+  get previewRows(): PreviewRow[] {
+    return buildPreviewRows(this.buildPreview());
+  }
+
+  back(): void {
+    this.goBackSvc.back();
+  }
+
+  control<K extends keyof CreateUserFormModel>(name: K) {
+    return this.form().controls[name];
+  }
+
+  controlError(
+    name: keyof CreateUserFormModel,
+    requireTouched = true,): string | null {
+    const ctrl = this.control(name);
+    if (!ctrl) return null;
+    if (requireTouched && !(ctrl.touched || ctrl.dirty)) return null;
+    const errors = ctrl.errors;
+    if (!errors) return null;
+    if (errors['duplicate']) return errors['duplicate'] as string;
+    if (errors['birthDate']) return errors['birthDate'] as string;
+    if (errors['startYear']) return errors['startYear'] as string;
+    if (errors['career']) return errors['career'] as string;
+    if (errors['careerLoad']) return errors['careerLoad'] as string;
+    if (errors['commission']) return errors['commission'] as string;
+    if (errors['commissionLoad']) return errors['commissionLoad'] as string;
+    if (errors['teacherCommissions'])
+      return errors['teacherCommissions'] as string;
+    if (errors['teacherSubjects']) return errors['teacherSubjects'] as string;
+    if (errors['teacherSubjectsLoad'])
+      return errors['teacherSubjectsLoad'] as string;
+    if (errors['email']) return 'Email inválido.';
+    if (errors['required']) {
+      const label = this.fieldLabels[name] ?? 'Campo';
+      return `${label} es obligatorio.`;
+    }
+    return null;
+  }
+
+  clearDuplicateErrorFor(field: 'email' | 'cuil'): void {
+    const ctrl = this.control(field);
+    if (!ctrl) return;
+    const errors = { ...(ctrl.errors ?? {}) };
+    if (errors['duplicate']) {
+      delete errors['duplicate'];
+      ctrl.setErrors(Object.keys(errors).length ? errors : null);
+    }
+  }
+
+  onCuilChange(): void {
+    this.clearDuplicateErrorFor('cuil');
+  }
+
+  onRoleChange(role: UserRole | null): void {
+    // Evita estados inconsistentes: al cambiar de rol, volvemos al paso 1/2.
+    this.activeStep = Math.min(this.activeStep, 2);
+
+    // Reset de selecciones del paso 3 (asignaciones)
+    this.careerIdReset();
+    this.control('commissionId').setValue(null);
+    this.control('teacherCommissionIds').setValue([]);
+    this.control('teacherSubjectIds').setValue([]);
+    this.teacherSubjectOptions = [];
+    this.teacherSubjectsLoadError = null;
+
+    if (role !== 'student') {
+      this.control('commissionId').setErrors(null);
+    }
+    if (role !== 'teacher') {
+      this.control('teacherCommissionIds').setErrors(null);
+      this.control('teacherSubjectIds').setErrors(null);
+    }
+
+    this.control('studentStartYear').updateValueAndValidity({ onlySelf: true });
+    this.control('careerId').updateValueAndValidity({ onlySelf: true });
+    this.control('commissionId').updateValueAndValidity({ onlySelf: true });
+    this.control('teacherCommissionIds').updateValueAndValidity({
+      onlySelf: true,
+    });
+    this.control('teacherSubjectIds').updateValueAndValidity({
+      onlySelf: true,
+    });
+  }
+
+  searchRoles(e: { query: string }) {
+    const q = (e?.query ?? '').toLowerCase().trim();
+    const source = this.availableRoleOptions;
+    if (!q) {
+      this.roleSuggestions = [...source];
+      return;
+    }
+    this.roleSuggestions = source.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        opt.value.toLowerCase().includes(q),
+    );
+  }
+
+  hasAddress() {
+    return hasAnyAddress(this.addressObj());
+  }
+
+  goToStep(step: number): void {
+    this.activeStep = step;
+    // PrimeNG Stepper (v20) usa signals; updateValue() asegura la navegaci¢n incluso en modo linear.
+    this.stepper?.updateValue?.(step);
+    setTimeout(() => {
+      this.activeStep = step;
+      this.stepper?.updateValue?.(step);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }
+
+  onNextFromStep1(): void {
+    if (this.isStep1Invalid) {
+      this.markControlsTouched([
+        'role',
+        'name',
+        'lastName',
+        'email',
+        'cuil',
+        'sex',
+        'birthDate',
+      ]);
+      this.toastErr('Completa los datos del Paso I.');
+      return;
+    }
+    this.goToStep(2);
+  }
+
+  async onNextFromStep2(): Promise<void> {
+    const controlsToTouch: (keyof CreateUserFormModel)[] = ['birthDate', 'sex'];
+    if (this.roleValue === 'student') {
+      controlsToTouch.push('studentStartYear');
+    }
+    if (controlsToTouch.length) this.markControlsTouched(controlsToTouch);
+    if (this.isStep2Invalid) {
+      this.toastErr('Completa los datos del Paso II.');
+      return;
+    }
+    if (this.hasAssignmentStep) {
+      await this.ensureCareerOptions();
+      await this.ensureCommissionOptions();
+      this.goToStep(3);
+    } else {
+      this.goToStep(this.stepSummaryValue);
+    }
+  }
+
+  onNextFromStep3(): void {
+    if (this.roleValue === 'student') {
+      this.control('careerId').markAsTouched();
+      this.control('commissionId').markAsTouched();
+      if (this.isStep3Invalid) {
+        this.toastErr('Selecciona carrera y comisi¢n antes de continuar.');
+        return;
+      }
+    } else if (this.roleValue === 'teacher') {
+      this.control('careerId').markAsTouched();
+      this.control('teacherCommissionIds').markAsTouched();
+      this.control('teacherSubjectIds').markAsTouched();
+      if (this.isStep3Invalid) {
+        this.toastErr(
+          'Completa carrera, comisiones y materias antes de seguir.',
+        );
+        return;
+      }
+    } else {
+      this.goToStep(this.stepSummaryValue);
+      return;
+    }
+    this.goToStep(this.stepSummaryValue);
+  }
 
   async createUser(): Promise<void> {
     if (this.isCreating) return;
