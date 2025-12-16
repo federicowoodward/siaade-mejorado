@@ -4,12 +4,8 @@
   <div class="card flex justify-content-center">
     <p-stepper #stepper [(value)]="activeStep" class="w-full" [linear]="true">
       <!-- Encabezado + pasos -->
-      <div
-        class="flex flex-column md:flex-row md:align-items-center justify-content-between gap-3"
-      >
-        <div
-          class="flex flex-column gap-3 justify-content-between surface-card p-4 border-round w-full"
-        >
+      <div class="flex flex-column md:flex-row md:align-items-center justify-content-between gap-3">
+        <div class="flex flex-column gap-3 justify-content-between surface-card p-4 border-round w-full">
           <div>
             <h2 class="m-0">Crear usuario</h2>
             <p class="m-0 text-color-secondary">
@@ -31,9 +27,7 @@
         <!-- PASO 1: rol + usuario básico -->
         <p-step-panel [value]="1">
           <ng-template #content>
-            <section
-              class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
-            >
+            <section class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem">
               <div class="flex flex-column gap-1">
                 <h3 class="m-0">Datos básicos del usuario</h3>
                 <p class="m-0 text-500">
@@ -49,19 +43,10 @@
                 <!-- Rol -->
                 <div class="col-12">
                   <p-iftalabel class="w-full">
-                    <p-autoComplete
-                      class="w-full"
-                      inputId="role"
-                      [suggestions]="roleSuggestions"
-                      (completeMethod)="searchRoles($event)"
-                      [dropdown]="true"
-                      [minLength]="0"
-                      formControlName="role"
-                      [forceSelection]="true"
-                      placeholder="Seleccione rol del nuevo usuario"
-                      optionLabel="label"
-                      optionValue="value"
-                    >
+                    <p-autoComplete class="w-full" inputId="role" [suggestions]="roleSuggestions"
+                      (completeMethod)="searchRoles($event)" [dropdown]="true" [minLength]="0" formControlName="role"
+                      [forceSelection]="true" placeholder="Seleccione rol del nuevo usuario" optionLabel="label"
+                      optionValue="value">
                     </p-autoComplete>
                     <label for="role">Rol *</label>
                   </p-iftalabel>
@@ -69,78 +54,44 @@
 
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <input
-                      id="name"
-                      pInputText
-                      class="w-full"
-                      formControlName="name"
-                    />
+                    <input id="name" pInputText class="w-full" formControlName="name" />
                     <label for="name">Nombre *</label>
                   </p-iftalabel>
                 </div>
 
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <input
-                      id="lastName"
-                      pInputText
-                      class="w-full"
-                      formControlName="lastName"
-                    />
+                    <input id="lastName" pInputText class="w-full" formControlName="lastName" />
                     <label for="lastName">Apellido *</label>
                   </p-iftalabel>
                 </div>
 
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <input
-                      id="email"
-                      pInputText
-                      class="w-full"
-                      [ngClass]="{
+                    <input id="email" pInputText class="w-full" [ngClass]="{
                         'p-invalid':
                           control('email').invalid &&
                           (control('email').dirty || control('email').touched)
-                      }"
-                      [attr.aria-invalid]="controlError('email') ? true : null"
-                      formControlName="email"
-                      placeholder="mail@dominio.com"
-                      (input)="clearDuplicateErrorFor('email')"
-                      blockedAction
-                    />
+                      }" [attr.aria-invalid]="controlError('email') ? true : null" formControlName="email"
+                      placeholder="mail@dominio.com" (input)="clearDuplicateErrorFor('email')" blockedAction />
                     <label for="email">Email *</label>
                   </p-iftalabel>
-                  <small
-                    *ngIf="controlError('email') as emailErr"
-                    class="p-error block mt-1"
-                  >
+                  <small *ngIf="controlError('email') as emailErr" class="p-error block mt-1">
                     {{ emailErr }}
                   </small>
                 </div>
 
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <input
-                      id="cuil"
-                      pInputText
-                      class="w-full"
-                      [ngClass]="{
+                    <input id="cuil" pInputText class="w-full" [ngClass]="{
                         'p-invalid':
                           control('cuil').invalid &&
                           (control('cuil').dirty || control('cuil').touched)
-                      }"
-                      [attr.aria-invalid]="controlError('cuil') ? true : null"
-                      formControlName="cuil"
-                      placeholder="11 dígitos"
-                      (input)="onCuilChange()"
-                      blockedAction
-                    />
+                      }" [attr.aria-invalid]="controlError('cuil') ? true : null" formControlName="cuil"
+                      placeholder="11 dígitos" (input)="onCuilChange()" blockedAction />
                     <label for="cuil">CUIL *</label>
                   </p-iftalabel>
-                  <small
-                    *ngIf="controlError('cuil') as cuilErr"
-                    class="p-error block mt-1"
-                  >
+                  <small *ngIf="controlError('cuil') as cuilErr" class="p-error block mt-1">
                     {{ cuilErr }}
                   </small>
                   <small class="text-color-secondary block mt-1">
@@ -151,44 +102,24 @@
 
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <p-select
-                      class="w-full"
-                      inputId="sex"
-                      [options]="sexOptions"
-                      optionLabel="label"
-                      optionValue="value"
-                      placeholder="Seleccioná una opción"
-                      formControlName="sex"
-                      name="sex"
-                      [showClear]="true"
-                      appendTo="body"
-                      blockedAction
-                    ></p-select>
+                    <p-select class="w-full" inputId="sex" [options]="sexOptions" optionLabel="label"
+                      optionValue="value" placeholder="Seleccioná una opción" formControlName="sex" name="sex"
+                      [showClear]="true" appendTo="body" blockedAction></p-select>
                     <label for="sex">Sexo *</label>
                   </p-iftalabel>
                 </div>
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <input
-                      id="birthDate"
-                      type="date"
-                      class="w-full p-inputtext p-component"
-                      [ngClass]="{
+                    <input id="birthDate" type="date" class="w-full p-inputtext p-component" [ngClass]="{
                         'p-invalid':
                           control('birthDate').invalid &&
                           (control('birthDate').dirty ||
                             control('birthDate').touched)
-                      }"
-                      [attr.aria-invalid]="controlError('birthDate') ? true : null"
-                      formControlName="birthDate"
-                      blockedAction
-                    />
+                      }" [attr.aria-invalid]="controlError('birthDate') ? true : null" formControlName="birthDate"
+                      blockedAction />
                     <label for="birthDate">Fecha de nacimiento *</label>
                   </p-iftalabel>
-                  <small
-                    *ngIf="controlError('birthDate') as birthErr"
-                    class="p-error block mt-1"
-                  >
+                  <small *ngIf="controlError('birthDate') as birthErr" class="p-error block mt-1">
                     {{ birthErr }}
                   </small>
                 </div>
@@ -196,15 +127,8 @@
 
               <div class="flex pt-4 justify-content-end">
                 <div>
-                  <button
-                    pButton
-                    type="button"
-                    label="Siguiente paso"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
-                    (click)="onNextFromStep1()"
-                    [disabled]="isStep1Invalid"
-                  ></button>
+                  <button pButton type="button" label="Siguiente paso" icon="pi pi-arrow-right" iconPos="right"
+                    (click)="onNextFromStep1()" [disabled]="isStep1Invalid"></button>
                 </div>
               </div>
             </section>
@@ -214,9 +138,7 @@
         <!-- PASO 2 -->
         <p-step-panel [value]="2">
           <ng-template #content>
-            <section
-              class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
-            >
+            <section class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem">
               <div class="grid form-grid col-12">
                 <!-- SECRETARY -->
                 <ng-container *ngIf="roleValue === 'secretary'">
@@ -235,40 +157,23 @@
                     <div class="grid">
                       <div class="col-12 md:col-6">
                         <p-iftalabel class="w-full">
-                          <input
-                            id="phone"
-                            pInputText
-                            class="w-full"
-                            formControlName="phone"
-                          />
+                          <input id="phone" pInputText class="w-full" formControlName="phone" />
                           <label for="phone">Teléfono</label>
                         </p-iftalabel>
                       </div>
                       <div class="col-12 md:col-6">
                         <p-iftalabel class="w-full">
-                          <input
-                            id="emergencyPhone"
-                            pInputText
-                            class="w-full"
-                            formControlName="emergencyPhone"
-                            blockedAction
-                          />
+                          <input id="emergencyPhone" pInputText class="w-full" formControlName="emergencyPhone"
+                            blockedAction />
                           <label for="emergencyPhone">Emergencia - Tel.</label>
                         </p-iftalabel>
-                        <small class="block mt-1"
-                          >Contacto: {{ control('emergencyName').value || '-'
-                          }}</small
-                        >
+                        <small class="block mt-1">Contacto: {{ control('emergencyName').value || '-'
+                          }}</small>
                       </div>
                       <div class="col-12 md:col-6">
                         <p-iftalabel class="w-full">
-                          <input
-                            id="emergencyName"
-                            pInputText
-                            class="w-full"
-                            formControlName="emergencyName"
-                            blockedAction
-                          />
+                          <input id="emergencyName" pInputText class="w-full" formControlName="emergencyName"
+                            blockedAction />
                           <label for="emergencyName">Emergencia - Nombre</label>
                         </p-iftalabel>
                       </div>
@@ -286,97 +191,50 @@
                         <div class="grid">
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <input
-                                id="addressStreet"
-                                pInputText
-                                class="w-full"
-                                formControlName="addressStreet"
-                                blockedAction
-                              />
+                              <input id="addressStreet" pInputText class="w-full" formControlName="addressStreet"
+                                blockedAction />
                               <label for="addressStreet">Calle</label>
                             </p-iftalabel>
                           </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <input
-                                id="addressNumber"
-                                pInputText
-                                class="w-full"
-                                formControlName="addressNumber"
-                                blockedAction
-                              />
+                              <input id="addressNumber" pInputText class="w-full" formControlName="addressNumber"
+                                blockedAction />
                               <label for="addressNumber">Número</label>
                             </p-iftalabel>
                           </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <p-select
-                                class="w-full"
-                                inputId="province"
-                                [options]="provinceOptions"
-                                formControlName="addressProvince"
-                                name="province"
-                                placeholder="Seleccioná provincia"
-                                [showClear]="true"
-                                appendTo="body"
-                                (onChange)="onProvinceChange($event.value)"
-                                blockedAction
-                                [filter]="true"
-                                filterBy="label"
-                              ></p-select>
+                              <p-select class="w-full" inputId="province" [options]="provinceOptions"
+                                formControlName="addressProvince" name="province" placeholder="Seleccioná provincia"
+                                [showClear]="true" appendTo="body" (onChange)="onProvinceChange($event.value)"
+                                blockedAction [filter]="true" filterBy="label"></p-select>
                               <label for="province">Provincia</label>
                             </p-iftalabel>
                           </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <p-select
-                                class="w-full"
-                                inputId="department"
-                                [options]="departmentOptions"
-                                formControlName="addressNeighborhood"
-                                name="department"
-                                placeholder="Ej: Capital"
-                                [showClear]="true"
-                                appendTo="body"
-                                (onChange)="onDepartmentChange($event.value)"
-                                blockedAction
-                                [filter]="true"
-                                filterBy="label"
-                              ></p-select>
+                              <p-select class="w-full" inputId="department" [options]="departmentOptions"
+                                formControlName="addressNeighborhood" name="department" placeholder="Ej: Capital"
+                                [showClear]="true" appendTo="body" (onChange)="onDepartmentChange($event.value)"
+                                blockedAction [filter]="true" filterBy="label"></p-select>
                               <label for="department">Departamento</label>
                             </p-iftalabel>
                           </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <p-select
-                                class="w-full"
-                                inputId="locality"
-                                [options]="localityOptions"
-                                formControlName="addressLocality"
-                                name="locality"
-                                placeholder="Ej: Córdoba Capital"
-                                [showClear]="true"
-                                appendTo="body"
-                                (onChange)="onLocalityChange($event.value)"
-                                blockedAction
-                                [filter]="true"
-                                filterBy="label"
-                              ></p-select>
+                              <p-select class="w-full" inputId="locality" [options]="localityOptions"
+                                formControlName="addressLocality" name="locality" placeholder="Ej: Córdoba Capital"
+                                [showClear]="true" appendTo="body" (onChange)="onLocalityChange($event.value)"
+                                blockedAction [filter]="true" filterBy="label"></p-select>
                               <label for="locality">Localidad</label>
                             </p-iftalabel>
                           </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <input
-                                id="addressPostalCode"
-                                pInputText
-                                class="w-full"
-                                formControlName="addressPostalCode"
-                                blockedAction
-                              />
-                              <label for="addressPostalCode"
-                                >Código Postal</label
-                              >
+                              <input id="addressPostalCode" pInputText class="w-full"
+                                formControlName="addressPostalCode" blockedAction />
+                              <label for="addressPostalCode">Código Postal</label>
                             </p-iftalabel>
                           </div>
                         </div>
@@ -388,13 +246,13 @@
                         <div class="grid">
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <input
-                                id="studentLegajo"
-                                pInputText
-                                class="w-full"
-                                formControlName="studentLegajo"
-                                placeholder="Identificador de legajo"
-                              />
+                              <input id="studentLegajo" pInputText class="w-full" formControlName="studentLegajo"
+                                placeholder="Identificador de legajo" [ngClass]="{
+                                  'p-invalid':
+                                    control('studentLegajo').invalid &&
+                                    (control('studentLegajo').dirty ||
+                                      control('studentLegajo').touched)
+                                }" />
                               <label for="studentLegajo">Legajo *</label>
                             </p-iftalabel>
                             <small class="text-color-secondary block mt-1">
@@ -404,21 +262,16 @@
                           </div>
                           <div class="col-12 md:col-6">
                             <p-iftalabel class="w-full">
-                              <input
-                                id="studentStartYear"
-                                type="number"
-                                class="w-full p-inputtext p-component"
-                                formControlName="studentStartYear"
-                                placeholder="YYYY"
-                              />
-                              <label for="studentStartYear"
-                                >Año de inicio *</label
-                              >
+                              <input id="studentStartYear" type="number" class="w-full p-inputtext p-component"
+                                formControlName="studentStartYear" placeholder="YYYY" [ngClass]="{
+                                  'p-invalid':
+                                    control('studentStartYear').invalid &&
+                                    (control('studentStartYear').dirty ||
+                                      control('studentStartYear').touched)
+                                }" />
+                              <label for="studentStartYear">Año de inicio *</label>
                             </p-iftalabel>
-                            <small
-                              *ngIf="controlError('studentStartYear') as startYearErr"
-                              class="p-error block mt-1"
-                            >
+                            <small *ngIf="controlError('studentStartYear') as startYearErr" class="p-error block mt-1">
                               {{ startYearErr }}
                             </small>
                           </div>
@@ -431,25 +284,12 @@
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
-                  <button
-                    pButton
-                    type="button"
-                    label="Paso anterior"
-                    severity="secondary"
-                    icon="pi pi-arrow-left"
-                    (click)="goToStep(1)"
-                  ></button>
+                  <button pButton type="button" label="Paso anterior" severity="secondary" icon="pi pi-arrow-left"
+                    (click)="goToStep(1)"></button>
                 </div>
                 <div>
-                  <button
-                    pButton
-                    type="button"
-                    label="Siguiente paso"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
-                    (click)="onNextFromStep2()"
-                    [disabled]="isStep2Invalid"
-                  ></button>
+                  <button pButton type="button" label="Siguiente paso" icon="pi pi-arrow-right" iconPos="right"
+                    (click)="onNextFromStep2()" [disabled]="isStep2Invalid"></button>
                 </div>
               </div>
             </section>
@@ -459,9 +299,7 @@
         <!-- PASO 3: asignaciones (alumno/docente) -->
         <p-step-panel *ngIf="hasAssignmentStep" [value]="3">
           <ng-template #content>
-            <section
-              class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-20rem"
-            >
+            <section class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-20rem">
               <div class="flex flex-column gap-1">
                 <h3 class="m-0" *ngIf="roleValue === 'student'">
                   Asignar carrera y comisión
@@ -478,24 +316,16 @@
               <div class="grid form-grid">
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
-                    <p-select
-                      class="w-full"
-                      inputId="careerId"
-                      [options]="careerOptions"
-                      optionLabel="label"
-                      optionValue="value"
-                      placeholder="Seleccioná una carrera"
-                      appendTo="body"
-                      [showClear]="true"
-                      formControlName="careerId"
-                      blockedAction
-                    ></p-select>
+                    <p-select class="w-full" inputId="careerId" [options]="careerOptions" optionLabel="label"
+                      optionValue="value" placeholder="Seleccioná una carrera" appendTo="body" [showClear]="true"
+                      formControlName="careerId" blockedAction [ngClass]="{
+                        'ng-invalid ng-dirty':
+                          control('careerId').invalid &&
+                          (control('careerId').dirty || control('careerId').touched)
+                      }"></p-select>
                     <label for="careerId">Carrera *</label>
                   </p-iftalabel>
-                  <small
-                    *ngIf="controlError('careerId') as careerErr"
-                    class="p-error block mt-1"
-                  >
+                  <small *ngIf="controlError('careerId') as careerErr" class="p-error block mt-1">
                     {{ careerErr }}
                   </small>
                 </div>
@@ -504,24 +334,17 @@
                 <ng-container *ngIf="roleValue === 'student'">
                   <div class="col-12 md:col-6">
                     <p-iftalabel class="w-full">
-                      <p-select
-                        class="w-full"
-                        inputId="commissionId"
-                        [options]="commissionOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        placeholder="Seleccioná una comisión"
-                        appendTo="body"
-                        [showClear]="true"
-                        formControlName="commissionId"
-                        blockedAction
-                      ></p-select>
+                      <p-select class="w-full" inputId="commissionId" [options]="commissionOptions" optionLabel="label"
+                        optionValue="value" placeholder="Seleccioná una comisión" appendTo="body" [showClear]="true"
+                        formControlName="commissionId" blockedAction [ngClass]="{
+                          'ng-invalid ng-dirty':
+                            control('commissionId').invalid &&
+                            (control('commissionId').dirty ||
+                              control('commissionId').touched)
+                        }"></p-select>
                       <label for="commissionId">Comisión *</label>
                     </p-iftalabel>
-                    <small
-                      *ngIf="controlError('commissionId') as commissionErr"
-                      class="p-error block mt-1"
-                    >
+                    <small *ngIf="controlError('commissionId') as commissionErr" class="p-error block mt-1">
                       {{ commissionErr }}
                     </small>
                   </div>
@@ -531,56 +354,39 @@
                 <ng-container *ngIf="roleValue === 'teacher'">
                   <div class="col-12 md:col-6">
                     <p-iftalabel class="w-full">
-                      <p-multiSelect
-                        class="w-full"
-                        inputId="teacherCommissionIds"
-                        [options]="commissionOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        formControlName="teacherCommissionIds"
-                        defaultLabel="Seleccioná comisiones"
-                        display="chip"
-                        appendTo="body"
-                        blockedAction
-                      ></p-multiSelect>
+                      <p-multiSelect class="w-full" inputId="teacherCommissionIds" [options]="commissionOptions"
+                        optionLabel="label" optionValue="value" formControlName="teacherCommissionIds"
+                        defaultLabel="Seleccioná comisiones" display="chip" appendTo="body" blockedAction [ngClass]="{
+                          'ng-invalid ng-dirty':
+                            control('teacherCommissionIds').invalid &&
+                            (control('teacherCommissionIds').dirty ||
+                              control('teacherCommissionIds').touched)
+                        }"></p-multiSelect>
                       <label for="teacherCommissionIds">Comisiones *</label>
                     </p-iftalabel>
-                    <small
-                      *ngIf="controlError('teacherCommissionIds') as teacherCommissionErr"
-                      class="p-error block mt-1"
-                    >
+                    <small *ngIf="controlError('teacherCommissionIds') as teacherCommissionErr"
+                      class="p-error block mt-1">
                       {{ teacherCommissionErr }}
                     </small>
                   </div>
 
                   <div class="col-12 md:col-6">
                     <p-iftalabel class="w-full">
-                      <p-multiSelect
-                        class="w-full"
-                        inputId="teacherSubjectIds"
-                        [options]="teacherSubjectOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        formControlName="teacherSubjectIds"
-                        defaultLabel="Seleccioná materias"
-                        display="chip"
-                        appendTo="body"
-                        [filter]="true"
-                        filterBy="label"
-                        blockedAction
-                      ></p-multiSelect>
+                      <p-multiSelect class="w-full" inputId="teacherSubjectIds" [options]="teacherSubjectOptions"
+                        optionLabel="label" optionValue="value" formControlName="teacherSubjectIds"
+                        defaultLabel="Seleccioná materias" display="chip" appendTo="body" [filter]="true"
+                        filterBy="label" blockedAction [ngClass]="{
+                          'ng-invalid ng-dirty':
+                            control('teacherSubjectIds').invalid &&
+                            (control('teacherSubjectIds').dirty ||
+                              control('teacherSubjectIds').touched)
+                        }"></p-multiSelect>
                       <label for="teacherSubjectIds">Materias *</label>
                     </p-iftalabel>
-                    <small
-                      *ngIf="controlError('teacherSubjectIds') as teacherSubjectsErr"
-                      class="p-error block mt-1"
-                    >
+                    <small *ngIf="controlError('teacherSubjectIds') as teacherSubjectsErr" class="p-error block mt-1">
                       {{ teacherSubjectsErr }}
                     </small>
-                    <small
-                      *ngIf="teacherSubjectsLoading"
-                      class="text-color-secondary block mt-1"
-                    >
+                    <small *ngIf="teacherSubjectsLoading" class="text-color-secondary block mt-1">
                       Cargando materias...
                     </small>
                   </div>
@@ -589,25 +395,12 @@
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
-                  <button
-                    pButton
-                    type="button"
-                    label="Paso anterior"
-                    severity="secondary"
-                    icon="pi pi-arrow-left"
-                    (click)="goToStep(2)"
-                  ></button>
+                  <button pButton type="button" label="Paso anterior" severity="secondary" icon="pi pi-arrow-left"
+                    (click)="goToStep(2)"></button>
                 </div>
                 <div>
-                  <button
-                    pButton
-                    type="button"
-                    label="Siguiente paso"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
-                    (click)="onNextFromStep3()"
-                    [disabled]="isStep3Invalid"
-                  ></button>
+                  <button pButton type="button" label="Siguiente paso" icon="pi pi-arrow-right" iconPos="right"
+                    (click)="onNextFromStep3()" [disabled]="isStep3Invalid"></button>
                 </div>
               </div>
             </section>
@@ -617,9 +410,7 @@
         <!-- PASO resumen -->
         <p-step-panel [value]="stepSummaryValue">
           <ng-template #content>
-            <section
-              class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem"
-            >
+            <section class="surface-card border-round shadow-1 p-4 flex flex-column gap-4 w-full min-h-30rem">
               <div class="flex flex-column gap-1">
                 <h3 class="m-0">Resumen</h3>
                 <p class="m-0 text-500">
@@ -628,13 +419,9 @@
               </div>
 
               <div class="summary-sections">
-                <ng-container
-                  *ngIf="rowsForSection('identity') as identityRows"
-                >
-                  <div
-                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
-                    *ngIf="identityRows.length"
-                  >
+                <ng-container *ngIf="rowsForSection('identity') as identityRows">
+                  <div class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="identityRows.length">
                     <div class="summary-card__header">
                       <p class="summary-card__title m-0">Rol y credenciales</p>
                       <p class="summary-card__subtitle m-0 text-500">
@@ -642,26 +429,18 @@
                       </p>
                     </div>
                     <div class="summary-grid">
-                      <div
-                        class="summary-item"
-                        *ngFor="let row of identityRows"
-                      >
+                      <div class="summary-item" *ngFor="let row of identityRows">
                         <span class="summary-label">
                           {{ row.field | fieldLabel }}
                         </span>
                         <div class="summary-value">
                           <ng-container [ngSwitch]="true">
-                            <span *ngSwitchCase="isPasswordField(row)"
-                              >••••••••</span
-                            >
+                            <span *ngSwitchCase="isPasswordField(row)">••••••••</span>
                             <span *ngSwitchCase="isCuilField(row)">
                               {{ maskCuil(displayPreviewValue(row)) }}
                             </span>
-                            <p-tag
-                              *ngSwitchCase="fieldKey(row) === 'role'"
-                              [value]="displayPreviewValue(row)"
-                              severity="secondary"
-                            ></p-tag>
+                            <p-tag *ngSwitchCase="fieldKey(row) === 'role'" [value]="displayPreviewValue(row)"
+                              severity="secondary"></p-tag>
                             <ng-container *ngSwitchDefault>
                               <span>{{ displayPreviewValue(row) || '-' }}</span>
                             </ng-container>
@@ -672,13 +451,9 @@
                   </div>
                 </ng-container>
 
-                <ng-container
-                  *ngIf="rowsForSection('personal') as personalRows"
-                >
-                  <div
-                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
-                    *ngIf="personalRows.length"
-                  >
+                <ng-container *ngIf="rowsForSection('personal') as personalRows">
+                  <div class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="personalRows.length">
                     <div class="summary-card__header">
                       <p class="summary-card__title m-0">Datos personales</p>
                       <p class="summary-card__subtitle m-0 text-500">
@@ -686,20 +461,14 @@
                       </p>
                     </div>
                     <div class="summary-grid">
-                      <div
-                        class="summary-item"
-                        *ngFor="let row of personalRows"
-                      >
+                      <div class="summary-item" *ngFor="let row of personalRows">
                         <span class="summary-label">
                           {{ row.field | fieldLabel }}
                         </span>
                         <div class="summary-value">
                           <ng-container [ngSwitch]="fieldKey(row)">
-                            <p-tag
-                              *ngSwitchCase="'sex'"
-                              [value]="displayPreviewValue(row)"
-                              severity="secondary"
-                            ></p-tag>
+                            <p-tag *ngSwitchCase="'sex'" [value]="displayPreviewValue(row)"
+                              severity="secondary"></p-tag>
                             <ng-container *ngSwitchDefault>
                               <span>{{ displayPreviewValue(row) || '-' }}</span>
                             </ng-container>
@@ -710,13 +479,9 @@
                   </div>
                 </ng-container>
 
-                <ng-container
-                  *ngIf="rowsForSection('academic') as academicRows"
-                >
-                  <div
-                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
-                    *ngIf="academicRows.length"
-                  >
+                <ng-container *ngIf="rowsForSection('academic') as academicRows">
+                  <div class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="academicRows.length">
                     <div class="summary-card__header">
                       <p class="summary-card__title m-0">Datos academicos</p>
                       <p class="summary-card__subtitle m-0 text-500">
@@ -724,40 +489,22 @@
                       </p>
                     </div>
                     <div class="summary-grid">
-                      <div
-                        class="summary-item"
-                        *ngFor="let row of academicRows"
-                      >
+                      <div class="summary-item" *ngFor="let row of academicRows">
                         <span class="summary-label">
                           {{ row.field | fieldLabel }}
                         </span>
                         <div class="summary-value">
                           <ng-container [ngSwitch]="fieldKey(row)">
-                            <div
-                              *ngSwitchCase="'commissions'"
-                              class="summary-chip-list"
-                            >
-                              <p-tag
-                                *ngFor="let item of asList(displayPreviewValue(row))"
-                                [value]="item"
-                                severity="secondary"
-                              ></p-tag>
+                            <div *ngSwitchCase="'commissions'" class="summary-chip-list">
+                              <p-tag *ngFor="let item of asList(displayPreviewValue(row))" [value]="item"
+                                severity="secondary"></p-tag>
                             </div>
-                            <div
-                              *ngSwitchCase="'subjects'"
-                              class="summary-chip-list"
-                            >
-                              <p-tag
-                                *ngFor="let item of asList(displayPreviewValue(row))"
-                                [value]="item"
-                                severity="info"
-                              ></p-tag>
+                            <div *ngSwitchCase="'subjects'" class="summary-chip-list">
+                              <p-tag *ngFor="let item of asList(displayPreviewValue(row))" [value]="item"
+                                severity="info"></p-tag>
                             </div>
-                            <p-tag
-                              *ngSwitchCase="'commission'"
-                              [value]="displayPreviewValue(row)"
-                              severity="secondary"
-                            ></p-tag>
+                            <p-tag *ngSwitchCase="'commission'" [value]="displayPreviewValue(row)"
+                              severity="secondary"></p-tag>
                             <ng-container *ngSwitchDefault>
                               <span>{{ displayPreviewValue(row) || '-' }}</span>
                             </ng-container>
@@ -769,10 +516,8 @@
                 </ng-container>
 
                 <ng-container *ngIf="rowsForSection('contact') as contactRows">
-                  <div
-                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
-                    *ngIf="contactRows.length"
-                  >
+                  <div class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="contactRows.length">
                     <div class="summary-card__header">
                       <p class="summary-card__title m-0">Contacto</p>
                       <p class="summary-card__subtitle m-0 text-500">
@@ -793,10 +538,8 @@
                 </ng-container>
 
                 <ng-container *ngIf="rowsForSection('address') as addressRows">
-                  <div
-                    class="summary-card surface-card border-1 surface-border border-round shadow-1"
-                    *ngIf="addressRows.length"
-                  >
+                  <div class="summary-card surface-card border-1 surface-border border-round shadow-1"
+                    *ngIf="addressRows.length">
                     <div class="summary-card__header">
                       <p class="summary-card__title m-0">Direccion</p>
                       <p class="summary-card__subtitle m-0 text-500">
@@ -819,25 +562,12 @@
 
               <div class="flex pt-4 justify-content-between">
                 <div class="flex gap-2">
-                  <button
-                    pButton
-                    type="button"
-                    label="Paso anterior"
-                    severity="secondary"
-                    icon="pi pi-arrow-left"
-                    (click)="goToStep(hasAssignmentStep ? 3 : 2)"
-                  ></button>
+                  <button pButton type="button" label="Paso anterior" severity="secondary" icon="pi pi-arrow-left"
+                    (click)="goToStep(hasAssignmentStep ? 3 : 2)"></button>
                 </div>
                 <div>
-                  <button
-                    pButton
-                    type="button"
-                    label="Crear"
-                    icon="pi pi-check"
-                    [disabled]="isCreating"
-                    (click)="createUser()"
-                    blockedAction
-                  ></button>
+                  <button pButton type="button" label="Crear" icon="pi pi-check" [disabled]="isCreating"
+                    (click)="createUser()" blockedAction></button>
                 </div>
               </div>
             </section>
