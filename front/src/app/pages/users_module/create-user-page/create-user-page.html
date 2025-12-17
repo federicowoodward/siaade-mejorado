@@ -69,7 +69,7 @@
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
                     <input id="email" pInputText class="w-full" [ngClass]="{
-                        'p-invalid':
+                        'ng-invalid ng-dirty':
                           control('email').invalid &&
                           (control('email').dirty || control('email').touched)
                       }" [attr.aria-invalid]="controlError('email') ? true : null" formControlName="email"
@@ -84,7 +84,7 @@
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
                     <input id="cuil" pInputText class="w-full" [ngClass]="{
-                        'p-invalid':
+                        'ng-invalid ng-dirty':
                           control('cuil').invalid &&
                           (control('cuil').dirty || control('cuil').touched)
                       }" [attr.aria-invalid]="controlError('cuil') ? true : null" formControlName="cuil"
@@ -111,7 +111,7 @@
                 <div class="col-12 md:col-6">
                   <p-iftalabel class="w-full">
                     <input id="birthDate" type="date" class="w-full p-inputtext p-component" [ngClass]="{
-                        'p-invalid':
+                        'ng-invalid ng-dirty':
                           control('birthDate').invalid &&
                           (control('birthDate').dirty ||
                             control('birthDate').touched)
@@ -248,7 +248,7 @@
                             <p-iftalabel class="w-full">
                               <input id="studentLegajo" pInputText class="w-full" formControlName="studentLegajo"
                                 placeholder="Identificador de legajo" [ngClass]="{
-                                  'p-invalid':
+                                  'ng-invalid ng-dirty':
                                     control('studentLegajo').invalid &&
                                     (control('studentLegajo').dirty ||
                                       control('studentLegajo').touched)
@@ -264,7 +264,7 @@
                             <p-iftalabel class="w-full">
                               <input id="studentStartYear" type="number" class="w-full p-inputtext p-component"
                                 formControlName="studentStartYear" placeholder="YYYY" [ngClass]="{
-                                  'p-invalid':
+                                  'ng-invalid ng-dirty':
                                     control('studentStartYear').invalid &&
                                     (control('studentStartYear').dirty ||
                                       control('studentStartYear').touched)
