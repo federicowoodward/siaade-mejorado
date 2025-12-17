@@ -121,7 +121,7 @@
   .auth-shell.login-mode .panes {
     transform: translateX(-50%); /* Mostrar segundo panel (Login) */
   }
-
+  
   .auth-shell.recover-mode .panes {
     transform: translateX(0); /* Mostrar primer panel (Recuperar) */
   }
@@ -674,5 +674,11 @@
 @media (max-width: 900px) {
   .auth-shell {
     width: 90%;
+  }
+}
+
+@media (max-width: 767px) {
+  .cover-slider {
+    display: none !important;
   }
 }
