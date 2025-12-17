@@ -1,23 +1,41 @@
-<div class="py-2 px-4 md:px-6 flex justify-content-between align-items-center shrink-0"
-  *ngIf="authService.isLoggedIn()">
+<div
+  class="py-2 px-4 md:px-6 flex justify-content-between align-items-center shrink-0"
+  *ngIf="authService.isLoggedIn()"
+>
   <!-- Botón hamburguesa -->
   <div class="lg:hidden block">
-    <p-button (onClick)="openSidebar()" aria-label="Abrir menú" icon="pi pi-bars"></p-button>
+    <p-button
+      (onClick)="openSidebar()"
+      aria-label="Abrir menú"
+      icon="pi pi-bars"
+    ></p-button>
   </div>
 
   <!-- Logo -->
   <div>
-    <img src="assets/images/logo_new.png" alt="Logo" class="w-4rem" />
+    <img src="assets/images/logo_only.svg" alt="Logo" class="w-3rem" />
   </div>
 
   <!-- Usuario y menú -->
-  <div class="flex align-items-center gap-2 p-2 px-3 cursor-pointer"
-    (click)="menu.toggle($event); this.isMenuOpen = !this.isMenuOpen;">
+  <div
+    class="flex align-items-center gap-2 p-2 px-3 cursor-pointer"
+    (click)="menu.toggle($event); this.isMenuOpen = !this.isMenuOpen;"
+  >
     <div class="flex flex-column">
       <p>{{ userName }}</p>
       <p class="text-sm text-gray-500">{{ userRole()! | roleLabel }}</p>
     </div>
-    <p [class.pi-angle-down]="!isMenuOpen" [class.pi-angle-up]="isMenuOpen" class="pi text-lg"></p>
+    <p
+      [class.pi-angle-down]="!isMenuOpen"
+      [class.pi-angle-up]="isMenuOpen"
+      class="pi text-lg"
+    ></p>
   </div>
 </div>
-<p-menu #menu [model]="items" [popup]="true" class="navbar" (onHide)="isMenuOpen = false" />
+<p-menu
+  #menu
+  [model]="items"
+  [popup]="true"
+  class="navbar"
+  (onHide)="isMenuOpen = false"
+/>
