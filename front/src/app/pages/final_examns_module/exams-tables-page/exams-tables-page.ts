@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 import { ExamTable } from '../../../core/models/exam_table.model';
 import { ExamTablesService } from '../../../core/services/final-exam-tables.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -55,6 +56,7 @@ export class ExamsTablesPage implements OnInit {
   loading = signal<boolean>(false);
 
   showDialog = signal(false);
+  saving = signal(false);
   editingId: number | null = null;
   name = '';
   start_date = '';
@@ -94,9 +96,10 @@ export class ExamsTablesPage implements OnInit {
   }
 
   confirmDialog() {
-    if (!this.validateDialog()) {
-      return;
-    }
+    if (this.saving()) return;
+    if (!this.validateDialog()) return;
+
+    this.saving.set(true);
 
     const payload = {
       name: this.name.trim(),
@@ -104,53 +107,62 @@ export class ExamsTablesPage implements OnInit {
       end_date: this.end_date,
     };
 
+    const finish = () => {
+      this.reload(true);
+      this.showDialog.set(false);
+    };
+
     if (this.editingId !== null) {
       const editingId = this.editingId;
-      this.svc.update(editingId, payload).subscribe({
-        next: () => {
-          this.uiAlertAudit.add(this.messages, {
-            severity: 'success',
-            summary: 'Actualizado',
-          });
-          this.reload(true);
-          this.sync.notify({ action: 'updated', mesaId: editingId });
-          this.showDialog.set(false);
-        },
-        error: (error) => {
-          this.showBackendError(error);
-        },
-      });
-    } else {
-      const currentUserId = this.auth.getUserId();
-      if (!currentUserId) {
-        this.uiAlertAudit.add(this.messages, {
-          severity: 'error',
-          summary: 'Sesion requerida',
-          detail:
-            'No pudimos identificar al usuario actual para crear la mesa.',
-          life: 5000,
+      this.svc
+        .update(editingId, payload)
+        .pipe(finalize(() => this.saving.set(false)))
+        .subscribe({
+          next: () => {
+            this.uiAlertAudit.add(this.messages, {
+              severity: 'success',
+              summary: 'Actualizado',
+            });
+            this.sync.notify({ action: 'updated', mesaId: editingId });
+            finish();
+          },
+          error: (error) => this.showBackendError(error),
         });
-        return;
-      }
-      const createPayload = {
-        ...payload,
-        created_by: currentUserId,
-      };
-      this.svc.create(createPayload).subscribe({
+
+      return;
+    }
+
+    const currentUserId = this.auth.getUserId();
+    if (!currentUserId) {
+      this.saving.set(false);
+      this.uiAlertAudit.add(this.messages, {
+        severity: 'error',
+        summary: 'Sesion requerida',
+        detail: 'No pudimos identificar al usuario actual para crear la mesa.',
+        life: 5000,
+      });
+      return;
+    }
+
+    const createPayload = {
+      ...payload,
+      created_by: currentUserId,
+    };
+
+    this.svc
+      .create(createPayload)
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
         next: (created) => {
           this.uiAlertAudit.add(this.messages, {
             severity: 'success',
             summary: 'Creado',
           });
-          this.reload(true);
           this.sync.notify({ action: 'created', mesaId: created.id });
-          this.showDialog.set(false);
+          finish();
         },
-        error: (error) => {
-          this.showBackendError(error);
-        },
+        error: (error) => this.showBackendError(error),
       });
-    }
   }
 
   deleteTable(t: ExamTable) {

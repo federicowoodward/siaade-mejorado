@@ -129,11 +129,15 @@
       label="Cancelar"
       icon="pi pi-times"
       severity="secondary"
+      type="button"
       (onClick)="showDialog.set(false)"
     ></p-button>
     <p-button
       label="Confirmar"
       icon="pi pi-check"
+      type="button"
+      [disabled]="saving()"
+      [loading]="saving()"
       (onClick)="confirmDialog()"
     ></p-button>
   </ng-template>
