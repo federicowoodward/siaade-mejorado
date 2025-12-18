@@ -43,14 +43,14 @@ import { ROLE } from "@/shared/rbac/roles.constants";
   ROLE.EXECUTIVE_SECRETARY,
   ROLE.SECRETARY,
   ROLE.PRECEPTOR,
-  ROLE.TEACHER,
+  ROLE.TEACHER
 )
 @Controller("users")
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly usersPatchService: UsersPatchService,
-    private readonly userReader: UserProfileReaderService,
+    private readonly userReader: UserProfileReaderService
   ) {}
 
   @Post("secretary")
@@ -111,7 +111,7 @@ export class UsersController {
   async blockUser(
     @Param("id") id: string,
     @Body() body: { reason?: string | null },
-    @Req() _req: Request,
+    @Req() _req: Request
   ) {
     const reason = (body?.reason ?? "").trim();
     const data = await this.usersService.blockUser(id, reason);
@@ -158,7 +158,7 @@ export class UsersController {
     ROLE.EXECUTIVE_SECRETARY,
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
-    ROLE.TEACHER,
+    ROLE.TEACHER
   )
   async getAllUsers(@Req() req: Request): Promise<{
     data: any[];
@@ -190,6 +190,7 @@ export class UsersController {
     ROLE.SECRETARY,
     ROLE.PRECEPTOR,
     ROLE.TEACHER,
+    ROLE.STUDENT
   )
   async getUserById(@Param("id") id: string, @Req() req: Request) {
     try {
@@ -197,7 +198,7 @@ export class UsersController {
       if (auth?.role === ROLE.TEACHER && auth?.id) {
         const allowed = await this.usersService.userBelongsToTeacher(
           id,
-          auth.id,
+          auth.id
         );
         if (!allowed) {
           throw new ForbiddenException("Access to this user is forbidden");
@@ -226,7 +227,13 @@ export class UsersController {
       additionalProperties: true,
     } as any,
   })
-  @AllowRoles(ROLE.PRECEPTOR, ROLE.SECRETARY, ROLE.EXECUTIVE_SECRETARY)
+  @AllowRoles(
+    ROLE.EXECUTIVE_SECRETARY,
+    ROLE.SECRETARY,
+    ROLE.PRECEPTOR,
+    ROLE.TEACHER,
+    ROLE.STUDENT
+  )
   async updateUser(@Param("id") id: string, @Body() body: Record<string, any>) {
     try {
       await this.usersPatchService.patchUser(id, body);
